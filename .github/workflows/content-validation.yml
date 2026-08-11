@@ -1,0 +1,21 @@
+# Hace ciertas las afirmaciones de los docs: las reglas duras son CI, no intenciones.
+# Se activa al pushear el repo a GitHub. Hasta entonces, correr local:
+#   npm run typecheck && npm run validate
+name: content-validation
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run validate

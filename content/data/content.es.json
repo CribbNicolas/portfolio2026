@@ -1,0 +1,345 @@
+{
+  "schemaVersion": "1.0.0",
+  "locale": "es",
+  "updatedAt": "2026-08-10T00:00:00.000Z",
+
+  "identity": {
+    "fullName": "Nicolás Agustín Cribb Barbaro",
+    "preferredName": "Nico",
+    "brandTitle": "Product Engineer",
+    "searchTitle": "Desarrollador Full Stack",
+    "titleAliases": [
+      "Full Stack Developer",
+      "Desarrollador React",
+      "Frontend Developer",
+      "Desarrollador Web"
+    ],
+    "location": {
+      "city": "Rosario",
+      "region": "Santa Fe",
+      "country": "Argentina",
+      "timezone": "UTC-3"
+    },
+    "contact": {
+      "email": "cribbnicolas26@gmail.com",
+      "phone": "<TELEFONO-REMOVIDO>",
+      "publishPhoneOn": ["cv", "cv-short", "cv-ats"]
+    },
+    "links": [
+      { "label": "GitHub", "url": "https://github.com/CribbNicolas", "kind": "github" },
+      { "label": "LinkedIn", "url": "https://www.linkedin.com/in/cribb-barbaro-nicolas/", "kind": "linkedin" }
+    ],
+    "careerStart": "2020-04",
+    "tagline": {
+      "short": "Construyo productos web completos, no solo la interfaz."
+    },
+    "summary": {
+      "short": "Desarrollador full stack con foco en producto: React, Next.js y TypeScript, con base sólida en Node, Docker y CI/CD para llevar un proyecto del repo a producción.",
+      "long": "TODO — versión larga para LinkedIn y portfolio. Ver branding-kit, sección 1.2."
+    }
+  },
+
+  "skills": [
+    { "id": "typescript", "name": "TypeScript", "category": "language", "aliases": ["TS"], "level": "core", "active": true, "visibility": { "priority": 1 } },
+    { "id": "javascript", "name": "JavaScript", "category": "language", "aliases": ["JS", "ECMAScript"], "level": "core", "active": true, "visibility": { "priority": 1 } },
+    { "id": "react", "name": "React", "category": "frontend", "aliases": ["ReactJS", "React.js"], "level": "core", "since": "2022-01", "active": true, "visibility": { "priority": 1 } },
+    { "id": "nextjs", "name": "Next.js", "category": "frontend", "aliases": ["NextJS", "Next"], "level": "core", "active": true, "visibility": { "priority": 1 } },
+    { "id": "mapbox", "name": "Mapbox GL JS", "category": "data", "aliases": ["Mapbox", "Mapbox GL"], "level": "core", "active": true, "visibility": { "priority": 2 } },
+    { "id": "wordpress", "name": "WordPress", "category": "cms", "aliases": ["WordPress plugin development", "WooCommerce"], "level": "core", "active": true, "visibility": { "priority": 3 } },
+    { "id": "vite", "name": "Vite", "category": "tooling", "aliases": [], "level": "working", "active": true, "visibility": { "priority": 3 } },
+    { "id": "tailwind", "name": "Tailwind CSS", "category": "frontend", "aliases": ["TailwindCSS"], "level": "working", "active": true, "visibility": { "priority": 2 } },
+    { "id": "mui", "name": "Material UI", "category": "frontend", "aliases": ["MUI"], "level": "working", "active": true, "visibility": { "priority": 3 } },
+    { "id": "jotai", "name": "Jotai", "category": "frontend", "aliases": [], "level": "working", "active": true, "visibility": { "priority": 4 } },
+    { "id": "solidjs", "name": "SolidJS", "category": "frontend", "aliases": ["Solid"], "level": "working", "active": true, "visibility": { "priority": 4 } },
+    { "id": "vue", "name": "Vue 3", "category": "frontend", "aliases": ["Vue.js", "VueJS"], "level": "working", "active": true, "visibility": { "priority": 4 } },
+    { "id": "node", "name": "Node.js", "category": "backend", "aliases": ["NodeJS", "Node"], "level": "working", "active": true, "visibility": { "priority": 2 } },
+    { "id": "php", "name": "PHP", "category": "backend", "aliases": ["Laravel"], "level": "working", "active": true, "visibility": { "priority": 4 } },
+    { "id": "sanity", "name": "Sanity", "category": "cms", "aliases": ["Sanity.io", "headless CMS"], "level": "working", "active": true, "visibility": { "priority": 3 } },
+    { "id": "playwright", "name": "Playwright", "category": "testing", "aliases": ["E2E testing"], "level": "working", "active": true, "visibility": { "priority": 2 } },
+    { "id": "docker", "name": "Docker", "category": "infra", "aliases": ["containerización"], "level": "working", "active": true, "visibility": { "priority": 2 } },
+    { "id": "cicd", "name": "CI/CD", "category": "infra", "aliases": ["GitHub Actions", "integración continua"], "level": "working", "active": true, "visibility": { "priority": 2 } },
+    { "id": "cloudflare", "name": "Cloudflare", "category": "infra", "aliases": ["Cloudflare Workers"], "level": "working", "active": true, "visibility": { "priority": 3 } },
+    { "id": "monorepo", "name": "Monorepos", "category": "tooling", "aliases": ["monorepo"], "level": "working", "active": true, "visibility": { "priority": 3 } },
+    { "id": "git", "name": "Git", "category": "tooling", "aliases": [], "level": "working", "active": true, "visibility": { "priority": 3 } },
+    { "id": "ai-assisted", "name": "Desarrollo asistido por IA", "category": "practice", "aliases": ["AI-assisted development", "Claude Code", "Cursor"], "level": "working", "active": true, "visibility": { "priority": 3 } }
+  ],
+
+  "roles": [
+    {
+      "id": "dinkum",
+      "company": "Dinkum Interactive",
+      "title": "Desarrollador de front-end",
+      "displayTitle": "Desarrollador Full Stack",
+      "employmentType": "full-time",
+      "workMode": "remote",
+      "location": "Argentina",
+      "start": "2024-09",
+      "end": null,
+      "context": {
+        "short": "Desarrollo de sistemas a medida, en equipo y como único responsable: plugins de WordPress desde cero, mapas interactivos y servicios de backoffice."
+      },
+      "visibility": { "priority": 1 }
+    },
+    {
+      "id": "adsmovil",
+      "company": "Adsmovil",
+      "title": "Desarrollador web",
+      "employmentType": "full-time",
+      "workMode": "remote",
+      "location": "Posadas, Misiones",
+      "start": "2022-06",
+      "end": "2024-09",
+      "context": {
+        "short": "Adtech. Sistemas de recolección y análisis de datos para estrategias publicitarias, con foco en discovery de nichos y delivery."
+      },
+      "visibility": { "priority": 1 }
+    },
+    {
+      "id": "hogarth",
+      "company": "Hogarth",
+      "clientDescription": "cliente global del sector tecnológico",
+      "title": "Frontend Developer",
+      "employmentType": "contract",
+      "concurrent": true,
+      "workMode": "remote",
+      "start": "2023-07",
+      "end": "2024-01",
+      "context": {
+        "short": "Equipo de frontend para un cliente global: versiones localizadas de sus productos web, cuidando congruencia e identidad de marca."
+      },
+      "visibility": { "priority": 2 }
+    },
+    {
+      "id": "freelance",
+      "company": "Independiente",
+      "title": "Desarrollador web",
+      "employmentType": "freelance",
+      "workMode": "remote",
+      "location": "Oberá, Misiones",
+      "start": "2020-04",
+      "end": "2022-06",
+      "context": {
+        "short": "Proyectos completos para clientes propios, de relevamiento a deploy. Vue, Quasar, Django, SCSS y Docker."
+      },
+      "visibility": { "priority": 2 }
+    }
+  ],
+
+  "achievements": [
+    {
+      "id": "dinkum-mapbox",
+      "roleId": "dinkum",
+      "projectId": "mapas-distritos",
+      "text": {
+        "short": "Construí interfaces de mapas con Mapbox GL JS renderizando capas de polígonos por distrito escolar y estado.",
+        "long": "TODO — versión larga: qué volumen de datos, qué problema resolvía para el usuario final."
+      },
+      "skillIds": ["mapbox", "react", "typescript"],
+      "dimension": "delivery",
+      "visibility": { "priority": 1 }
+    },
+    {
+      "id": "dinkum-mapbox-fix",
+      "roleId": "dinkum",
+      "projectId": "mapas-distritos",
+      "text": {
+        "short": "Resolví artefactos visuales en el renderizado corrigiendo paint properties, e implementé hover interactivo con feature-state."
+      },
+      "skillIds": ["mapbox", "javascript"],
+      "dimension": "performance",
+      "visibility": { "priority": 2 }
+    },
+    {
+      "id": "dinkum-vite",
+      "roleId": "dinkum",
+      "projectId": "wp-plugins",
+      "text": {
+        "short": "Migré el tooling de build de Webpack a Vite, simplificando la configuración y acelerando el ciclo de desarrollo."
+      },
+      "skillIds": ["vite", "typescript"],
+      "dimension": "architecture",
+      "visibility": { "priority": 2 }
+    },
+    {
+      "id": "dinkum-wp",
+      "roleId": "dinkum",
+      "projectId": "wp-plugins",
+      "text": {
+        "short": "Desarrollé plugins de WordPress desde cero con React, Material UI y TypeScript, integrando endpoints AJAX, nonces y enqueueing."
+      },
+      "skillIds": ["wordpress", "react", "mui", "typescript", "php"],
+      "dimension": "delivery",
+      "visibility": { "priority": 1 }
+    },
+    {
+      "id": "adsmovil-react",
+      "roleId": "adsmovil",
+      "text": {
+        "short": "Integré el equipo de modernización tecnológica: primeros desarrollos en React, documentación y definición de buenas prácticas."
+      },
+      "skillIds": ["react", "javascript"],
+      "dimension": "architecture",
+      "visibility": { "priority": 1 }
+    },
+    {
+      "id": "adsmovil-datos",
+      "roleId": "adsmovil",
+      "text": {
+        "short": "Desarrollé sistemas que mejoraron la eficiencia en la recolección de datos para campañas publicitarias."
+      },
+      "skillIds": ["react", "javascript"],
+      "dimension": "business",
+      "visibility": { "priority": 2 }
+    },
+    {
+      "id": "hogarth-i18n",
+      "roleId": "hogarth",
+      "text": {
+        "short": "Desarrollé versiones localizadas de productos web para un cliente global, manteniendo congruencia funcional e identidad visual."
+      },
+      "skillIds": ["javascript", "typescript"],
+      "dimension": "collaboration",
+      "visibility": { "priority": 2 }
+    },
+    {
+      "id": "freelance-build",
+      "roleId": "freelance",
+      "text": {
+        "short": "Optimicé el delivery de un sistema aplicando minificación y segmentación de código mediante un build system."
+      },
+      "skillIds": ["javascript"],
+      "dimension": "performance",
+      "visibility": { "priority": 2 }
+    }
+  ],
+
+  "projects": [
+    {
+      "id": "jwd-maderas",
+      "name": "JWD Maderas",
+      "client": "JWD Maderas",
+      "status": "in-progress",
+      "start": "2026-01",
+      "end": null,
+      "problem": {
+        "short": "Una maderera de Oberá sin presencia web: los clientes cotizaban solo por teléfono y no había forma de mostrar el catálogo."
+      },
+      "solution": {
+        "short": "Landing mobile-first con catálogo, calculadora de cotización, integración con WhatsApp y panel de administración.",
+        "long": "TODO — detallar arquitectura, modelado de contenido en Sanity y decisiones de SEO local."
+      },
+      "outcome": {
+        "short": "TODO — completar cuando esté en producción: consultas recibidas, tiempo ahorrado por cotización."
+      },
+      "decisions": [
+        {
+          "decision": "Next.js + Sanity en lugar de WordPress",
+          "context": "El cliente necesita editar precios y catálogo sin tocar código, pero el sitio tiene que cargar rápido en redes móviles del interior.",
+          "rationale": "Contenido desacoplado y generación estática: el editor tiene panel propio y el visitante recibe HTML pre-renderizado.",
+          "tradeoff": "Más setup inicial que un WordPress con tema comprado, y dependencia del free tier de un servicio externo."
+        }
+      ],
+      "skillIds": ["nextjs", "react", "typescript", "sanity", "tailwind"],
+      "links": [],
+      "media": [],
+      "featured": true,
+      "slug": "jwd-maderas",
+      "visibility": { "priority": 1 }
+    },
+    {
+      "id": "mapas-distritos",
+      "name": "Mapas interactivos de distritos",
+      "client": "producto interno",
+      "roleId": "dinkum",
+      "status": "shipped",
+      "start": "2025-01",
+      "end": null,
+      "problem": {
+        "short": "TODO — qué necesitaba resolver el usuario que miraba el mapa."
+      },
+      "solution": {
+        "short": "Capas de polígonos por distrito escolar y estado sobre Mapbox GL JS, con hover interactivo y vista fija sin pitch ni rotación."
+      },
+      "outcome": {
+        "short": "TODO — completar con volumen de datos o impacto en el flujo de trabajo del usuario."
+      },
+      "skillIds": ["mapbox", "react", "typescript"],
+      "links": [],
+      "media": [],
+      "featured": true,
+      "slug": "mapas-distritos",
+      "visibility": { "priority": 1 }
+    },
+    {
+      "id": "wp-plugins",
+      "name": "Plugins de WordPress con tooling moderno",
+      "roleId": "dinkum",
+      "status": "shipped",
+      "start": "2024-10",
+      "end": null,
+      "problem": {
+        "short": "Construir funcionalidad a medida dentro de WordPress sin renunciar a TypeScript, componentes y un ciclo de desarrollo rápido."
+      },
+      "solution": {
+        "short": "Plugins desde cero con React, Material UI y TypeScript sobre la API de WordPress, con build migrado de Webpack a Vite."
+      },
+      "outcome": {
+        "short": "TODO — completar con tiempo de build antes/después o cantidad de plugins entregados."
+      },
+      "decisions": [
+        {
+          "decision": "Migrar el build de Webpack a Vite",
+          "context": "La configuración de Webpack heredada era difícil de mantener y el ciclo de feedback en desarrollo era lento.",
+          "rationale": "Menos configuración, arranque en frío mucho más rápido y HMR usable dentro del entorno de WordPress.",
+          "tradeoff": "Hubo que resolver a mano el enqueueing y la convivencia con el sistema de assets de WordPress."
+        }
+      ],
+      "skillIds": ["wordpress", "react", "mui", "typescript", "vite", "php"],
+      "links": [],
+      "media": [],
+      "featured": true,
+      "slug": "wordpress-tooling-moderno",
+      "visibility": { "priority": 2 }
+    }
+  ],
+
+  "education": [
+    {
+      "id": "digital-house",
+      "institution": "Digital House",
+      "degree": "Certified Tech Developer (CTD)",
+      "field": "Desarrollo web",
+      "end": "2022-02",
+      "status": "completed",
+      "visibility": { "priority": 2 }
+    },
+    {
+      "id": "incade",
+      "institution": "Instituto INCADE",
+      "degree": "Técnico en Programación y Análisis de Sistemas",
+      "start": "2017-01",
+      "end": "2020-07",
+      "status": "completed",
+      "visibility": { "priority": 2 }
+    },
+    {
+      "id": "dachary",
+      "institution": "Universidad Gastón Dachary",
+      "degree": "Ingeniería en Informática",
+      "start": "2014-01",
+      "end": "2017-12",
+      "status": "partial",
+      "visibility": { "priority": 3 }
+    }
+  ],
+
+  "certifications": [],
+
+  "languages": [
+    { "code": "es", "name": "Español", "level": "native" },
+    { "code": "en", "name": "Inglés", "level": "B1", "note": "TODO — confirmar nivel real; ajustar a B2 si aplica" }
+  ],
+
+  "services": [],
+  "testimonials": []
+}
