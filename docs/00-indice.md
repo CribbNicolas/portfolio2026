@@ -29,10 +29,14 @@ Fechadas, para saber qué revisar cuando cambie el contexto.
 ## Estado
 
 - [x] Schema y contrato de datos
-- [x] Validación (Zod + reglas duras) corriendo en CI
+- [x] Validación (Zod + reglas duras) — `npm run validate`
+- [x] Tests de las reglas que el schema no valida (visibility, locale) — `npm test`
 - [x] Dataset semilla con datos reales
+- [x] Repo bajo control de versiones (git)
+- [ ] **Repo en GitHub** — habilita el workflow de CI (`.github/workflows/`). Hasta el push, la validación corre a mano.
 - [ ] **Métricas** — el hueco más importante. Ver [03-cv.md](./03-cv.md#métricas-pendientes)
 - [ ] Confirmar datos de Hogarth
+- [ ] `formatMetric()` — hace cumplir la regla 4 (`~` para estimados). Hay un test en `todo` esperándolo.
 - [ ] Frontend consumiendo `getView()`
 - [ ] Generadores de salida (CV PDF, `/cv` HTML, JSON-LD, `llms.txt`)
 - [ ] Bloques de texto para LinkedIn

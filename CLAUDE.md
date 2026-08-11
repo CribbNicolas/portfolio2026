@@ -27,6 +27,7 @@ content/
   source/
     json-source.ts      ContentSource sobre el JSON. Solo trae/cachea el dataset y delega en resolveView.
     index.ts            ⚠️ La ÚNICA línea que cambia al migrar a Sanity. Todo el frontend importa de acá.
+    content-source.test.ts  Tests de reglas 7,8 + locale (lo que el schema NO valida). Regla 4 en `todo`.
 scripts/validate.ts     Lo que corre en CI.
 .github/workflows/      content-validation.yml — typecheck + validate en push. Activo cuando el repo esté en GitHub.
 docs/                   Ver docs/00-indice.md. El "por qué" de cada decisión de diseño vive acá.
@@ -42,9 +43,10 @@ docs/                   Ver docs/00-indice.md. El "por qué" de cada decisión d
 ```bash
 npm run typecheck   # tsc --noEmit
 npm run validate    # tsx scripts/validate.ts — Zod + reglas duras
+npm test            # tsx --test — reglas 7,8 + locale (lo que el schema no valida)
 ```
 
-**Corré los dos antes de dar cualquier cosa por hecha.** Si `validate` falla, el
+**Corré los tres antes de dar cualquier cosa por hecha.** Si `validate` falla, el
 mensaje dice qué regla se violó y cómo arreglarla; leelo, no lo saltees. Ambos
 tienen que pasar antes de cerrar una tarea.
 
@@ -83,11 +85,11 @@ asumir que `validate` cubre algo, mirá esta tabla:
 | 1 | Ninguna duración a mano | `validation.ts` → `checkRules` + `collectProse` (recorre TODO `Prose`, short y long). **CI** |
 | 2 | No dos full-time solapados sin `concurrent` | `validation.ts` → `checkRules` (`overlaps`). **CI** |
 | 3 | Skill `core` necesita evidencia | `validation.ts` → `checkRules`. **CI** |
-| 4 | `estimated` se renderiza con "~" | **NADIE todavía** — el generador no existe. Cuando exista, en UN solo `formatMetric()`, nunca resuelto por vista. |
+| 4 | `estimated` se renderiza con "~" | **NADIE todavía** — el generador no existe. Cuando exista, en UN solo `formatMetric()`, nunca resuelto por vista. Hay un test en `todo` esperándolo. |
 | 5 | Todo `Media` con `alt` | `validation.ts` → Zod (`media.alt.min(1)`). **CI** |
 | 6 | `approved: false` no se renderiza | Doble: `resolveView` filtra por `t.approved`; `checkRules` además avisa si hay no-aprobado sin exclusión. **CI + runtime** |
-| 7 | `cv-short` corta por `priority` | `resolve-view.ts` (`PRIORITY_CUTOFF`, `MAX_ACHIEVEMENTS_PER_ROLE`). **Runtime, no CI.** |
-| 8 | `streetAddress`/`phone` solo en superficies listadas | `resolve-view.ts` (filtrado de `identity`). **Runtime, no CI.** |
+| 7 | `cv-short` corta por `priority` | `resolve-view.ts` (`PRIORITY_CUTOFF`, `MAX_ACHIEVEMENTS_PER_ROLE`). Cubierto por **`npm test`**, no por `validate`. |
+| 8 | `streetAddress`/`phone` solo en superficies listadas | `resolve-view.ts` (filtrado de `identity`). Cubierto por **`npm test`**, no por `validate`. |
 | — | Integridad referencial (`roleId`/`projectId`/`skillId`) | `checkRules` (rule 0). **CI** |
 
 ## Convenciones (deducidas del código, no de preferencias)
@@ -156,6 +158,8 @@ contradecía la promesa de "migración = una línea". **Extraída a
 `resolve-view.ts`.** Las implementaciones de `ContentSource` quedan reducidas a
 traer el dataset.
 
-**Pendiente real, sin decidir:** la regla 4 (`~` para estimados) no tiene código
-que la haga cumplir porque el generador de salidas no existe. Cuando se escriba,
-un único `formatMetric()`.
+**Pendiente real, sin decidir:** la regla 4 (`~` para estimados) todavía no tiene
+código que la haga cumplir porque el generador de salidas no existe. El gap está
+registrado como un test en `todo` (`content-source.test.ts`) que importa un
+`formatMetric` inexistente: rojo/todo hasta que se escriba, y ahí pasa. Cuando se
+escriba, un único `formatMetric()`, nunca resuelto por vista.

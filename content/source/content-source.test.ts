@@ -1,0 +1,66 @@
+/**
+ * Tests del contrato de contenido. Corren en CI (`npm test`).
+ *
+ * Verifican las reglas que se rompen EN SILENCIO: las 7 y 8 no las valida el
+ * schema, viven en `resolveView`. El día que alguien escriba `sanity-source.ts`
+ * y se olvide de delegar, estos tests son lo único que lo caza antes de publicar
+ * un `streetAddress` o un teléfono donde no va.
+ */
+
+import { test } from "node:test";
+import assert from "node:assert/strict";
+import { content } from "./index";
+
+test("regla 8: phone solo en las superficies de publishPhoneOn", async () => {
+  const cv = await content.getView("cv", "es"); // cv ∈ publishPhoneOn
+  assert.ok(cv.identity.contact.phone, "phone debería estar presente en cv");
+
+  const pub = await content.getView("public-api", "es"); // no ∈ publishPhoneOn
+  assert.equal(
+    pub.identity.contact.phone,
+    undefined,
+    "phone NO debe salir en public-api",
+  );
+});
+
+test("regla 8: streetAddress nunca sale en ninguna superficie", async () => {
+  for (const surface of ["cv", "cv-ats", "portfolio", "public-api"] as const) {
+    const view = await content.getView(surface, "es");
+    assert.equal(
+      view.identity.location.streetAddress,
+      undefined,
+      `streetAddress no debe salir en ${surface}`,
+    );
+  }
+});
+
+test("regla 7: cv-short corta más agresivo que portfolio", async () => {
+  const short = await content.getView("cv-short", "es");
+  const portfolio = await content.getView("portfolio", "es");
+  const bullets = (v: typeof short) =>
+    v.experience.reduce((n, r) => n + r.achievements.length, 0);
+  assert.ok(
+    bullets(short) <= bullets(portfolio),
+    "cv-short no puede tener más bullets que portfolio",
+  );
+});
+
+test("locale sin dataset tira error, no devuelve otro en silencio", async () => {
+  await assert.rejects(
+    () => content.getView("cv", "en"),
+    /Locale no soportado/,
+  );
+});
+
+// Regla 4: una Metric `estimated` se renderiza con "~" o "aprox.".
+// TODO abierto a propósito: el generador no existe todavía, así que `formatMetric`
+// tampoco. Queda como `todo` para que el gap viva en código —donde molesta— y no
+// solo en un .md. Cuando exista formatMetric, este test pasa y hay que sacar el todo.
+test("regla 4: Metric estimated se renderiza con ~ (pendiente formatMetric)", { todo: true }, async () => {
+  // @ts-expect-error formatMetric no existe todavía (regla 4 sin dueño). Cuando se
+  // cree, este @ts-expect-error se vuelve un error de "expectativa sin usar": esa
+  // es la señal de que hay que sacar el `todo` y activar el test de verdad.
+  const { formatMetric } = await import("../schema/format-metric.js");
+  const out = formatMetric({ label: "tiempo de build", delta: "40%", confidence: "estimated" });
+  assert.match(out, /~|aprox\./);
+});
