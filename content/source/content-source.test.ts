@@ -10,6 +10,8 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { content } from "./index";
+import { validateDataset } from "../schema/validation";
+import datasetEs from "../data/content.es.json";
 
 test("regla 8: phone solo en las superficies de publishPhoneOn", async () => {
   const cv = await content.getView("cv", "es"); // cv ∈ publishPhoneOn
@@ -43,6 +45,15 @@ test("regla 7: cv-short corta más agresivo que portfolio", async () => {
     bullets(short) <= bullets(portfolio),
     "cv-short no puede tener más bullets que portfolio",
   );
+});
+
+test("strict: una clave desconocida en el dataset tira error, no se descarta", () => {
+  // Sin `.strict()` en los schemas Zod, un campo que existe en el JSON pero no en
+  // el schema se dropea en silencio. Esto lo bloquea: si alguien agrega un campo a
+  // una interface y se olvida del schema, el dato con ese campo revienta acá.
+  const conBasura = structuredClone(datasetEs) as Record<string, unknown>;
+  (conBasura.identity as Record<string, unknown>).campoInventado = "x";
+  assert.throws(() => validateDataset(conBasura), /Unrecognized key|campoInventado/i);
 });
 
 test("locale sin dataset tira error, no devuelve otro en silencio", async () => {

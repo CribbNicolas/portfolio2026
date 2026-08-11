@@ -28,8 +28,8 @@ content/
     json-source.ts      ContentSource sobre el JSON. Solo trae/cachea el dataset y delega en resolveView.
     index.ts            ⚠️ La ÚNICA línea que cambia al migrar a Sanity. Todo el frontend importa de acá.
     content-source.test.ts  Tests de reglas 7,8 + locale (lo que el schema NO valida). Regla 4 en `todo`.
-scripts/validate.ts     Lo que corre en CI.
-.github/workflows/      content-validation.yml — typecheck + validate en push. Activo cuando el repo esté en GitHub.
+scripts/validate.ts     Entry point de `npm run validate`.
+.github/workflows/      content-validation.yml — corre typecheck + validate + test en cada push. Activo (repo en GitHub).
 docs/                   Ver docs/00-indice.md. El "por qué" de cada decisión de diseño vive acá.
 ```
 
@@ -47,8 +47,9 @@ npm test            # tsx --test — reglas 7,8 + locale (lo que el schema no va
 ```
 
 **Corré los tres antes de dar cualquier cosa por hecha.** Si `validate` falla, el
-mensaje dice qué regla se violó y cómo arreglarla; leelo, no lo saltees. Ambos
-tienen que pasar antes de cerrar una tarea.
+mensaje dice qué regla se violó y cómo arreglarla; leelo, no lo saltees. Los tres
+tienen que pasar antes de cerrar una tarea, y **los tres corren en CI en cada push**
+(`.github/workflows/content-validation.yml`; repo ya en GitHub, privado).
 
 ## Invariantes (no negociables)
 
@@ -88,8 +89,8 @@ asumir que `validate` cubre algo, mirá esta tabla:
 | 4 | `estimated` se renderiza con "~" | **NADIE todavía** — el generador no existe. Cuando exista, en UN solo `formatMetric()`, nunca resuelto por vista. Hay un test en `todo` esperándolo. |
 | 5 | Todo `Media` con `alt` | `validation.ts` → Zod (`media.alt.min(1)`). **CI** |
 | 6 | `approved: false` no se renderiza | Doble: `resolveView` filtra por `t.approved`; `checkRules` además avisa si hay no-aprobado sin exclusión. **CI + runtime** |
-| 7 | `cv-short` corta por `priority` | `resolve-view.ts` (`PRIORITY_CUTOFF`, `MAX_ACHIEVEMENTS_PER_ROLE`). Cubierto por **`npm test`**, no por `validate`. |
-| 8 | `streetAddress`/`phone` solo en superficies listadas | `resolve-view.ts` (filtrado de `identity`). Cubierto por **`npm test`**, no por `validate`. |
+| 7 | `cv-short` corta por `priority` | `resolve-view.ts` (`PRIORITY_CUTOFF`, `MAX_ACHIEVEMENTS_PER_ROLE`). **`npm test`** (corre en CI), no `validate`. |
+| 8 | `streetAddress`/`phone` solo en superficies listadas | `resolve-view.ts` (filtrado de `identity`). **`npm test`** (corre en CI), no `validate`. |
 | — | Integridad referencial (`roleId`/`projectId`/`skillId`) | `checkRules` (rule 0). **CI** |
 
 ## Convenciones (deducidas del código, no de preferencias)
@@ -102,15 +103,18 @@ asumir que `validate` cubre algo, mirá esta tabla:
   string `"YYYY-MM"`, nunca `Date` en los datos. Todo tipo se exporta desde
   `content-schema.ts`.
 - **Zod espeja las interfaces 1:1:** un `const` lowercase por cada `interface`
-  (`role` ↔ `Role`), mismos campos, mismo orden. Si cambiás una interface,
-  actualizá su schema Zod en el mismo commit.
+  (`role` ↔ `Role`), mismos campos, mismo orden, y **todos con `.strict()`** — una
+  clave no declarada tira error en vez de descartarse en silencio. Si agregás un
+  campo a una interface, agregalo al schema Zod en el mismo commit (si no, el dato
+  con ese campo revienta en `validate`/`test`, que es la idea).
 - **Naming:** `id` en kebab/lowercase (`"mapbox-gl"`), `camelCase` funciones,
   `PascalCase` tipos, `UPPER_SNAKE` consts de configuración (`PRIORITY_CUTOFF`).
 - **Funciones puras en `schema/`; I/O solo en implementaciones de `source/`.**
   `resolveView` y `checkRules` no tienen side effects.
 - **ESM** (`"type": "module"`), imports sin extensión, `import type` para tipos.
 - **Datos faltantes van como `TODO — ...` dentro del `Prose`**, no como campo
-  vacío ni número inventado.
+  vacío ni número inventado. `Prose.short` está topeado en **180 caracteres** (Zod
+  lo valida): si el texto no entra, no es para `short`, va en `long`.
 
 ## Pendiente / qué NO hacer todavía
 
@@ -124,7 +128,7 @@ Estado completo en `docs/00-indice.md`. Resumen operativo:
   NO las inventes — candidatos y qué medir en `docs/03-cv.md` §5. Rango honesto
   con `confidence: "estimated"` sirve; número inventado no.
 - **Datos a confirmar:** Hogarth (`employmentType`, `start` 2023-07), nivel de
-  inglés, `careerStart`. Ver `README.md` §Huecos y `docs/00-indice.md`.
+  inglés, `careerStart`. Fuente única: `docs/00-indice.md`.
 - **`services` y `testimonials` vacíos a propósito** — están en el schema para no
   migrar después. No los llenes con placeholders.
 - **Dataset EN:** no cargar ni traducir (decisión fechada en `docs/00-indice.md`).
@@ -134,7 +138,7 @@ Estado completo en `docs/00-indice.md`. Resumen operativo:
 
 ## Preguntas abiertas / estado
 
-Cinco observaciones de la sesión de arranque, con su resolución. Registradas acá
+Observaciones de las sesiones de arranque, con su resolución. Registradas acá
 para que la próxima sesión no las redescubra desde cero:
 
 1. **`getDataset("en")` fallaba en silencio** (devolvía ES). **RESUELTO:** ahora
@@ -145,12 +149,14 @@ para que la próxima sesión no las redescubra desde cero:
 3. **La regla 1 escaneaba solo campos hardcodeados.** **RESUELTO:** `collectProse`
    recorre todo `Prose` del dataset (short + long: identity, roles, achievements,
    projects, services). Cierra la clase de agujero, no casos sueltos.
-4. **No había CI** pese a que los docs lo daban por hecho. **RESUELTO:** workflow
-   `.github/workflows/content-validation.yml`. **Nota:** el repo no está
-   inicializado en git todavía; el workflow se activa al pushear a GitHub. Hasta
-   entonces, correr `typecheck` + `validate` a mano.
+4. **No había CI ni el repo estaba en git.** **RESUELTO:** `git init`, repo privado
+   `CribbNicolas/portfolio2026`, y workflow `content-validation.yml` corriendo verde
+   en cada push (typecheck + validate + test). El estado activo vive en §Comandos.
 5. **`monthsBetween` estaba duplicado.** **RESUELTO:** extraído a `dates.ts`,
    importado por `validation.ts` y `resolve-view.ts`.
+6. **Los schemas Zod no eran `.strict()`:** una clave presente en el JSON pero
+   ausente del schema se descartaba en silencio. **RESUELTO:** `.strict()` en todos
+   los objetos + test que verifica que una clave desconocida tira error.
 
 Además, resuelto en esta sesión: la lógica de visibility vivía dentro de
 `json-source.ts` (dentro de la implementación, no de la capa compartida) —

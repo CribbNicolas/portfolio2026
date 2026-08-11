@@ -15,6 +15,12 @@ import { toMonths } from "./dates";
 // ---------------------------------------------------------------------------
 // 1. Forma (Zod)
 // ---------------------------------------------------------------------------
+//
+// Todos los objetos llevan `.strict()`: una clave presente en el JSON pero
+// ausente del schema Zod tira error, en vez de descartarse en silencio. Sin esto,
+// olvidarse de reflejar en Zod un campo nuevo de la interface pasa desapercibido
+// —justo el modo de falla que este proyecto combate—. Si agregás un campo a una
+// interface, agregalo también acá en el mismo commit.
 
 const yearMonth = z
   .string()
@@ -39,12 +45,12 @@ const visibility = z.object({
     z.literal(4),
     z.literal(5),
   ]),
-});
+}).strict();
 
 const prose = z.object({
   short: z.string().min(1).max(180, "El texto corto no puede pasar 180 caracteres"),
   long: z.string().optional(),
-});
+}).strict();
 
 const link = z.object({
   label: z.string(),
@@ -58,14 +64,14 @@ const link = z.object({
     "article",
     "other",
   ]),
-});
+}).strict();
 
 const media = z.object({
   kind: z.enum(["image", "gif", "video"]),
   url: z.string(),
   alt: z.string().min(1, "Regla 5: todo media necesita alt"),
   caption: z.string().optional(),
-});
+}).strict();
 
 const metric = z.object({
   label: z.string(),
@@ -74,7 +80,7 @@ const metric = z.object({
   delta: z.string().optional(),
   confidence: z.enum(["measured", "estimated"]),
   source: z.string().optional(),
-});
+}).strict();
 
 const identity = z.object({
   fullName: z.string(),
@@ -88,17 +94,17 @@ const identity = z.object({
     country: z.string(),
     timezone: z.string(),
     streetAddress: z.string().optional(),
-  }),
+  }).strict(),
   contact: z.object({
     email: z.string().email(),
     phone: z.string().optional(),
     publishPhoneOn: z.array(surface),
-  }),
+  }).strict(),
   links: z.array(link),
   careerStart: yearMonth,
   tagline: prose,
   summary: prose,
-});
+}).strict();
 
 const skill = z.object({
   id: z.string(),
@@ -119,7 +125,7 @@ const skill = z.object({
   since: yearMonth.optional(),
   active: z.boolean(),
   visibility,
-});
+}).strict();
 
 const achievement = z.object({
   id: z.string(),
@@ -137,7 +143,7 @@ const achievement = z.object({
     "business",
   ]),
   visibility,
-});
+}).strict();
 
 const role = z.object({
   id: z.string(),
@@ -160,7 +166,7 @@ const role = z.object({
   end: yearMonth.nullable(),
   context: prose,
   visibility,
-});
+}).strict();
 
 const technicalDecision = z.object({
   decision: z.string(),
@@ -168,7 +174,7 @@ const technicalDecision = z.object({
   rationale: z.string(),
   tradeoff: z.string().min(1, "Si no hay trade-off, no era una decisión"),
   alternatives: z.array(z.string()).optional(),
-});
+}).strict();
 
 const project = z.object({
   id: z.string(),
@@ -189,7 +195,7 @@ const project = z.object({
   featured: z.boolean(),
   slug: z.string().optional(),
   visibility,
-});
+}).strict();
 
 const education = z.object({
   id: z.string(),
@@ -200,7 +206,7 @@ const education = z.object({
   end: yearMonth.nullable().optional(),
   status: z.enum(["completed", "partial", "in-progress"]),
   visibility,
-});
+}).strict();
 
 const certification = z.object({
   id: z.string(),
@@ -210,14 +216,14 @@ const certification = z.object({
   expires: yearMonth.optional(),
   credentialUrl: z.string().url().optional(),
   visibility,
-});
+}).strict();
 
 const languageSkill = z.object({
   code: z.string(),
   name: z.string(),
   level: z.enum(["A1", "A2", "B1", "B2", "C1", "C2", "native"]),
   note: z.string().optional(),
-});
+}).strict();
 
 const service = z.object({
   id: z.string(),
@@ -227,7 +233,7 @@ const service = z.object({
   deliverables: z.array(z.string()),
   priceRange: z.string().optional(),
   visibility,
-});
+}).strict();
 
 const testimonial = z.object({
   id: z.string(),
@@ -238,7 +244,7 @@ const testimonial = z.object({
   approved: z.boolean(),
   projectId: z.string().optional(),
   visibility,
-});
+}).strict();
 
 export const datasetSchema = z.object({
   schemaVersion: z.string(),
@@ -254,7 +260,7 @@ export const datasetSchema = z.object({
   languages: z.array(languageSkill),
   services: z.array(service),
   testimonials: z.array(testimonial),
-});
+}).strict();
 
 // ---------------------------------------------------------------------------
 // 2. Reglas duras (las del CONTRATO.md)
