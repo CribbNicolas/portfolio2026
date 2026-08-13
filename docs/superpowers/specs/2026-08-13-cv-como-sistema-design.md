@@ -40,8 +40,8 @@ estaba hecho. Lo que faltaba era el contrato de *salida*.
 | Momento del PDF | En build, estático | Hosting sin servidor. **Diseñado para escalar a on-demand** sin reescribir el generador |
 | Motor de PDF | Playwright (headless Chrome) | Un solo layout para HTML y PDF: no pueden desincronizarse. Texto seleccionable y PDF *tagged* |
 | Artefactos | **Uno solo**: `cv.pdf`, diseñado y de una columna | `docs/01` §3: lo que rompe el parser es la estructura, no la estética. Un artefacto = nunca dudar cuál mandar |
-| Superficie renderizada | `cv-ats` | `priority ≤ 3`, máx 5 bullets por rol. Ya resuelto por `resolveView` |
-| Teléfono | Fuera de toda superficie pública | `/cv` HTML y `cv.pdf` comparten superficie, así que comparten política de contacto. Reversible cambiando `publishPhoneOn` en el dataset, sin tocar código |
+| Superficie renderizada | `cv-ats`, **y solo esa** | `priority ≤ 3`, máx 5 bullets por rol. Ya resuelto por `resolveView`. Habrá más CVs más adelante: agregar `cv` o `cv-short` es agregar una página que pida otra superficie, sin tocar la maquinaria |
+| Teléfono | Fuera de toda superficie pública | `/cv` HTML y `cv.pdf` comparten superficie, así que comparten política de contacto. **Requiere editar el dataset:** hoy `publishPhoneOn` incluye `cv-ats`, o sea que tal como está el teléfono se publicaría en la web abierta |
 | Container API de Astro | **Descartada** | Sigue siendo `experimental_AstroContainer`. El PDF se saca navegando a la página construida; la misma costura sirve para SSR |
 
 Descartadas y por qué: Typst y React-PDF/pdfmake obligan a mantener un **segundo
@@ -136,6 +136,27 @@ verbo pasado), con la métrica inline vía `formatMetric`.
 `metric`. Este slice entrega la maquinaria; los números los carga el autor.
 Invariante 4 prohíbe inventarlos. Ver §9.
 
+### Los `TODO` del dataset no pueden filtrarse al PDF
+
+`resolveView` pasa `languages` sin filtrar (`resolve-view.ts:132`) y
+`LanguageSkill.note` no es `Prose`, así que `collectProse` de la regla 1
+tampoco lo alcanza. Hoy ese campo dice literalmente
+`"TODO — confirmar nivel real"`. Lo mismo pasa con `Project.outcome.short` en
+dos de los tres proyectos, que entran en la vista por `priority ≤ 3`.
+
+Dos medidas, deliberadamente asimétricas:
+
+1. **`cv.astro` no renderiza `LanguageSkill.note` ni `Project.outcome`.** El CV
+   imprime idioma y nivel, y nada más. Los proyectos no llevan sección de
+   resultado en el CV. El PDF queda limpio por construcción, no por disciplina.
+2. **Los `TODO` que sí llegan a `/cv.json` y `/llms.txt`** se reportan en un
+   step **no bloqueante** de CI (`npm run audit:todos`), que lista dónde están.
+   No falla el build: son datos pendientes conocidos del autor, y un pipeline
+   rojo permanente deja de dar señal.
+
+Lo único bloqueante es que **`dist/cv.pdf` no contenga la cadena `TODO`** —
+verificable con el texto que ya se extrae en §6.
+
 ## 6. Motor de PDF
 
 ```
@@ -181,7 +202,8 @@ verifica:
    rol visible en la superficie;
 3. el nombre aparece **antes** que el primer rol en el orden de extracción
    (reading order sano);
-4. `numPages <= 2`.
+4. `numPages <= 2`;
+5. el texto **no contiene la cadena `TODO`**.
 
 Esto convierte "pasa el ATS" de intención en test de CI, que es lo que exige el
 invariante 7.
@@ -229,7 +251,7 @@ lo ejecuta.
 
 | Riesgo | Impacto | Mitigación |
 |---|---|---|
-| **El dataset no tiene ninguna `metric`** | El CV pasa capas 1 y 2 pero queda flojo en la capa 3, que es la que decide | Ninguna técnica. Es carga de datos del autor, y ningún código lo destraba. Declarado, no escondido |
+| **El dataset no tiene ninguna `metric`** | El CV pasa capas 1 y 2 pero queda flojo en la capa 3, que es la que decide | Ninguna técnica. Carga de datos del autor, asumida explícitamente: se corrige después y el CV se regenera solo. Candidatos en `docs/03-cv.md` §5 |
 | Chromium en CI: build más lento y más frágil | Pipeline de minutos en vez de segundos | Cache de browsers de Playwright; step aislado para que el fallo sea legible |
 | Fuentes distintas entre local y CI | PDFs que no coinciden | Self-hosting de `woff2` + `document.fonts.ready` |
 | El CV excede 2 páginas al crecer el dataset | Descarte por longitud | El test de `numPages <= 2` falla en CI. Se corrige bajando `priority` en el dato, no el layout |
@@ -246,7 +268,10 @@ lo ejecuta.
    (invariante 1).
 6. `grep` de `json-source` dentro de `src/` da cero resultados (invariante 2).
 7. El test en `todo` de `content-source.test.ts` está en verde.
-8. Ni `streetAddress` ni `phone` aparecen en `dist/` (regla 8).
+8. Ni `streetAddress` ni `phone` aparecen en `dist/` (regla 8). Requiere sacar
+   `cv-ats` de `publishPhoneOn` en el dataset.
+9. El texto de `dist/cv.pdf` no contiene `TODO`. El resto de los outputs se
+   audita sin bloquear (`npm run audit:todos`).
 
 ## 11. Fuera de alcance
 
