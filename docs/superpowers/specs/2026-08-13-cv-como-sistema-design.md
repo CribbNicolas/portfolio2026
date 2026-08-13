@@ -60,18 +60,29 @@ src/
     llms.txt.ts        Endpoint → markdown generado.
   components/cv/       Componentes tontos: reciben props ya resueltas, no filtran nada.
   lib/
-    format/            EL CONTRATO DE SALIDA. Puro, testeado. Ver §4.
-    jsonld.ts          ContentView → schema.org Person.
+    jsonld.ts          ContentView → schema.org Person. Salida web, vive con la web.
+content/schema/
+  format-metric.ts     Regla 4. Un archivo para la regla, como dates.ts es el de la regla 1.
+  format.ts            Duraciones, rangos de fecha y títulos. Ver §4.
 scripts/
   build-pdf.ts         Post-build: sirve dist/, Playwright imprime, escribe dist/cv.pdf.
+  audit-todos.ts       Reporte no bloqueante de TODOs que llegan a outputs públicos.
 ```
+
+**Por qué los formatters van en `content/schema/` y no en `src/lib/`:** el test
+en `todo` de `content-source.test.ts` ya importa `../schema/format-metric.js`, y
+tiene razón — son funciones puras que hacen cumplir reglas del contrato, no
+detalles de la web. El CLI por-aviso y el generador de bloques de LinkedIn las
+van a necesitar sin arrastrar Astro. `CLAUDE.md` ya lo dice: funciones puras en
+`schema/`, I/O solo en `source/`.
 
 ### Las tres costuras
 
 1. **`content/source/index.ts`** — no se toca. `src/` importa `getView` vía alias
    `@content`. Ningún `.astro` importa `json-source` (invariante 2).
-2. **`src/lib/format/`** — nueva. Todo `ContentView` → string pasa por acá. Un
-   componente que concatena `${meses} meses` a mano es un bug (invariante 3).
+2. **`content/schema/format.ts` + `format-metric.ts`** — nuevas. Todo
+   `ContentView` → string pasa por acá. Un componente que concatena
+   `${meses} meses` a mano es un bug (invariante 3).
 3. **`renderPdf({ url, out? }) → Buffer`** — recibe una **URL**, no un componente.
    Hoy apunta a `dist/` servido en localhost; en SSR mañana apunta a la ruta viva
    con `?job=`. El cuerpo no cambia.
@@ -81,13 +92,14 @@ en `src/` rompe el invariante 1.
 
 ## 4. El contrato de salida
 
-`src/lib/format/` — funciones puras, sin JSX, testeadas con `tsx --test`.
+`content/schema/format-metric.ts` y `content/schema/format.ts` — funciones
+puras, sin JSX, testeadas con `tsx --test`.
 
 | Función | Comportamiento | Regla |
 |---|---|---|
 | `formatMetric(m: Metric)` | `measured` → `"-40%"`. `estimated` → `"~40%"`. Con `before`/`after` → `"12 min → 3 min"`, prefijado con `~` si es estimado | **4** |
-| `formatDuration(months)` | `"2 a 7 m"`. Nunca escrito a mano | 1 |
-| `formatDateRange(start, end)` | `"jul 2023 — presente"`. `end: null` = presente | 1 |
+| `formatDuration(months)` | `"1 año 11 meses"`. Nunca escrito a mano | 1 |
+| `formatDateRange(start, end)` | `"07/2023 — Actualidad"`. Formato `MM/AAAA` por `docs/03` §2; `end: null` = Actualidad | 1 |
 | `formatRoleTitle(role)` | `displayTitle ?? title`, más `"(en paralelo)"` si `concurrent` | 2 |
 | `formatSeniority(years)` | Derivado de `careerStart` | 1 |
 
@@ -166,6 +178,12 @@ npm run build  →  astro build  &&  tsx scripts/build-pdf.ts
 `scripts/build-pdf.ts` levanta un servidor estático sobre `dist/` con
 `node:http` (sin dependencia nueva), Playwright abre `http://localhost:PORT/cv`,
 imprime y escribe `dist/cv.pdf`.
+
+El archivo en `dist/` se llama `cv.pdf` porque la URL corta es lo que se pega en
+postulaciones. El nombre que exige `docs/03` §2
+(`Nicolas-Cribb-Barbaro-Full-Stack-Developer.pdf`) se impone con el atributo
+`download` del enlace: el visitante guarda ese nombre, el link sigue siendo
+`/cv.pdf`.
 
 ```ts
 await page.pdf({
@@ -264,7 +282,7 @@ lo ejecuta.
    verificaciones de §6.
 3. `/cv` renderiza el CV completo en HTML, una columna, sin JS de cliente.
 4. `/cv.json`, `/llms.txt` y el JSON-LD del `<head>` salen del mismo `getView`.
-5. `grep` de `visibility` y de `priority` dentro de `src/` da cero resultados
+5. `grep` de `.visibility` y de `.priority` dentro de `src/` da cero resultados
    (invariante 1).
 6. `grep` de `json-source` dentro de `src/` da cero resultados (invariante 2).
 7. El test en `todo` de `content-source.test.ts` está en verde.
