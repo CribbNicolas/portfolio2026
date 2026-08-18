@@ -10,7 +10,6 @@
  */
 
 import type { Role, YearMonth } from "./content-schema";
-import { yearsOfExperience } from "./dates";
 
 // ---------------------------------------------------------------------------
 // Fechas
