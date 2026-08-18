@@ -1,0 +1,43 @@
+---
+/**
+ * Un rol con sus bullets.
+ *
+ * Ni las fechas ni la duración se escriben acá: vienen de `format.ts`
+ * (regla 1). El título pasa por `formatRoleTitle` porque es lo que declara un
+ * rol `concurrent` y evita la bandera roja de la regla 2.
+ */
+import type { ContentView } from "@content";
+import { formatDateRange, formatDuration, formatMetric, formatRoleTitle } from "@content";
+
+interface Props {
+  role: ContentView["experience"][number];
+}
+
+const { role } = Astro.props;
+const company = role.clientDescription
+  ? `${role.company} — ${role.clientDescription}`
+  : role.company;
+---
+
+<article class="role">
+  <h3 class="role__title">{formatRoleTitle(role)} <span class="role__company">· {company}</span></h3>
+  <p class="role__meta">
+    {formatDateRange(role.start, role.end)} · {formatDuration(role.durationMonths)}
+    {role.location && <> · {role.location}</>}
+  </p>
+  <p class="role__context">{role.context.short}</p>
+
+  {role.achievements.length > 0 && (
+    <ul class="role__bullets">
+      {role.achievements.map((a) => {
+        const metric = a.metric ? formatMetric(a.metric) : null;
+        return (
+          <li>
+            {a.text.short}
+            {metric && <> — <span class="metric">{metric}</span></>}
+          </li>
+        );
+      })}
+    </ul>
+  )}
+</article>

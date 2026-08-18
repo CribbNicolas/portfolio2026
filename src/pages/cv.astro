@@ -1,0 +1,77 @@
+---
+/**
+ * El CV en HTML. De esta misma página sale el PDF (scripts/build-pdf.ts), así
+ * que HTML y PDF no se pueden desincronizar: hay un solo layout.
+ *
+ * Superficie `cv-ats`. Por ahora es la única que se renderiza; agregar un
+ * `cv` diseñado más adelante es agregar otra página que pida otra superficie,
+ * sin tocar nada de esto.
+ *
+ * Dos cosas NO se renderizan a propósito:
+ *  - `LanguageSkill.note`: hoy contiene un TODO y `resolveView` no filtra
+ *    `languages`. Si se imprimiera, el TODO saldría en el PDF.
+ *  - `Project.outcome`: dos de los tres proyectos tienen el outcome en TODO, y
+ *    los proyectos ya viven en el portfolio. El CV no lleva sección de proyectos.
+ */
+import Base from "../layouts/Base.astro";
+import Header from "../components/cv/Header.astro";
+import Section from "../components/cv/Section.astro";
+import RoleBlock from "../components/cv/RoleBlock.astro";
+import SkillList from "../components/cv/SkillList.astro";
+import { content, formatDateRange, formatYearMonth } from "@content";
+
+import "@fontsource/manrope/400.css";
+import "@fontsource/manrope/600.css";
+import "@fontsource/manrope/800.css";
+import "../styles/tokens.css";
+import "../styles/cv.css";
+
+const view = await content.getView("cv-ats", "es");
+const { identity } = view;
+---
+
+<Base
+  title={`CV — ${identity.fullName}, ${identity.searchTitle}`}
+  description={identity.summary.short}
+>
+  <main class="cv">
+    <Header identity={identity} />
+
+    <Section title="Perfil">
+      <p class="profile">{identity.summary.short}</p>
+    </Section>
+
+    <Section title="Habilidades técnicas">
+      <SkillList skills={view.skills} />
+    </Section>
+
+    <Section title="Experiencia">
+      {view.experience.map((role) => <RoleBlock role={role} />)}
+    </Section>
+
+    <Section title="Educación">
+      {view.education.map((e) => (
+        <div class="entry">
+          <p class="entry__title">{e.degree}{e.field && <> — {e.field}</>}</p>
+          <p class="entry__meta">
+            {e.institution}
+            {/* Sin `start` no hay rango: formatDateRange(end, end) imprimiría
+                "02/2022 — 02/2022", que se lee como un error de carga. */}
+            {e.end && <> · {e.start ? formatDateRange(e.start, e.end) : formatYearMonth(e.end)}</>}
+            {e.status === "partial" && <> · Cursado parcial</>}
+            {e.status === "in-progress" && <> · En curso</>}
+          </p>
+        </div>
+      ))}
+    </Section>
+
+    <Section title="Idiomas">
+      {view.languages.map((l) => (
+        <p class="skill-group">
+          <span class="skill-group__label">{l.name}:</span>{" "}
+          {l.level === "native" ? "Nativo" : l.level}
+        </p>
+      ))}
+    </Section>
+  </main>
+</Base>

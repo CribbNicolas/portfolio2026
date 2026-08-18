@@ -1,0 +1,132 @@
+/*
+ * Layout de la home. A diferencia de cv.css, acá SÍ se puede usar flex y
+ * sombras: la restricción de una sola columna existe por el parseo del PDF, y
+ * la home no se imprime.
+ */
+
+.home {
+  padding: calc(var(--espacio) * 6) calc(var(--espacio) * 2.5);
+  max-width: 40rem;
+  margin: 0 auto;
+}
+
+.home__kicker {
+  display: inline-block;
+  font-size: 0.75rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--acento);
+  background: var(--acento-tenue);
+  padding: calc(var(--espacio) * 0.75) calc(var(--espacio) * 1.25);
+  border-radius: 99px;
+  margin: 0 0 calc(var(--espacio) * 3);
+}
+
+.home__name {
+  font-size: 2.125rem;
+  line-height: 1.08;
+  margin: 0 0 calc(var(--espacio) * 1.25);
+  font-weight: 800;
+  letter-spacing: -0.035em;
+}
+
+.home__role {
+  font-size: 1.0625rem;
+  color: var(--tinta-suave);
+  margin: 0 0 calc(var(--espacio) * 3);
+  font-weight: 600;
+}
+
+.home__tagline {
+  font-size: 1.375rem;
+  line-height: 1.4;
+  margin: 0 0 calc(var(--espacio) * 4.5);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.home__actions {
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--espacio) * 1.5);
+  margin: 0 0 calc(var(--espacio) * 4.5);
+}
+
+.btn {
+  display: block;
+  text-align: center;
+  padding: calc(var(--espacio) * 2);
+  text-decoration: none;
+  border-radius: var(--radio);
+  font-weight: 700;
+  font-size: 1rem;
+  border: 1px solid var(--linea);
+  color: var(--tinta);
+}
+
+.btn--primary {
+  background: var(--acento);
+  border-color: var(--acento);
+  color: #fff;
+  box-shadow: var(--sombra);
+}
+
+.btn:hover {
+  border-color: var(--acento);
+  color: var(--acento);
+}
+
+.btn--primary:hover {
+  color: #fff;
+  filter: brightness(1.06);
+}
+
+.home__links {
+  margin: 0;
+  list-style: none;
+  padding-left: 0;
+}
+
+.home__links li {
+  margin-bottom: calc(var(--espacio) * 1.25);
+}
+
+.home__links a {
+  color: var(--tinta);
+  text-decoration: none;
+  font-weight: 600;
+  border-bottom: 2px solid var(--acento-tenue);
+}
+
+.home__links a:hover {
+  border-bottom-color: var(--acento);
+}
+
+@media (min-width: 40rem) {
+  .home {
+    padding: calc(var(--espacio) * 11) calc(var(--espacio) * 4);
+  }
+
+  .home__name {
+    font-size: 3rem;
+  }
+
+  .home__tagline {
+    font-size: 1.625rem;
+  }
+
+  .home__actions {
+    flex-direction: row;
+  }
+
+  .btn {
+    flex: 1;
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .btn--primary {
+    color: #1a0f0a;
+  }
+}

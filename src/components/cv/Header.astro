@@ -1,0 +1,34 @@
+---
+/**
+ * Encabezado del CV. Un solo `<h1>` con nombre y `searchTitle` —el título
+ * buscable, no el de marca (docs/CONTRATO §3).
+ *
+ * El contacto sale en texto plano con etiquetas escritas ("Email:"), no con
+ * íconos: un ícono no se extrae y el dato queda huérfano.
+ */
+import type { Identity } from "@content";
+
+interface Props {
+  identity: Identity;
+}
+
+const { identity } = Astro.props;
+const { city, region, country } = identity.location;
+---
+
+<header>
+  <h1 class="cv__name">{identity.fullName}</h1>
+  <p class="cv__title">{identity.searchTitle}</p>
+  <p class="cv__contact">
+    {city}, {region}, {country} · Email: <a href={`mailto:${identity.contact.email}`}>{identity.contact.email}</a>
+    {identity.contact.phone && <> · Tel: {identity.contact.phone}</>}
+  </p>
+  <p class="cv__contact">
+    {identity.links.map((link, i) => (
+      <>
+        {i > 0 && " · "}
+        {link.label}: <a href={link.url}>{link.url}</a>
+      </>
+    ))}
+  </p>
+</header>
