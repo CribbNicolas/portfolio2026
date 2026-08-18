@@ -1,7 +1,14 @@
 # Spec — Sistema visual: 3 direcciones a explorar
 
 Fecha: 2026-08-14
-Estado: brief de diseño. Produce 3 propuestas para elegir e iterar.
+Estado: **resuelto. Dirección elegida: C — «Producto»** (2026-08-14).
+
+Las tres se maquetaron con datos reales y viven en `docs/design/`. La elegida
+está implementada en la Task 3 del plan
+`docs/superpowers/plans/2026-08-13-cv-como-sistema.md`, y se aplica tanto a
+`/cv` como a la home. Las direcciones A y B quedan en el repo como registro de
+lo que se descartó y por qué — sirven si más adelante hay que revisar la
+decisión.
 
 Documento para entregarle a un agente de diseño. Define lo **no negociable**, el
 **sistema base compartido**, y **tres direcciones** que difieren en personalidad,
