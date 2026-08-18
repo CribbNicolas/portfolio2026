@@ -11,6 +11,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { content } from "./index";
 import { validateDataset } from "../schema/validation";
+import { formatMetric } from "../schema/format-metric";
 import datasetEs from "../data/content.es.json";
 
 test("regla 8: phone solo en las superficies de publishPhoneOn", async () => {
@@ -64,14 +65,10 @@ test("locale sin dataset tira error, no devuelve otro en silencio", async () => 
 });
 
 // Regla 4: una Metric `estimated` se renderiza con "~" o "aprox.".
-// TODO abierto a propósito: el generador no existe todavía, así que `formatMetric`
-// tampoco. Queda como `todo` para que el gap viva en código —donde molesta— y no
-// solo en un .md. Cuando exista formatMetric, este test pasa y hay que sacar el todo.
-test("regla 4: Metric estimated se renderiza con ~ (pendiente formatMetric)", { todo: true }, async () => {
-  // @ts-expect-error formatMetric no existe todavía (regla 4 sin dueño). Cuando se
-  // cree, este @ts-expect-error se vuelve un error de "expectativa sin usar": esa
-  // es la señal de que hay que sacar el `todo` y activar el test de verdad.
-  const { formatMetric } = await import("../schema/format-metric.js");
+// Este test estuvo en `todo` hasta que existió `formatMetric`. La cobertura
+// completa vive en `content/schema/format.test.ts`; acá queda el caso mínimo
+// porque este archivo es el que documenta las reglas que el schema no valida.
+test("regla 4: Metric estimated se renderiza con ~", () => {
   const out = formatMetric({ label: "tiempo de build", delta: "40%", confidence: "estimated" });
-  assert.match(out, /~|aprox\./);
+  assert.match(String(out), /~|aprox\./);
 });
