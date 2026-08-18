@@ -1,0 +1,206 @@
+<!-- @dsCard group="C — Producto" -->
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>C · Producto — /cv</title>
+<style>
+/* =========================================================================
+   DIRECCIÓN C — «Producto». El sitio se ve como el producto que el autor
+   le construiría a un cliente.
+   MOBILE-FIRST. UNA COLUMNA, sin flex ni grid.
+   En /cv no hay sombras ni tarjetas: se reservan para la home. Acá la
+   jerarquía la hacen el peso tipográfico y el espacio.
+   ========================================================================= */
+:root{
+  --fondo:#ffffff;
+  --fondo-elevado:#f7f6f4;
+  --tinta:#17181c;
+  --tinta-suave:#5f636e;
+  --acento:#b0472a;
+  --acento-tenue:#fbeee9;
+  --linea:#e5e3df;
+  --fuente-titulo:"Manrope","Plus Jakarta Sans",system-ui,-apple-system,sans-serif;
+  --fuente-cuerpo:"Manrope","Plus Jakarta Sans",system-ui,-apple-system,sans-serif;
+  --escala:1.25;
+  --espacio:8px;
+  --radio:10px;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0;background:var(--fondo);color:var(--tinta);
+  font-family:var(--fuente-cuerpo);
+  font-variant-ligatures:none;
+  font-size:16px;line-height:1.55;letter-spacing:-.005em;
+}
+.cv{padding:calc(var(--espacio)*4) calc(var(--espacio)*2.5);max-width:45rem;margin:0 auto}
+
+/* --- Encabezado --------------------------------------------------------- */
+.nombre{font-size:1.875rem;line-height:1.1;margin:0 0 calc(var(--espacio)*1);font-weight:800;letter-spacing:-.03em}
+.titulo{
+  font-size:1rem;margin:0 0 calc(var(--espacio)*2.5);font-weight:700;
+  color:var(--acento);
+}
+.contacto{margin:0 0 calc(var(--espacio)*.75);color:var(--tinta-suave);font-size:.9375rem}
+.contacto a{color:var(--tinta);text-decoration:none;font-weight:600}
+.contacto a:hover{color:var(--acento)}
+
+/* --- Secciones ---------------------------------------------------------- */
+.seccion{margin-top:calc(var(--espacio)*4.5)}
+.seccion__titulo{
+  font-size:.75rem;font-weight:800;text-transform:uppercase;letter-spacing:.12em;
+  color:var(--tinta-suave);margin:0 0 calc(var(--espacio)*2);
+}
+.perfil{margin:0;font-size:1.0625rem;line-height:1.6}
+
+/* --- Roles -------------------------------------------------------------- */
+.rol{margin-bottom:calc(var(--espacio)*3.5);break-inside:avoid}
+.rol__titulo{font-size:1.0625rem;font-weight:800;margin:0;line-height:1.3;letter-spacing:-.015em}
+.rol__empresa{font-weight:600;color:var(--tinta-suave)}
+.rol__meta{
+  margin:calc(var(--espacio)*.5) 0 0;color:var(--tinta-suave);font-size:.875rem;
+  font-variant-numeric:tabular-nums;font-weight:600;
+}
+.rol__contexto{margin:calc(var(--espacio)*1.25) 0 0;color:var(--tinta-suave);font-size:.9375rem}
+.bullets{margin:calc(var(--espacio)*1.5) 0 0;padding-left:1.15rem}
+.bullets li{margin-bottom:calc(var(--espacio)*1.125)}
+.bullets li::marker{color:var(--acento)}
+.metrica{
+  color:var(--acento);font-weight:800;font-variant-numeric:tabular-nums;
+  background:var(--acento-tenue);padding:1px 6px;border-radius:6px;
+}
+
+/* --- Skills, educación, idiomas ----------------------------------------- */
+.grupo{margin:0 0 calc(var(--espacio)*1.25);font-size:.9375rem}
+.grupo__etiqueta{font-weight:800}
+.entrada{margin-bottom:calc(var(--espacio)*2.25);break-inside:avoid}
+.entrada__titulo{font-size:1rem;font-weight:700;margin:0}
+.entrada__meta{margin:calc(var(--espacio)*.25) 0 0;color:var(--tinta-suave);font-size:.875rem;font-variant-numeric:tabular-nums}
+
+@media (min-width:40rem){
+  body{font-size:17px}
+  .cv{padding:calc(var(--espacio)*7) calc(var(--espacio)*4)}
+  .nombre{font-size:2.5rem}
+  .titulo{font-size:1.125rem}
+}
+
+/* --- Modo oscuro opcional en pantalla ------------------------------------ */
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --fondo:#131417;--fondo-elevado:#1c1e23;--tinta:#f0eeea;--tinta-suave:#a1a5b0;
+    --acento:#e2825f;--acento-tenue:#2c1c16;--linea:#2c2f36;
+  }
+}
+
+/* --- Impresión: siempre claro ------------------------------------------- */
+@page{size:A4;margin:16mm 15mm}
+@media print{
+  :root{--fondo:#fff;--tinta:#000;--tinta-suave:#4a4e58;--acento:#8f3a22;--acento-tenue:transparent;--linea:#ddd}
+  body{background:#fff;color:#000;font-size:10.5pt;line-height:1.45}
+  .cv{padding:0;max-width:none}
+  .nombre{font-size:21pt}
+  .titulo{font-size:11.5pt}
+  .seccion{margin-top:6.5mm}
+  .rol{margin-bottom:5mm}
+  .metrica{background:none;padding:0}
+}
+</style>
+</head>
+<body>
+<main class="cv">
+
+  <h1 class="nombre">Nicolás Agustín Cribb Barbaro</h1>
+  <p class="titulo">Desarrollador Full Stack</p>
+  <p class="contacto">Rosario, Santa Fe, Argentina · UTC−3</p>
+  <p class="contacto">Email: <a href="mailto:cribbnicolas26@gmail.com">cribbnicolas26@gmail.com</a></p>
+  <p class="contacto">GitHub: <a href="#">github.com/CribbNicolas</a> · LinkedIn: <a href="#">linkedin.com/in/cribb-barbaro-nicolas</a></p>
+
+  <section class="seccion">
+    <h2 class="seccion__titulo">Perfil</h2>
+    <p class="perfil">Desarrollador full stack con foco en producto: React, Next.js y TypeScript, con base sólida en Node, Docker y CI/CD para llevar un proyecto del repo a producción.</p>
+  </section>
+
+  <section class="seccion">
+    <h2 class="seccion__titulo">Habilidades técnicas</h2>
+    <p class="grupo"><span class="grupo__etiqueta">Lenguajes:</span> TypeScript, JavaScript</p>
+    <p class="grupo"><span class="grupo__etiqueta">Frontend:</span> React, Next.js, Tailwind CSS, Material UI</p>
+    <p class="grupo"><span class="grupo__etiqueta">Backend:</span> Node.js</p>
+    <p class="grupo"><span class="grupo__etiqueta">Datos:</span> Mapbox GL JS</p>
+    <p class="grupo"><span class="grupo__etiqueta">CMS:</span> WordPress, Sanity</p>
+    <p class="grupo"><span class="grupo__etiqueta">Testing:</span> Playwright</p>
+    <p class="grupo"><span class="grupo__etiqueta">Infraestructura:</span> Docker, CI/CD, Cloudflare</p>
+    <p class="grupo"><span class="grupo__etiqueta">Herramientas:</span> Vite, Monorepos, Git</p>
+    <p class="grupo"><span class="grupo__etiqueta">Prácticas:</span> Desarrollo asistido por IA</p>
+  </section>
+
+  <section class="seccion">
+    <h2 class="seccion__titulo">Experiencia</h2>
+
+    <article class="rol">
+      <h3 class="rol__titulo">Desarrollador Full Stack <span class="rol__empresa">· Dinkum Interactive</span></h3>
+      <p class="rol__meta">09/2024 — Actualidad · 1 año 11 meses · Argentina</p>
+      <p class="rol__contexto">Desarrollo de sistemas a medida, en equipo y como único responsable: plugins de WordPress desde cero, mapas interactivos y servicios de backoffice.</p>
+      <ul class="bullets">
+        <li>Construí interfaces de mapas con Mapbox GL JS renderizando capas de polígonos por distrito escolar y estado.</li>
+        <li>Desarrollé plugins de WordPress desde cero con React, Material UI y TypeScript, integrando endpoints AJAX, nonces y enqueueing.</li>
+        <li>Resolví artefactos visuales en el renderizado corrigiendo paint properties, e implementé hover interactivo con feature-state.</li>
+        <li>Migré el tooling de build de Webpack a Vite, simplificando la configuración y acelerando el ciclo de desarrollo.</li>
+      </ul>
+    </article>
+
+    <article class="rol">
+      <h3 class="rol__titulo">Desarrollador web <span class="rol__empresa">· Adsmovil</span></h3>
+      <p class="rol__meta">06/2022 — 09/2024 · 2 años 3 meses · Posadas, Misiones</p>
+      <p class="rol__contexto">Adtech. Sistemas de recolección y análisis de datos para estrategias publicitarias, con foco en discovery de nichos y delivery.</p>
+      <ul class="bullets">
+        <li>Integré el equipo de modernización tecnológica: primeros desarrollos en React, documentación y definición de buenas prácticas.</li>
+        <li>Desarrollé sistemas que mejoraron la eficiencia en la recolección de datos para campañas publicitarias.</li>
+      </ul>
+    </article>
+
+    <article class="rol">
+      <h3 class="rol__titulo">Frontend Developer (en paralelo) <span class="rol__empresa">· Hogarth — cliente global del sector tecnológico</span></h3>
+      <p class="rol__meta">07/2023 — 01/2024 · 6 meses</p>
+      <p class="rol__contexto">Equipo de frontend para un cliente global: versiones localizadas de sus productos web, cuidando congruencia e identidad de marca.</p>
+      <ul class="bullets">
+        <li>Desarrollé versiones localizadas de productos web para un cliente global, manteniendo congruencia funcional e identidad visual.</li>
+      </ul>
+    </article>
+
+    <article class="rol">
+      <h3 class="rol__titulo">Desarrollador web <span class="rol__empresa">· Independiente</span></h3>
+      <p class="rol__meta">04/2020 — 06/2022 · 2 años 2 meses · Oberá, Misiones</p>
+      <p class="rol__contexto">Proyectos completos para clientes propios, de relevamiento a deploy. Vue, Quasar, Django, SCSS y Docker.</p>
+      <ul class="bullets">
+        <li>Optimicé el delivery de un sistema aplicando minificación y segmentación de código mediante un build system.</li>
+      </ul>
+    </article>
+  </section>
+
+  <section class="seccion">
+    <h2 class="seccion__titulo">Educación</h2>
+    <div class="entrada">
+      <p class="entrada__titulo">Certified Tech Developer (CTD) — Desarrollo web</p>
+      <p class="entrada__meta">Digital House · 02/2022</p>
+    </div>
+    <div class="entrada">
+      <p class="entrada__titulo">Técnico en Programación y Análisis de Sistemas</p>
+      <p class="entrada__meta">Instituto INCADE · 01/2017 — 07/2020</p>
+    </div>
+    <div class="entrada">
+      <p class="entrada__titulo">Ingeniería en Informática</p>
+      <p class="entrada__meta">Universidad Gastón Dachary · 01/2014 — 12/2017 · Cursado parcial</p>
+    </div>
+  </section>
+
+  <section class="seccion">
+    <h2 class="seccion__titulo">Idiomas</h2>
+    <p class="grupo"><span class="grupo__etiqueta">Español:</span> Nativo</p>
+    <p class="grupo"><span class="grupo__etiqueta">Inglés:</span> B1</p>
+  </section>
+
+</main>
+</body>
+</html>
