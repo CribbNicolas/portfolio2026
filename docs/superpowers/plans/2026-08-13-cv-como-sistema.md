@@ -1010,6 +1010,7 @@ El artefacto que se sube a los portales, más el test que convierte "pasa el ATS
 - Create: `scripts/build-pdf.ts`
 - Create: `scripts/pdf-output.check.ts`
 - Modify: `package.json`
+- Modify: `content/data/content.es.json:26`
 
 **Interfaces:**
 - Consumes: la ruta `/cv` de la Task 3; `content` desde `content/source/index`.
@@ -1258,27 +1259,37 @@ try {
 }
 ```
 
-- [ ] **Step 6: Generar el PDF**
+- [ ] **Step 6: Sacar el teléfono de la superficie `cv-ats`**
+
+En `content/data/content.es.json`, línea 26:
+
+```json
+      "publishPhoneOn": ["cv", "cv-short"]
+```
+
+`cv-ats` sale de la lista porque `/cv` HTML y `cv.pdf` comparten esa superficie: dejarlo publicaba el teléfono en la web abierta, no solo en el PDF que se sube a un portal. Las superficies `cv` y `cv-short` todavía no se renderizan; cuando se agregue el CV diseñado, la decisión se revisa ahí.
+
+Va en esta task y no más adelante porque el test *"regla 8: ni el teléfono ni la dirección salen en el PDF"* del Step 2 lo exige: una task no se cierra con un test en rojo.
+
+- [ ] **Step 7: Generar el PDF**
 
 Run: `npm run build`
 Expected: `astro build` OK, luego `PDF escrito en dist/cv.pdf`.
 
-- [ ] **Step 7: Correr la verificación y confirmar que pasa**
+- [ ] **Step 8: Correr la verificación y confirmar que pasa**
 
 Run: `npm run test:pdf`
-Expected: 6 tests PASS.
+Expected: los 6 tests PASS, sin excepciones.
 
-Si falla *"ni el teléfono ni la dirección salen en el PDF"*, es lo esperado en este punto: el dataset todavía publica el teléfono en `cv-ats` y eso se corrige en la Task 7. Anotarlo y seguir; el resto tiene que pasar igual.
-
-- [ ] **Step 8: El test manual de `docs/03` §2**
+- [ ] **Step 9: El test manual de `docs/03` §2**
 
 Abrir `dist/cv.pdf`, seleccionar todo, pegar en un editor de texto plano.
 Expected: sale en orden legible, de arriba a abajo, sin columnas entremezcladas.
 
-- [ ] **Step 9: Commit**
+- [ ] **Step 10: Commit**
 
 ```bash
-git add scripts/render-pdf.ts scripts/build-pdf.ts scripts/pdf-output.check.ts package.json package-lock.json
+git add scripts/render-pdf.ts scripts/build-pdf.ts scripts/pdf-output.check.ts content/data/content.es.json package.json package-lock.json
 git commit -m "feat(pdf): cv.pdf desde /cv con Playwright + verificacion de parseo"
 ```
 
@@ -1372,7 +1383,11 @@ Expected: FAIL — `Cannot find module './jsonld'`
  * el filtro estaría en el lugar equivocado.
  */
 
-import type { ContentView } from "@content";
+// Import relativo y NO por el alias `@content`: este módulo lo cargan tanto Vite
+// (que resuelve el alias) como `tsx` corriendo el test suelto (que puede no
+// resolverlo). Es `import type`, así que no hay costo en runtime. Los `.astro`
+// sí usan el alias, porque siempre pasan por Vite.
+import type { ContentView } from "../../content/source/index";
 
 export function buildPersonJsonLd(view: ContentView, site: URL): Record<string, unknown> {
   const { identity } = view;
@@ -1551,13 +1566,12 @@ git commit -m "feat(web): capa maquina - JSON-LD Person, /cv.json y /llms.txt"
 
 ---
 
-### Task 6: Auditoría de TODOs y saneamiento del dataset
+### Task 6: Auditoría de TODOs publicados
 
-El chequeo bloqueante del PDF ya existe (Task 4). Falta la visibilidad sobre lo que sí se publica con TODOs, y sacar el teléfono de la web.
+El chequeo bloqueante del PDF ya existe (Task 4). Falta la visibilidad sobre lo que sí se publica con TODOs, y verificar que el teléfono tampoco quedó en el HTML ni en el JSON.
 
 **Files:**
 - Create: `scripts/audit-todos.ts`
-- Modify: `content/data/content.es.json:26`
 
 **Interfaces:**
 - Consumes: los archivos de `dist/`.
@@ -1614,34 +1628,21 @@ console.log(
 Run: `npm run build && npm run audit:todos`
 Expected: lista los TODOs de `cv.json` y `llms.txt` (outcomes de proyectos, `summary.long`, nota del nivel de inglés) y termina con exit 0.
 
-- [ ] **Step 3: Sacar el teléfono de las superficies públicas**
+- [ ] **Step 3: Verificar que el teléfono no está en NINGÚN output**
 
-En `content/data/content.es.json`, línea 26:
-
-```json
-      "publishPhoneOn": ["cv", "cv-short"]
-```
-
-`cv-ats` sale de la lista porque `/cv` HTML y `cv.pdf` comparten esa superficie: dejarlo publicaba el teléfono en la web abierta, no solo en el PDF que se sube a un portal. Las superficies `cv` y `cv-short` todavía no se renderizan; cuando se agregue el CV diseñado, esta decisión se revisa ahí.
-
-- [ ] **Step 4: Verificar que el teléfono desapareció de todos lados**
-
-```bash
-npm run build && npm run test:pdf
-```
-Expected: los 6 tests PASS, incluido *"regla 8: ni el teléfono ni la dirección salen en el PDF"* que en la Task 4 quedó fallando.
+La Task 4 ya lo sacó de `publishPhoneOn` y lo verificó dentro del PDF. Acá se verifica el resto de `dist/`: HTML, JSON y texto, que en aquel momento todavía no existían todos.
 
 ```bash
 node --input-type=commonjs -e "const fs=require('fs'),p=require('path'); const tel='<TELEFONO-REMOVIDO>'; const walk=d=>fs.readdirSync(d).flatMap(e=>{const r=p.join(d,e);return fs.statSync(r).isDirectory()?walk(r):[r]}); const malos=walk('dist').filter(f=>/\.(html|json|txt)$/.test(f)&&fs.readFileSync(f,'utf8').includes(tel)); if(malos.length){console.error('el telefono sigue en: '+malos.join(', '));process.exit(1)} console.log('OK: telefono fuera de dist/')"
 ```
 Expected: `OK: telefono fuera de dist/`
 
-- [ ] **Step 5: Correr la suite completa y commitear**
+- [ ] **Step 4: Correr la suite completa y commitear**
 
 ```bash
 npm run typecheck && npm run validate && npm test && npm run test:pdf
-git add scripts/audit-todos.ts content/data/content.es.json package.json
-git commit -m "feat(build): auditoria de TODOs publicados + telefono fuera de cv-ats"
+git add scripts/audit-todos.ts
+git commit -m "feat(build): auditoria no bloqueante de TODOs publicados"
 ```
 
 ---
