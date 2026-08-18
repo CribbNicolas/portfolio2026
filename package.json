@@ -4,14 +4,21 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "typecheck": "tsc --noEmit",
+    "dev": "astro dev",
+    "build": "astro build && tsx scripts/build-pdf.ts",
+    "preview": "astro preview",
+    "typecheck": "astro sync && tsc --noEmit && astro check",
     "validate": "tsx scripts/validate.ts",
-    "test": "tsx --test"
+    "test": "tsx --test",
+    "test:pdf": "tsx --test scripts/pdf-output.check.ts",
+    "audit:todos": "tsx scripts/audit-todos.ts"
   },
   "dependencies": {
+    "astro": "^6.4.8",
     "zod": "^3.23.8"
   },
   "devDependencies": {
+    "@astrojs/check": "^0.9.10",
     "@types/node": "^26.2.0",
     "tsx": "^4.19.2",
     "typescript": "^5.6.3"

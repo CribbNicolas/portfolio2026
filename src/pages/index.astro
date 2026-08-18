@@ -1,0 +1,37 @@
+---
+/**
+ * Home mínima. NO es el portfolio: eso es otro slice y depende de una
+ * investigación de diseño que todavía no se hizo (docs/04 §6).
+ *
+ * Existe para dos cosas: que la URL raíz no sea un 404, y que el PDF tenga
+ * de dónde descargarse.
+ */
+import Base from "../layouts/Base.astro";
+import { content, formatSeniority } from "@content";
+
+const view = await content.getView("public-api", "es");
+const { identity } = view;
+---
+
+<Base
+  title={`${identity.fullName} — ${identity.searchTitle}`}
+  description={identity.summary.short}
+>
+  <main>
+    <h1>{identity.fullName}</h1>
+    <p>{identity.searchTitle} · {formatSeniority(view.yearsOfExperience)}</p>
+    <p>{identity.tagline.short}</p>
+
+    <ul>
+      <li><a href="/cv">Ver el CV</a></li>
+      <li>
+        <a href="/cv.pdf" download="Nicolas-Cribb-Barbaro-Full-Stack-Developer.pdf">
+          Descargar el CV en PDF
+        </a>
+      </li>
+      {identity.links.map((link) => (
+        <li><a href={link.url} rel="me noopener">{link.label}</a></li>
+      ))}
+    </ul>
+  </main>
+</Base>
