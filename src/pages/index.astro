@@ -8,6 +8,7 @@
  */
 import Base from "../layouts/Base.astro";
 import { content, formatSeniority } from "@content";
+import { buildPersonJsonLd } from "../lib/jsonld";
 
 import "@fontsource/manrope/400.css";
 import "@fontsource/manrope/600.css";
@@ -17,12 +18,14 @@ import "../styles/home.css";
 
 const view = await content.getView("public-api", "es");
 const { identity } = view;
+const jsonLd = buildPersonJsonLd(view, new URL(Astro.site!));
 ---
 
 <Base
   title={`${identity.fullName} — ${identity.searchTitle}`}
   description={identity.summary.short}
 >
+  <script type="application/ld+json" slot="head" set:html={JSON.stringify(jsonLd)} />
   <main class="home">
     <p class="home__kicker">{identity.brandTitle}</p>
     <h1 class="home__name">{identity.fullName}</h1>

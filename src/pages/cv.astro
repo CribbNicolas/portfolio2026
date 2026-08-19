@@ -19,6 +19,7 @@ import Section from "../components/cv/Section.astro";
 import RoleBlock from "../components/cv/RoleBlock.astro";
 import SkillList from "../components/cv/SkillList.astro";
 import { content, formatDateRange, formatYearMonth } from "@content";
+import { buildPersonJsonLd } from "../lib/jsonld";
 
 import "@fontsource/manrope/400.css";
 import "@fontsource/manrope/600.css";
@@ -28,12 +29,18 @@ import "../styles/cv.css";
 
 const view = await content.getView("cv-ats", "es");
 const { identity } = view;
+
+// El JSON-LD sale de `public-api`, no de `cv-ats`: son dos superficies
+// distintas cargadas en la misma página.
+const viewPublica = await content.getView("public-api", "es");
+const jsonLd = buildPersonJsonLd(viewPublica, new URL(Astro.site!));
 ---
 
 <Base
   title={`CV — ${identity.fullName}, ${identity.searchTitle}`}
   description={identity.summary.short}
 >
+  <script type="application/ld+json" slot="head" set:html={JSON.stringify(jsonLd)} />
   <main class="cv">
     <Header identity={identity} />
 
