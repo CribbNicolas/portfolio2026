@@ -9,9 +9,12 @@ Capa de **contenido** de un portfolio + CV para un dev que busca trabajo y
 freelance en LatAm/español. Principio rector: **los datos son la fuente única de
 verdad; el CV, el portfolio y los bloques de LinkedIn son VISTAS derivadas.** El
 backend guarda hechos atómicos (`Achievement`, `Skill`, `Role`, `Metric`), nunca
-documentos. Hoy existe solo esta capa (schema + validación + dataset JSON + una
-implementación de `ContentSource`). **No existe frontend todavía.** Por qué el
-schema es como es: `docs/CONTRATO.md` y `docs/01`–`04`. No los reescribas; leelos.
+documentos. Existen la capa de contenido (schema + validación + dataset JSON +
+una implementación de `ContentSource`) y un frontend Astro estático que solo
+renderiza la superficie `cv-ats` (CV en HTML, PDF, JSON-LD, `/cv.json`,
+`/llms.txt`). El portfolio visual y las demás superficies quedan para el
+próximo slice. Por qué el schema es como es: `docs/CONTRATO.md` y `docs/01`–`04`.
+No los reescribas; leelos.
 
 ## Mapa de archivos
 
@@ -27,10 +30,26 @@ content/
   source/
     json-source.ts      ContentSource sobre el JSON. Solo trae/cachea el dataset y delega en resolveView.
     index.ts            ⚠️ La ÚNICA línea que cambia al migrar a Sanity. Todo el frontend importa de acá.
-    content-source.test.ts  Tests de reglas 7,8 + locale (lo que el schema NO valida). Regla 4 en `todo`.
+    content-source.test.ts  Tests de reglas 7,8 + locale (lo que el schema NO valida).
 scripts/validate.ts     Entry point de `npm run validate`.
-.github/workflows/      content-validation.yml — corre typecheck + validate + test en cada push. Activo (repo en GitHub).
+.github/workflows/      content-validation.yml — typecheck + validate + test + build + test:pdf + audit:todos en cada push. Sube dist/cv.pdf como artifact. Activo (repo en GitHub).
 docs/                   Ver docs/00-indice.md. El "por qué" de cada decisión de diseño vive acá.
+src/
+  pages/cv.astro      El CV en HTML. ÚNICA fuente del layout; de acá sale el PDF.
+  pages/index.astro   Home mínima. NO es el portfolio.
+  pages/cv.json.ts    Endpoint public-api.
+  pages/llms.txt.ts   Endpoint markdown para agentes.
+  components/cv/      Componentes tontos: reciben props resueltas, no filtran nada.
+  lib/jsonld.ts       ContentView → schema.org Person.
+  styles/cv.css       Una columna. Prohibido flex/grid/table (rompe el parseo).
+content/schema/
+  format-metric.ts    Regla 4. El "~" de los estimados vive acá y solo acá.
+  format.ts           Duraciones, rangos MM/AAAA, títulos de rol. Reglas 1 y 2.
+scripts/
+  render-pdf.ts       renderPdf({ url }). Recibe URL, no componente: es la costura a SSR.
+  build-pdf.ts        Sirve dist/ e imprime /cv → dist/cv.pdf.
+  pdf-output.check.ts Verifica el PDF generado. No es *.test.ts a propósito.
+  audit-todos.ts      Reporte NO bloqueante de TODOs publicados.
 ```
 
 **No toques sin pensarlo:**
@@ -44,12 +63,19 @@ docs/                   Ver docs/00-indice.md. El "por qué" de cada decisión d
 npm run typecheck   # tsc --noEmit
 npm run validate    # tsx scripts/validate.ts — Zod + reglas duras
 npm test            # tsx --test — reglas 7,8 + locale (lo que el schema no valida)
+npm run dev         # astro dev
+npm run build       # astro build + genera dist/cv.pdf
+npm run test:pdf    # verifica el PDF generado (necesita build previo)
+npm run audit:todos # lista TODOs publicados. No bloquea
 ```
 
-**Corré los tres antes de dar cualquier cosa por hecha.** Si `validate` falla, el
-mensaje dice qué regla se violó y cómo arreglarla; leelo, no lo saltees. Los tres
-tienen que pasar antes de cerrar una tarea, y **los tres corren en CI en cada push**
-(`.github/workflows/content-validation.yml`; repo ya en GitHub, privado).
+**Corré la secuencia completa antes de dar cualquier cosa por hecha:**
+`npm run typecheck && npm run validate && npm test && npm run build && npm run test:pdf && npm run audit:todos`.
+Si `validate` falla, el mensaje dice qué regla se violó y cómo arreglarla; leelo,
+no lo saltees. Todo eso corre en CI en cada push
+(`.github/workflows/content-validation.yml`; repo ya en GitHub, privado) —
+`audit:todos` incluido, pero como último step y sin bloquear: es un reporte, no
+un gate.
 
 ## Invariantes (no negociables)
 
@@ -86,7 +112,7 @@ asumir que `validate` cubre algo, mirá esta tabla:
 | 1 | Ninguna duración a mano | `validation.ts` → `checkRules` + `collectProse` (recorre TODO `Prose`, short y long). **CI** |
 | 2 | No dos full-time solapados sin `concurrent` | `validation.ts` → `checkRules` (`overlaps`). **CI** |
 | 3 | Skill `core` necesita evidencia | `validation.ts` → `checkRules`. **CI** |
-| 4 | `estimated` se renderiza con "~" | **NADIE todavía** — el generador no existe. Cuando exista, en UN solo `formatMetric()`, nunca resuelto por vista. Hay un test en `todo` esperándolo. |
+| 4 | `estimated` se renderiza con "~" | `content/schema/format-metric.ts` → `formatMetric`. Único lugar. **`npm test`** (corre en CI) |
 | 5 | Todo `Media` con `alt` | `validation.ts` → Zod (`media.alt.min(1)`). **CI** |
 | 6 | `approved: false` no se renderiza | Doble: `resolveView` filtra por `t.approved`; `checkRules` además avisa si hay no-aprobado sin exclusión. **CI + runtime** |
 | 7 | `cv-short` corta por `priority` | `resolve-view.ts` (`PRIORITY_CUTOFF`, `MAX_ACHIEVEMENTS_PER_ROLE`). **`npm test`** (corre en CI), no `validate`. |
@@ -120,10 +146,14 @@ asumir que `validate` cubre algo, mirá esta tabla:
 
 Estado completo en `docs/00-indice.md`. Resumen operativo:
 
-- **Frontend:** no existe. No construyas componentes salvo que se pida explícito.
+- **Frontend:** existe (Astro estático, ver `src/` en el mapa de archivos), pero
+  solo renderiza la superficie `cv-ats`. El CV diseñado (CV-A) queda para
+  después. `components/cv/` son tontos: reciben props resueltas, no filtran
+  nada (invariante 1).
 - **Generadores de salida** (CV PDF, `/cv` HTML, JSON-LD `Person`, `/llms.txt`,
-  `/cv.json`): no existen. Cuando se hagan, la regla 4 vive en un único
-  `formatMetric()`. Detalle de qué emite cada uno: `docs/CONTRATO.md` §2 y `docs/04`.
+  `/cv.json`): existen. La regla 4 vive en un único `formatMetric()`
+  (`content/schema/format-metric.ts`). Detalle de qué emite cada uno:
+  `docs/CONTRATO.md` §2 y `docs/04`.
 - **Métricas:** el hueco más importante. Ningún `Achievement` tiene `metric`.
   NO las inventes — candidatos y qué medir en `docs/03-cv.md` §5. Rango honesto
   con `confidence: "estimated"` sirve; número inventado no.
@@ -144,14 +174,15 @@ para que la próxima sesión no las redescubra desde cero:
 1. **`getDataset("en")` fallaba en silencio** (devolvía ES). **RESUELTO:** ahora
    tira `Error` explícito para locales sin dataset (`json-source.ts`, `DATASETS`).
 2. **No todas las reglas se validan en el mismo lugar.** **RESUELTO como
-   documentación:** ver la tabla "Dónde se hace cumplir cada regla dura". La regla
-   4 sigue **sin dueño** hasta que exista el generador.
+   documentación:** ver la tabla "Dónde se hace cumplir cada regla dura". La
+   regla 4 tuvo dueño más tarde: `formatMetric()` en `content/schema/format-metric.ts`.
 3. **La regla 1 escaneaba solo campos hardcodeados.** **RESUELTO:** `collectProse`
    recorre todo `Prose` del dataset (short + long: identity, roles, achievements,
    projects, services). Cierra la clase de agujero, no casos sueltos.
 4. **No había CI ni el repo estaba en git.** **RESUELTO:** `git init`, repo privado
    `CribbNicolas/portfolio2026`, y workflow `content-validation.yml` corriendo verde
-   en cada push (typecheck + validate + test). El estado activo vive en §Comandos.
+   en cada push. Extendido después a build + test:pdf + audit:todos cuando
+   existieron los generadores. El estado activo vive en §Comandos.
 5. **`monthsBetween` estaba duplicado.** **RESUELTO:** extraído a `dates.ts`,
    importado por `validation.ts` y `resolve-view.ts`.
 6. **Los schemas Zod no eran `.strict()`:** una clave presente en el JSON pero
@@ -164,8 +195,7 @@ contradecía la promesa de "migración = una línea". **Extraída a
 `resolve-view.ts`.** Las implementaciones de `ContentSource` quedan reducidas a
 traer el dataset.
 
-**Pendiente real, sin decidir:** la regla 4 (`~` para estimados) todavía no tiene
-código que la haga cumplir porque el generador de salidas no existe. El gap está
-registrado como un test en `todo` (`content-source.test.ts`) que importa un
-`formatMetric` inexistente: rojo/todo hasta que se escriba, y ahí pasa. Cuando se
-escriba, un único `formatMetric()`, nunca resuelto por vista.
+**Regla 4, resuelta:** `formatMetric()` en `content/schema/format-metric.ts` es
+el único lugar que decide el "~" de un `Metric` `estimated`. El test que antes
+estaba en `todo` (`content-source.test.ts`) ya corre en verde — `npm test` no
+tiene ningún `todo` en la salida.

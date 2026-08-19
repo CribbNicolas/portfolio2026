@@ -1,6 +1,6 @@
 # Hace ciertas las afirmaciones de los docs: las reglas duras son CI, no intenciones.
-# Equivalente local (los tres tienen que pasar):
-#   npm run typecheck && npm run validate && npm test
+# Equivalente local (todos tienen que pasar):
+#   npm run typecheck && npm run validate && npm test && npm run build && npm run test:pdf
 name: content-validation
 
 on:
@@ -20,3 +20,26 @@ jobs:
       - run: npm run typecheck
       - run: npm run validate
       - run: npm test
+
+      # El PDF necesita Chromium. Va en un step propio para que un fallo de
+      # descarga del browser no se confunda con un fallo del CV.
+      - name: Cache de browsers de Playwright
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+      - run: npx playwright install --with-deps chromium
+
+      - run: npm run build
+      # Acá se verifica que el CV pasa la capa 1 del embudo: texto extraíble,
+      # orden de lectura sano, sin TODOs, sin teléfono, máximo 2 páginas.
+      - run: npm run test:pdf
+
+      # No bloquea: son datos pendientes conocidos. Queda en el log para verlos.
+      - run: npm run audit:todos
+
+      - name: Publicar el CV generado
+        uses: actions/upload-artifact@v4
+        with:
+          name: cv-pdf
+          path: dist/cv.pdf
