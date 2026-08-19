@@ -10,6 +10,10 @@ on:
 jobs:
   validate:
     runs-on: ubuntu-latest
+    # El default de GitHub son 6 HORAS. Una corrida sana tarda ~1 minuto, así que
+    # cualquier cosa que pase de 15 está colgada, no lenta. Sin este techo, un
+    # apt-get que no responde quema un job entero antes de que alguien lo note.
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -32,7 +36,16 @@ jobs:
         with:
           path: ~/.cache/ms-playwright
           key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
-      - run: npx playwright install --with-deps chromium
+      # Sin `--with-deps` a propósito: esa bandera corre `apt-get` en CADA
+      # corrida, incluso cuando el caché de browsers acierta y no hay nada que
+      # descargar. Una corrida se colgó 6 h ahí porque los mirrors de Ubuntu no
+      # respondían — mismo commit que había pasado en 1 min. La imagen de
+      # ubuntu-latest ya trae las librerías que Chromium necesita.
+      # Si algún día Chromium no arranca, el fallo sale en el step `build` de
+      # abajo y la vuelta atrás es agregar `--with-deps` de nuevo.
+      - name: Instalar Chromium
+        timeout-minutes: 5
+        run: npx playwright install chromium
 
       - run: npm run build
       # Acá se verifica que el CV pasa la capa 1 del embudo: texto extraíble,
