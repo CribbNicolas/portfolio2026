@@ -233,9 +233,19 @@
     padding: 0;
   }
 
-  /* El letter-spacing separa los glifos en la extracción del PDF: los títulos
-     salían como "P E R F I L" y ningún parser los mapeaba a un campo. En
-     pantalla el tracking se mantiene; al imprimir se anula. */
+  /* NINGÚN tracking sobrevive a la impresión. Dos motivos, los dos vistos:
+     - Positivo: separaba los glifos y los títulos salían "P E R F I L", así que
+       ningún parser los mapeaba a un campo.
+     - Negativo: achica también el avance del espacio, y hay visores que por
+       debajo de cierto umbral deciden que no hay espacio y devuelven
+       "NicolásAgustínCribbBarbaro" al copiar. El PDF guarda el espacio igual
+       —pdfjs lo ve— pero no vale la pena depender del criterio de cada visor
+       justo en el campo del nombre.
+     En pantalla el tracking se mantiene; al imprimir se anula, y a estos
+     tamaños no se nota. */
+  body,
+  .cv__name,
+  .role__title,
   .section__title {
     letter-spacing: normal;
   }
