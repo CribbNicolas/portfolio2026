@@ -20,7 +20,9 @@
 - **Nunca inventar métricas, números, fechas ni logros.** El dataset se toca solo donde este plan lo dice explícitamente (Task 7).
 - **Fechas visibles en formato `MM/AAAA`** (`docs/03-cv.md` §2). Presente = `"Actualidad"`.
 - **El CV es de UNA columna.** Prohibido `display: flex`, `display: grid`, `<table>` y `position: absolute` dentro de `src/styles/cv.css` y de los componentes de `src/components/cv/`. El orden del DOM es el orden de lectura que extrae el parser.
-- **Node 20** (lo que usa el workflow actual).
+- **Node 24.** El workflow venía con Node 20 y este plan lo dio por bueno sin
+  chequearlo: Astro 6 exige `>=22.12`, así que con 20 el pipeline muere en el
+  primer step. Corregido después de verlo fallar en CI.
 - Los tres comandos existentes (`npm run typecheck`, `npm run validate`, `npm test`) tienen que seguir pasando después de cada task.
 
 ---
