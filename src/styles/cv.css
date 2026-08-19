@@ -51,6 +51,10 @@
   color: var(--tinta);
   text-decoration: none;
   font-weight: 600;
+  /* Una URL partida por un salto de línea se extrae del PDF con un espacio
+     adentro y deja de ser una URL. El salto tiene que caer ENTRE links, nunca
+     dentro de uno. */
+  white-space: nowrap;
 }
 
 .cv__contact a:hover {

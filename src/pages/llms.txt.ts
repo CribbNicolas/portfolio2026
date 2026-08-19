@@ -7,7 +7,7 @@
  */
 
 import type { APIRoute } from "astro";
-import { content, formatDateRange, formatSeniority } from "@content";
+import { content, formatDateRange, formatRoleTitle, formatSeniority } from "@content";
 
 export const GET: APIRoute = async ({ site }) => {
   const view = await content.getView("public-api", "es");
@@ -35,7 +35,7 @@ export const GET: APIRoute = async ({ site }) => {
     "",
     "## Experiencia",
     ...view.experience.flatMap((role) => [
-      `### ${role.company} — ${role.displayTitle ?? role.title}`,
+      `### ${formatRoleTitle(role)} · ${role.clientDescription ? `${role.company} — ${role.clientDescription}` : role.company}`,
       `${formatDateRange(role.start, role.end)} · ${role.employmentType} · ${role.workMode}`,
       role.context.short,
       ...role.achievements.map((a) => `- ${a.text.short}`),

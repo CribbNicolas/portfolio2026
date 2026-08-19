@@ -141,6 +141,25 @@ test("el PDF sale tagged y con outline, como se prometió", async () => {
   assert.ok(outline && outline.length > 0, "el PDF no tiene outline (marcadores por sección)");
 });
 
+test("capa 1: el email y los links se extraen enteros", async () => {
+  // Una URL partida por un salto de línea se extrae con un espacio adentro y
+  // deja de ser una URL. Es el campo que un ATS usa para encontrar el perfil.
+  const { texto } = await extraer();
+  const view = await content.getView("cv-ats", "es");
+  const normal = texto.replace(/\s+/g, " ");
+
+  assert.ok(
+    normal.includes(view.identity.contact.email),
+    `el email no aparece contiguo en el texto extraído`,
+  );
+  for (const link of view.identity.links) {
+    assert.ok(
+      normal.includes(link.url),
+      `la URL de ${link.label} (${link.url}) no aparece contigua en el texto extraído`,
+    );
+  }
+});
+
 test("regla 8: ni el teléfono ni la dirección salen en el PDF", async () => {
   const { texto } = await extraer();
   const data = await content.getDataset("es");

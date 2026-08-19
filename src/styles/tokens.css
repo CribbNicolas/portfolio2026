@@ -6,6 +6,11 @@
  * El color se declara por ROL (--tinta, --acento), nunca por nombre de color:
  * así el modo oscuro y el modo impresión redefinen los mismos tokens sin tocar
  * un solo selector.
+ *
+ * Acá viven los tokens de PANTALLA (claro y oscuro). `cv.css` los redefine
+ * aparte, en su propio `@media print`, para la variante de impresión: este
+ * archivo no es el único lugar donde vive un color, es el único lugar donde
+ * viven los tokens de pantalla.
  */
 
 :root {
@@ -27,8 +32,12 @@
   --sombra: 0 1px 2px rgb(23 24 28 / 0.04), 0 8px 24px rgb(23 24 28 / 0.06);
 }
 
-/* Modo oscuro solo en pantalla. La impresión lo revierte siempre. */
-@media (prefers-color-scheme: dark) {
+/* Modo oscuro solo en pantalla. La impresión lo revierte siempre.
+   `screen and` es necesario, no cosmético: sin él, esta media query tiene más
+   especificidad (0,2,0) que `@media print { :root { ... } }` de cv.css
+   (0,1,0), y en un Ctrl+P con el sistema en oscuro gana el oscuro sobre el
+   papel blanco, pase lo que pase con el orden de la cascada. */
+@media screen and (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     --fondo: #131417;
     --fondo-elevado: #1c1e23;
