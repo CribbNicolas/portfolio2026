@@ -1,6 +1,6 @@
 # Hace ciertas las afirmaciones de los docs: las reglas duras son CI, no intenciones.
-# Equivalente local (los tres tienen que pasar):
-#   npm run typecheck && npm run validate && npm test
+# Equivalente local (todos tienen que pasar):
+#   npm run typecheck && npm run validate && npm test && npm run build && npm run test:pdf && npm run audit:todos
 name: content-validation
 
 on:
@@ -10,13 +10,53 @@ on:
 jobs:
   validate:
     runs-on: ubuntu-latest
+    # El default de GitHub son 6 HORAS. Una corrida sana tarda ~1 minuto, así que
+    # cualquier cosa que pase de 15 está colgada, no lenta. Sin este techo, un
+    # apt-get que no responde quema un job entero antes de que alguien lo note.
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          # Astro 6 exige Node >=22.12. Con 20 el `astro sync` del typecheck se
+          # niega a arrancar y el pipeline muere en el primer step. Se usa 24
+          # porque es lo que corre la máquina de desarrollo: una CI que corre otro
+          # major que el dev deja de servir para cazar lo que el dev no ve.
+          node-version: 24
           cache: npm
       - run: npm ci
       - run: npm run typecheck
       - run: npm run validate
       - run: npm test
+
+      # El PDF necesita Chromium. Va en un step propio para que un fallo de
+      # descarga del browser no se confunda con un fallo del CV.
+      - name: Cache de browsers de Playwright
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+      # Sin `--with-deps` a propósito: esa bandera corre `apt-get` en CADA
+      # corrida, incluso cuando el caché de browsers acierta y no hay nada que
+      # descargar. Una corrida se colgó 6 h ahí porque los mirrors de Ubuntu no
+      # respondían — mismo commit que había pasado en 1 min. La imagen de
+      # ubuntu-latest ya trae las librerías que Chromium necesita.
+      # Si algún día Chromium no arranca, el fallo sale en el step `build` de
+      # abajo y la vuelta atrás es agregar `--with-deps` de nuevo.
+      - name: Instalar Chromium
+        timeout-minutes: 5
+        run: npx playwright install chromium
+
+      - run: npm run build
+      # Acá se verifica que el CV pasa la capa 1 del embudo: texto extraíble,
+      # orden de lectura sano, sin TODOs, sin teléfono, máximo 2 páginas.
+      - run: npm run test:pdf
+
+      # No bloquea: son datos pendientes conocidos. Queda en el log para verlos.
+      - run: npm run audit:todos
+
+      - name: Publicar el CV generado
+        uses: actions/upload-artifact@v4
+        with:
+          name: cv-pdf
+          path: dist/cv.pdf

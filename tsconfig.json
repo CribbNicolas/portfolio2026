@@ -1,4 +1,5 @@
 {
+  "extends": "astro/tsconfigs/strict",
   "compilerOptions": {
     "target": "ES2022",
     "module": "ESNext",
@@ -9,7 +10,12 @@
     "skipLibCheck": true,
     "resolveJsonModule": true,
     "esModuleInterop": true,
-    "forceConsistentCasingInFileNames": true
+    "forceConsistentCasingInFileNames": true,
+    "baseUrl": ".",
+    "paths": {
+      "@content": ["./content/source/index.ts"]
+    }
   },
-  "include": ["content/**/*", "scripts/**/*"]
+  "include": ["content/**/*", "scripts/**/*", "src/**/*", ".astro/types.d.ts"],
+  "exclude": ["dist", "node_modules"]
 }

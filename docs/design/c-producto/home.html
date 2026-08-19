@@ -1,0 +1,86 @@
+<!-- @dsCard group="C — Producto" -->
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>C · Producto — home</title>
+<style>
+/* Home de la dirección C. Mobile-first. Las sombras suaves viven acá y NO
+   en /cv: en el CV la jerarquía tiene que sobrevivir impresa en blanco y negro. */
+:root{
+  --fondo:#ffffff;--fondo-elevado:#f7f6f4;--tinta:#17181c;--tinta-suave:#5f636e;
+  --acento:#b0472a;--acento-tenue:#fbeee9;--linea:#e5e3df;--espacio:8px;--radio:10px;
+  --sans:"Manrope","Plus Jakarta Sans",system-ui,-apple-system,sans-serif;
+  --sombra:0 1px 2px rgb(23 24 28 / .04), 0 8px 24px rgb(23 24 28 / .06);
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--fondo);color:var(--tinta);font-family:var(--sans);font-size:16px;line-height:1.55;letter-spacing:-.005em}
+.wrap{padding:calc(var(--espacio)*6) calc(var(--espacio)*2.5);max-width:40rem;margin:0 auto}
+.kicker{
+  display:inline-block;font-size:.75rem;font-weight:800;text-transform:uppercase;letter-spacing:.1em;
+  color:var(--acento);background:var(--acento-tenue);padding:calc(var(--espacio)*.75) calc(var(--espacio)*1.25);
+  border-radius:99px;margin:0 0 calc(var(--espacio)*3);
+}
+h1{font-size:2.125rem;line-height:1.08;margin:0 0 calc(var(--espacio)*1.25);font-weight:800;letter-spacing:-.035em}
+.rol{font-size:1.0625rem;color:var(--tinta-suave);margin:0 0 calc(var(--espacio)*3);font-weight:600}
+.tagline{font-size:1.375rem;line-height:1.4;margin:0 0 calc(var(--espacio)*4.5);font-weight:700;letter-spacing:-.02em}
+.acciones{display:flex;flex-direction:column;gap:calc(var(--espacio)*1.5);margin:0 0 calc(var(--espacio)*4.5)}
+.btn{
+  display:block;text-align:center;padding:calc(var(--espacio)*2);text-decoration:none;
+  border-radius:var(--radio);font-weight:700;font-size:1rem;border:1px solid var(--linea);color:var(--tinta);
+}
+.btn--primario{background:var(--acento);border-color:var(--acento);color:#fff;box-shadow:var(--sombra)}
+.btn:hover{border-color:var(--acento);color:var(--acento)}
+.btn--primario:hover{color:#fff;filter:brightness(1.06)}
+.tarjeta{
+  background:var(--fondo-elevado);border:1px solid var(--linea);border-radius:var(--radio);
+  padding:calc(var(--espacio)*2.5);margin:0 0 calc(var(--espacio)*4);
+}
+.tarjeta h2{font-size:.75rem;font-weight:800;text-transform:uppercase;letter-spacing:.1em;color:var(--tinta-suave);margin:0 0 calc(var(--espacio)*1.25)}
+.tarjeta p{margin:0;font-size:.9375rem;color:var(--tinta-suave);line-height:1.6}
+.links{margin:0;list-style:none;padding-left:0}
+.links li{margin-bottom:calc(var(--espacio)*1.25)}
+.links a{color:var(--tinta);text-decoration:none;font-weight:600;border-bottom:2px solid var(--acento-tenue)}
+.links a:hover{border-bottom-color:var(--acento)}
+@media (min-width:40rem){
+  .wrap{padding:calc(var(--espacio)*11) calc(var(--espacio)*4)}
+  h1{font-size:3rem}
+  .tagline{font-size:1.625rem}
+  .acciones{flex-direction:row}
+  .btn{flex:1}
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --fondo:#131417;--fondo-elevado:#1c1e23;--tinta:#f0eeea;--tinta-suave:#a1a5b0;
+    --acento:#e2825f;--acento-tenue:#2c1c16;--linea:#2c2f36;
+  }
+  .btn--primario{color:#1a0f0a}
+}
+</style>
+</head>
+<body>
+<main class="wrap">
+  <p class="kicker">Product Engineer</p>
+  <h1>Nicolás Agustín Cribb Barbaro</h1>
+  <p class="rol">Desarrollador Full Stack · 6+ años · Rosario, Argentina</p>
+  <p class="tagline">Construyo productos web completos, no solo la interfaz.</p>
+
+  <div class="acciones">
+    <a class="btn btn--primario" href="/cv">Ver el CV</a>
+    <a class="btn" href="/cv.pdf" download="Nicolas-Cribb-Barbaro-Full-Stack-Developer.pdf">Descargar en PDF</a>
+  </div>
+
+  <div class="tarjeta">
+    <h2>Cómo trabajo</h2>
+    <p>Entender primero qué problema de negocio hay detrás de la pantalla, elegir la tecnología más aburrida que lo resuelva bien, y dejar el código en un estado donde el próximo que lo toque no tenga que adivinar nada.</p>
+  </div>
+
+  <ul class="links">
+    <li><a href="mailto:cribbnicolas26@gmail.com">cribbnicolas26@gmail.com</a></li>
+    <li><a href="#">github.com/CribbNicolas</a></li>
+    <li><a href="#">linkedin.com/in/cribb-barbaro-nicolas</a></li>
+  </ul>
+</main>
+</body>
+</html>

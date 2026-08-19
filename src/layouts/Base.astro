@@ -1,0 +1,31 @@
+---
+/**
+ * Layout base. Su única responsabilidad es el `<head>`.
+ *
+ * El slot `head` existe para que cada página inyecte su JSON-LD server-rendered:
+ * los crawlers no ejecutan JS, así que tiene que salir en el HTML del server
+ * (docs/04 §3).
+ */
+interface Props {
+  title: string;
+  description: string;
+}
+
+const { title, description } = Astro.props;
+const canonical = new URL(Astro.url.pathname, Astro.site);
+---
+
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonical} />
+    <slot name="head" />
+  </head>
+  <body>
+    <slot />
+  </body>
+</html>

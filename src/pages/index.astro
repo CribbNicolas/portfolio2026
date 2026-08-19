@@ -1,0 +1,51 @@
+---
+/**
+ * Home mínima. NO es el portfolio: eso es otro slice y depende de una
+ * investigación de diseño que todavía no se hizo (docs/04 §6).
+ *
+ * Existe para dos cosas: que la URL raíz no sea un 404, y que el PDF tenga
+ * de dónde descargarse.
+ */
+import Base from "../layouts/Base.astro";
+import { content, formatSeniority } from "@content";
+import { buildPersonJsonLd } from "../lib/jsonld";
+
+import "@fontsource/manrope/400.css";
+import "@fontsource/manrope/600.css";
+import "@fontsource/manrope/800.css";
+import "../styles/tokens.css";
+import "../styles/home.css";
+
+const view = await content.getView("public-api", "es");
+const { identity } = view;
+const jsonLd = buildPersonJsonLd(view, new URL(Astro.site!));
+---
+
+<Base
+  title={`${identity.fullName} — ${identity.searchTitle}`}
+  description={identity.summary.short}
+>
+  <script type="application/ld+json" slot="head" set:html={JSON.stringify(jsonLd)} />
+  <main class="home">
+    <p class="home__kicker">{identity.brandTitle}</p>
+    <h1 class="home__name">{identity.fullName}</h1>
+    <p class="home__role">
+      {identity.searchTitle} · {formatSeniority(view.yearsOfExperience)} · {identity.location.city}, {identity.location.country}
+    </p>
+    <p class="home__tagline">{identity.tagline.short}</p>
+
+    <div class="home__actions">
+      <a class="btn btn--primary" href="/cv">Ver el CV</a>
+      <a class="btn" href="/cv.pdf" download="Nicolas-Cribb-Barbaro-Full-Stack-Developer.pdf">
+        Descargar en PDF
+      </a>
+    </div>
+
+    <ul class="home__links">
+      <li><a href={`mailto:${identity.contact.email}`}>{identity.contact.email}</a></li>
+      {identity.links.map((link) => (
+        <li><a href={link.url} rel="me noopener">{link.label}</a></li>
+      ))}
+    </ul>
+  </main>
+</Base>

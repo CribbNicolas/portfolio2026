@@ -25,6 +25,9 @@ Fechadas, para saber qué revisar cuando cambie el contexto.
 | 2026-08 | Hogarth: `contract` + `concurrent: true`, inicio 2023-07 | Como full-time se superponía con Adsmovil. **Pendiente de confirmar** |
 | 2026-08 | Contenido como datos, backend después (Fase 0 → JSON en repo) | El contrato de datos da la independencia, no el backend |
 | 2026-08 | Sin dataset en inglés por ahora | Traducir un CV produce inglés traducido, que es peor que inglés escrito |
+| 2026-08 | Frontend en **Astro estático**, PDF en build con **Playwright** desde la misma página `/cv` | Un solo layout para HTML y PDF: no se pueden desincronizar |
+| 2026-08 | Solo se renderiza `cv-ats`; el CV diseñado (CV-A) queda para después | Un artefacto = nunca dudar cuál mandar. La maquinaria de superficies ya soporta agregar el otro |
+| 2026-08 | `cv-ats` sale de `publishPhoneOn` | `/cv` HTML y el PDF comparten superficie: publicarlo ahí lo ponía en la web abierta |
 
 ## Estado
 
@@ -33,12 +36,12 @@ Fechadas, para saber qué revisar cuando cambie el contexto.
 - [x] Tests de las reglas que el schema no valida (visibility, locale) — `npm test`
 - [x] Dataset semilla con datos reales
 - [x] Repo bajo control de versiones (git)
-- [ ] **Repo en GitHub** — habilita el workflow de CI (`.github/workflows/`). Hasta el push, la validación corre a mano.
+- [x] Repo en GitHub
+- [x] `formatMetric()` — hace cumplir la regla 4
+- [x] Frontend consumiendo `getView()`
+- [x] Generadores de salida: CV PDF, `/cv` HTML, JSON-LD, `llms.txt`, `/cv.json`
 - [ ] **Métricas** — el hueco más importante. Ver [03-cv.md](./03-cv.md#métricas-pendientes)
 - [ ] Confirmar datos de Hogarth
-- [ ] `formatMetric()` — hace cumplir la regla 4 (`~` para estimados). Hay un test en `todo` esperándolo.
-- [ ] Frontend consumiendo `getView()`
-- [ ] Generadores de salida (CV PDF, `/cv` HTML, JSON-LD, `llms.txt`)
 - [ ] Bloques de texto para LinkedIn
 - [ ] Migración a Sanity (Fase 1, sin apuro)
 

@@ -1,0 +1,63 @@
+<!-- @dsCard group="A — Documento" -->
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>A · Documento — home</title>
+<style>
+/* Home de la dirección A. Mobile-first. La home SÍ puede usar flex: las
+   restricciones de estructura son solo de /cv, porque de ahí sale el PDF. */
+:root{
+  --fondo:#fbfaf7;--tinta:#1c1a17;--tinta-suave:#5d5850;--acento:#7a2e2e;
+  --linea:#ddd6c9;--espacio:8px;
+  --serif:"Source Serif 4",Georgia,"Times New Roman",serif;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--fondo);color:var(--tinta);font-family:var(--serif);font-size:17px;line-height:1.6}
+.wrap{padding:calc(var(--espacio)*7) calc(var(--espacio)*3);max-width:38rem;margin:0 auto}
+.kicker{font-size:.8125rem;text-transform:uppercase;letter-spacing:.14em;color:var(--tinta-suave);margin:0 0 calc(var(--espacio)*2)}
+h1{font-size:2rem;line-height:1.15;margin:0 0 calc(var(--espacio)*1.5);font-weight:600;letter-spacing:-.015em}
+.rol{font-size:1.125rem;color:var(--acento);margin:0 0 calc(var(--espacio)*3);font-weight:600}
+.tagline{font-size:1.3125rem;line-height:1.45;margin:0 0 calc(var(--espacio)*5);border-left:2px solid var(--acento);padding-left:calc(var(--espacio)*2.5)}
+.acciones{display:flex;flex-direction:column;gap:calc(var(--espacio)*1.5);margin:0 0 calc(var(--espacio)*5)}
+.btn{
+  display:block;text-align:center;padding:calc(var(--espacio)*1.75);text-decoration:none;
+  border:1px solid var(--tinta);color:var(--tinta);font-weight:600;font-size:1rem;
+}
+.btn--primario{background:var(--tinta);color:var(--fondo)}
+.btn:hover{border-color:var(--acento);color:var(--acento)}
+.btn--primario:hover{background:var(--acento);border-color:var(--acento);color:var(--fondo)}
+.links{border-top:1px solid var(--linea);padding-top:calc(var(--espacio)*2.5);margin:0;list-style:none;padding-left:0}
+.links li{margin-bottom:calc(var(--espacio)*1)}
+.links a{color:var(--tinta-suave);text-decoration:underline;text-decoration-color:var(--linea);text-underline-offset:3px}
+.links a:hover{color:var(--acento)}
+@media (min-width:40rem){
+  .wrap{padding:calc(var(--espacio)*12) calc(var(--espacio)*4)}
+  h1{font-size:2.75rem}
+  .tagline{font-size:1.5rem}
+  .acciones{flex-direction:row}
+  .btn{flex:1}
+}
+</style>
+</head>
+<body>
+<main class="wrap">
+  <p class="kicker">Product Engineer · Rosario, Argentina</p>
+  <h1>Nicolás Agustín Cribb Barbaro</h1>
+  <p class="rol">Desarrollador Full Stack · 6+ años</p>
+  <p class="tagline">Construyo productos web completos, no solo la interfaz.</p>
+
+  <div class="acciones">
+    <a class="btn btn--primario" href="/cv">Ver el CV</a>
+    <a class="btn" href="/cv.pdf" download="Nicolas-Cribb-Barbaro-Full-Stack-Developer.pdf">Descargar en PDF</a>
+  </div>
+
+  <ul class="links">
+    <li><a href="mailto:cribbnicolas26@gmail.com">cribbnicolas26@gmail.com</a></li>
+    <li><a href="#">github.com/CribbNicolas</a></li>
+    <li><a href="#">linkedin.com/in/cribb-barbaro-nicolas</a></li>
+  </ul>
+</main>
+</body>
+</html>

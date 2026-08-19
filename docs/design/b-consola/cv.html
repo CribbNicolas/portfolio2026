@@ -1,0 +1,218 @@
+<!-- @dsCard group="B — Consola" -->
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>B · Consola — /cv</title>
+<style>
+/* =========================================================================
+   DIRECCIÓN B — «Consola». El sitio demuestra la habilidad que vende.
+   MOBILE-FIRST. UNA COLUMNA, sin flex ni grid.
+
+   Nota de estructura: NO se usan prefijos tipo "// Perfil" ni marcadores en
+   ::before dentro de los <h2>. El texto extraído del PDF tiene que decir
+   exactamente "Perfil", "Experiencia", etc., porque un parser mapea esos
+   títulos a campos. La estética de terminal se hace con fuente, color y
+   bordes — nunca metiendo caracteres en el contenido.
+   ========================================================================= */
+:root{
+  --fondo:#0d1117;
+  --fondo-elevado:#161b22;
+  --tinta:#e6edf3;
+  --tinta-suave:#9198a1;
+  --acento:#f0b429;
+  --acento-tenue:#2b2411;
+  --linea:#2b313a;
+  --fuente-titulo:ui-monospace,"JetBrains Mono","IBM Plex Mono",Menlo,Consolas,monospace;
+  --fuente-cuerpo:"Inter","IBM Plex Sans",system-ui,-apple-system,sans-serif;
+  --escala:1.2;
+  --espacio:8px;
+  --radio:3px;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0;background:var(--fondo);color:var(--tinta);
+  font-family:var(--fuente-cuerpo);
+  font-variant-ligatures:none;
+  font-size:15px;line-height:1.5;
+}
+.cv{padding:calc(var(--espacio)*3) calc(var(--espacio)*2.5);max-width:46rem;margin:0 auto}
+
+/* --- Encabezado --------------------------------------------------------- */
+.nombre{font-size:1.5rem;line-height:1.2;margin:0 0 calc(var(--espacio)*.5);font-weight:700;letter-spacing:-.02em}
+.titulo{
+  font-family:var(--fuente-titulo);font-size:.9375rem;margin:0 0 calc(var(--espacio)*2);
+  color:var(--acento);font-weight:500;
+}
+.contacto{
+  font-family:var(--fuente-titulo);font-size:.8125rem;
+  margin:0 0 calc(var(--espacio)*.5);color:var(--tinta-suave);
+}
+.contacto a{color:var(--tinta);text-decoration:none;border-bottom:1px solid var(--linea)}
+.contacto a:hover{border-bottom-color:var(--acento)}
+
+/* --- Secciones ---------------------------------------------------------- */
+.seccion{margin-top:calc(var(--espacio)*4)}
+.seccion__titulo{
+  font-family:var(--fuente-titulo);
+  font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.16em;
+  color:var(--acento);
+  border-left:2px solid var(--acento);padding-left:calc(var(--espacio)*1.25);
+  margin:0 0 calc(var(--espacio)*2);
+}
+.perfil{margin:0;color:var(--tinta)}
+
+/* --- Roles -------------------------------------------------------------- */
+.rol{
+  margin-bottom:calc(var(--espacio)*3);padding-bottom:calc(var(--espacio)*3);
+  border-bottom:1px solid var(--linea);break-inside:avoid;
+}
+.rol:last-child{border-bottom:0}
+.rol__titulo{font-size:1rem;font-weight:600;margin:0;line-height:1.35}
+.rol__empresa{color:var(--acento)}
+.rol__meta{
+  font-family:var(--fuente-titulo);font-size:.75rem;font-variant-numeric:tabular-nums;
+  margin:calc(var(--espacio)*.75) 0 0;color:var(--tinta-suave);
+}
+.rol__contexto{margin:calc(var(--espacio)*1) 0 0;color:var(--tinta-suave);font-size:.875rem}
+.bullets{margin:calc(var(--espacio)*1.5) 0 0;padding-left:1.1rem}
+.bullets li{margin-bottom:calc(var(--espacio)*.875)}
+.bullets li::marker{color:var(--acento)}
+.metrica{
+  font-family:var(--fuente-titulo);color:var(--acento);font-weight:600;
+  font-variant-numeric:tabular-nums;background:var(--acento-tenue);
+  padding:1px 5px;border-radius:var(--radio);
+}
+
+/* --- Skills, educación, idiomas ----------------------------------------- */
+.grupo{margin:0 0 calc(var(--espacio)*1);font-size:.875rem}
+.grupo__etiqueta{
+  font-family:var(--fuente-titulo);font-size:.75rem;text-transform:uppercase;
+  letter-spacing:.08em;color:var(--tinta-suave);
+}
+.grupo__valor{font-family:var(--fuente-titulo);font-size:.8125rem;color:var(--tinta)}
+.entrada{margin-bottom:calc(var(--espacio)*2);break-inside:avoid}
+.entrada__titulo{font-size:.9375rem;font-weight:600;margin:0}
+.entrada__meta{
+  font-family:var(--fuente-titulo);font-size:.75rem;font-variant-numeric:tabular-nums;
+  margin:calc(var(--espacio)*.25) 0 0;color:var(--tinta-suave);
+}
+
+@media (min-width:40rem){
+  body{font-size:16px}
+  .cv{padding:calc(var(--espacio)*6) calc(var(--espacio)*4)}
+  .nombre{font-size:2rem}
+}
+
+/* --- Impresión: el modo oscuro NO se imprime. Nunca. --------------------- */
+@page{size:A4;margin:16mm 15mm}
+@media print{
+  :root{--tinta:#000;--tinta-suave:#3d434b;--acento:#8a5a00;--linea:#c9cdd3;--acento-tenue:transparent}
+  body{background:#fff;color:#000;font-size:10pt;line-height:1.42}
+  .cv{padding:0;max-width:none}
+  .nombre{font-size:20pt}
+  .seccion{margin-top:6mm}
+  .rol{margin-bottom:4mm;padding-bottom:4mm}
+  .metrica{background:none;padding:0}
+  .contacto a{border:0}
+}
+</style>
+</head>
+<body>
+<main class="cv">
+
+  <h1 class="nombre">Nicolás Agustín Cribb Barbaro</h1>
+  <p class="titulo">Desarrollador Full Stack</p>
+  <p class="contacto">Rosario, Santa Fe, Argentina · UTC−3</p>
+  <p class="contacto">Email: <a href="mailto:cribbnicolas26@gmail.com">cribbnicolas26@gmail.com</a></p>
+  <p class="contacto">GitHub: <a href="#">github.com/CribbNicolas</a> · LinkedIn: <a href="#">linkedin.com/in/cribb-barbaro-nicolas</a></p>
+
+  <section class="seccion">
+    <h2 class="seccion__titulo">Perfil</h2>
+    <p class="perfil">Desarrollador full stack con foco en producto: React, Next.js y TypeScript, con base sólida en Node, Docker y CI/CD para llevar un proyecto del repo a producción.</p>
+  </section>
+
+  <section class="seccion">
+    <h2 class="seccion__titulo">Habilidades técnicas</h2>
+    <p class="grupo"><span class="grupo__etiqueta">Lenguajes</span><br><span class="grupo__valor">TypeScript · JavaScript</span></p>
+    <p class="grupo"><span class="grupo__etiqueta">Frontend</span><br><span class="grupo__valor">React · Next.js · Tailwind CSS · Material UI</span></p>
+    <p class="grupo"><span class="grupo__etiqueta">Backend</span><br><span class="grupo__valor">Node.js</span></p>
+    <p class="grupo"><span class="grupo__etiqueta">Datos</span><br><span class="grupo__valor">Mapbox GL JS</span></p>
+    <p class="grupo"><span class="grupo__etiqueta">CMS</span><br><span class="grupo__valor">WordPress · Sanity</span></p>
+    <p class="grupo"><span class="grupo__etiqueta">Testing</span><br><span class="grupo__valor">Playwright</span></p>
+    <p class="grupo"><span class="grupo__etiqueta">Infraestructura</span><br><span class="grupo__valor">Docker · CI/CD · Cloudflare</span></p>
+    <p class="grupo"><span class="grupo__etiqueta">Herramientas</span><br><span class="grupo__valor">Vite · Monorepos · Git</span></p>
+    <p class="grupo"><span class="grupo__etiqueta">Prácticas</span><br><span class="grupo__valor">Desarrollo asistido por IA</span></p>
+  </section>
+
+  <section class="seccion">
+    <h2 class="seccion__titulo">Experiencia</h2>
+
+    <article class="rol">
+      <h3 class="rol__titulo">Desarrollador Full Stack · <span class="rol__empresa">Dinkum Interactive</span></h3>
+      <p class="rol__meta">09/2024 — Actualidad · 1 año 11 meses · Argentina · remoto</p>
+      <p class="rol__contexto">Desarrollo de sistemas a medida, en equipo y como único responsable: plugins de WordPress desde cero, mapas interactivos y servicios de backoffice.</p>
+      <ul class="bullets">
+        <li>Construí interfaces de mapas con Mapbox GL JS renderizando capas de polígonos por distrito escolar y estado.</li>
+        <li>Desarrollé plugins de WordPress desde cero con React, Material UI y TypeScript, integrando endpoints AJAX, nonces y enqueueing.</li>
+        <li>Resolví artefactos visuales en el renderizado corrigiendo paint properties, e implementé hover interactivo con feature-state.</li>
+        <li>Migré el tooling de build de Webpack a Vite, simplificando la configuración y acelerando el ciclo de desarrollo.</li>
+      </ul>
+    </article>
+
+    <article class="rol">
+      <h3 class="rol__titulo">Desarrollador web · <span class="rol__empresa">Adsmovil</span></h3>
+      <p class="rol__meta">06/2022 — 09/2024 · 2 años 3 meses · Posadas, Misiones · remoto</p>
+      <p class="rol__contexto">Adtech. Sistemas de recolección y análisis de datos para estrategias publicitarias, con foco en discovery de nichos y delivery.</p>
+      <ul class="bullets">
+        <li>Integré el equipo de modernización tecnológica: primeros desarrollos en React, documentación y definición de buenas prácticas.</li>
+        <li>Desarrollé sistemas que mejoraron la eficiencia en la recolección de datos para campañas publicitarias.</li>
+      </ul>
+    </article>
+
+    <article class="rol">
+      <h3 class="rol__titulo">Frontend Developer (en paralelo) · <span class="rol__empresa">Hogarth — cliente global del sector tecnológico</span></h3>
+      <p class="rol__meta">07/2023 — 01/2024 · 6 meses · remoto</p>
+      <p class="rol__contexto">Equipo de frontend para un cliente global: versiones localizadas de sus productos web, cuidando congruencia e identidad de marca.</p>
+      <ul class="bullets">
+        <li>Desarrollé versiones localizadas de productos web para un cliente global, manteniendo congruencia funcional e identidad visual.</li>
+      </ul>
+    </article>
+
+    <article class="rol">
+      <h3 class="rol__titulo">Desarrollador web · <span class="rol__empresa">Independiente</span></h3>
+      <p class="rol__meta">04/2020 — 06/2022 · 2 años 2 meses · Oberá, Misiones · remoto</p>
+      <p class="rol__contexto">Proyectos completos para clientes propios, de relevamiento a deploy. Vue, Quasar, Django, SCSS y Docker.</p>
+      <ul class="bullets">
+        <li>Optimicé el delivery de un sistema aplicando minificación y segmentación de código mediante un build system.</li>
+      </ul>
+    </article>
+  </section>
+
+  <section class="seccion">
+    <h2 class="seccion__titulo">Educación</h2>
+    <div class="entrada">
+      <p class="entrada__titulo">Certified Tech Developer (CTD) — Desarrollo web</p>
+      <p class="entrada__meta">Digital House · 02/2022</p>
+    </div>
+    <div class="entrada">
+      <p class="entrada__titulo">Técnico en Programación y Análisis de Sistemas</p>
+      <p class="entrada__meta">Instituto INCADE · 01/2017 — 07/2020</p>
+    </div>
+    <div class="entrada">
+      <p class="entrada__titulo">Ingeniería en Informática</p>
+      <p class="entrada__meta">Universidad Gastón Dachary · 01/2014 — 12/2017 · Cursado parcial</p>
+    </div>
+  </section>
+
+  <section class="seccion">
+    <h2 class="seccion__titulo">Idiomas</h2>
+    <p class="grupo"><span class="grupo__etiqueta">Español</span><br><span class="grupo__valor">Nativo</span></p>
+    <p class="grupo"><span class="grupo__etiqueta">Inglés</span><br><span class="grupo__valor">B1</span></p>
+  </section>
+
+</main>
+</body>
+</html>

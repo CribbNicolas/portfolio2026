@@ -1,0 +1,120 @@
+<!-- @dsCard group="B — Consola" -->
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>B · Consola — sistema</title>
+<style>
+:root{
+  --fondo:#0d1117;--fondo-elevado:#161b22;--tinta:#e6edf3;--tinta-suave:#9198a1;
+  --acento:#f0b429;--acento-tenue:#2b2411;--linea:#2b313a;
+  --mono:ui-monospace,"JetBrains Mono","IBM Plex Mono",Menlo,Consolas,monospace;
+  --sans:"Inter","IBM Plex Sans",system-ui,-apple-system,sans-serif;
+  --espacio:8px;--radio:3px;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--fondo);color:var(--tinta);font-family:var(--sans);font-size:15px;line-height:1.5}
+.wrap{padding:calc(var(--espacio)*4) calc(var(--espacio)*2.5);max-width:46rem;margin:0 auto}
+h1{font-size:1.5rem;margin:0 0 calc(var(--espacio)*1);font-weight:700;letter-spacing:-.02em}
+.sub{color:var(--tinta-suave);margin:0 0 calc(var(--espacio)*4);font-size:.9375rem}
+h2{
+  font-family:var(--mono);font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.16em;
+  color:var(--acento);border-left:2px solid var(--acento);padding-left:calc(var(--espacio)*1.25);
+  margin:calc(var(--espacio)*5) 0 calc(var(--espacio)*2);
+}
+code{font-family:var(--mono);font-size:.8125rem;background:var(--fondo-elevado);padding:1px 5px;border-radius:var(--radio)}
+.tokens{display:grid;grid-template-columns:1fr;gap:calc(var(--espacio)*1.25);margin:0}
+.token{display:flex;align-items:center;gap:calc(var(--espacio)*1.5);font-size:.875rem}
+.chip{width:36px;height:36px;flex:none;border:1px solid var(--linea);border-radius:var(--radio)}
+.token b{font-family:var(--mono);font-weight:400;font-size:.8125rem}
+.token span{color:var(--tinta-suave);margin-left:auto;font-family:var(--mono);font-size:.75rem}
+.escala p{margin:0 0 calc(var(--espacio)*1.25);line-height:1.2}
+.e1{font-size:2rem;font-weight:700;letter-spacing:-.025em}
+.e2{font-size:1.375rem;font-weight:600}
+.e3{font-size:1rem;font-weight:600}
+.e4{font-size:.9375rem}
+.e5{font-family:var(--mono);font-size:.75rem;color:var(--tinta-suave)}
+.e6{font-family:var(--mono);font-size:.75rem;text-transform:uppercase;letter-spacing:.16em;color:var(--acento)}
+
+.rol{border:1px solid var(--linea);border-radius:var(--radio);padding:calc(var(--espacio)*2.5);background:var(--fondo-elevado);margin-bottom:calc(var(--espacio)*2)}
+.rol__titulo{font-size:1rem;font-weight:600;margin:0;line-height:1.35}
+.rol__empresa{color:var(--acento)}
+.rol__meta{font-family:var(--mono);font-size:.75rem;font-variant-numeric:tabular-nums;margin:calc(var(--espacio)*.75) 0 0;color:var(--tinta-suave)}
+.rol__contexto{margin:calc(var(--espacio)*1) 0 0;color:var(--tinta-suave);font-size:.875rem}
+.bullets{margin:calc(var(--espacio)*1.5) 0 0;padding-left:1.1rem}
+.bullets li{margin-bottom:calc(var(--espacio)*.875)}
+.bullets li::marker{color:var(--acento)}
+.metrica{font-family:var(--mono);color:var(--acento);font-weight:600;font-variant-numeric:tabular-nums;background:var(--acento-tenue);padding:1px 5px;border-radius:var(--radio)}
+.aviso{border-left:2px solid var(--acento);background:var(--acento-tenue);padding:calc(var(--espacio)*1.5) calc(var(--espacio)*2);font-size:.875rem;margin:0 0 calc(var(--espacio)*2);border-radius:0 var(--radio) var(--radio) 0}
+.nota{font-size:.9375rem}
+.nota li{margin-bottom:calc(var(--espacio)*1)}
+@media (min-width:40rem){
+  .wrap{padding:calc(var(--espacio)*7) calc(var(--espacio)*4)}
+  .tokens{grid-template-columns:1fr 1fr}
+}
+</style>
+</head>
+<body>
+<main class="wrap">
+  <h1>B — «Consola»</h1>
+  <p class="sub">El sitio demuestra la habilidad que vende.</p>
+
+  <h2>Tokens</h2>
+  <div class="tokens">
+    <div class="token"><i class="chip" style="background:#0d1117"></i><b>--fondo</b><span>#0d1117</span></div>
+    <div class="token"><i class="chip" style="background:#161b22"></i><b>--fondo-elevado</b><span>#161b22</span></div>
+    <div class="token"><i class="chip" style="background:#e6edf3"></i><b>--tinta</b><span>#e6edf3</span></div>
+    <div class="token"><i class="chip" style="background:#9198a1"></i><b>--tinta-suave</b><span>#9198a1</span></div>
+    <div class="token"><i class="chip" style="background:#f0b429"></i><b>--acento</b><span>#f0b429</span></div>
+    <div class="token"><i class="chip" style="background:#2b313a"></i><b>--linea</b><span>#2b313a</span></div>
+  </div>
+  <p class="sub" style="margin-top:16px">Tipografía: <code>JetBrains Mono</code> 400/700 + <code>Inter</code> 400/600 — 4 archivos, justo en el tope del presupuesto.<br>
+  Escala <code>1.2</code> (densa) · unidad <code>8px</code> · <code>--radio: 3px</code> · bordes en vez de sombras.<br>
+  Contraste sobre <code>#0d1117</code>: tinta 13.9:1 · tinta-suave 6.1:1 · acento 9.8:1 — AA holgado.<br>
+  <b>El acento es ámbar y no verde a propósito:</b> el verde terminal es exactamente el cliché que hace fallar el criterio 1.</p>
+
+  <h2>Escala tipográfica</h2>
+  <div class="escala">
+    <p class="e1">Nicolás Cribb Barbaro</p>
+    <p class="e2">Título de sección grande</p>
+    <p class="e3">Desarrollador Full Stack · Dinkum</p>
+    <p class="e4">Texto de cuerpo y bullets del CV, en sans, en el tamaño real.</p>
+    <p class="e5">09/2024 — Actualidad · 1 año 11 meses</p>
+    <p class="e6">Encabezado de sección</p>
+  </div>
+
+  <h2>Bloque de rol — sin métrica (estado real de hoy)</h2>
+  <div class="rol">
+    <h3 class="rol__titulo">Desarrollador Full Stack · <span class="rol__empresa">Dinkum Interactive</span></h3>
+    <p class="rol__meta">09/2024 — Actualidad · 1 año 11 meses · Argentina · remoto</p>
+    <p class="rol__contexto">Desarrollo de sistemas a medida, en equipo y como único responsable.</p>
+    <ul class="bullets">
+      <li>Construí interfaces de mapas con Mapbox GL JS renderizando capas de polígonos por distrito escolar y estado.</li>
+      <li>Migré el tooling de build de Webpack a Vite, simplificando la configuración y acelerando el ciclo de desarrollo.</li>
+    </ul>
+  </div>
+
+  <h2>Bloque de rol — con métrica</h2>
+  <p class="aviso"><b>Ejemplo hipotético.</b> El dataset todavía no tiene ninguna <code>metric</code>. El número es ilustrativo: el invariante 4 prohíbe inventarlos. El <code>~</code> es obligatorio cuando <code>confidence: "estimated"</code>.</p>
+  <div class="rol">
+    <h3 class="rol__titulo">Desarrollador Full Stack · <span class="rol__empresa">Dinkum Interactive</span></h3>
+    <p class="rol__meta">09/2024 — Actualidad · 1 año 11 meses · Argentina · remoto</p>
+    <p class="rol__contexto">Desarrollo de sistemas a medida, en equipo y como único responsable.</p>
+    <ul class="bullets">
+      <li>Construí interfaces de mapas con Mapbox GL JS renderizando capas de polígonos por distrito escolar y estado.</li>
+      <li>Migré el tooling de build de Webpack a Vite — <span class="metrica">~90 s → ~12 s</span> de build.</li>
+    </ul>
+  </div>
+
+  <h2>Qué señala esta dirección</h2>
+  <ol class="nota">
+    <li>Manda <b>profundidad técnica</b>: el sitio mismo es evidencia del oficio.</li>
+    <li>Le habla al <b>hiring manager técnico</b> y conecta con el diferencial de mapas y datos.</li>
+    <li>Es la que mejor tolera densidad: sirve cuando haya casos de estudio con código.</li>
+    <li>Resigna calidez: el cliente freelance de una maderera puede no sentirse el destinatario.</li>
+    <li>Riesgo real: es la estética más repetida entre portfolios de dev, así que tiene que ganarse la diferencia en los detalles.</li>
+  </ol>
+</main>
+</body>
+</html>

@@ -1,0 +1,87 @@
+/*
+ * Sistema visual — dirección C, «Producto».
+ * Elegida el 2026-08-14 entre las tres de
+ * docs/superpowers/specs/2026-08-14-sistema-visual-design.md §6.
+ *
+ * El color se declara por ROL (--tinta, --acento), nunca por nombre de color:
+ * así el modo oscuro y el modo impresión redefinen los mismos tokens sin tocar
+ * un solo selector.
+ *
+ * Acá viven los tokens de PANTALLA (claro y oscuro). `cv.css` los redefine
+ * aparte, en su propio `@media print`, para la variante de impresión: este
+ * archivo no es el único lugar donde vive un color, es el único lugar donde
+ * viven los tokens de pantalla.
+ */
+
+:root {
+  --fondo: #ffffff;
+  --fondo-elevado: #f7f6f4;
+  --tinta: #17181c;
+  --tinta-suave: #5f636e;
+  /* Terracota y no violeta/índigo a propósito: el gradiente violeta es el
+     default de mil templates y falla el test de voz del spec §5. */
+  --acento: #b0472a;
+  --acento-tenue: #fbeee9;
+  --linea: #e5e3df;
+
+  --fuente: "Manrope", system-ui, -apple-system, sans-serif;
+
+  /* Unidad de espacio única. Todo margen y padding es un múltiplo de esto. */
+  --espacio: 8px;
+  --radio: 10px;
+  --sombra: 0 1px 2px rgb(23 24 28 / 0.04), 0 8px 24px rgb(23 24 28 / 0.06);
+}
+
+/* Modo oscuro solo en pantalla. La impresión lo revierte siempre.
+   `screen and` es necesario, no cosmético: sin él, esta media query tiene más
+   especificidad (0,2,0) que `@media print { :root { ... } }` de cv.css
+   (0,1,0), y en un Ctrl+P con el sistema en oscuro gana el oscuro sobre el
+   papel blanco, pase lo que pase con el orden de la cascada. */
+@media screen and (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --fondo: #131417;
+    --fondo-elevado: #1c1e23;
+    --tinta: #f0eeea;
+    --tinta-suave: #a1a5b0;
+    --acento: #e2825f;
+    --acento-tenue: #2c1c16;
+    --linea: #2c2f36;
+  }
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--fondo);
+  color: var(--tinta);
+  font-family: var(--fuente);
+  /* Las ligaduras (fi, fl) se extraen del PDF como un glifo solo y ensucian el
+     texto que lee el parser. Se apagan por parseo, no por estética. */
+  font-variant-ligatures: none;
+  font-size: 16px;
+  line-height: 1.55;
+  letter-spacing: -0.005em;
+}
+
+:focus-visible {
+  outline: 2px solid var(--acento);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
+}

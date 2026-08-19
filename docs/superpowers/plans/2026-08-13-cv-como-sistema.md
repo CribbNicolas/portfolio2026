@@ -20,7 +20,9 @@
 - **Nunca inventar métricas, números, fechas ni logros.** El dataset se toca solo donde este plan lo dice explícitamente (Task 7).
 - **Fechas visibles en formato `MM/AAAA`** (`docs/03-cv.md` §2). Presente = `"Actualidad"`.
 - **El CV es de UNA columna.** Prohibido `display: flex`, `display: grid`, `<table>` y `position: absolute` dentro de `src/styles/cv.css` y de los componentes de `src/components/cv/`. El orden del DOM es el orden de lectura que extrae el parser.
-- **Node 20** (lo que usa el workflow actual).
+- **Node 24.** El workflow venía con Node 20 y este plan lo dio por bueno sin
+  chequearlo: Astro 6 exige `>=22.12`, así que con 20 el pipeline muere en el
+  primer step. Corregido después de verlo fallar en CI.
 - Los tres comandos existentes (`npm run typecheck`, `npm run validate`, `npm test`) tienen que seguir pasando después de cada task.
 
 ---
@@ -569,17 +571,24 @@ git commit -m "feat(web): scaffold de Astro consumiendo getView via alias @conte
 
 ---
 
-### Task 3: `/cv` — el CV en HTML
+### Task 3: `/cv` — el CV en HTML, dirección visual «Producto»
 
 La página que después imprime el PDF. Todas las restricciones de la capa 1 se aplican acá.
 
+**Dirección visual elegida: C — «Producto»** (`docs/superpowers/specs/2026-08-14-sistema-visual-design.md` §6). Maqueta de referencia: `docs/design/c-producto/`. Se aplica al CV y también a la home.
+
+Principio: el sitio se ve como el producto que el autor le construiría a un cliente. Sans de buen carácter, acento terracota, jerarquía por peso y espacio. **En `/cv` no hay sombras ni tarjetas** — se reservan para la home, porque en el CV la jerarquía tiene que sobrevivir impresa en blanco y negro.
+
 **Files:**
+- Create: `src/styles/tokens.css`
 - Create: `src/styles/cv.css`
+- Create: `src/styles/home.css`
 - Create: `src/components/cv/Section.astro`
 - Create: `src/components/cv/Header.astro`
 - Create: `src/components/cv/RoleBlock.astro`
 - Create: `src/components/cv/SkillList.astro`
 - Create: `src/pages/cv.astro`
+- Modify: `src/pages/index.astro` (aplicar la dirección visual)
 - Modify: `package.json` (dependencia de la fuente)
 
 **Interfaces:**
@@ -589,12 +598,99 @@ La página que después imprime el PDF. Todas las restricciones de la capa 1 se 
 - [ ] **Step 1: Instalar la fuente**
 
 ```bash
-npm install @fontsource/inter
+npm install @fontsource/manrope
 ```
+
+Manrope es la familia de la dirección C. **Una sola familia, tres pesos** (400, 600, 800): cada peso es un archivo que se embebe en el PDF, y el presupuesto del spec es de 2 familias y 4 pesos como máximo.
 
 Self-hosteada a propósito: si el PDF depende de fuentes del sistema, el que sale en Windows y el que sale en el Ubuntu de CI no coinciden.
 
-- [ ] **Step 2: Crear `src/styles/cv.css`**
+- [ ] **Step 2: Crear `src/styles/tokens.css`**
+
+Los tokens de la dirección C. Es el ÚNICO lugar donde vive un color o un tamaño base: si mañana se cambia el acento, se cambia acá y cambia todo.
+
+```css
+/*
+ * Sistema visual — dirección C, «Producto».
+ * Elegida el 2026-08-14 entre las tres de
+ * docs/superpowers/specs/2026-08-14-sistema-visual-design.md §6.
+ *
+ * El color se declara por ROL (--tinta, --acento), nunca por nombre de color:
+ * así el modo oscuro y el modo impresión redefinen los mismos tokens sin tocar
+ * un solo selector.
+ */
+
+:root {
+  --fondo: #ffffff;
+  --fondo-elevado: #f7f6f4;
+  --tinta: #17181c;
+  --tinta-suave: #5f636e;
+  /* Terracota y no violeta/índigo a propósito: el gradiente violeta es el
+     default de mil templates y falla el test de voz del spec §5. */
+  --acento: #b0472a;
+  --acento-tenue: #fbeee9;
+  --linea: #e5e3df;
+
+  --fuente: "Manrope", system-ui, -apple-system, sans-serif;
+
+  /* Unidad de espacio única. Todo margen y padding es un múltiplo de esto. */
+  --espacio: 8px;
+  --radio: 10px;
+  --sombra: 0 1px 2px rgb(23 24 28 / 0.04), 0 8px 24px rgb(23 24 28 / 0.06);
+}
+
+/* Modo oscuro solo en pantalla. La impresión lo revierte siempre. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --fondo: #131417;
+    --fondo-elevado: #1c1e23;
+    --tinta: #f0eeea;
+    --tinta-suave: #a1a5b0;
+    --acento: #e2825f;
+    --acento-tenue: #2c1c16;
+    --linea: #2c2f36;
+  }
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--fondo);
+  color: var(--tinta);
+  font-family: var(--fuente);
+  /* Las ligaduras (fi, fl) se extraen del PDF como un glifo solo y ensucian el
+     texto que lee el parser. Se apagan por parseo, no por estética. */
+  font-variant-ligatures: none;
+  font-size: 16px;
+  line-height: 1.55;
+  letter-spacing: -0.005em;
+}
+
+:focus-visible {
+  outline: 2px solid var(--acento);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
+}
+```
+
+- [ ] **Step 3: Crear `src/styles/cv.css`**
 
 ```css
 /*
@@ -607,6 +703,9 @@ Self-hosteada a propósito: si el PDF depende de fuentes del sistema, el que sal
  *
  * docs/01 §3 desarma el mito de que el diseño rompe el parseo: lo que lo rompe
  * es la estructura. Este archivo respeta la estructura y se toma la estética.
+ *
+ * Tampoco hay sombras ni tarjetas: eso vive en la home. Acá la jerarquía tiene
+ * que sobrevivir impresa en blanco y negro.
  */
 
 @page {
@@ -614,125 +713,359 @@ Self-hosteada a propósito: si el PDF depende de fuentes del sistema, el que sal
   margin: 16mm 15mm;
 }
 
-:root {
-  --tinta: #14181f;
-  --tinta-suave: #4a5261;
-  --acento: #1f4fd8;
-  --linea: #d5dae3;
-}
-
-* {
-  box-sizing: border-box;
-}
-
-body {
-  margin: 0;
-  background: #fff;
-  color: var(--tinta);
-  font-family: "Inter", system-ui, -apple-system, sans-serif;
-  /* Las ligaduras (fi, fl) se extraen como un glifo solo y ensucian el texto
-     que lee el parser. Se apagan a propósito, no por estética. */
-  font-variant-ligatures: none;
-  font-size: 10.5pt;
-  line-height: 1.45;
-}
-
 .cv {
-  max-width: 190mm;
+  padding: calc(var(--espacio) * 4) calc(var(--espacio) * 2.5);
+  max-width: 45rem;
   margin: 0 auto;
-  padding: 14mm;
 }
+
+/* --- Encabezado --------------------------------------------------------- */
 
 .cv__name {
-  font-size: 21pt;
-  line-height: 1.15;
-  margin: 0 0 1mm;
+  font-size: 1.875rem;
+  line-height: 1.1;
+  margin: 0 0 calc(var(--espacio) * 1);
+  font-weight: 800;
+  letter-spacing: -0.03em;
 }
 
 .cv__title {
-  font-size: 12pt;
-  font-weight: 600;
+  font-size: 1rem;
+  font-weight: 700;
   color: var(--acento);
-  margin: 0 0 2mm;
+  margin: 0 0 calc(var(--espacio) * 2.5);
 }
 
 .cv__contact {
+  margin: 0 0 calc(var(--espacio) * 0.75);
   color: var(--tinta-suave);
-  margin: 0 0 2mm;
+  font-size: 0.9375rem;
 }
 
 .cv__contact a {
-  color: inherit;
+  color: var(--tinta);
+  text-decoration: none;
+  font-weight: 600;
 }
 
+.cv__contact a:hover {
+  color: var(--acento);
+}
+
+/* --- Secciones ---------------------------------------------------------- */
+
 .section {
-  margin-top: 7mm;
+  margin-top: calc(var(--espacio) * 4.5);
 }
 
 .section__title {
-  font-size: 10.5pt;
-  font-weight: 700;
+  font-size: 0.75rem;
+  font-weight: 800;
   text-transform: uppercase;
-  letter-spacing: 0.07em;
-  border-bottom: 1px solid var(--linea);
-  padding-bottom: 1.5mm;
-  margin: 0 0 3mm;
+  letter-spacing: 0.12em;
+  color: var(--tinta-suave);
+  margin: 0 0 calc(var(--espacio) * 2);
 }
 
+.profile {
+  margin: 0;
+  font-size: 1.0625rem;
+  line-height: 1.6;
+}
+
+/* --- Roles -------------------------------------------------------------- */
+
 .role {
-  margin-bottom: 5mm;
+  margin-bottom: calc(var(--espacio) * 3.5);
   /* Un rol partido entre dos páginas se lee como dos trabajos distintos. */
   break-inside: avoid;
 }
 
 .role__title {
-  font-size: 11pt;
+  font-size: 1.0625rem;
+  font-weight: 800;
+  margin: 0;
+  line-height: 1.3;
+  letter-spacing: -0.015em;
+}
+
+.role__company {
+  font-weight: 600;
+  color: var(--tinta-suave);
+}
+
+.role__meta {
+  margin: calc(var(--espacio) * 0.5) 0 0;
+  color: var(--tinta-suave);
+  font-size: 0.875rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.role__context {
+  margin: calc(var(--espacio) * 1.25) 0 0;
+  color: var(--tinta-suave);
+  font-size: 0.9375rem;
+}
+
+.role__bullets {
+  margin: calc(var(--espacio) * 1.5) 0 0;
+  padding-left: 1.15rem;
+}
+
+.role__bullets li {
+  margin-bottom: calc(var(--espacio) * 1.125);
+}
+
+.role__bullets li::marker {
+  color: var(--acento);
+}
+
+.metric {
+  color: var(--acento);
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  background: var(--acento-tenue);
+  padding: 1px 6px;
+  border-radius: 6px;
+}
+
+/* --- Skills, educación, idiomas ----------------------------------------- */
+
+.skill-group {
+  margin: 0 0 calc(var(--espacio) * 1.25);
+  font-size: 0.9375rem;
+}
+
+.skill-group__label {
+  font-weight: 800;
+}
+
+.entry {
+  margin-bottom: calc(var(--espacio) * 2.25);
+  break-inside: avoid;
+}
+
+.entry__title {
+  font-size: 1rem;
   font-weight: 700;
   margin: 0;
 }
 
-.role__meta,
-.role__context {
+.entry__meta {
+  margin: calc(var(--espacio) * 0.25) 0 0;
   color: var(--tinta-suave);
-  margin: 0.5mm 0 0;
+  font-size: 0.875rem;
+  font-variant-numeric: tabular-nums;
 }
 
-.role__bullets {
-  margin: 2mm 0 0;
-  padding-left: 5mm;
-}
+/* --- Tablet y desktop: solo ensanchan. Mobile-first. --------------------- */
 
-.role__bullets li {
-  margin-bottom: 1.5mm;
-}
-
-.skill-group {
-  margin: 0 0 1.5mm;
-}
-
-.skill-group__label {
-  font-weight: 600;
-}
-
-.entry {
-  margin-bottom: 2.5mm;
-  break-inside: avoid;
-}
-
-@media screen {
+@media (min-width: 40rem) {
   body {
-    background: #eef0f4;
-    padding: 8mm 0;
+    font-size: 17px;
   }
 
   .cv {
+    padding: calc(var(--espacio) * 7) calc(var(--espacio) * 4);
+  }
+
+  .cv__name {
+    font-size: 2.5rem;
+  }
+
+  .cv__title {
+    font-size: 1.125rem;
+  }
+}
+
+/* --- Impresión: siempre claro, pase lo que pase en pantalla -------------- */
+
+@media print {
+  :root {
+    --fondo: #fff;
+    --tinta: #000;
+    --tinta-suave: #4a4e58;
+    --acento: #8f3a22;
+    --acento-tenue: transparent;
+    --linea: #ddd;
+  }
+
+  body {
     background: #fff;
-    box-shadow: 0 1px 12px rgb(0 0 0 / 0.08);
+    color: #000;
+    font-size: 10.5pt;
+    line-height: 1.45;
+  }
+
+  .cv {
+    padding: 0;
+    max-width: none;
+  }
+
+  .cv__name {
+    font-size: 21pt;
+  }
+
+  .cv__title {
+    font-size: 11.5pt;
+  }
+
+  .section {
+    margin-top: 6.5mm;
+  }
+
+  .role {
+    margin-bottom: 5mm;
+  }
+
+  .metric {
+    background: none;
+    padding: 0;
   }
 }
 ```
 
-- [ ] **Step 3: Crear `src/components/cv/Section.astro`**
+- [ ] **Step 4: Crear `src/styles/home.css`**
+
+La home SÍ puede usar flex y sombras: las restricciones de estructura son solo de `/cv`, porque de ahí sale el PDF.
+
+```css
+/*
+ * Layout de la home. A diferencia de cv.css, acá SÍ se puede usar flex y
+ * sombras: la restricción de una sola columna existe por el parseo del PDF, y
+ * la home no se imprime.
+ */
+
+.home {
+  padding: calc(var(--espacio) * 6) calc(var(--espacio) * 2.5);
+  max-width: 40rem;
+  margin: 0 auto;
+}
+
+.home__kicker {
+  display: inline-block;
+  font-size: 0.75rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--acento);
+  background: var(--acento-tenue);
+  padding: calc(var(--espacio) * 0.75) calc(var(--espacio) * 1.25);
+  border-radius: 99px;
+  margin: 0 0 calc(var(--espacio) * 3);
+}
+
+.home__name {
+  font-size: 2.125rem;
+  line-height: 1.08;
+  margin: 0 0 calc(var(--espacio) * 1.25);
+  font-weight: 800;
+  letter-spacing: -0.035em;
+}
+
+.home__role {
+  font-size: 1.0625rem;
+  color: var(--tinta-suave);
+  margin: 0 0 calc(var(--espacio) * 3);
+  font-weight: 600;
+}
+
+.home__tagline {
+  font-size: 1.375rem;
+  line-height: 1.4;
+  margin: 0 0 calc(var(--espacio) * 4.5);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.home__actions {
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--espacio) * 1.5);
+  margin: 0 0 calc(var(--espacio) * 4.5);
+}
+
+.btn {
+  display: block;
+  text-align: center;
+  padding: calc(var(--espacio) * 2);
+  text-decoration: none;
+  border-radius: var(--radio);
+  font-weight: 700;
+  font-size: 1rem;
+  border: 1px solid var(--linea);
+  color: var(--tinta);
+}
+
+.btn--primary {
+  background: var(--acento);
+  border-color: var(--acento);
+  color: #fff;
+  box-shadow: var(--sombra);
+}
+
+.btn:hover {
+  border-color: var(--acento);
+  color: var(--acento);
+}
+
+.btn--primary:hover {
+  color: #fff;
+  filter: brightness(1.06);
+}
+
+.home__links {
+  margin: 0;
+  list-style: none;
+  padding-left: 0;
+}
+
+.home__links li {
+  margin-bottom: calc(var(--espacio) * 1.25);
+}
+
+.home__links a {
+  color: var(--tinta);
+  text-decoration: none;
+  font-weight: 600;
+  border-bottom: 2px solid var(--acento-tenue);
+}
+
+.home__links a:hover {
+  border-bottom-color: var(--acento);
+}
+
+@media (min-width: 40rem) {
+  .home {
+    padding: calc(var(--espacio) * 11) calc(var(--espacio) * 4);
+  }
+
+  .home__name {
+    font-size: 3rem;
+  }
+
+  .home__tagline {
+    font-size: 1.625rem;
+  }
+
+  .home__actions {
+    flex-direction: row;
+  }
+
+  .btn {
+    flex: 1;
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .btn--primary {
+    color: #1a0f0a;
+  }
+}
+```
+
+- [ ] **Step 5: Crear `src/components/cv/Section.astro`**
 
 ```astro
 ---
@@ -740,6 +1073,9 @@ body {
  * Sección del CV. Los nombres los pone quien la usa, y tienen que ser los
  * estándar de docs/03 §2 (`Perfil`, `Habilidades técnicas`, ...): un parser
  * mapea esos títulos a campos, y "Mi stack" no mapea a nada.
+ *
+ * Por eso tampoco se le agregan prefijos decorativos ni marcadores en ::before:
+ * el texto extraído del PDF tiene que decir exactamente el nombre estándar.
  */
 interface Props {
   title: string;
@@ -754,7 +1090,7 @@ const { title } = Astro.props;
 </section>
 ```
 
-- [ ] **Step 4: Crear `src/components/cv/Header.astro`**
+- [ ] **Step 6: Crear `src/components/cv/Header.astro`**
 
 ```astro
 ---
@@ -795,7 +1131,7 @@ const { city, region, country } = identity.location;
 
 El teléfono se renderiza solo si `resolveView` lo dejó pasar (regla 8). El componente no decide: pregunta si el dato está.
 
-- [ ] **Step 5: Crear `src/components/cv/RoleBlock.astro`**
+- [ ] **Step 7: Crear `src/components/cv/RoleBlock.astro`**
 
 ```astro
 ---
@@ -820,7 +1156,7 @@ const company = role.clientDescription
 ---
 
 <article class="role">
-  <h3 class="role__title">{formatRoleTitle(role)} · {company}</h3>
+  <h3 class="role__title">{formatRoleTitle(role)} <span class="role__company">· {company}</span></h3>
   <p class="role__meta">
     {formatDateRange(role.start, role.end)} · {formatDuration(role.durationMonths)}
     {role.location && <> · {role.location}</>}
@@ -834,7 +1170,7 @@ const company = role.clientDescription
         return (
           <li>
             {a.text.short}
-            {metric && <> — <strong>{metric}</strong></>}
+            {metric && <> — <span class="metric">{metric}</span></>}
           </li>
         );
       })}
@@ -843,7 +1179,7 @@ const company = role.clientDescription
 </article>
 ```
 
-- [ ] **Step 6: Crear `src/components/cv/SkillList.astro`**
+- [ ] **Step 8: Crear `src/components/cv/SkillList.astro`**
 
 ```astro
 ---
@@ -892,7 +1228,7 @@ const grupos = GRUPOS
 ))}
 ```
 
-- [ ] **Step 7: Crear `src/pages/cv.astro`**
+- [ ] **Step 9: Crear `src/pages/cv.astro`**
 
 ```astro
 ---
@@ -915,11 +1251,12 @@ import Header from "../components/cv/Header.astro";
 import Section from "../components/cv/Section.astro";
 import RoleBlock from "../components/cv/RoleBlock.astro";
 import SkillList from "../components/cv/SkillList.astro";
-import { content, formatDateRange } from "@content";
+import { content, formatDateRange, formatYearMonth } from "@content";
 
-import "@fontsource/inter/400.css";
-import "@fontsource/inter/600.css";
-import "@fontsource/inter/700.css";
+import "@fontsource/manrope/400.css";
+import "@fontsource/manrope/600.css";
+import "@fontsource/manrope/800.css";
+import "../styles/tokens.css";
 import "../styles/cv.css";
 
 const view = await content.getView("cv-ats", "es");
@@ -934,7 +1271,7 @@ const { identity } = view;
     <Header identity={identity} />
 
     <Section title="Perfil">
-      <p>{identity.summary.short}</p>
+      <p class="profile">{identity.summary.short}</p>
     </Section>
 
     <Section title="Habilidades técnicas">
@@ -948,10 +1285,12 @@ const { identity } = view;
     <Section title="Educación">
       {view.education.map((e) => (
         <div class="entry">
-          <p class="role__title">{e.degree}{e.field && <> — {e.field}</>}</p>
-          <p class="role__meta">
+          <p class="entry__title">{e.degree}{e.field && <> — {e.field}</>}</p>
+          <p class="entry__meta">
             {e.institution}
-            {e.end && <> · {formatDateRange(e.start ?? e.end, e.end)}</>}
+            {/* Sin `start` no hay rango: formatDateRange(end, end) imprimiría
+                "02/2022 — 02/2022", que se lee como un error de carga. */}
+            {e.end && <> · {e.start ? formatDateRange(e.start, e.end) : formatYearMonth(e.end)}</>}
             {e.status === "partial" && <> · Cursado parcial</>}
             {e.status === "in-progress" && <> · En curso</>}
           </p>
@@ -971,33 +1310,94 @@ const { identity } = view;
 </Base>
 ```
 
-- [ ] **Step 8: Verificar el HTML generado**
+- [ ] **Step 10: Aplicar la dirección visual a la home**
+
+Reemplazar `src/pages/index.astro` completo. El contenido no cambia; se le agregan las clases y los estilos.
+
+```astro
+---
+/**
+ * Home mínima. NO es el portfolio: eso es otro slice y depende de una
+ * investigación de diseño que todavía no se hizo (docs/04 §6).
+ *
+ * Existe para dos cosas: que la URL raíz no sea un 404, y que el PDF tenga
+ * de dónde descargarse.
+ */
+import Base from "../layouts/Base.astro";
+import { content, formatSeniority } from "@content";
+
+import "@fontsource/manrope/400.css";
+import "@fontsource/manrope/600.css";
+import "@fontsource/manrope/800.css";
+import "../styles/tokens.css";
+import "../styles/home.css";
+
+const view = await content.getView("public-api", "es");
+const { identity } = view;
+---
+
+<Base
+  title={`${identity.fullName} — ${identity.searchTitle}`}
+  description={identity.summary.short}
+>
+  <main class="home">
+    <p class="home__kicker">{identity.brandTitle}</p>
+    <h1 class="home__name">{identity.fullName}</h1>
+    <p class="home__role">
+      {identity.searchTitle} · {formatSeniority(view.yearsOfExperience)} · {identity.location.city}, {identity.location.country}
+    </p>
+    <p class="home__tagline">{identity.tagline.short}</p>
+
+    <div class="home__actions">
+      <a class="btn btn--primary" href="/cv">Ver el CV</a>
+      <a class="btn" href="/cv.pdf" download="Nicolas-Cribb-Barbaro-Full-Stack-Developer.pdf">
+        Descargar en PDF
+      </a>
+    </div>
+
+    <ul class="home__links">
+      <li><a href={`mailto:${identity.contact.email}`}>{identity.contact.email}</a></li>
+      {identity.links.map((link) => (
+        <li><a href={link.url} rel="me noopener">{link.label}</a></li>
+      ))}
+    </ul>
+  </main>
+</Base>
+```
+
+- [ ] **Step 11: Verificar el HTML generado**
 
 ```bash
 npx astro build
 ```
-Expected: build OK, `dist/cv/index.html` creado.
+Expected: build OK, `dist/cv/index.html` y `dist/index.html` creados.
 
 ```bash
-node --input-type=commonjs -e "const fs=require('fs'),p=require('path'); const walk=d=>fs.readdirSync(d).flatMap(e=>{const r=p.join(d,e);return fs.statSync(r).isDirectory()?walk(r):[r]}); const h=fs.readFileSync('dist/cv/index.html','utf8'); const css=walk('dist').filter(f=>f.endsWith('.css')).map(f=>fs.readFileSync(f,'utf8')).join('\n'); const fallos=[]; if(h.includes('TODO')) fallos.push('hay un TODO en el HTML del CV'); if(!h.includes('Habilidades técnicas')) fallos.push('falta la seccion estandar'); if(/display:\s*(flex|grid)/.test(css)) fallos.push('hay flex o grid en el CSS: rompe el orden de lectura'); if(fallos.length){console.error(fallos.join('\n'));process.exit(1)} console.log('OK: CV en HTML sin TODOs y de una columna')"
+node --input-type=commonjs -e "const fs=require('fs'); const h=fs.readFileSync('dist/cv/index.html','utf8'); const fallos=[]; if(h.includes('TODO')) fallos.push('hay un TODO en el HTML del CV'); if(!h.includes('Habilidades')) fallos.push('falta la seccion estandar'); if(h.includes('02/2022 — 02/2022')) fallos.push('fecha de educacion duplicada: el fix del rango no se aplico'); if(fallos.length){console.error(fallos.join(' | '));process.exit(1)} console.log('OK: CV en HTML sin TODOs y con fechas sanas')"
 ```
-Expected: `OK: CV en HTML sin TODOs y de una columna`
+Expected: `OK: CV en HTML sin TODOs y con fechas sanas`
 
-El chequeo de `flex`/`grid` va contra el **CSS compilado**, no contra el HTML: los
-estilos viven en `dist/_astro/*.css`, así que mirar el HTML no probaría nada.
+El chequeo de que no haya `flex`/`grid` va contra el **fuente de `cv.css`**, no contra todo `dist`: `home.css` los usa legítimamente y mezclarlos daría un falso positivo.
 
-- [ ] **Step 9: Revisar a ojo**
+```bash
+node --input-type=commonjs -e "const c=require('fs').readFileSync('src/styles/cv.css','utf8'); if(/display:\s*(flex|grid)/.test(c)){console.error('hay flex o grid en cv.css: rompe el orden de lectura del PDF');process.exit(1)} console.log('OK: cv.css es de una sola columna')"
+```
+Expected: `OK: cv.css es de una sola columna`
 
-Run: `npm run dev` y abrir `http://localhost:4321/cv`
-Expected: una columna, secciones en orden `Perfil` → `Habilidades técnicas` → `Experiencia` → `Educación` → `Idiomas`, sin teléfono duplicado ni texto cortado. Cerrar con Ctrl-C.
+- [ ] **Step 12: Revisar a ojo, en mobile**
 
-- [ ] **Step 10: Verificar que no se rompió nada y commitear**
+Run: `npm run dev` y abrir `http://localhost:4321/cv` y `http://localhost:4321/`
+
+Expected: con la ventana angosta (~390px) el CV se lee cómodo en una columna y las secciones van en orden `Perfil` → `Habilidades técnicas` → `Experiencia` → `Educación` → `Idiomas`; la home apila los dos botones. Al ensanchar, los botones se ponen lado a lado y el texto se airea. Comparar contra las maquetas de referencia `docs/design/c-producto/cv.html` y `docs/design/c-producto/home.html`. Cerrar con Ctrl-C.
+
+- [ ] **Step 13: Verificar que no se rompió nada y commitear**
 
 ```bash
 npm run typecheck && npm run validate && npm test
 git add src/ package.json package-lock.json
-git commit -m "feat(cv): pagina /cv en HTML, una columna, secciones estandar"
+git commit -m "feat(cv): pagina /cv y home con la direccion visual Producto"
 ```
+
 
 ---
 
@@ -1010,6 +1410,7 @@ El artefacto que se sube a los portales, más el test que convierte "pasa el ATS
 - Create: `scripts/build-pdf.ts`
 - Create: `scripts/pdf-output.check.ts`
 - Modify: `package.json`
+- Modify: `content/data/content.es.json:26`
 
 **Interfaces:**
 - Consumes: la ruta `/cv` de la Task 3; `content` desde `content/source/index`.
@@ -1258,27 +1659,37 @@ try {
 }
 ```
 
-- [ ] **Step 6: Generar el PDF**
+- [ ] **Step 6: Sacar el teléfono de la superficie `cv-ats`**
+
+En `content/data/content.es.json`, línea 26:
+
+```json
+      "publishPhoneOn": ["cv", "cv-short"]
+```
+
+`cv-ats` sale de la lista porque `/cv` HTML y `cv.pdf` comparten esa superficie: dejarlo publicaba el teléfono en la web abierta, no solo en el PDF que se sube a un portal. Las superficies `cv` y `cv-short` todavía no se renderizan; cuando se agregue el CV diseñado, la decisión se revisa ahí.
+
+Va en esta task y no más adelante porque el test *"regla 8: ni el teléfono ni la dirección salen en el PDF"* del Step 2 lo exige: una task no se cierra con un test en rojo.
+
+- [ ] **Step 7: Generar el PDF**
 
 Run: `npm run build`
 Expected: `astro build` OK, luego `PDF escrito en dist/cv.pdf`.
 
-- [ ] **Step 7: Correr la verificación y confirmar que pasa**
+- [ ] **Step 8: Correr la verificación y confirmar que pasa**
 
 Run: `npm run test:pdf`
-Expected: 6 tests PASS.
+Expected: los 6 tests PASS, sin excepciones.
 
-Si falla *"ni el teléfono ni la dirección salen en el PDF"*, es lo esperado en este punto: el dataset todavía publica el teléfono en `cv-ats` y eso se corrige en la Task 7. Anotarlo y seguir; el resto tiene que pasar igual.
-
-- [ ] **Step 8: El test manual de `docs/03` §2**
+- [ ] **Step 9: El test manual de `docs/03` §2**
 
 Abrir `dist/cv.pdf`, seleccionar todo, pegar en un editor de texto plano.
 Expected: sale en orden legible, de arriba a abajo, sin columnas entremezcladas.
 
-- [ ] **Step 9: Commit**
+- [ ] **Step 10: Commit**
 
 ```bash
-git add scripts/render-pdf.ts scripts/build-pdf.ts scripts/pdf-output.check.ts package.json package-lock.json
+git add scripts/render-pdf.ts scripts/build-pdf.ts scripts/pdf-output.check.ts content/data/content.es.json package.json package-lock.json
 git commit -m "feat(pdf): cv.pdf desde /cv con Playwright + verificacion de parseo"
 ```
 
@@ -1372,7 +1783,11 @@ Expected: FAIL — `Cannot find module './jsonld'`
  * el filtro estaría en el lugar equivocado.
  */
 
-import type { ContentView } from "@content";
+// Import relativo y NO por el alias `@content`: este módulo lo cargan tanto Vite
+// (que resuelve el alias) como `tsx` corriendo el test suelto (que puede no
+// resolverlo). Es `import type`, así que no hay costo en runtime. Los `.astro`
+// sí usan el alias, porque siempre pasan por Vite.
+import type { ContentView } from "../../content/source/index";
 
 export function buildPersonJsonLd(view: ContentView, site: URL): Record<string, unknown> {
   const { identity } = view;
@@ -1551,13 +1966,12 @@ git commit -m "feat(web): capa maquina - JSON-LD Person, /cv.json y /llms.txt"
 
 ---
 
-### Task 6: Auditoría de TODOs y saneamiento del dataset
+### Task 6: Auditoría de TODOs publicados
 
-El chequeo bloqueante del PDF ya existe (Task 4). Falta la visibilidad sobre lo que sí se publica con TODOs, y sacar el teléfono de la web.
+El chequeo bloqueante del PDF ya existe (Task 4). Falta la visibilidad sobre lo que sí se publica con TODOs, y verificar que el teléfono tampoco quedó en el HTML ni en el JSON.
 
 **Files:**
 - Create: `scripts/audit-todos.ts`
-- Modify: `content/data/content.es.json:26`
 
 **Interfaces:**
 - Consumes: los archivos de `dist/`.
@@ -1614,34 +2028,21 @@ console.log(
 Run: `npm run build && npm run audit:todos`
 Expected: lista los TODOs de `cv.json` y `llms.txt` (outcomes de proyectos, `summary.long`, nota del nivel de inglés) y termina con exit 0.
 
-- [ ] **Step 3: Sacar el teléfono de las superficies públicas**
+- [ ] **Step 3: Verificar que el teléfono no está en NINGÚN output**
 
-En `content/data/content.es.json`, línea 26:
-
-```json
-      "publishPhoneOn": ["cv", "cv-short"]
-```
-
-`cv-ats` sale de la lista porque `/cv` HTML y `cv.pdf` comparten esa superficie: dejarlo publicaba el teléfono en la web abierta, no solo en el PDF que se sube a un portal. Las superficies `cv` y `cv-short` todavía no se renderizan; cuando se agregue el CV diseñado, esta decisión se revisa ahí.
-
-- [ ] **Step 4: Verificar que el teléfono desapareció de todos lados**
-
-```bash
-npm run build && npm run test:pdf
-```
-Expected: los 6 tests PASS, incluido *"regla 8: ni el teléfono ni la dirección salen en el PDF"* que en la Task 4 quedó fallando.
+La Task 4 ya lo sacó de `publishPhoneOn` y lo verificó dentro del PDF. Acá se verifica el resto de `dist/`: HTML, JSON y texto, que en aquel momento todavía no existían todos.
 
 ```bash
 node --input-type=commonjs -e "const fs=require('fs'),p=require('path'); const tel='<TELEFONO-REMOVIDO>'; const walk=d=>fs.readdirSync(d).flatMap(e=>{const r=p.join(d,e);return fs.statSync(r).isDirectory()?walk(r):[r]}); const malos=walk('dist').filter(f=>/\.(html|json|txt)$/.test(f)&&fs.readFileSync(f,'utf8').includes(tel)); if(malos.length){console.error('el telefono sigue en: '+malos.join(', '));process.exit(1)} console.log('OK: telefono fuera de dist/')"
 ```
 Expected: `OK: telefono fuera de dist/`
 
-- [ ] **Step 5: Correr la suite completa y commitear**
+- [ ] **Step 4: Correr la suite completa y commitear**
 
 ```bash
 npm run typecheck && npm run validate && npm test && npm run test:pdf
-git add scripts/audit-todos.ts content/data/content.es.json package.json
-git commit -m "feat(build): auditoria de TODOs publicados + telefono fuera de cv-ats"
+git add scripts/audit-todos.ts
+git commit -m "feat(build): auditoria no bloqueante de TODOs publicados"
 ```
 
 ---

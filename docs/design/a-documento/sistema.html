@@ -1,0 +1,121 @@
+<!-- @dsCard group="A — Documento" -->
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>A · Documento — sistema</title>
+<style>
+:root{
+  --fondo:#fbfaf7;--fondo-elevado:#f4f1ea;--tinta:#1c1a17;--tinta-suave:#5d5850;
+  --acento:#7a2e2e;--acento-tenue:#f0e6e4;--linea:#ddd6c9;
+  --serif:"Source Serif 4",Georgia,"Times New Roman",serif;
+  --espacio:8px;--radio:0;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--fondo);color:var(--tinta);font-family:var(--serif);font-size:16px;line-height:1.55}
+.wrap{padding:calc(var(--espacio)*4) calc(var(--espacio)*2.5);max-width:44rem;margin:0 auto}
+h1{font-size:1.5rem;margin:0 0 calc(var(--espacio)*1);font-weight:600}
+.sub{color:var(--tinta-suave);margin:0 0 calc(var(--espacio)*4)}
+h2{
+  font-size:.8125rem;font-weight:600;text-transform:uppercase;letter-spacing:.14em;color:var(--tinta-suave);
+  border-bottom:1px solid var(--linea);padding-bottom:calc(var(--espacio)*.75);
+  margin:calc(var(--espacio)*5) 0 calc(var(--espacio)*2);
+}
+code{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:.8125rem;background:var(--fondo-elevado);padding:1px 4px}
+.tokens{display:grid;grid-template-columns:1fr;gap:calc(var(--espacio)*1.25);margin:0}
+.token{display:flex;align-items:center;gap:calc(var(--espacio)*1.5);font-size:.875rem}
+.chip{width:36px;height:36px;flex:none;border:1px solid var(--linea)}
+.token b{font-family:ui-monospace,Menlo,Consolas,monospace;font-weight:400;font-size:.8125rem}
+.token span{color:var(--tinta-suave);margin-left:auto;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:.75rem}
+.escala p{margin:0 0 calc(var(--espacio)*1.25);line-height:1.2}
+.e1{font-size:2.25rem;font-weight:600;letter-spacing:-.015em}
+.e2{font-size:1.5rem;font-weight:600}
+.e3{font-size:1.0625rem;font-weight:600}
+.e4{font-size:1rem}
+.e5{font-size:.875rem;color:var(--tinta-suave)}
+.e6{font-size:.8125rem;text-transform:uppercase;letter-spacing:.14em;color:var(--tinta-suave)}
+
+/* bloque de rol aislado — el elemento que más se repite en el CV */
+.rol{border:1px solid var(--linea);padding:calc(var(--espacio)*2.5);background:#fff;margin-bottom:calc(var(--espacio)*2)}
+.rol__titulo{font-size:1.0625rem;font-weight:600;margin:0;line-height:1.3}
+.rol__empresa{font-weight:400}
+.rol__meta{margin:calc(var(--espacio)*.5) 0 0;color:var(--tinta-suave);font-size:.875rem;font-variant-numeric:tabular-nums}
+.rol__contexto{margin:calc(var(--espacio)*1) 0 0;color:var(--tinta-suave);font-size:.9375rem}
+.bullets{margin:calc(var(--espacio)*1.5) 0 0;padding-left:1.1rem}
+.bullets li{margin-bottom:calc(var(--espacio)*1)}
+.metrica{color:var(--acento);font-weight:600;font-variant-numeric:tabular-nums}
+.aviso{
+  border-left:2px solid var(--acento);background:var(--acento-tenue);
+  padding:calc(var(--espacio)*1.5) calc(var(--espacio)*2);font-size:.875rem;margin:0 0 calc(var(--espacio)*2);
+}
+.nota{font-size:.9375rem}
+.nota li{margin-bottom:calc(var(--espacio)*1)}
+@media (min-width:40rem){
+  .wrap{padding:calc(var(--espacio)*7) calc(var(--espacio)*4)}
+  .tokens{grid-template-columns:1fr 1fr}
+}
+</style>
+</head>
+<body>
+<main class="wrap">
+  <h1>A — «Documento»</h1>
+  <p class="sub">El contenido es el diseño. Todo lo demás se corre del camino.</p>
+
+  <h2>Tokens</h2>
+  <div class="tokens">
+    <div class="token"><i class="chip" style="background:#fbfaf7"></i><b>--fondo</b><span>#fbfaf7</span></div>
+    <div class="token"><i class="chip" style="background:#f4f1ea"></i><b>--fondo-elevado</b><span>#f4f1ea</span></div>
+    <div class="token"><i class="chip" style="background:#1c1a17"></i><b>--tinta</b><span>#1c1a17</span></div>
+    <div class="token"><i class="chip" style="background:#5d5850"></i><b>--tinta-suave</b><span>#5d5850</span></div>
+    <div class="token"><i class="chip" style="background:#7a2e2e"></i><b>--acento</b><span>#7a2e2e</span></div>
+    <div class="token"><i class="chip" style="background:#ddd6c9"></i><b>--linea</b><span>#ddd6c9</span></div>
+  </div>
+  <p class="sub" style="margin-top:16px">Tipografía: <code>Source Serif 4</code> (npm <code>@fontsource/source-serif-4</code>), pesos 400 y 600 — dos archivos, dentro del presupuesto de 4.<br>
+  Escala <code>1.333</code> · unidad de espacio <code>8px</code> · <code>--radio: 0</code> · sin sombras.<br>
+  Contraste: tinta sobre fondo 14.2:1 · tinta-suave 6.4:1 · acento 7.1:1 — todos AA y la mayoría AAA.</p>
+
+  <h2>Escala tipográfica</h2>
+  <div class="escala">
+    <p class="e1">Nicolás Cribb Barbaro</p>
+    <p class="e2">Título de sección grande</p>
+    <p class="e3">Desarrollador Full Stack · Dinkum</p>
+    <p class="e4">Texto de cuerpo y bullets del CV, en el tamaño real de lectura.</p>
+    <p class="e5">Metadatos: fechas, duración, ubicación</p>
+    <p class="e6">Encabezado de sección</p>
+  </div>
+
+  <h2>Bloque de rol — sin métrica (estado real de hoy)</h2>
+  <div class="rol">
+    <h3 class="rol__titulo">Desarrollador Full Stack · <span class="rol__empresa">Dinkum Interactive</span></h3>
+    <p class="rol__meta">09/2024 — Actualidad · 1 año 11 meses · Argentina</p>
+    <p class="rol__contexto">Desarrollo de sistemas a medida, en equipo y como único responsable.</p>
+    <ul class="bullets">
+      <li>Construí interfaces de mapas con Mapbox GL JS renderizando capas de polígonos por distrito escolar y estado.</li>
+      <li>Migré el tooling de build de Webpack a Vite, simplificando la configuración y acelerando el ciclo de desarrollo.</li>
+    </ul>
+  </div>
+
+  <h2>Bloque de rol — con métrica</h2>
+  <p class="aviso"><b>Ejemplo hipotético.</b> El dataset todavía no tiene ninguna <code>metric</code> cargada. Este número es ilustrativo y no debe usarse: el invariante 4 del proyecto prohíbe inventar números. El <code>~</code> es obligatorio cuando <code>confidence: "estimated"</code>.</p>
+  <div class="rol">
+    <h3 class="rol__titulo">Desarrollador Full Stack · <span class="rol__empresa">Dinkum Interactive</span></h3>
+    <p class="rol__meta">09/2024 — Actualidad · 1 año 11 meses · Argentina</p>
+    <p class="rol__contexto">Desarrollo de sistemas a medida, en equipo y como único responsable.</p>
+    <ul class="bullets">
+      <li>Construí interfaces de mapas con Mapbox GL JS renderizando capas de polígonos por distrito escolar y estado.</li>
+      <li>Migré el tooling de build de Webpack a Vite — <span class="metrica">~90 s → ~12 s</span> de build.</li>
+    </ul>
+  </div>
+
+  <h2>Qué señala esta dirección</h2>
+  <ol class="nota">
+    <li>Manda <b>criterio y calma</b>: alguien que confía en lo que dice y no necesita decorarlo.</li>
+    <li>Le habla mejor al <b>hiring manager</b>, sobre todo en empresas donde la prolijidad pesa.</li>
+    <li>Es la que más natural le queda al CV, porque el CV literalmente <i>es</i> un documento.</li>
+    <li>Resigna señal de "producto": no comunica que el autor construye interfaces.</li>
+    <li>Riesgo real: que el cliente freelance lo lea como anticuado en vez de sobrio.</li>
+  </ol>
+</main>
+</body>
+</html>

@@ -1,5 +1,8 @@
 node_modules/
 dist/
+.astro/
+# Scratch de ejecución de planes (ledger, briefs, reportes). El registro real es git.
+.superpowers/
 *.log
 .DS_Store
 _smoke.ts
