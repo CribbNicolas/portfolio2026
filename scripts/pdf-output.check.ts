@@ -89,6 +89,21 @@ test("ningún TODO del dataset llegó al PDF", async () => {
   );
 });
 
+test("capa 1: los nombres de sección estándar se extraen enteros", async () => {
+  // Un parser mapea estos títulos a campos. Si el CSS los separa en glifos
+  // sueltos ("P E R F I L"), el PDF se ve bien y no lo lee nadie.
+  const { texto } = await extraer();
+  const normal = texto.replace(/\s+/g, " ");
+
+  for (const seccion of ["Perfil", "Habilidades", "Experiencia", "Educación", "Idiomas"]) {
+    assert.match(
+      normal,
+      new RegExp(seccion, "i"),
+      `la sección "${seccion}" no aparece contigua en el texto extraído`,
+    );
+  }
+});
+
 test("regla 8: ni el teléfono ni la dirección salen en el PDF", async () => {
   const { texto } = await extraer();
   const data = await content.getDataset("es");

@@ -228,4 +228,11 @@
     background: none;
     padding: 0;
   }
+
+  /* El letter-spacing separa los glifos en la extracción del PDF: los títulos
+     salían como "P E R F I L" y ningún parser los mapeaba a un campo. En
+     pantalla el tracking se mantiene; al imprimir se anula. */
+  .section__title {
+    letter-spacing: normal;
+  }
 }
