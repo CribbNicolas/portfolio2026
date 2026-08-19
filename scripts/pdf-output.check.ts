@@ -14,7 +14,7 @@ import { readFile } from "node:fs/promises";
 // del DOM que Node 20 no tiene). Ese subpath no expone types propios.
 // @ts-ignore
 import { getDocument } from "pdfjs-dist/legacy/build/pdf.mjs";
-import { content } from "../content/source/index";
+import { content, formatRoleTitle } from "../content/source/index";
 
 const PDF = "dist/cv.pdf";
 
@@ -102,6 +102,43 @@ test("capa 1: los nombres de sección estándar se extraen enteros", async () =>
       `la sección "${seccion}" no aparece contigua en el texto extraído`,
     );
   }
+});
+
+test("capa 1: los títulos de rol y los bullets se extraen enteros", async () => {
+  // formatRoleTitle y text.short son el contenido que de verdad se lee. Si el
+  // CSS los parte en glifos sueltos, el PDF se ve bien y no dice nada.
+  const { texto } = await extraer();
+  const view = await content.getView("cv-ats", "es");
+  const normal = texto.replace(/\s+/g, " ");
+
+  for (const role of view.experience) {
+    const titulo = formatRoleTitle(role);
+    assert.ok(
+      normal.includes(titulo),
+      `el título de rol "${titulo}" no aparece contiguo en el texto extraído`,
+    );
+    for (const a of role.achievements) {
+      // Los primeros 40 caracteres alcanzan: si el bullet se partió, ya falla ahí.
+      const inicio = a.text.short.slice(0, 40);
+      assert.ok(
+        normal.includes(inicio),
+        `el bullet "${inicio}..." no aparece contiguo en el texto extraído`,
+      );
+    }
+  }
+});
+
+test("el PDF sale tagged y con outline, como se prometió", async () => {
+  // `tagged: true` y `outline: true` son opciones explícitas de renderPdf. Sin
+  // esto, si Chrome dejara de honrarlas nadie se enteraría.
+  const buf = await readFile(PDF);
+  const doc = await getDocument({ data: new Uint8Array(buf) }).promise;
+
+  const markInfo = await doc.getMarkInfo();
+  assert.ok(markInfo?.Marked, "el PDF no está tagged: se pierde el orden de lectura explícito");
+
+  const outline = await doc.getOutline();
+  assert.ok(outline && outline.length > 0, "el PDF no tiene outline (marcadores por sección)");
 });
 
 test("regla 8: ni el teléfono ni la dirección salen en el PDF", async () => {
