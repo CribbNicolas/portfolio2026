@@ -28,6 +28,10 @@ Fechadas, para saber qué revisar cuando cambie el contexto.
 | 2026-08 | Frontend en **Astro estático**, PDF en build con **Playwright** desde la misma página `/cv` | Un solo layout para HTML y PDF: no se pueden desincronizar |
 | 2026-08 | Solo se renderiza `cv-ats`; el CV diseñado (CV-A) queda para después | Un artefacto = nunca dudar cuál mandar. La maquinaria de superficies ya soporta agregar el otro |
 | 2026-08 | `cv-ats` sale de `publishPhoneOn` | `/cv` HTML y el PDF comparten superficie: publicarlo ahí lo ponía en la web abierta |
+| 2026-08 | El **mapa de conocimiento es la portada**; `/lab` se borró | Era una ruta aparte mientras la home era un placeholder. Mantener dos páginas con el mismo hero era duplicación sin lector |
+| 2026-08 | Se avanzó con el mapa **antes** de la investigación de diseño de [04 §6](./04-portfolio.md#6-pendiente-de-investigar) | El mapa es la única superficie que muestra el grafo de datos; postergarlo por tipografías era postergar lo que diferencia el sitio. La investigación sigue pendiente para los casos de estudio |
+| 2026-08 | La **home envía JavaScript**; `/cv` sigue en cero | El mapa lo necesita. `/cv` no es negociable: el PDF se imprime desde ahí y un script cambia el render en silencio. Lista blanca en `no-client-js.check.ts` |
+| 2026-08 | Tamaño de nodo = **años de uso × conexiones**, por raíz | Un tamaño fijo por tipo no decía nada. Los años se derivan de `since` o de la evidencia fechada — nunca se estiman |
 
 ## Estado
 
@@ -40,9 +44,12 @@ Fechadas, para saber qué revisar cuando cambie el contexto.
 - [x] `formatMetric()` — hace cumplir la regla 4
 - [x] Frontend consumiendo `getView()`
 - [x] Generadores de salida: CV PDF, `/cv` HTML, JSON-LD, `llms.txt`, `/cv.json`
+- [x] Mapa de conocimiento en la home (SVG server-rendered + WebGL opcional)
 - [ ] **Métricas** — el hueco más importante. Ver [03-cv.md](./03-cv.md#métricas-pendientes)
 - [ ] Confirmar datos de Hogarth
 - [ ] Bloques de texto para LinkedIn
+- [ ] Casos de estudio en el portfolio — antes hay que hacer la investigación de [04 §6](./04-portfolio.md#6-pendiente-de-investigar)
+- [ ] Logros del rol Freelance (2020-04 → 2022-06): hoy tiene uno solo y sus `skillIds` son `["javascript"]`. Esos 2.2 años no le aportan una conexión a ninguna otra tecnología, y por eso WordPress —declarada `core`— queda chica en el mapa
 - [ ] Migración a Sanity (Fase 1, sin apuro)
 
 ## Nota sobre las fuentes

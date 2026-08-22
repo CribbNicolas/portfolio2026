@@ -7,13 +7,20 @@ Dos objetivos a la vez: convencer a un equipo que contrata y cerrar clientes fre
 ## 1. Estructura
 
 ```
-1. Hero          → quién sos + qué construís + CTA. Una frase, no un párrafo.
-2. Casos         → 3 proyectos en formato problema → decisión → resultado.
-3. Servicios     → qué te pueden contratar a hacer (lado freelance).
-4. Sobre mí      → historia corta, con voz. No un CV repetido.
-5. Stack         → agrupado, escaneable.
-6. Contacto      → mail + WhatsApp + LinkedIn. Sin formulario de 8 campos.
+1. Hero          → quién sos + qué construís + CTA. Una frase, no un párrafo.   [hecho]
+2. Contacto      → mail + LinkedIn. Sin formulario de 8 campos.                 [hecho]
+3. Stack         → el mapa de conocimiento. Ver §7.                             [hecho]
+4. Casos         → 3 proyectos en formato problema → decisión → resultado.      [pendiente]
+5. Servicios     → qué te pueden contratar a hacer (lado freelance).            [pendiente]
+6. Sobre mí      → historia corta, con voz. No un CV repetido.                  [pendiente]
 ```
+
+El orden de la lista NO es el orden final de la página: hoy el contacto está en
+el hero porque no hay nada entre medio que justifique bajarlo. Cuando existan
+los casos, vuelve al pie.
+
+**El Stack no es una grilla de logos.** Ver §7: es un grafo, y el tamaño de cada
+tecnología es un dato derivado, no una opinión.
 
 **Blog:** opcional, pero si se abre hay que sostenerlo. Un blog con tres posts viejos resta más de lo que suma.
 
@@ -76,4 +83,22 @@ Por eso el orden es: portfolio online primero con JSON en el repo, backend despu
 
 ## 6. Pendiente de investigar
 
-Quedó abierta una segunda investigación sobre patrones de portfolios de referentes: estructura, tipografía y paletas, cómo presentan proyectos, qué errores se repiten en portfolios senior, cómo incorporan la IA a su marca. Vale la pena hacerla **antes** de decidir el diseño visual, no después.
+Quedó abierta una segunda investigación sobre patrones de portfolios de referentes: estructura, tipografía y paletas, cómo presentan proyectos, qué errores se repiten en portfolios senior, cómo incorporan la IA a su marca.
+
+**Se decidió avanzar sin ella** (2026-08). El plan original era investigar antes de tocar el diseño visual; en cambio se construyó primero el mapa de conocimiento (§7) y se lo puso de portada. El motivo: el mapa no es una decisión estética sino la única superficie que muestra el grafo de datos, y postergarlo por una investigación de tipografías era postergar lo que diferencia al sitio por lo que lo hace parecido a otros.
+
+Lo que la investigación **sigue** teniendo que resolver, y hoy está sin decidir: tipografía y paleta más allá de los tokens actuales, y cómo se presentan los casos de estudio. Hacerla antes de escribir el §2, no después.
+
+## 7. El mapa de conocimiento
+
+Es la portada. Cruza logros, roles, proyectos y tecnologías como grafo — la única vista que aprovecha que los `Achievement` viven sueltos (CONTRATO §3) en vez de anidados en cada trabajo.
+
+**Qué dice el dibujo:**
+
+- **El tamaño de una tecnología** = años de uso × cantidad de conexiones, por raíz (el ojo compara área, no radio). Los años salen de `Skill.since` o, si no está, del span de la evidencia fechada que la respalda. Nunca se estiman (invariante 4).
+- **La posición** = los trabajos en la corteza, las tecnologías en el núcleo. Núcleo = lo que sé, corteza = dónde lo usé.
+- **Las tecnologías sin evidencia** se dibujan chicas y huecas, agrupadas en el centro. Son las que declarás pero todavía no tienen un logro que las demuestre. **El mapa muestra el hueco en vez de taparlo** — y eso es a propósito: es el mismo criterio que la advertencia del §5.
+
+**Por qué esto convence y una grilla de logos no:** una grilla afirma; el grafo muestra la evidencia. Un nodo grande lo es porque hay logros fechados detrás, y se puede clickear para ver cuáles.
+
+**Costo:** es la única página del sitio con JavaScript. El camino crítico son 4 KB gzip; `three` (127 KB) baja recién cuando el mapa entra en pantalla, y solo si el dispositivo lo aguanta. Sin JavaScript el mapa sigue completo en SVG, hover cruzado incluido. `/cv` sigue en cero — de ahí sale el PDF.

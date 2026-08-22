@@ -1,0 +1,63 @@
+---
+/**
+ * El mapa en SVG. NO es un placeholder mientras carga el 3D: es el mapa, con
+ * las mismas coordenadas que usa la escena de three.js. Si el JS no corre —sin
+ * JS, con `prefers-reduced-motion`, sin WebGL, con datos limitados— esto es lo
+ * que queda, y es completo.
+ *
+ * Componente tonto: recibe la lista de dibujo ya calculada por `buildSvgMapa`
+ * y escribe atributos. No proyecta, no ordena, no filtra.
+ */
+import type { SvgMapa } from "../../lib/graph-svg";
+
+interface Props {
+  mapa: SvgMapa;
+  totalNodos: number;
+  totalAristas: number;
+}
+
+const { mapa, totalNodos, totalAristas } = Astro.props;
+---
+
+<svg
+  class="lab__svg"
+  viewBox={mapa.viewBox}
+  role="img"
+  aria-label={`Mapa de conocimiento: ${totalNodos} nodos y ${totalAristas} conexiones entre roles, proyectos, logros y tecnologías.`}
+>
+  {mapa.aristas.map((a) => (
+    <line
+      x1={a.x1} y1={a.y1} x2={a.x2} y2={a.y2}
+      class={a.afinidad ? "lab__arista lab__arista--afinidad" : "lab__arista"}
+      style={`stroke-width:${a.ancho};opacity:${a.opacidad}`}
+    />
+  ))}
+
+  {mapa.nodos.map((n) => (
+    <>
+      {n.conEvidencia && (
+        <circle
+          cx={n.cx} cy={n.cy} r={n.rHalo}
+          class="lab__halo"
+          style={`opacity:${(n.opacidad * 0.9).toFixed(3)}`}
+        />
+      )}
+      <circle
+        id={n.domId}
+        cx={n.cx} cy={n.cy} r={n.r}
+        class={`lab__nodo lab__nodo--${n.kind}${n.conEvidencia ? "" : " lab__nodo--hueco"}`}
+        style={`opacity:${n.conEvidencia ? n.opacidad : (n.opacidad * 0.75).toFixed(3)};stroke-width:${n.grosorTrazo}`}
+      ><title>{n.label}</title></circle>
+    </>
+  ))}
+
+  {mapa.etiquetas.map((e) => (
+    <text
+      x={e.x}
+      y={e.y}
+      text-anchor="middle"
+      class={`lab__etiqueta lab__etiqueta--${e.kind}`}
+      style={`opacity:${e.opacidad};font-size:${e.tamano}px`}
+    >{e.texto}</text>
+  ))}
+</svg>

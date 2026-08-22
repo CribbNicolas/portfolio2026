@@ -1,24 +1,64 @@
 ---
 /**
- * Home mínima. NO es el portfolio: eso es otro slice y depende de una
- * investigación de diseño que todavía no se hizo (docs/04 §6).
+ * La home: identidad + el mapa de conocimiento.
  *
- * Existe para dos cosas: que la URL raíz no sea un 404, y que el PDF tenga
- * de dónde descargarse.
+ * El mapa es la vista que cumple la promesa del CONTRATO §3 — los `Achievement`
+ * viven sueltos para poder cruzarlos, y ninguna otra superficie los cruza.
+ * Vivió en `/lab` mientras la home era un placeholder; ahora es la portada.
+ * Decisión fechada en `docs/00-indice.md` y estructura en `docs/04` §1.
+ *
+ * Es la ÚNICA página del sitio que envía JavaScript, y por eso está en
+ * `PAGINAS_CON_JS` de `scripts/no-client-js.check.ts`. `/cv` sigue en cero: de
+ * ahí sale el PDF, y un script que se cuele cambia el render en silencio.
+ *
+ * TODO el cálculo del grafo corre acá, en build. Nada de esa derivación viaja
+ * al browser: el cliente recibe coordenadas ya resueltas.
  */
 import Base from "../layouts/Base.astro";
-import { content, formatSeniority } from "@content";
+import { content, formatSeniority, buildKnowledgeGraph, layoutGraph } from "@content";
 import { buildPersonJsonLd } from "../lib/jsonld";
+import { buildSvgMapa } from "../lib/graph-svg";
+import { buildHoverCss, ID_ITEM } from "../lib/lab-hover-css";
+import GraphSvg from "../components/lab/GraphSvg.astro";
 
 import "@fontsource/manrope/400.css";
 import "@fontsource/manrope/600.css";
 import "@fontsource/manrope/800.css";
 import "../styles/tokens.css";
 import "../styles/home.css";
+import "../styles/lab.css";
 
-const view = await content.getView("public-api", "es");
+const view = await content.getView("portfolio", "es");
 const { identity } = view;
 const jsonLd = buildPersonJsonLd(view, new URL(Astro.site!));
+
+const grafo = buildKnowledgeGraph(view);
+const posicionado = layoutGraph(grafo);
+const mapa = buildSvgMapa(posicionado);
+const hoverCss = buildHoverCss(posicionado);
+
+// Lo que el runtime 3D necesita. Coordenadas ya redondeadas por `layoutGraph`.
+// Claves de una letra: esto viaja en el HTML de cada visita, y con 37 nodos los
+// nombres largos de propiedad costarían más que los datos.
+const datosGrafo = JSON.stringify({
+  nodes: posicionado.nodes.map((n) => ({
+    i: n.id, k: n.kind, x: n.x, y: n.y, z: n.z, d: n.degree,
+    r: Math.round(n.escalaRadio * 100) / 100,
+    n: n.label, t: n.detail, ...(n.categoria ? { c: n.categoria } : {}),
+  })),
+  edges: posicionado.edges.map((e) => ({ s: e.source, t: e.target, a: e.kind === "afinidad", w: e.weight })),
+  radio: posicionado.radioEncuadre,
+});
+
+// La lista del DOM: es a la vez el contenido accesible y el lado DOM del puente
+// de hover. Se ordena por grado — lo más conectado arriba, que es lo más
+// probado, no lo alfabéticamente primero.
+const items = posicionado.nodes
+  .filter((n) => n.kind === "skill")
+  .sort((a, b) => b.degree - a.degree || a.label.localeCompare(b.label, "es"));
+
+const conEvidencia = items.filter((n) => n.degree > 0).length;
+const afinidades = posicionado.edges.filter((e) => e.kind === "afinidad").length;
 ---
 
 <Base
@@ -26,26 +66,125 @@ const jsonLd = buildPersonJsonLd(view, new URL(Astro.site!));
   description={identity.summary.short}
 >
   <script type="application/ld+json" slot="head" set:html={JSON.stringify(jsonLd)} />
-  <main class="home">
-    <p class="home__kicker">{identity.brandTitle}</p>
-    <h1 class="home__name">{identity.fullName}</h1>
-    <p class="home__role">
-      {identity.searchTitle} · {formatSeniority(view.yearsOfExperience)} · {identity.location.city}, {identity.location.country}
-    </p>
-    <p class="home__tagline">{identity.tagline.short}</p>
+  <style is:inline set:html={hoverCss} slot="head" />
 
-    <div class="home__actions">
-      <a class="btn btn--primary" href="/cv">Ver el CV</a>
-      <a class="btn" href="/cv.pdf" download="Nicolas-Cribb-Barbaro-Full-Stack-Developer.pdf">
-        Descargar en PDF
-      </a>
-    </div>
+  <div class="lab">
+    <canvas class="lab__campo" data-lab-campo aria-hidden="true"></canvas>
 
-    <ul class="home__links">
-      <li><a href={`mailto:${identity.contact.email}`}>{identity.contact.email}</a></li>
-      {identity.links.map((link) => (
-        <li><a href={link.url} rel="me noopener">{link.label}</a></li>
-      ))}
-    </ul>
-  </main>
+    <main class="lab__contenido">
+      <section class="home lab__hero">
+        <p class="home__kicker">{identity.brandTitle}</p>
+        <h1 class="home__name">{identity.fullName}</h1>
+        <p class="home__role">
+          {identity.searchTitle} · {formatSeniority(view.yearsOfExperience)} · {identity.location.city}, {identity.location.country}
+        </p>
+        <p class="home__tagline">{identity.tagline.short}</p>
+
+        <div class="home__actions">
+          <a class="btn btn--primary" href="/cv">Ver el CV</a>
+          <a class="btn" href="/cv.pdf" download="Nicolas-Cribb-Barbaro-Full-Stack-Developer.pdf">
+            Descargar en PDF
+          </a>
+        </div>
+
+        <ul class="home__links">
+          <li><a href={`mailto:${identity.contact.email}`}>{identity.contact.email}</a></li>
+          {identity.links.map((link) => (
+            <li><a href={link.url} rel="me noopener">{link.label}</a></li>
+          ))}
+        </ul>
+      </section>
+
+      <section class="lab__mapa-seccion">
+        <div class="lab__intro">
+          <h2 class="lab__titulo">Mapa de conocimiento</h2>
+          <p class="lab__bajada">
+            Los logros no viven adentro de cada trabajo: viven sueltos y se cruzan por
+            tecnología, por rol y por proyecto. Esto es ese cruce, dibujado.
+          </p>
+          <dl class="lab__cifras">
+            <div><dt>Nodos</dt><dd>{posicionado.nodes.length}</dd></div>
+            <div><dt>Conexiones</dt><dd>{posicionado.edges.length}</dd></div>
+            <div><dt>Por afinidad</dt><dd>{afinidades}</dd></div>
+          </dl>
+        </div>
+
+        {/*
+          `tabindex` y `role` van sobre el CONTENEDOR, no sobre el canvas: el
+          canvas es `pointer-events: none` y no puede recibir nada. Acá se
+          escuchan el arrastre, el click y las flechas.
+        */}
+        <div
+          class="lab__mapa"
+          tabindex="0"
+          role="application"
+          aria-label="Mapa de conocimiento. Arrastrá para rotar, hacé click en un nodo para ver qué lo respalda. Las flechas también rotan."
+        >
+          <GraphSvg
+            mapa={mapa}
+            totalNodos={posicionado.nodes.length}
+            totalAristas={posicionado.edges.length}
+          />
+          <canvas class="lab__canvas" data-lab-grafo aria-hidden="true"></canvas>
+          {/*
+            Las etiquetas del 3D viven en el DOM, no en WebGL: un atlas de fuente
+            costaría más que toda la escena y el texto saldría borroso. Están
+            server-rendered y ocultas hasta que el 3D monta; el SVG trae las suyas.
+          */}
+          <div class="lab__etiquetas" aria-hidden="true">
+            {posicionado.nodes
+              .filter((n) => n.kind === "role" || n.kind === "project")
+              .map((n) => (
+                <span class={`lab__etiqueta-3d lab__etiqueta-3d--${n.kind}`} data-lab-etiqueta data-node={n.id}>
+                  {n.label}
+                </span>
+              ))}
+          </div>
+          <div class="lab__tooltip" data-lab-tooltip aria-hidden="true"></div>
+
+          {/*
+            El panel de detalle lo llena el JS con `textContent` sobre elementos
+            creados a mano — nunca `innerHTML`. `aria-live="polite"` hace que un
+            lector de pantalla anuncie el nodo enfocado sin interrumpir.
+          */}
+          <div class="lab__panel" data-lab-panel role="status" aria-live="polite"></div>
+
+          <p class="lab__pista" aria-hidden="true">Arrastrá para rotar · click en un nodo</p>
+        </div>
+
+        <div class="lab__indice">
+          <h3 class="lab__indice-titulo">
+            Stack <span class="lab__indice-nota">{conEvidencia} de {items.length} con evidencia</span>
+          </h3>
+          <ul class="lab__lista">
+            {items.map((n) => (
+              <li>
+                <span
+                  id={ID_ITEM(n.id)}
+                  class={n.degree > 0 ? "lab__item" : "lab__item lab__item--hueco"}
+                  data-node={n.id}
+                  tabindex="0"
+                >
+                  <span class="lab__punto" aria-hidden="true"></span>
+                  {n.label}
+                  {n.degree > 0 && <span class="lab__grado">{n.degree}</span>}
+                </span>
+              </li>
+            ))}
+          </ul>
+          <p class="lab__nota">
+            Las {items.length - conEvidencia} tecnologías sin conexiones son reales: las uso,
+            pero todavía no escribí el logro que lo demuestre. Van huecas y chicas, agrupadas
+            en el núcleo. El mapa muestra el hueco en vez de taparlo.
+          </p>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script type="application/json" data-lab-datos set:html={datosGrafo} />
+  <script>
+    import { iniciar } from "../scripts/lab/boot";
+    iniciar();
+  </script>
 </Base>

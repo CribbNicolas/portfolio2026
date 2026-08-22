@@ -10,9 +10,10 @@ freelance en LatAm/español. Principio rector: **los datos son la fuente única 
 verdad; el CV, el portfolio y los bloques de LinkedIn son VISTAS derivadas.** El
 backend guarda hechos atómicos (`Achievement`, `Skill`, `Role`, `Metric`), nunca
 documentos. Existen la capa de contenido (schema + validación + dataset JSON +
-una implementación de `ContentSource`) y un frontend Astro estático que solo
-renderiza la superficie `cv-ats` (CV en HTML, PDF, JSON-LD, `/cv.json`,
-`/llms.txt`). El portfolio visual y las demás superficies quedan para el
+una implementación de `ContentSource`) y un frontend Astro estático con dos
+páginas: `/cv` (superficie `cv-ats`: HTML, PDF, JSON-LD, `/cv.json`,
+`/llms.txt`) y la home (superficie `portfolio`: identidad + el mapa de
+conocimiento). Los casos de estudio y el lado freelance quedan para el
 próximo slice. Por qué el schema es como es: `docs/CONTRATO.md` y `docs/01`–`04`.
 No los reescribas; leelos.
 
@@ -36,19 +37,34 @@ scripts/validate.ts     Entry point de `npm run validate`.
 docs/                   Ver docs/00-indice.md. El "por qué" de cada decisión de diseño vive acá.
 src/
   pages/cv.astro      El CV en HTML. ÚNICA fuente del layout; de acá sale el PDF.
-  pages/index.astro   Home mínima. NO es el portfolio.
+  pages/index.astro   La home: identidad + el mapa de conocimiento. ÚNICA página con JS.
   pages/cv.json.ts    Endpoint public-api.
   pages/llms.txt.ts   Endpoint markdown para agentes.
   components/cv/      Componentes tontos: reciben props resueltas, no filtran nada.
+  components/lab/GraphSvg.astro  El mapa en SVG. NO es placeholder: es el fallback real.
+                      El prefijo `lab` es el nombre del BLOQUE (el mapa), no de una ruta:
+                      `/lab` ya no existe. Renombrarlo rompería los greps de CI.
   lib/jsonld.ts       ContentView → schema.org Person.
+  lib/graph-svg.ts    PositionedGraph → lista de dibujo. Niebla, orden de pintado, etiquetas.
+  lib/lab-hover-css.ts  Grafo → reglas :has(). El hover cruzado funciona SIN JS.
+  scripts/lab/        Lo ÚNICO que se bundlea para el browser. Ver §Frontend del mapa.
+  scripts/lab/interaccion.ts  Arrastre, foco de vecindario, tooltip. No importa three:
+                      el renderer le pasa una función `proyectar`. Cambiar de
+                      renderer no toca este archivo.
   styles/cv.css       Una columna. Prohibido flex/grid/table (rompe el parseo).
+  styles/lab.css      El mapa. Los dos canvas son pointer-events:none. Eso es lo que hace
+                      cierta la promesa de "no captura el mouse".
 content/schema/
   format-metric.ts    Regla 4. El "~" de los estimados vive acá y solo acá.
   format.ts           Duraciones, rangos MM/AAAA, títulos de rol. Reglas 1 y 2.
+  knowledge-graph.ts  ContentView → grafo. Incluye la afinidad skill↔skill derivada.
+  graph-layout.ts     Fuerzas en 3D + proyección. Determinista, corre SOLO en build.
 scripts/
   render-pdf.ts       renderPdf({ url }). Recibe URL, no componente: es la costura a SSR.
   build-pdf.ts        Sirve dist/ e imprime /cv → dist/cv.pdf.
   pdf-output.check.ts Verifica el PDF generado. No es *.test.ts a propósito.
+  no-client-js.check.ts  Política de JS por página en todo dist/. Blinda /cv.
+  bundle-budget.check.ts Presupuesto de la home: three fuera del camino crítico.
   audit-todos.ts      Reporte NO bloqueante de TODOs publicados.
 ```
 
@@ -59,18 +75,26 @@ scripts/
 
 ## Comandos
 
+**El gestor de paquetes es pnpm** (`packageManager: pnpm@11.1.3`). No uses `npm`:
+`pnpm-workspace.yaml` declara qué paquetes pueden correr scripts de instalación
+(`allowBuilds`), y ese es el motivo de fondo del cambio — con npm cualquiera de
+los 450 paquetes del árbol ejecuta código arbitrario al instalar.
+
 ```bash
-npm run typecheck   # tsc --noEmit
-npm run validate    # tsx scripts/validate.ts — Zod + reglas duras
-npm test            # tsx --test — reglas 7,8 + locale (lo que el schema no valida)
-npm run dev         # astro dev
-npm run build       # astro build + genera dist/cv.pdf
-npm run test:pdf    # verifica el PDF generado (necesita build previo)
-npm run audit:todos # lista TODOs publicados. No bloquea
+pnpm run typecheck   # astro sync && tsc --noEmit && astro check
+pnpm run validate    # tsx scripts/validate.ts — Zod + reglas duras
+pnpm test            # tsx --test — reglas 7,8, locale y el grafo
+pnpm run dev         # astro dev
+pnpm run build       # astro build + genera dist/cv.pdf
+pnpm run test:pdf    # verifica el PDF generado (necesita build previo)
+pnpm run test:js     # política de JS por página sobre todo dist/ (necesita build)
+pnpm run test:bundle # presupuesto de bytes del mapa de la home (necesita build)
+pnpm run audit:todos # lista TODOs publicados. No bloquea
+pnpm run audit:deps  # pnpm audit --audit-level high
 ```
 
 **Corré la secuencia completa antes de dar cualquier cosa por hecha:**
-`npm run typecheck && npm run validate && npm test && npm run build && npm run test:pdf && npm run audit:todos`.
+`pnpm run typecheck && pnpm run validate && pnpm test && pnpm run build && pnpm run test:pdf && pnpm run test:js && pnpm run test:bundle && pnpm run audit:todos`.
 Si `validate` falla, el mensaje dice qué regla se violó y cómo arreglarla; leelo,
 no lo saltees. Todo eso corre en CI en cada push
 (`.github/workflows/content-validation.yml`; repo ya en GitHub, privado) —
@@ -119,6 +143,54 @@ asumir que `validate` cubre algo, mirá esta tabla:
 | 8 | `streetAddress`/`phone` solo en superficies listadas | `resolve-view.ts` (filtrado de `identity`). **`npm test`** (corre en CI), no `validate`. |
 | — | Integridad referencial (`roleId`/`projectId`/`skillId`) | `checkRules` (rule 0). **CI** |
 
+## Frontend del mapa (lo único con JavaScript)
+
+**La home es la ÚNICA página que envía JS.** `/cv` sigue en cero y eso NO es
+negociable: el PDF se renderiza desde ahí con Playwright esperando
+`networkidle`, así que un script que se cuele cambia el PDF en silencio.
+`PAGINAS_CON_JS` en `no-client-js.check.ts` es la lista blanca —agregar una
+página es una decisión explícita en un diff, no un accidente.
+
+Reglas, todas verificadas en CI por `bundle-budget.check.ts` y
+`no-client-js.check.ts`:
+
+1. **Nada bajo `src/scripts/` importa de `@content`.** `json-source.ts` importa
+   estáticamente zod y el dataset entero: un solo import los manda al browser.
+   Los tipos cruzan solo por `src/scripts/lab/types.ts`, que no importa nada en
+   runtime. Precedente y comentario: `src/lib/jsonld.ts:12-15`.
+2. **`three` tiene UN solo importador —`grafo-3d.ts`— y se carga con
+   `import()` dinámico.** Alcanza un import estático en cualquier módulo para
+   que Rollup meta three (127 KB gzip) en el bundle inicial sin que nadie se
+   entere. El check busca `WebGLRenderer` en los chunks críticos.
+3. **Prohibido `three/examples/jsm/*` y `three/addons`.** `OrbitControls`
+   registra `wheel` con `preventDefault`: eso es scroll hijacking, que el spec
+   §3.4 prohíbe. Se descarta por comportamiento, no por peso.
+4. **Los canvas son `pointer-events: none` siempre. Quien escucha es el
+   CONTENEDOR** (`.lab__mapa`, que además es `tabindex=0`). Esa separación es lo
+   que permite clickear nodos sin que el mapa se quede con los eventos que no le
+   tocan. El hit-test es por proyección a NDC, no con `Raycaster`: la proyección
+   hay que calcularla igual para ubicar las etiquetas.
+5. **Ningún listener de `wheel` ni `touchmove`** (hay un test que lo verifica
+   sobre los chunks emitidos). El scroll lo reparte el browser vía
+   `touch-action: pan-y`: vertical scrollea, horizontal rota. Esa es la
+   diferencia con el scroll hijacking — arbitra el browser, no nosotros. Los
+   ÚNICOS `preventDefault` de `src/scripts/` están en teclado (flechas sobre el
+   mapa ya enfocado, Espacio sobre un ítem de la lista), nunca sobre puntero.
+6. **Cero hex en JS.** Los colores salen de `getComputedStyle` sobre los tokens,
+   así el modo oscuro funciona sin JS de tema.
+7. **El SVG nunca se saca del DOM.** El 3D se superpone y el SVG pasa a
+   `opacity: 0`. Volver —contexto WebGL perdido, frames fuera de presupuesto—
+   es quitar una clase.
+
+**Si el dispositivo aguanta se decide en cuatro escalones** (`capacidad.ts`), y
+solo el tercero mide: `prefers-reduced-motion`/`saveData`/`effectiveType`/
+`deviceMemory`/WebGL2 antes de bajar un byte; el contexto al montar; **la mediana
+de los primeros 30 frames contra un techo de 20 ms**; y degradación en vivo
+(primero `dpr → 1`, después apagar). El tercero es el que importa: en iOS no
+existen `saveData`, `effectiveType` ni `deviceMemory` —son APIs de Chromium—,
+así que apoyarse en el escalón 1 es decidir a ciegas en la mitad de los
+teléfonos.
+
 ## Convenciones (deducidas del código, no de preferencias)
 
 - **Comentarios en español, explican el PORQUÉ, no el qué.** Banners de sección
@@ -146,10 +218,10 @@ asumir que `validate` cubre algo, mirá esta tabla:
 
 Estado completo en `docs/00-indice.md`. Resumen operativo:
 
-- **Frontend:** existe (Astro estático, ver `src/` en el mapa de archivos), pero
-  solo renderiza la superficie `cv-ats`. El CV diseñado (CV-A) queda para
-  después. `components/cv/` son tontos: reciben props resueltas, no filtran
-  nada (invariante 1).
+- **Frontend:** existe (Astro estático, ver `src/` en el mapa de archivos):
+  `/cv` sobre `cv-ats` y la home sobre `portfolio`. El CV diseñado (CV-A) y los
+  casos de estudio quedan para después. `components/cv/` son tontos: reciben
+  props resueltas, no filtran nada (invariante 1).
 - **Generadores de salida** (CV PDF, `/cv` HTML, JSON-LD `Person`, `/llms.txt`,
   `/cv.json`): existen. La regla 4 vive en un único `formatMetric()`
   (`content/schema/format-metric.ts`). Detalle de qué emite cada uno:
