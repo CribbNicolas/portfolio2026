@@ -1,0 +1,88 @@
+/*
+ * La lista de proyectos.
+ *
+ * Sin tarjetas con sombra: el mapa de arriba ya es el elemento con peso visual
+ * de la página, y competirle acá parte la atención. La jerarquía es tipográfica.
+ */
+
+.proyectos-seccion {
+  max-width: 40rem;
+  margin: 0 auto;
+  padding: 0 calc(var(--espacio) * 2.5) calc(var(--espacio) * 8);
+}
+
+.proyectos {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: calc(var(--espacio) * 4);
+}
+
+.proyecto {
+  border-top: 1px solid var(--linea);
+  padding-top: calc(var(--espacio) * 2);
+}
+
+.proyecto__nombre {
+  font-size: 1.125rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  margin: 0 0 calc(var(--espacio) * 0.5);
+  display: flex;
+  align-items: baseline;
+  gap: calc(var(--espacio) * 1.5);
+  flex-wrap: wrap;
+}
+
+/* `in-progress` se dice, no se esconde: mostrar algo a medias como terminado
+   es lo que el schema evita con `status`. */
+.proyecto__estado {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--acento);
+  background: var(--acento-tenue);
+  padding: 0.15em 0.6em;
+  border-radius: 999px;
+}
+
+.proyecto__cliente {
+  margin: 0 0 calc(var(--espacio) * 1);
+  font-size: 0.8125rem;
+  color: var(--tinta-suave);
+}
+
+.proyecto__solucion {
+  margin: 0 0 calc(var(--espacio) * 1.5);
+  line-height: 1.55;
+  text-wrap: pretty;
+}
+
+.proyecto__stack {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: calc(var(--espacio) * 0.75);
+}
+
+.proyecto__stack li {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--tinta-suave);
+  border: 1px solid var(--linea);
+  border-radius: var(--radio);
+  padding: 0.15em 0.6em;
+}
+
+.proyecto__links {
+  margin: calc(var(--espacio) * 1.5) 0 0;
+  font-size: 0.875rem;
+}
+
+.proyecto__links a {
+  color: var(--acento);
+}

@@ -20,6 +20,7 @@ import { buildPersonJsonLd } from "../lib/jsonld";
 import { buildSvgMapa } from "../lib/graph-svg";
 import { buildHoverCss, ID_ITEM } from "../lib/lab-hover-css";
 import GraphSvg from "../components/lab/GraphSvg.astro";
+import ListaProyectos from "../components/proyectos/ListaProyectos.astro";
 import Section from "../components/cv/Section.astro";
 import RoleBlock from "../components/cv/RoleBlock.astro";
 import SkillList from "../components/cv/SkillList.astro";
@@ -30,6 +31,7 @@ import "@fontsource/manrope/800.css";
 import "../styles/tokens.css";
 import "../styles/home.css";
 import "../styles/cv.css";
+import "../styles/proyectos.css";
 import "../styles/lab.css";
 
 const view = await content.getView("portfolio", "es");
@@ -67,6 +69,13 @@ const items = posicionado.nodes
 
 const conEvidencia = items.filter((n) => n.degree > 0).length;
 const afinidades = posicionado.edges.filter((e) => e.kind === "afinidad").length;
+
+// skillId → nombre canónico, para el stack de cada proyecto. Se arma acá y no
+// en el componente: `view.skills` viene agrupado por categoría, y aplanarlo es
+// trabajo de la página, no del componente tonto.
+const nombreDeSkill = new Map(
+  Object.values(view.skills).flat().map((s) => [s.id, s.name]),
+);
 ---
 
 <Base
@@ -186,6 +195,11 @@ const afinidades = posicionado.edges.filter((e) => e.kind === "afinidad").length
             en el núcleo. El mapa muestra el hueco en vez de taparlo.
           </p>
         </div>
+      </section>
+
+      <section id="proyectos" class="proyectos-seccion">
+        <h2 class="lab__titulo">Proyectos</h2>
+        <ListaProyectos proyectos={view.projects} nombreDeSkill={nombreDeSkill} />
       </section>
 
       <section id="cv" class="cv">
