@@ -41,6 +41,14 @@ const jsonLd = buildPersonJsonLd(viewPublica, new URL(Astro.site!));
   description={identity.summary.short}
 >
   <script type="application/ld+json" slot="head" set:html={JSON.stringify(jsonLd)} />
+
+  {/*
+    `/cv` existe para que `build-pdf.ts` la imprima, no para que la visiten: el
+    lector llega al CV por el ancla `#cv` de la landing. Indexarla partiría en
+    dos la única visita, y el que cayera acá no vería ni el mapa ni los
+    proyectos. `scripts/landing-unica.check.ts` verifica esto.
+  */}
+  <meta name="robots" content="noindex, follow" slot="head" />
   <main class="cv">
     <Header identity={identity} />
 

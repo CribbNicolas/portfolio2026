@@ -18,6 +18,7 @@
     "test:pdf": "tsx --test scripts/pdf-output.check.ts",
     "test:js": "tsx --test scripts/no-client-js.check.ts",
     "test:bundle": "tsx --test scripts/bundle-budget.check.ts",
+    "test:landing": "tsx --test scripts/landing-unica.check.ts",
     "audit:todos": "tsx scripts/audit-todos.ts",
     "audit:deps": "pnpm audit --audit-level high"
   },
