@@ -10,11 +10,12 @@ freelance en LatAm/español. Principio rector: **los datos son la fuente única 
 verdad; el CV, el portfolio y los bloques de LinkedIn son VISTAS derivadas.** El
 backend guarda hechos atómicos (`Achievement`, `Skill`, `Role`, `Metric`), nunca
 documentos. Existen la capa de contenido (schema + validación + dataset JSON +
-una implementación de `ContentSource`) y un frontend Astro estático con dos
-páginas: `/cv` (superficie `cv-ats`: HTML, PDF, JSON-LD, `/cv.json`,
-`/llms.txt`) y la home (superficie `portfolio`: identidad + el mapa de
-conocimiento). Los casos de estudio y el lado freelance quedan para el
-próximo slice. Por qué el schema es como es: `docs/CONTRATO.md` y `docs/01`–`04`.
+una implementación de `ContentSource`) y un frontend Astro estático que es
+**una sola página navegable**: `/` con hero, índice de anclas, mapa de
+conocimiento, proyectos y el CV completo. `/cv` sigue existiendo pero NO es un
+destino — es la fuente desde la que se imprime el PDF, con `noindex` y sin
+links entrantes. Los casos de estudio en formato largo, los servicios y el
+lado freelance quedan para el próximo slice. Por qué el schema es como es: `docs/CONTRATO.md` y `docs/01`–`04`.
 No los reescribas; leelos.
 
 ## Mapa de archivos
@@ -37,10 +38,14 @@ scripts/validate.ts     Entry point de `npm run validate`.
 docs/                   Ver docs/00-indice.md. El "por qué" de cada decisión de diseño vive acá.
 src/
   pages/cv.astro      El CV en HTML. ÚNICA fuente del layout; de acá sale el PDF.
-  pages/index.astro   La home: identidad + el mapa de conocimiento. ÚNICA página con JS.
+                      NO es un destino navegable: `noindex` y cero links entrantes.
+                      El lector llega al CV por el ancla `#cv` de la landing.
+  pages/index.astro   La landing: hero + índice + #mapa + #proyectos + #cv. ÚNICA página con JS.
   pages/cv.json.ts    Endpoint public-api.
   pages/llms.txt.ts   Endpoint markdown para agentes.
   components/cv/      Componentes tontos: reciben props resueltas, no filtran nada.
+  components/proyectos/ListaProyectos.astro  Los proyectos. Cada tarjeta lleva el id que
+                      espera `buildHoverCss`: el hover cruzado con el mapa va SIN JS.
   components/lab/GraphSvg.astro  El mapa en SVG. NO es placeholder: es el fallback real.
                       El prefijo `lab` es el nombre del BLOQUE (el mapa), no de una ruta:
                       `/lab` ya no existe. Renombrarlo rompería los greps de CI.
@@ -52,6 +57,7 @@ src/
                       el renderer le pasa una función `proyectar`. Cambiar de
                       renderer no toca este archivo.
   styles/cv.css       Una columna. Prohibido flex/grid/table (rompe el parseo).
+  styles/proyectos.css  La lista de proyectos. Jerarquía tipográfica, sin tarjetas con sombra.
   styles/lab.css      El mapa. Los dos canvas son pointer-events:none. Eso es lo que hace
                       cierta la promesa de "no captura el mouse".
 content/schema/
@@ -65,6 +71,8 @@ scripts/
   pdf-output.check.ts Verifica el PDF generado. No es *.test.ts a propósito.
   no-client-js.check.ts  Política de JS por página en todo dist/. Blinda /cv.
   bundle-budget.check.ts Presupuesto de la home: three fuera del camino crítico.
+  landing-unica.check.ts La landing es la única puerta: /cv sin links ni indexar, y la
+                      sección CV de la landing sincronizada con el PDF.
   audit-todos.ts      Reporte NO bloqueante de TODOs publicados.
 ```
 
@@ -89,12 +97,13 @@ pnpm run build       # astro build + genera dist/cv.pdf
 pnpm run test:pdf    # verifica el PDF generado (necesita build previo)
 pnpm run test:js     # política de JS por página sobre todo dist/ (necesita build)
 pnpm run test:bundle # presupuesto de bytes del mapa de la home (necesita build)
+pnpm run test:landing # /cv aislada + sección CV sincronizada con el PDF (necesita build)
 pnpm run audit:todos # lista TODOs publicados. No bloquea
 pnpm run audit:deps  # pnpm audit --audit-level high
 ```
 
 **Corré la secuencia completa antes de dar cualquier cosa por hecha:**
-`pnpm run typecheck && pnpm run validate && pnpm test && pnpm run build && pnpm run test:pdf && pnpm run test:js && pnpm run test:bundle && pnpm run audit:todos`.
+`pnpm run typecheck && pnpm run validate && pnpm test && pnpm run build && pnpm run test:pdf && pnpm run test:js && pnpm run test:bundle && pnpm run test:landing && pnpm run audit:todos`.
 Si `validate` falla, el mensaje dice qué regla se violó y cómo arreglarla; leelo,
 no lo saltees. Todo eso corre en CI en cada push
 (`.github/workflows/content-validation.yml`; repo ya en GitHub, privado) —

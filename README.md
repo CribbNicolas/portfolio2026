@@ -2,11 +2,14 @@
 
 Capa de contenido del portfolio y del CV. Fuente única de verdad: los datos viven
 en `content/data/` y el CV, el portfolio y los bloques de LinkedIn son **vistas**
-derivadas de ellos. Sobre esa capa hay un sitio Astro estático que renderiza la
-superficie `cv-ats` como `/cv` en HTML, imprime `dist/cv.pdf` con Playwright, y
-publica JSON-LD `Person`, `/cv.json` y `/llms.txt`.
+derivadas de ellos. Sobre esa capa hay un sitio Astro estático de **una sola
+página navegable**: hero, mapa, proyectos y el CV completo, con un índice de
+anclas y un botón flotante que baja el PDF. `/cv` sigue existiendo pero dejó de
+ser un destino — es la fuente desde la que Playwright imprime `dist/cv.pdf`, y
+va con `noindex` y sin links entrantes. El sitio publica además JSON-LD
+`Person`, `/cv.json` y `/llms.txt`.
 
-La **home** es la segunda vista de los mismos datos: un **mapa de conocimiento**
+El corazón de la landing es el **mapa de conocimiento**
 que cruza logros, roles, proyectos y tecnologías como grafo. El tamaño de cada
 tecnología sale de sus años de uso por sus conexiones; los trabajos quedan en la
 corteza y las tecnologías en el núcleo. Se renderiza en el servidor como SVG y,
@@ -27,6 +30,7 @@ pnpm test             # reglas que el schema no valida (visibility, locale, graf
 pnpm run test:pdf     # verifica dist/cv.pdf ya buildeado (parseo, ATS)
 pnpm run test:js      # ninguna página salvo la home envía JavaScript
 pnpm run test:bundle  # home: three fuera del camino crítico y dentro del techo
+pnpm run test:landing # /cv aislada y la sección CV sincronizada con el PDF
 pnpm run audit:todos  # chequea que no queden TODOs sin resolver en el dataset
 ```
 

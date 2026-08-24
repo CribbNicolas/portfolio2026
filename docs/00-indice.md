@@ -32,6 +32,10 @@ Fechadas, para saber qué revisar cuando cambie el contexto.
 | 2026-08 | Se avanzó con el mapa **antes** de la investigación de diseño de [04 §6](./04-portfolio.md#6-pendiente-de-investigar) | El mapa es la única superficie que muestra el grafo de datos; postergarlo por tipografías era postergar lo que diferencia el sitio. La investigación sigue pendiente para los casos de estudio |
 | 2026-08 | La **home envía JavaScript**; `/cv` sigue en cero | El mapa lo necesita. `/cv` no es negociable: el PDF se imprime desde ahí y un script cambia el render en silencio. Lista blanca en `no-client-js.check.ts` |
 | 2026-08 | Tamaño de nodo = **años de uso × conexiones**, por raíz | Un tamaño fijo por tipo no decía nada. Los años se derivan de `since` o de la evidencia fechada — nunca se estiman |
+| 2026-08-24 | El sitio es una **landing única**: hero, índice de anclas, mapa, proyectos y el CV completo en `/` | Un CV no necesita navegación. Dos páginas partían en dos la única visita que vas a tener |
+| 2026-08-24 | `/cv` deja de ser destino: `noindex`, sin links entrantes, solo fuente de impresión del PDF | Es lo que siempre fue por debajo. Lo sostiene `landing-unica.check.ts`, no la buena memoria |
+| 2026-08-24 | La sección CV de la landing usa `cv-ats`, no `portfolio` | El botón promete "el CV": si la sección mostrara más logros que el PDF, la promesa sería falsa. El test compara los conteos |
+| 2026-08-24 | El índice y el botón flotante son anclas y un `<a download>`, sin JS | El presupuesto de la home es para el mapa. Navegación que cuesta bytes es navegación mal hecha |
 
 ## Estado
 
@@ -45,6 +49,8 @@ Fechadas, para saber qué revisar cuando cambie el contexto.
 - [x] Frontend consumiendo `getView()`
 - [x] Generadores de salida: CV PDF, `/cv` HTML, JSON-LD, `llms.txt`, `/cv.json`
 - [x] Mapa de conocimiento en la home (SVG server-rendered + WebGL opcional)
+- [x] Landing única: índice de anclas, sección de proyectos y el CV completo en `/`; `/cv` aislada con `noindex` y `test:landing`
+- [ ] **Links de los proyectos** — los tres tienen `links: []`. La sección los renderiza solo si existen: es editar el dataset, no tocar código
 - [ ] **Métricas** — el hueco más importante. Ver [03-cv.md](./03-cv.md#métricas-pendientes)
 - [ ] Confirmar datos de Hogarth
 - [ ] Bloques de texto para LinkedIn
