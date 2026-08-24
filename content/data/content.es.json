@@ -42,7 +42,7 @@
   "skills": [
     { "id": "typescript", "name": "TypeScript", "category": "language", "aliases": ["TS"], "level": "core", "active": true, "visibility": { "priority": 1 } },
     { "id": "javascript", "name": "JavaScript", "category": "language", "aliases": ["JS", "ECMAScript"], "level": "core", "active": true, "visibility": { "priority": 1 } },
-    { "id": "react", "name": "React", "category": "frontend", "aliases": ["ReactJS", "React.js"], "level": "core", "since": "2022-01", "active": true, "visibility": { "priority": 1 } },
+    { "id": "react", "name": "React", "category": "frontend", "aliases": ["ReactJS", "React.js"], "level": "core", "since": "2022-10", "active": true, "visibility": { "priority": 1 } },
     { "id": "nextjs", "name": "Next.js", "category": "frontend", "aliases": ["NextJS", "Next"], "level": "core", "active": true, "visibility": { "priority": 1 } },
     { "id": "mapbox", "name": "Mapbox GL JS", "category": "data", "aliases": ["Mapbox", "Mapbox GL"], "level": "core", "active": true, "visibility": { "priority": 2 } },
     { "id": "wordpress", "name": "WordPress", "category": "cms", "aliases": ["WordPress plugin development", "WooCommerce"], "level": "core", "active": true, "visibility": { "priority": 3 } },

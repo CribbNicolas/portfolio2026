@@ -6,17 +6,28 @@ derivadas de ellos. Sobre esa capa hay un sitio Astro estático que renderiza la
 superficie `cv-ats` como `/cv` en HTML, imprime `dist/cv.pdf` con Playwright, y
 publica JSON-LD `Person`, `/cv.json` y `/llms.txt`.
 
+La **home** es la segunda vista de los mismos datos: un **mapa de conocimiento**
+que cruza logros, roles, proyectos y tecnologías como grafo. El tamaño de cada
+tecnología sale de sus años de uso por sus conexiones; los trabajos quedan en la
+corteza y las tecnologías en el núcleo. Se renderiza en el servidor como SVG y,
+si el dispositivo lo aguanta, se superpone la versión en WebGL. Sin JavaScript el
+mapa sigue completo, hover cruzado incluido.
+
 ## Arranque
 
+Requiere **pnpm** (`corepack enable` alcanza) y Node >= 22.12.
+
 ```bash
-npm install
-npm run dev          # astro dev
-npm run build        # astro build + genera dist/cv.pdf
-npm run typecheck    # astro sync + tsc --noEmit + astro check
-npm run validate     # Zod (forma) + reglas duras (coherencia)
-npm test             # reglas que el schema no valida (visibility, locale)
-npm run test:pdf     # verifica dist/cv.pdf ya buildeado (parseo, ATS)
-npm run audit:todos  # chequea que no queden TODOs sin resolver en el dataset
+pnpm install
+pnpm run dev          # astro dev
+pnpm run build        # astro build + genera dist/cv.pdf
+pnpm run typecheck    # astro sync + tsc --noEmit + astro check
+pnpm run validate     # Zod (forma) + reglas duras (coherencia)
+pnpm test             # reglas que el schema no valida (visibility, locale, grafo)
+pnpm run test:pdf     # verifica dist/cv.pdf ya buildeado (parseo, ATS)
+pnpm run test:js      # ninguna página salvo la home envía JavaScript
+pnpm run test:bundle  # home: three fuera del camino crítico y dentro del techo
+pnpm run audit:todos  # chequea que no queden TODOs sin resolver en el dataset
 ```
 
 Todos tienen que pasar. Si `validate` falla, el mensaje dice qué regla se violó

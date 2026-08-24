@@ -17,3 +17,8 @@ export * from "../schema/content-schema";
 // Así `src/` importa TODO de un solo lugar y el invariante 2 sigue siendo cierto.
 export * from "../schema/format";
 export * from "../schema/format-metric";
+
+// El grafo es otra vista derivada del mismo contenido, igual que el formateo.
+// Corre SOLO en build (frontmatter de /lab): nada de esto viaja al browser.
+export * from "../schema/knowledge-graph";
+export * from "../schema/graph-layout";

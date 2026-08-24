@@ -1,6 +1,6 @@
 # Hace ciertas las afirmaciones de los docs: las reglas duras son CI, no intenciones.
 # Equivalente local (todos tienen que pasar):
-#   npm run typecheck && npm run validate && npm test && npm run build && npm run test:pdf && npm run audit:todos
+#   pnpm run typecheck && pnpm run validate && pnpm test && pnpm run build && pnpm run test:pdf && pnpm run test:js && pnpm run test:bundle && pnpm run audit:todos
 name: content-validation
 
 on:
@@ -16,6 +16,10 @@ jobs:
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
+      # pnpm ANTES de setup-node: `cache: pnpm` necesita que el binario ya exista
+      # para resolver el store. Al revés, el step de cache falla con "Unable to
+      # locate executable file: pnpm".
+      - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v4
         with:
           # Astro 6 exige Node >=22.12. Con 20 el `astro sync` del typecheck se
@@ -23,11 +27,14 @@ jobs:
           # porque es lo que corre la máquina de desarrollo: una CI que corre otro
           # major que el dev deja de servir para cazar lo que el dev no ve.
           node-version: 24
-          cache: npm
-      - run: npm ci
-      - run: npm run typecheck
-      - run: npm run validate
-      - run: npm test
+          cache: pnpm
+      # --frozen-lockfile es el `npm ci` de pnpm: falla si el lockfile no coincide
+      # con package.json en vez de arreglarlo en silencio. En CI eso es lo que se
+      # quiere — un lockfile desactualizado tiene que romper el build, no pasar.
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm run typecheck
+      - run: pnpm run validate
+      - run: pnpm test
 
       # El PDF necesita Chromium. Va en un step propio para que un fallo de
       # descarga del browser no se confunda con un fallo del CV.
@@ -35,7 +42,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.cache/ms-playwright
-          key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+          key: playwright-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
       # Sin `--with-deps` a propósito: esa bandera corre `apt-get` en CADA
       # corrida, incluso cuando el caché de browsers acierta y no hay nada que
       # descargar. Una corrida se colgó 6 h ahí porque los mirrors de Ubuntu no
@@ -45,15 +52,22 @@ jobs:
       # abajo y la vuelta atrás es agregar `--with-deps` de nuevo.
       - name: Instalar Chromium
         timeout-minutes: 5
-        run: npx playwright install chromium
+        run: pnpm exec playwright install chromium
 
-      - run: npm run build
+      - run: pnpm run build
       # Acá se verifica que el CV pasa la capa 1 del embudo: texto extraíble,
       # orden de lectura sano, sin TODOs, sin teléfono, máximo 2 páginas.
-      - run: npm run test:pdf
+      - run: pnpm run test:pdf
+
+      # Política de JS por página sobre TODO dist/. Blinda /cv: el PDF sale de
+      # ahí y un script que se cuele cambiaría el render sin que nadie lo note.
+      - run: pnpm run test:js
+      # Presupuesto de bytes de /lab. El chunk de three tiene que quedar afuera
+      # del camino crítico, no solo "ser lazy" de palabra.
+      - run: pnpm run test:bundle
 
       # No bloquea: son datos pendientes conocidos. Queda en el log para verlos.
-      - run: npm run audit:todos
+      - run: pnpm run audit:todos
 
       - name: Publicar el CV generado
         uses: actions/upload-artifact@v4

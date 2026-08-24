@@ -1,0 +1,12 @@
+# Los postinstall de las dependencias NO corren salvo que estén acá en true.
+# Ese es el motivo de fondo del cambio a pnpm: con npm, cualquier paquete del
+# árbol (452 en total) ejecuta scripts arbitrarios al instalar. Acá la lista es
+# explícita y revisable en el diff.
+#
+# esbuild y sharp traen binario preconstruido como paquete opcional por
+# plataforma (@esbuild/*, @img/sharp-*), así que su postinstall es un fallback
+# y no hace falta. Si algún día el build muere por un binario que falta, el
+# arreglo es poner el paquete en true acá y decir por qué.
+allowBuilds:
+  esbuild: false
+  sharp: false
