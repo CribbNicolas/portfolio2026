@@ -130,3 +130,72 @@
     color: #1a0f0a;
   }
 }
+
+/* --- Índice y descarga flotante ----------------------------------------- */
+
+.home__indice {
+  display: flex;
+  flex-wrap: wrap;
+  gap: calc(var(--espacio) * 2.5);
+  margin-top: calc(var(--espacio) * 3);
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.home__indice a {
+  color: var(--tinta-suave);
+  text-decoration: none;
+  border-bottom: 1px solid var(--linea);
+  padding-bottom: 0.15em;
+}
+
+.home__indice a:hover {
+  color: var(--acento);
+  border-bottom-color: var(--acento);
+}
+
+/* z-index 10: `.lab__campo` es `position: fixed` y `.lab__contenido` es
+   `z-index: 1`. Sin esto el botón queda debajo del contenido. */
+.descarga-flotante {
+  position: fixed;
+  right: calc(var(--espacio) * 2);
+  bottom: calc(var(--espacio) * 2);
+  z-index: 10;
+  display: inline-flex;
+  align-items: center;
+  gap: calc(var(--espacio) * 0.75);
+  padding: 0.75em 1.25em;
+  border-radius: 999px;
+  background: var(--acento);
+  color: var(--fondo);
+  font-size: 0.875rem;
+  font-weight: 700;
+  text-decoration: none;
+  box-shadow: 0 6px 24px rgb(0 0 0 / 0.18);
+}
+
+.descarga-flotante:hover {
+  filter: brightness(1.08);
+}
+
+/* El PDF sale de `/cv`, que no tiene este botón. La regla está por si alguien
+   imprime la landing desde el browser. */
+@media print {
+  .descarga-flotante,
+  .home__indice {
+    display: none;
+  }
+}
+
+/* El scroll suave es lo que hace que el índice se lea como navegación y no
+   como un salto. `tokens.css` anula animaciones bajo `prefers-reduced-motion`,
+   pero `scroll-behavior` no es una animación y ese reset no la alcanza. */
+html {
+  scroll-behavior: smooth;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}

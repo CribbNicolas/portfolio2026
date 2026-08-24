@@ -98,11 +98,22 @@ const nombreDeSkill = new Map(
         <p class="home__tagline">{identity.tagline.short}</p>
 
         <div class="home__actions">
-          <a class="btn btn--primary" href="/cv">Ver el CV</a>
+          <a class="btn btn--primary" href="#cv">Ver el CV</a>
           <a class="btn" href="/cv.pdf" download="Nicolas-Cribb-Barbaro-Full-Stack-Developer.pdf">
             Descargar en PDF
           </a>
         </div>
+
+        {/*
+          El índice reemplaza a la navegación entre páginas: son anclas dentro
+          de la misma landing. `href="#cv"` y NO `/cv` — esa ruta existe solo
+          para imprimir el PDF, y hay un test que verifica que nadie la linkee.
+        */}
+        <nav class="home__indice" aria-label="Secciones">
+          <a href="#mapa">Mapa</a>
+          <a href="#proyectos">Proyectos</a>
+          <a href="#cv">CV</a>
+        </nav>
 
         <ul class="home__links">
           <li><a href={`mailto:${identity.contact.email}`}>{identity.contact.email}</a></li>
@@ -112,7 +123,7 @@ const nombreDeSkill = new Map(
         </ul>
       </section>
 
-      <section class="lab__mapa-seccion">
+      <section id="mapa" class="lab__mapa-seccion">
         <div class="lab__intro">
           <h2 class="lab__titulo">Mapa de conocimiento</h2>
           <p class="lab__bajada">
@@ -241,6 +252,19 @@ const nombreDeSkill = new Map(
         </Section>
       </section>
     </main>
+
+    {/*
+      Acompaña todo el scroll: el del hero sirve para el que decide en los
+      primeros diez segundos, este para el que ya leyó. Fuera de `.lab__mapa`,
+      así que no le roba eventos de puntero al mapa.
+    */}
+    <a
+      class="descarga-flotante"
+      href="/cv.pdf"
+      download="Nicolas-Cribb-Barbaro-Full-Stack-Developer.pdf"
+    >
+      <span aria-hidden="true">↓</span> Descargar CV
+    </a>
   </div>
 
   <script type="application/json" data-lab-datos set:html={datosGrafo} />
