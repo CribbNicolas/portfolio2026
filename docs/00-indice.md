@@ -8,6 +8,7 @@ Todo lo que sabemos y todo lo que decidimos. Si algo no está acá, no existe.
 | [02-branding.md](./02-branding.md) | Posicionamiento, titular, About, voz, LinkedIn |
 | [03-cv.md](./03-cv.md) | Formato, contenido, bullets, checklist por postulación |
 | [04-portfolio.md](./04-portfolio.md) | Estructura, casos de estudio, capa legible por máquinas |
+| [05-deploy-y-analitica.md](./05-deploy-y-analitica.md) | El stack gratuito (Cloudflare Pages, Actions, Clarity) y los pasos para conectarlo |
 | [CONTRATO.md](./CONTRATO.md) | Reglas del sistema de contenido |
 
 ---
@@ -56,6 +57,8 @@ Fechadas, para saber qué revisar cuando cambie el contexto.
 - [ ] Bloques de texto para LinkedIn
 - [ ] Casos de estudio en el portfolio — antes hay que hacer la investigación de [04 §6](./04-portfolio.md#6-pendiente-de-investigar)
 - [ ] Logros del rol Freelance (2020-04 → 2022-06): hoy tiene uno solo y sus `skillIds` son `["javascript"]`. Esos 2.2 años no le aportan una conexión a ninguna otra tecnología, y por eso WordPress —declarada `core`— queda chica en el mapa
+- [ ] **Deploy** — stack decidido en [05](./05-deploy-y-analitica.md). Bloqueado en comprar el dominio
+- [ ] Analítica: Cloudflare Web Analytics + Clarity en la landing. Ver [05](./05-deploy-y-analitica.md) §2
 - [ ] Migración a Sanity (Fase 1, sin apuro)
 
 ## Nota sobre las fuentes
