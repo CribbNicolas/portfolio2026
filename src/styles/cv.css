@@ -250,3 +250,12 @@
     letter-spacing: normal;
   }
 }
+
+/* Solo lo usa la landing: en `/cv` el `<h1>` del Header ya abre la página.
+   Vive acá y no en home.css porque es parte del bloque `.cv`. */
+.cv__seccion-titulo {
+  font-size: 1.5rem;
+  font-weight: 800;
+  letter-spacing: -0.025em;
+  margin: 0 0 calc(var(--espacio) * 2);
+}

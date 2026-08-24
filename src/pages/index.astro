@@ -15,20 +15,28 @@
  * al browser: el cliente recibe coordenadas ya resueltas.
  */
 import Base from "../layouts/Base.astro";
-import { content, formatSeniority, buildKnowledgeGraph, layoutGraph } from "@content";
+import { content, formatSeniority, formatDateRange, formatYearMonth, buildKnowledgeGraph, layoutGraph } from "@content";
 import { buildPersonJsonLd } from "../lib/jsonld";
 import { buildSvgMapa } from "../lib/graph-svg";
 import { buildHoverCss, ID_ITEM } from "../lib/lab-hover-css";
 import GraphSvg from "../components/lab/GraphSvg.astro";
+import Section from "../components/cv/Section.astro";
+import RoleBlock from "../components/cv/RoleBlock.astro";
+import SkillList from "../components/cv/SkillList.astro";
 
 import "@fontsource/manrope/400.css";
 import "@fontsource/manrope/600.css";
 import "@fontsource/manrope/800.css";
 import "../styles/tokens.css";
 import "../styles/home.css";
+import "../styles/cv.css";
 import "../styles/lab.css";
 
 const view = await content.getView("portfolio", "es");
+// Regla 7: `cv-ats` recorta por prioridad (cutoff 3) y topea en 5 logros por
+// rol; `portfolio` no recorta nada. La sección de abajo tiene que mostrar
+// EXACTAMENTE lo que sale impreso, porque el botón de descarga promete "el CV".
+const viewCv = await content.getView("cv-ats", "es");
 const { identity } = view;
 const jsonLd = buildPersonJsonLd(view, new URL(Astro.site!));
 
@@ -178,6 +186,45 @@ const afinidades = posicionado.edges.filter((e) => e.kind === "afinidad").length
             en el núcleo. El mapa muestra el hueco en vez de taparlo.
           </p>
         </div>
+      </section>
+
+      <section id="cv" class="cv">
+        <h2 class="cv__seccion-titulo">Currículum</h2>
+
+        <Section title="Perfil">
+          <p class="profile">{viewCv.identity.summary.short}</p>
+        </Section>
+
+        <Section title="Habilidades técnicas">
+          <SkillList skills={viewCv.skills} />
+        </Section>
+
+        <Section title="Experiencia">
+          {viewCv.experience.map((role) => <RoleBlock role={role} />)}
+        </Section>
+
+        <Section title="Educación">
+          {viewCv.education.map((e) => (
+            <div class="entry">
+              <p class="entry__title">{e.degree}{e.field && <> — {e.field}</>}</p>
+              <p class="entry__meta">
+                {e.institution}
+                {e.end && <> · {e.start ? formatDateRange(e.start, e.end) : formatYearMonth(e.end)}</>}
+                {e.status === "partial" && <> · Cursado parcial</>}
+                {e.status === "in-progress" && <> · En curso</>}
+              </p>
+            </div>
+          ))}
+        </Section>
+
+        <Section title="Idiomas">
+          {viewCv.languages.map((l) => (
+            <p class="skill-group">
+              <span class="skill-group__label">{l.name}:</span>{" "}
+              {l.level === "native" ? "Nativo" : l.level}
+            </p>
+          ))}
+        </Section>
       </section>
     </main>
   </div>
