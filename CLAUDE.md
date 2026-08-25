@@ -55,6 +55,9 @@ src/
                       El lector llega al CV por el ancla `#cv` de la landing.
   pages/index.astro   La landing: hero + índice + #mapa + #proyectos + #cv. ÚNICA página con JS.
   pages/cv.json.ts    Endpoint public-api.
+  pages/build.json.ts El commit publicado (CF_PAGES_COMMIT_SHA). Un solo consumidor: el smoke,
+                      que espera con esto a que Cloudflare sirva el commit recién pusheado.
+  pages/404.astro     Sin esto Pages devuelve 200 con HTML para cualquier ruta: soft-404.
   pages/llms.txt.ts   Endpoint markdown para agentes.
   components/cv/      Componentes tontos: reciben props resueltas, no filtran nada.
   components/proyectos/ListaProyectos.astro  Los proyectos. Cada tarjeta lleva el id que
@@ -99,7 +102,9 @@ scripts/
   no-client-js.check.ts  Política de JS por página en todo dist/. Blinda /cv.
   bundle-budget.check.ts Presupuesto de la home: three fuera del camino crítico.
   landing-unica.check.ts La landing es la única puerta: /cv sin links ni indexar, y la
-                      sección CV de la landing sincronizada con el PDF.
+                      sección CV de la landing sincronizada con el PDF. Además: existe 404.html.
+  servido.check.ts    Lo ÚNICO que verifica la respuesta SERVIDA y no dist/. Corre desde el
+                      smoke. Ataja lo que pasa después del build: inyecciones en el borde.
   audit-todos.ts      Reporte NO bloqueante de TODOs publicados.
   version.ts          Comparación de versiones. Puro, sin I/O. Acepta SOLO x.y.z.
   version.test.ts     Tests de lo anterior. Corre en `pnpm test`.
@@ -131,6 +136,7 @@ pnpm run test:pdf    # verifica el PDF (necesita pdf:local previo, o PDF_SOURCE=
 pnpm run test:js     # política de JS por página sobre todo dist/ (necesita build)
 pnpm run test:bundle # presupuesto de bytes del mapa de la home (necesita build)
 pnpm run test:landing # /cv aislada + sección CV sincronizada con el PDF (necesita build)
+pnpm run test:servido # verifica el sitio PUBLICADO. Necesita SITIO=https://…  (no dist/)
 pnpm run test:version # el PR sube package.json.version. Necesita: git fetch origin develop
 pnpm run test:workflows # los .yml de CI parsean y declaran jobs. Corre PRIMERO en CI
 pnpm run audit:todos # lista TODOs publicados. No bloquea

@@ -360,3 +360,72 @@ que leerlos y decidir si valen un check o si ya los cubre otro.
 
 No hay test que reemplace abrir el navegador. Queda anotado para que no se
 confunda "verde en CI" con "revisado".
+
+---
+
+## 14. `smoke-deploy.yml` nunca corrió — **RESUELTO 2026-08-25**
+
+**Severidad: era alta.** Un gate que no corre es peor que no tener gate: igual
+da la sensación de estar cubierto.
+
+El workflow escuchaba `deployment_status`, asumiendo que Cloudflare Pages creaba
+GitHub Deployments. **No los crea:** publica un *check run* llamado
+`Cloudflare Pages`. El evento nunca se disparó.
+
+Medido antes de arreglarlo:
+
+```
+corridas de smoke-deploy.yml:  0
+deployments en la API del repo: 0
+check runs sobre main:          Cloudflare Pages (app: cloudflare-workers-and-pages)
+                                validate        (app: github-actions)
+```
+
+O sea que el PDF publicado nunca pasó por su gate, mientras la lista de Actions
+mostraba todo en verde.
+
+**Es la segunda vez que pasa lo mismo con otra cara.** La primera fue un CR
+literal que dejó el YAML inválido (§ del arreglo en el mismo archivo). Aquella
+la ataja ahora `workflows.check.ts`; esta no la ataja nadie, porque el YAML era
+válido y el disparador simplemente no existía. **No hay forma de verificar
+estáticamente que un evento se dispare** — solo mirar si el workflow corrió
+alguna vez.
+
+**Arreglo.** Dispara con `push` a `main`/`staging`, que sí ocurre siempre. Como
+el push y el deploy no son el mismo momento, se agregó `src/pages/build.json.ts`
+con `CF_PAGES_COMMIT_SHA`: el workflow poletea esa URL hasta que el commit
+servido coincide con el pusheado, y recién entonces corre los tests.
+
+Dormir un rato fijo hubiera sido la versión frágil: verificaría el deploy
+anterior cada vez que el build tardara de más, **y pasaría en verde**.
+
+---
+
+## 15. Los checks miran `dist/`, no lo que se sirve — **CUBIERTO 2026-08-25**
+
+**Severidad: era media, y con un caso concreto encima.**
+
+`no-client-js.check.ts`, `bundle-budget.check.ts` y `landing-unica.check.ts`
+leen archivos de `dist/`. Todo lo que pase **después** del build es invisible
+para ellos: una inyección en el borde, una regla de transformación, un
+`_headers` mal puesto.
+
+El caso que lo hizo urgente no es hipotético: habilitar Cloudflare Web Analytics
+desde el dashboard de Pages inyecta su beacon en **todo** el sitio en el próximo
+deploy. Eso pondría JavaScript en `/cv` —de donde Browser Rendering imprime el
+PDF— y los cinco checks seguirían en verde, porque el `dist/` no cambió.
+
+**Cubierto con `scripts/servido.check.ts`**, que corre desde el smoke contra la
+URL publicada y verifica lo que el dist no puede decir:
+
+- `/cv` servida no carga ningún `<script src>`
+- `/cv` servida no menciona ninguna de las tres huellas de analítica
+- una ruta inventada devuelve `404` y no `200`
+
+Verificado contra producción el 2026-08-25: 3/3. Y contra un sitio cualquiera
+que sí sirve JS, falla — o sea que el test distingue, no pasa siempre.
+
+**Lo que queda abierto:** la cobertura es de tres afirmaciones, no de todos los
+invariantes. El presupuesto de bytes y la sincronía landing↔PDF se siguen
+midiendo solo sobre `dist/`. Ampliarlo es sumar tests a ese archivo; no hace
+falta arquitectura nueva.
