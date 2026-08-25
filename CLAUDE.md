@@ -268,9 +268,14 @@ teléfonos.
 
 ## Pendiente / qué NO hacer todavía
 
-**Arrancá por `docs/06-proxima-sesion.md`:** es el handoff ordenado —qué quedó
-sin verificar, qué está bloqueado en datos del autor y qué conviene hacer
-primero—. Estado completo en `docs/00-indice.md`. Resumen operativo:
+**Arrancá por `docs/06-proxima-sesion.md`:** es el plan de trabajo en tres
+fases, con cómo proceder en cada tarea y qué verificar. La regla que ordena todo:
+**lo que toca cómo se CREAN los datos espera al editor de la fase 2**; arreglarlo
+antes es garantizar que se retoque después.
+
+Antes de "arreglar de paso" algo, mirá `docs/07-deuda-tecnica.md`: puede que ya
+esté anotado con su porqué y con la fase que le toca. Estado completo en
+`docs/00-indice.md`. Resumen operativo:
 
 - **Frontend:** existe (Astro estático, ver `src/` en el mapa de archivos):
   `/cv` sobre `cv-ats` y la home sobre `portfolio`. El CV diseñado (CV-A) y los
@@ -288,9 +293,14 @@ primero—. Estado completo en `docs/00-indice.md`. Resumen operativo:
 - **`services` y `testimonials` vacíos a propósito** — están en el schema para no
   migrar después. No los llenes con placeholders.
 - **Dataset EN:** no cargar ni traducir (decisión fechada en `docs/00-indice.md`).
-- **Sanity (Fase 1, sin apuro):** escribir `sanity-source.ts` que implemente
-  `ContentSource`, traiga el dataset y llame a `resolveView`. Cambiar una línea en
-  `index.ts`. Nada más.
+- **Backend: NO por ahora.** Evaluado el 2026-08-25 (`docs/06` §5). Keystatic
+  descartado —exige adaptador SSR más React y Markdoc—; Sanity viable pero
+  pospuesto, porque con los datos afuera de git el contenido deja de pasar por
+  los gates. En su lugar va `pnpm run editor`, un editor local. Adoptar Sanity
+  más adelante sigue costando lo mismo: `sanity-source.ts` y una línea en
+  `index.ts`.
+- **Techos que están al límite:** el PDF va 2 de 2 páginas y el chunk 3D al 87%.
+  Agregar contenido al CV implica sacar otro. Tabla completa en el `README`.
 
 ## Preguntas abiertas / estado
 

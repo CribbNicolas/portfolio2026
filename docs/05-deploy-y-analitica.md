@@ -9,7 +9,7 @@ abajo. El stack entero sigue siendo gratuito salvo el dominio.
 |---|---|---|---|
 | Hosting **y build** | Cloudflare Pages | Gratis (500 builds/mes) | Pendiente |
 | PDF a demanda | Cloudflare Browser Rendering | Gratis (10 min de browser/día) | Pendiente |
-| Gates de calidad | GitHub Actions | Gratis (repo privado: 2.000 min/mes) | Ya corre |
+| Gates de calidad | GitHub Actions | Gratis y **sin tope de minutos**: el repo es público | Ya corre |
 | Heatmap y sesiones | Microsoft Clarity | Gratis ilimitado | Pendiente |
 | Tráfico y Web Vitals | Cloudflare Web Analytics | Gratis | Pendiente |
 | Dominio | A definir | ~10-15 USD/año | No bloqueante |
@@ -20,9 +20,17 @@ abajo. El stack entero sigue siendo gratuito salvo el dominio.
 
 **Cloudflare Pages y no Azure Static Web Apps ni GitHub Pages.** Pages da banda
 y requests ilimitados en el tier gratuito, 500 builds al mes y dominios propios
-sin tope. Azure Free corta en 100 GB de banda y 2 dominios. GitHub Pages queda
-afuera directamente: el repo es privado y Pages sobre repo privado exige GitHub
-Pro.
+sin tope. Azure Free corta en 100 GB de banda y 2 dominios.
+
+> El argumento contra GitHub Pages era que el repo es privado y Pages sobre repo
+> privado exige GitHub Pro. **El repo pasó a público el 2026-08-25** para poder
+> usar rulesets (ver [08](./08-ramas-y-versionado.md) §2), así que ese argumento
+> ya no aplica. No se revisó la decisión: Pages sigue ganando por banda
+> ilimitada, y sobre todo porque el PDF a demanda necesita una Function, que
+> GitHub Pages no tiene.
+
+Efecto secundario del cambio a público: **Actions dejó de tener tope de
+minutos.** Los 2.000 mensuales aplican a repos privados.
 
 **El build corre en Cloudflare.** Antes no podía: `pnpm run build` levantaba
 Playwright y Chromium para imprimir `dist/cv.pdf`, y ningún builder de host trae
