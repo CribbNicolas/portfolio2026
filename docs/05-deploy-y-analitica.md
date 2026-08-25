@@ -89,7 +89,7 @@ Clarity entra en la landing sin tocar los gates de CI:
 ## 2. Dónde corre cada cosa
 
 ```
-push a cualquier rama
+push a cualquier rama (feature/* · develop · staging · main)
       |
       +--> GitHub Actions · content-validation.yml       <- GATE DE CALIDAD
       |      typecheck · validate · test · build
@@ -98,6 +98,7 @@ push a cualquier rama
       |      audit:todos (no bloquea)
       |
       +--> Cloudflare Pages · build automatico           <- PUBLICA
+             solo staging y main. develop y feature/* NO deployan
              pnpm run build -> dist/
              staging -> URL de preview
              main    -> produccion
@@ -117,10 +118,14 @@ es de dónde salen los bytes (`PDF_SOURCE`).
 **Actions ya no deployea.** No hay token de Cloudflare en GitHub, y por lo tanto
 no hay nada que rotar si un log se filtra. Pages buildea el repo por su cuenta.
 
-**El flujo de trabajo es `staging` → `main`.** Se trabaja en `staging`, que tiene
-su propia URL de preview con la Function funcionando; el smoke corre contra esa
-preview. Recién cuando todo está verde se mergea a `main`, que es la rama de
-producción. Para que "verde" signifique algo, hay que proteger `main` — paso 6.
+**El flujo es `feature/*` → `develop` → `staging` → `main`.** `develop` acumula
+PRs sin deployar nada; `staging` publica una preview real con la Function
+andando, y ahí corre el smoke; `main` es producción. El detalle —y la regla de
+versionado que va con esto— está en
+[08-ramas-y-versionado](./08-ramas-y-versionado.md).
+
+Para que "verde antes de mergear" signifique algo, hay que proteger `main` —
+paso 6.
 
 ---
 
@@ -159,6 +164,22 @@ preview builds de `staging` las necesitan igual):
 | `PNPM_VERSION` | `11.1.3` | La v3 trae pnpm 10.11.1. `packageManager` declara `pnpm@11.1.3` y `engines` pide `>=11`. |
 | `SITE_URL` | tu URL | Sin esto el JSON-LD y el canonical salen apuntando a `https://portfolio.invalid` (`astro.config.mjs:6`). **Hasta que compres el dominio, poné la URL de `*.pages.dev`** — así el sitio queda coherente desde el primer deploy. En Preview conviene dejar la misma. |
 
+### Paso 2b — Qué ramas deployan
+
+**Settings → Builds & deployments → Configure Preview deployments →
+Custom branches.**
+
+| Campo | Valor |
+|---|---|
+| Include | `staging` |
+| Exclude | *(vacío)* |
+
+**No** pongas "All non-Production branches": con esa opción, `develop` y cada
+rama de feature disparan un build y un deploy, que es exactamente lo que
+`develop` existe para evitar (ver [08](./08-ramas-y-versionado.md) §1).
+
+`main` no se lista acá: es la Production branch y deploya por serlo.
+
 ### Paso 3 — El token de Browser Rendering
 
 My Profile → **API Tokens** → **Create Token** → **Custom token**.
@@ -194,10 +215,26 @@ Las lee `functions/cv.pdf.ts`. **Cargalas en Production Y en Preview**, o el
 Pushear `staging`, esperar el deploy y abrir
 `https://<hash>.<proyecto>.pages.dev/cv.pdf`.
 
-**Esto es lo primero que hay que mirar, antes que cualquier otra cosa.** Lo que
-está sin verificar contra Cloudflare real es si Pages rutea un archivo con punto
-en el nombre: `functions/cv.pdf.ts` debería mapear a `/cv.pdf` (Pages saca solo
-la última extensión), pero no está probado contra un deploy.
+**Esto es lo primero que hay que mirar, antes que cualquier otra cosa.**
+
+**Verificado el 2026-08-25** contra `https://cribbnicolas.pages.dev`, primer
+deploy de producción:
+
+| Qué | Medido |
+|---|---|
+| Ruteo del punto en el nombre | `functions/cv.pdf.ts` → `/cv.pdf`. **Anda.** No hizo falta el rewrite |
+| `GET /cv.pdf` en frío | `200 application/pdf`, 56.743 bytes, 5,04 s |
+| `GET /cv.pdf` cacheado | 0,28 s. El caché de borde acierta |
+| `pnpm run test:pdf` contra esa URL | **10/10** |
+| `tagged` y `outline` | **Browser Rendering los honra.** Era la duda que quedaba abierta: no hace falta migrar a Workers |
+| `HEAD /cv.pdf` | Devolvía `200 text/html`. **Bug encontrado acá**, arreglado con `onRequestHead` |
+
+El HEAD es el que casi se escapa: el GET andaba perfecto y los diez tests
+pasaban. `onRequestGet` matchea solo GET, así que el HEAD caía al manejador de
+assets estáticos y devolvía la misma página que una ruta inexistente. Ahora
+`smoke-deploy.yml` lo verifica en un step propio.
+
+La tabla de abajo queda como referencia para la próxima vez que algo falle.
 
 | Qué ves | Qué significa | Qué hacer |
 |---|---|---|
@@ -207,10 +244,11 @@ la última extensión), pero no está probado contra un deploy.
 | `502 No se pudo generar el PDF` | El token no tiene el permiso (Browser Run → Edit), o la cuenta no tiene el producto habilitado | Revisar el paso 3 |
 | `429` | Se agotaron los 10 min del día | Esperar. A este volumen no debería pasar |
 
-Si el PDF abre pero **sin tagging**, el smoke lo va a decir con el mensaje `el
-PDF no está tagged`. Significaría que Browser Rendering ignora `tagged`/`outline`
-en `pdfOptions`. La salida entonces es migrar el hosting a Workers con assets
-estáticos, donde el binding da Puppeteer completo — no aflojar el test.
+Si alguna vez el PDF abre pero **sin tagging**, el smoke lo va a decir con el
+mensaje `el PDF no está tagged`. Hoy no pasa —está medido—, pero significaría
+que Browser Rendering dejó de honrar `tagged`/`outline` en `pdfOptions`. La
+salida entonces es migrar el hosting a Workers con assets estáticos, donde el
+binding da Puppeteer completo — no aflojar el test.
 
 ### Paso 6 — Proteger `main`
 
@@ -218,6 +256,15 @@ En GitHub: Settings → Branches → Add rule sobre `main`.
 
 - Require a pull request before merging.
 - Require status checks to pass → **`validate`** (el job de `content-validation.yml`).
+
+**La misma regla sobre `staging` y sobre `develop`**, y en `develop` además el
+check `bump`. Ahí "Require a pull request" no es opcional: `version-gate.yml` se
+dispara con el evento `pull_request`, así que un push directo lo saltea entero y
+mete código sin subir la versión.
+
+Los rulesets sólo se aplican en repos públicos con plan Free — esa es la razón
+por la que este repo es público. El detalle está en
+[08](./08-ramas-y-versionado.md) §2.
 
 Sin esto, "todo verde antes de mergear" es una intención, no un mecanismo — y el
 orden viejo (deployar sólo después de la secuencia completa) se perdería sin
@@ -314,13 +361,16 @@ Las tres preguntas que vale la pena mirar:
 
 ## 7. Estado
 
-- [ ] Proyecto de Cloudflare Pages creado, conectado al repo (§3 paso 1)
-- [ ] `NODE_VERSION`, `PNPM_VERSION`, `SITE_URL` cargadas en Production y Preview (§3 paso 2)
-- [ ] Token de Browser Rendering creado (§3 paso 3)
-- [ ] `BROWSER_RENDERING_*` cargadas en Production y Preview (§3 paso 4)
-- [ ] **`/cv.pdf` verificado en la preview de `staging`** (§3 paso 5) — bloquea el merge a `main`
-- [ ] `main` protegida con el check `validate` (§3 paso 6)
-- [ ] `smoke-deploy.yml` en `main` y disparando (solo funciona una vez que está en la rama por defecto)
+- [x] Proyecto de Cloudflare Pages creado, conectado al repo (§3 paso 1) — `cribbnicolas.pages.dev`
+- [x] `NODE_VERSION`, `PNPM_VERSION`, `SITE_URL` cargadas (§3 paso 2)
+- [x] Token de Browser Run creado (§3 paso 3)
+- [x] `BROWSER_RENDERING_*` cargadas en Production (§3 paso 4)
+- [ ] `BROWSER_RENDERING_*` cargadas también en **Preview** — sin esto el `/cv.pdf` de las previews da 503
+- [x] **`/cv.pdf` verificado en producción** (§3 paso 5) — 10/10, tagged incluido
+- [ ] Preview deployments en **Custom branches → include `staging`** (§3 paso 2b). NO "All non-Production branches": deployaría `develop`
+- [ ] Repo público y un ruleset por rama —`main`, `staging`, `develop`— con "Require a pull request" y los status checks requeridos ([08](./08-ramas-y-versionado.md) §2)
+- [x] `smoke-deploy.yml` en `main` — dispara desde el próximo deploy
+- [ ] Página 404 propia: hoy una ruta inexistente devuelve `200` con HTML en vez de `404`. Es un soft-404 y los crawlers lo penalizan. Se arregla con `src/pages/404.astro`
 - [ ] Dominio comprado, apuntado, y `SITE_URL` actualizado (§3 paso 7)
 - [ ] Cloudflare Web Analytics activo (§3 paso 8)
 - [ ] Clarity en la landing + `test:js` verde (§3 paso 9)

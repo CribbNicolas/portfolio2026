@@ -22,8 +22,7 @@
     },
     "contact": {
       "email": "cribbnicolas26@gmail.com",
-      "phone": "<TELEFONO-REMOVIDO>",
-      "publishPhoneOn": ["cv", "cv-short"]
+      "publishPhoneOn": []
     },
     "links": [
       { "label": "GitHub", "url": "https://github.com/CribbNicolas", "kind": "github" },

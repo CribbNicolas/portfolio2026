@@ -117,3 +117,19 @@ export async function onRequestGet(contexto: Contexto): Promise<Response> {
   waitUntil(cacheDeBorde.put(clave, pdf.clone()));
   return pdf;
 }
+
+/**
+ * HEAD contesta lo mismo que GET, sin cuerpo.
+ *
+ * Sin esto, Pages no matchea el pedido contra la Function —`onRequestGet` es
+ * SOLO GET— y lo atiende el manejador de assets estáticos. Medido contra el
+ * deploy: `HEAD /cv.pdf` devolvía `200 text/html`, byte por byte la misma
+ * respuesta que `HEAD /una-ruta-que-no-existe`. Quien hace HEAD antes de bajar
+ * —unfurlers de links, crawlers de reclutamiento, chequeos de monitoreo— veía
+ * una página HTML donde esperaba un PDF.
+ *
+ * Reusar el handler es correcto: el runtime descarta el cuerpo de una respuesta
+ * a HEAD. Y no duplica renders, porque `claveDeCache` arma siempre un GET, así
+ * que un HEAD posterior al primer render pega el mismo caché.
+ */
+export const onRequestHead = onRequestGet;

@@ -36,11 +36,16 @@ content/
 scripts/validate.ts     Entry point de `npm run validate`.
 .github/workflows/      content-validation.yml — typecheck + validate + test + build + pdf:local + test:pdf + los tres checks + audit:todos en cada push. Sube dist/cv.pdf como artifact. NO deployea: de eso se encarga Cloudflare Pages.
                         smoke-deploy.yml — corre test:pdf contra el /cv.pdf PUBLICADO en cada deploy con éxito de Pages (previews de staging incluidas). Solo dispara si el archivo está en la rama por defecto.
+                        version-gate.yml — solo en PRs a develop: package.json.version tiene que subir.
 functions/              Cloudflare Pages Functions. Lo ÚNICO del repo que corre en runtime.
   cv.pdf.ts           GET /cv.pdf. Le pide a Browser Rendering que imprima nuestro propio /cv y cachea el resultado. Reemplaza al dist/cv.pdf estático.
   _pdf.ts             Las piezas puras (cuerpo del pedido, clave de caché, cabeceras). El guion bajo lo saca del ruteo de Pages.
   _pdf.test.ts        Custodia que el PDF servido pida las MISMAS opciones que el PDF testeado.
 docs/                   Ver docs/00-indice.md. El "por qué" de cada decisión de diseño vive acá.
+                        08-ramas-y-versionado.md — feature/* → develop → staging → main, y la regla del bump.
+                        LEELO antes de abrir un PR: el de develop falla si no subís la versión.
+                        07-deuda-tecnica.md — lo encontrado fuera de scope y no arreglado. Mirarlo ANTES de
+                        "arreglar de paso" algo: puede que ya esté anotado con su porqué.
 src/
   pages/cv.astro      El CV en HTML. ÚNICA fuente del layout; de acá sale el PDF.
                       NO es un destino navegable: `noindex` y cero links entrantes.
@@ -88,6 +93,11 @@ scripts/
   landing-unica.check.ts La landing es la única puerta: /cv sin links ni indexar, y la
                       sección CV de la landing sincronizada con el PDF.
   audit-todos.ts      Reporte NO bloqueante de TODOs publicados.
+  version.ts          Comparación de versiones. Puro, sin I/O. Acepta SOLO x.y.z.
+  version.test.ts     Tests de lo anterior. Corre en `pnpm test`.
+  version-bump.check.ts  Gate del bump. Lee git, por eso no es *.test.ts.
+  workflows.check.ts  Los .yml de CI parsean. Existe porque un CR incrustado dejó
+                      smoke-deploy.yml inválido tres commits sin que se notara.
 ```
 
 **No toques sin pensarlo:**
@@ -113,12 +123,14 @@ pnpm run test:pdf    # verifica el PDF (necesita pdf:local previo, o PDF_SOURCE=
 pnpm run test:js     # política de JS por página sobre todo dist/ (necesita build)
 pnpm run test:bundle # presupuesto de bytes del mapa de la home (necesita build)
 pnpm run test:landing # /cv aislada + sección CV sincronizada con el PDF (necesita build)
+pnpm run test:version # el PR sube package.json.version. Necesita: git fetch origin develop
+pnpm run test:workflows # los .yml de CI parsean y declaran jobs. Corre PRIMERO en CI
 pnpm run audit:todos # lista TODOs publicados. No bloquea
 pnpm run audit:deps  # pnpm audit --audit-level high
 ```
 
 **Corré la secuencia completa antes de dar cualquier cosa por hecha:**
-`pnpm run typecheck && pnpm run validate && pnpm test && pnpm run build && pnpm run pdf:local && pnpm run test:pdf && pnpm run test:js && pnpm run test:bundle && pnpm run test:landing && pnpm run audit:todos`.
+`pnpm run test:workflows && pnpm run typecheck && pnpm run validate && pnpm test && pnpm run build && pnpm run pdf:local && pnpm run test:pdf && pnpm run test:js && pnpm run test:bundle && pnpm run test:landing && pnpm run audit:todos`.
 Si `validate` falla, el mensaje dice qué regla se violó y cómo arreglarla; leelo,
 no lo saltees. Todo eso corre en CI en cada push
 (`.github/workflows/content-validation.yml`; repo ya en GitHub, privado) —
