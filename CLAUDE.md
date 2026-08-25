@@ -37,6 +37,9 @@ scripts/validate.ts     Entry point de `npm run validate`.
 .github/workflows/      content-validation.yml — typecheck + validate + test + build + pdf:local + test:pdf + los tres checks + audit:todos en cada push. Sube dist/cv.pdf como artifact. NO deployea: de eso se encarga Cloudflare Pages.
                         smoke-deploy.yml — corre test:pdf contra el /cv.pdf PUBLICADO en cada deploy con éxito de Pages (previews de staging incluidas). Solo dispara si el archivo está en la rama por defecto.
                         version-gate.yml — solo en PRs a develop: package.json.version tiene que subir.
+                        flujo-de-ramas.yml — solo en PRs a staging/main: verifica de qué rama vienen.
+                        A main solo entra staging; a staging solo entra develop. Los rulesets no
+                        pueden expresar esto: miran la rama destino, no el origen.
 functions/              Cloudflare Pages Functions. Lo ÚNICO del repo que corre en runtime.
   cv.pdf.ts           GET /cv.pdf. Le pide a Browser Rendering que imprima nuestro propio /cv y cachea el resultado. Reemplaza al dist/cv.pdf estático.
   _pdf.ts             Las piezas puras (cuerpo del pedido, clave de caché, cabeceras). El guion bajo lo saca del ruteo de Pages.
@@ -62,6 +65,8 @@ src/
   lib/jsonld.ts       ContentView → schema.org Person.
   lib/graph-svg.ts    PositionedGraph → lista de dibujo. Niebla, orden de pintado, etiquetas.
   lib/lab-hover-css.ts  Grafo → reglas :has(). El hover cruzado funciona SIN JS.
+  scripts/analitica.ts  Clarity. SOLO lo llama index.astro; nunca Base.astro (/cv en cero JS).
+                      Sin PUBLIC_CLARITY_ID el import se va por tree-shaking y no pesa nada.
   scripts/lab/        Lo ÚNICO que se bundlea para el browser. Ver §Frontend del mapa.
   scripts/lab/pildora.ts  Retraso de la barra flotante al scrollear. Adorno: detrás de
                       `prefers-reduced-motion` y el rAF se apaga solo al frenar.

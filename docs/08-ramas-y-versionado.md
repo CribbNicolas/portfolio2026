@@ -37,11 +37,12 @@ correcta es **Custom branches, incluyendo sólo `staging`**. Ver
 **Qué corre en cada una.** `content-validation.yml` corre en todas: el gate de
 calidad no depende de si algo se publica. Lo que cambia es lo demás:
 
-| Workflow | Cuándo |
-|---|---|
-| `content-validation.yml` | Todo push y todo PR |
-| `version-gate.yml` | Sólo PRs que apuntan a `develop` |
-| `smoke-deploy.yml` | Cada deploy con éxito de Pages (o sea: `staging` y `main`) |
+| Workflow | Cuándo | Job |
+|---|---|---|
+| `content-validation.yml` | Todo push y todo PR | `validate` |
+| `version-gate.yml` | Sólo PRs que apuntan a `develop` | `bump` |
+| `flujo-de-ramas.yml` | Sólo PRs que apuntan a `staging` o `main` | `flujo` |
+| `smoke-deploy.yml` | Cada deploy con éxito de Pages (o sea: `staging` y `main`) | — |
 
 ---
 
@@ -64,9 +65,30 @@ Configuración, un ruleset por rama:
 
 | Rama | Reglas |
 |---|---|
-| `main` | Require a pull request (0 approvals) · Require status checks: `validate` · Block force pushes · Restrict deletions |
-| `staging` | Igual que `main` |
-| `develop` | Igual, más el status check **`bump`** |
+| `main` | Require a pull request (0 approvals) · Status checks: `validate` + **`flujo`** · Block force pushes · Restrict deletions |
+| `staging` | Igual que `main`: `validate` + **`flujo`** |
+| `develop` | Igual, pero con `validate` + **`bump`** en vez de `flujo` |
+
+### De dónde puede venir un PR
+
+Los rulesets **no** saben de dónde viene un pull request: miran la rama que se
+actualiza, no la que aporta los commits. Se puede exigir que haya un PR y que
+pasen checks, pero no que el origen sea una rama concreta.
+
+Ese pedazo lo pone `flujo-de-ramas.yml`: falla si un PR a `main` no viene de
+`staging`, o si uno a `staging` no viene de `develop`. Sin él, nada impediría
+abrir un PR de `feature/lo-que-sea` directo a `main` y saltearse de una sola vez
+la preview, el smoke sobre el PDF publicado y el bump de versión.
+
+También rechaza los PRs que vengan de un fork. El repo es público, así que
+cualquiera puede forkearlo y abrir un PR desde una rama llamada `staging`:
+`head_ref` trae solo el nombre, y sin comparar el repositorio de origen ese PR
+pasaría el filtro por llamarse igual.
+
+**No hay escape para hotfix, a propósito.** Un camino alternativo que nadie usa
+se pudre sin que nadie lo note. Si algún día hay que ir directo a `main`, se
+desactiva el check en el ruleset y se vuelve a activar: dos clicks, y queda en
+el log de auditoría del repo.
 
 **`Required approvals` en 0, no en 1.** GitHub no deja aprobar el propio PR. Con
 1, un repo de una sola persona queda trabado sin salida.
