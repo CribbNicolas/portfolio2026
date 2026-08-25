@@ -278,11 +278,35 @@ const nombreDeSkill = new Map(
         </Section>
       </section>
     </main>
+
+    {/*
+      La línea de privacidad. Clarity usa cookies y graba sesiones; decirlo es
+      lo mínimo razonable si llega tráfico de la UE (docs/05 §5). Vive acá y no
+      en `Base.astro` porque Clarity tampoco vive ahí: si mañana se saca la
+      analítica, esta línea se va con ella y no queda huérfana en `/cv`.
+    */}
+    <footer class="pie">
+      <p>
+        Uso Microsoft Clarity para ver qué partes de esta página se leen: mide
+        clicks y scroll, y graba sesiones anónimas. Usa cookies.{" "}
+        <a
+          href="https://privacy.microsoft.com/privacystatement"
+          rel="noopener noreferrer"
+          target="_blank">Su política de privacidad</a>.
+      </p>
+    </footer>
   </div>
 
   <script type="application/json" data-lab-datos set:html={datosGrafo} />
   <script>
+    // La analítica va PRIMERO, y no es un descuido: `Clarity.init` solo inyecta
+    // un `<script async>` y su propio try/catch se traga cualquier error, así
+    // que no puede tirar. `iniciar()` sí toca el DOM y puede fallar en un
+    // dispositivo raro — al revés, un fallo del mapa se llevaría puesta la
+    // medición, que es justo lo que sirve para entender ese fallo.
+    import { iniciarAnalitica } from "../scripts/analitica";
     import { iniciar } from "../scripts/lab/boot";
+    iniciarAnalitica();
     iniciar();
   </script>
 </Base>

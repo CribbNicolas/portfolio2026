@@ -62,6 +62,8 @@ src/
   lib/jsonld.ts       ContentView → schema.org Person.
   lib/graph-svg.ts    PositionedGraph → lista de dibujo. Niebla, orden de pintado, etiquetas.
   lib/lab-hover-css.ts  Grafo → reglas :has(). El hover cruzado funciona SIN JS.
+  scripts/analitica.ts  Clarity. SOLO lo llama index.astro; nunca Base.astro (/cv en cero JS).
+                      Sin PUBLIC_CLARITY_ID el import se va por tree-shaking y no pesa nada.
   scripts/lab/        Lo ÚNICO que se bundlea para el browser. Ver §Frontend del mapa.
   scripts/lab/pildora.ts  Retraso de la barra flotante al scrollear. Adorno: detrás de
                       `prefers-reduced-motion` y el rAF se apaga solo al frenar.
