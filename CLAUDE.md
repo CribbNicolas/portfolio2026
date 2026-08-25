@@ -229,7 +229,9 @@ teléfonos.
 
 ## Pendiente / qué NO hacer todavía
 
-Estado completo en `docs/00-indice.md`. Resumen operativo:
+**Arrancá por `docs/06-proxima-sesion.md`:** es el handoff ordenado —qué quedó
+sin verificar, qué está bloqueado en datos del autor y qué conviene hacer
+primero—. Estado completo en `docs/00-indice.md`. Resumen operativo:
 
 - **Frontend:** existe (Astro estático, ver `src/` en el mapa de archivos):
   `/cv` sobre `cv-ats` y la home sobre `portfolio`. El CV diseñado (CV-A) y los

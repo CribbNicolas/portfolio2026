@@ -9,6 +9,7 @@ Todo lo que sabemos y todo lo que decidimos. Si algo no está acá, no existe.
 | [03-cv.md](./03-cv.md) | Formato, contenido, bullets, checklist por postulación |
 | [04-portfolio.md](./04-portfolio.md) | Estructura, casos de estudio, capa legible por máquinas |
 | [05-deploy-y-analitica.md](./05-deploy-y-analitica.md) | El stack gratuito (Cloudflare Pages, Actions, Clarity) y los pasos para conectarlo |
+| [06-proxima-sesion.md](./06-proxima-sesion.md) | **Handoff.** Qué quedó a medias y en qué orden atacarlo. Empezar acá |
 | [CONTRATO.md](./CONTRATO.md) | Reglas del sistema de contenido |
 
 ---
