@@ -104,8 +104,9 @@ push a cualquier rama (feature/* · develop · staging · main)
              main    -> produccion
                    |
                    +--> GitHub Actions · smoke-deploy.yml  <- GATE POST-DEPLOY
-                          GET <url>/cv.pdf
-                          test:pdf sobre esos bytes        <- el PDF SERVIDO pasa el ATS
+                          espera /build.json == este commit
+                          test:pdf sobre el PDF publicado
+                          test:servido: /cv sin JS, 404 real  <- lo que dist/ no puede decir
 ```
 
 **Por qué el gate está dos veces.** `pdf:local` imprime con Playwright en el
@@ -114,6 +115,15 @@ sobre el mismo layout. El primero bloquea el merge sin depender de la red de
 nadie; el segundo es lo único que prueba que lo que baja la gente parsea. Las
 assertions son las mismas —`scripts/pdf-output.check.ts`— y lo único que cambia
 es de dónde salen los bytes (`PDF_SOURCE`).
+
+**Y el smoke es lo único que ve lo SERVIDO.** Los demás checks leen `dist/`, así
+que no pueden ver nada que pase después del build —una inyección en el borde,
+una regla de transformación—. `scripts/servido.check.ts` pide las URLs reales.
+
+**Cómo sabe que el deploy ya está arriba.** Espera a que `/build.json` devuelva
+el commit que se acaba de pushear. Ese endpoint lleva `CF_PAGES_COMMIT_SHA` y
+existe sólo para esto. Dormir un rato fijo sería frágil: verificaría el deploy
+anterior cada vez que el build tardara de más, y pasaría en verde.
 
 **Actions ya no deployea.** No hay token de Cloudflare en GitHub, y por lo tanto
 no hay nada que rotar si un log se filtra. Pages buildea el repo por su cuenta.
@@ -283,12 +293,31 @@ nameservers a Cloudflare.
 
 ### Paso 8 — Cloudflare Web Analytics
 
-Dashboard → **Analytics & Logs** → **Web Analytics** → **Add a site**.
+**El código ya está.** Falta el token.
 
-Si el sitio se sirve por Cloudflare con dominio propio, se puede activar sin
-tocar el HTML. Si pide el beacon, es un `<script defer>` que va en
-`src/layouts/Base.astro`, **condicionado a que no sea `/cv`** — ver el paso 9,
-mismo mecanismo.
+Dashboard → **Analytics & Logs** → **Web Analytics** → **Add a site** →
+**setup manual**. Copiar el `token` del snippet y cargarlo en Pages →
+Variables and Secrets como `PUBLIC_CF_BEACON_TOKEN`, plaintext, **solo en
+Production**.
+
+> ⚠️ **NO lo habilites desde el dashboard de Pages.**
+>
+> La doc de Cloudflare dice que al hacerlo *"automatically add the JavaScript
+> snippet to your Pages site on the next deployment"* — **a todo el sitio**, y
+> no documenta cómo limitarlo por página. Eso metería JavaScript en `/cv`, que
+> es de donde Browser Rendering imprime el PDF.
+>
+> Y hay algo peor que el hecho en sí: **`no-client-js.check.ts` no lo cazaría.**
+> Ese check inspecciona `dist/`, y la inyección ocurre en el borde, después del
+> build. El invariante de cero JS en `/cv` se rompería en producción con todos
+> los checks en verde.
+>
+> Por eso el beacon va a mano en `src/pages/index.astro`, igual que Clarity.
+
+Web Analytics **no usa cookies** y no identifica visitantes: mide tráfico,
+referrers, país, navegador y Core Web Vitals. Es lo que Clarity no da. Por eso
+van los dos, y por eso en el pie se nombran por separado — meterlos en la misma
+frase daría a entender que los dos graban.
 
 ### Paso 9 — Microsoft Clarity
 
@@ -401,6 +430,6 @@ Las tres preguntas que vale la pena mirar:
 - [x] `smoke-deploy.yml` en `main` — dispara desde el próximo deploy
 - [ ] Página 404 propia: hoy una ruta inexistente devuelve `200` con HTML en vez de `404`. Es un soft-404 y los crawlers lo penalizan. Se arregla con `src/pages/404.astro`
 - [ ] Dominio comprado, apuntado, y `SITE_URL` actualizado (§3 paso 7)
-- [ ] Cloudflare Web Analytics activo (§3 paso 8)
+- [ ] Token de Web Analytics en `PUBLIC_CF_BEACON_TOKEN`, solo en Production (§3 paso 8)
 - [ ] Cuenta de Clarity creada y `PUBLIC_CLARITY_ID` cargada en Pages, **solo en Production** (§3 paso 9)
 - [x] Línea de privacidad en el pie
