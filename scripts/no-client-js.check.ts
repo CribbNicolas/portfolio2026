@@ -93,11 +93,24 @@ for (const archivo of paginas) {
   });
 }
 
+/**
+ * Las huellas de cada analítica en el HTML servido.
+ *
+ * Se listan una por una y no con un patrón genérico tipo "analytics": si
+ * mañana entra una tercera y nadie la suma acá, conviene que el test quede
+ * evidentemente incompleto y no que pase por casualidad.
+ */
+const HUELLAS_DE_ANALITICA = [
+  { marca: "clarity", nombre: "Microsoft Clarity" },
+  { marca: "cloudflareinsights", nombre: "Cloudflare Web Analytics" },
+  { marca: "cf-beacon", nombre: "Cloudflare Web Analytics" },
+];
+
 test("la analítica vive SOLO en la landing", async () => {
-  // Los tests de arriba ya lo cubren de rebote: Clarity en `Base.astro` haría
-  // que `/cv` emitiera un `<script src>` y varios fallarían. Pero fallarían
-  // diciendo "cv/index.html no puede cargar JS", y quien lea eso va a buscar el
-  // problema en el mapa, no en la analítica.
+  // Los tests de arriba ya lo cubren de rebote: una analítica en `Base.astro`
+  // haría que `/cv` emitiera un `<script src>` y varios fallarían. Pero
+  // fallarían diciendo "cv/index.html no puede cargar JS", y quien lea eso va
+  // a buscar el problema en el mapa, no en la medición.
   //
   // Esto nombra el riesgo: `/cv` es de donde Browser Rendering imprime el PDF,
   // y un script de terceros ahí cambia el render en producción sin que ningún
@@ -106,12 +119,15 @@ test("la analítica vive SOLO en la landing", async () => {
   for (const archivo of paginas) {
     const ruta = relative(DIST, archivo).split(sep).join("/");
     if (ruta === "index.html") continue;
-    if (/clarity/i.test(await readFile(archivo, "utf8"))) culpables.push(ruta);
+    const html = await readFile(archivo, "utf8");
+    for (const { marca, nombre } of HUELLAS_DE_ANALITICA) {
+      if (html.toLowerCase().includes(marca)) culpables.push(`${ruta} (${nombre})`);
+    }
   }
   assert.deepEqual(
     culpables,
     [],
-    `Clarity llegó a ${culpables.join(", ")}. Va SOLO en index.astro: si se ` +
+    `la analítica llegó a ${culpables.join(", ")}. Va SOLO en index.astro: si se ` +
       "movió a Base.astro, /cv dejó de estar en cero JS y el PDF se imprime desde ahí.",
   );
 });

@@ -1,86 +1,104 @@
-# El PDF que sirve producción pasa el ATS, no solo el que produce tu máquina.
+# Verifica el sitio PUBLICADO: que el PDF pase el ATS, y que `/cv` siga en cero
+# JavaScript en la respuesta real y no en el `dist/` que produjo el build.
 #
 # `content-validation.yml` verifica `dist/cv.pdf`, generado con Playwright en el
-# runner. Pero el PDF que baja la gente lo imprime Browser Rendering desde
+# runner. El PDF que baja la gente lo imprime Browser Rendering desde
 # `functions/cv.pdf.ts`: otro Chromium, otra red, otro momento. Son las MISMAS
-# assertions (`pnpm run test:pdf`) sobre bytes distintos, y sin esto la única
-# forma de enterarse de que el PDF servido se rompió sería que un reclutador lo
-# abriera.
+# assertions sobre bytes distintos.
 #
-# Corre en CADA deploy con éxito de Cloudflare Pages —previews de `staging`
-# incluidas—, así que la rama se valida contra su propia URL antes de mergear.
+# La primera version de este archivo escuchaba `deployment_status`, asumiendo
+# que Cloudflare Pages creaba GitHub Deployments. NO los crea: publica un *check
+# run* llamado "Cloudflare Pages". El evento nunca se disparo y este gate estuvo
+# semanas sin correr ni una sola vez, mientras la lista de Actions mostraba todo
+# en verde. Medido: 0 corridas del workflow, 0 deployments en la API del repo.
 #
-# ⚠️ GitHub solo dispara `deployment_status` con la versión del workflow que
-# está en la rama por defecto. Hasta que este archivo llegue a `main`, no se
-# ejecuta. Es esperable en el primer merge, no un bug.
+# Ahora dispara con `push`, que si ocurre siempre. Lo que eso trae es que el
+# push y el deploy no son el mismo momento —Cloudflare tarda uno o dos minutos—,
+# asi que hay que esperar a que la URL sirva ESTE commit y no el anterior. Para
+# eso existe `/build.json`, que lleva `CF_PAGES_COMMIT_SHA`.
+#
+# Dormir un rato fijo en vez de preguntar seria la version fragil: verificaria
+# el deploy anterior cada vez que el build tardara de mas, y pasaria en verde.
 name: smoke-deploy
 
 on:
-  deployment_status:
+  push:
+    branches: [main, staging]
+  # Para volver a correrlo sin pushear nada, cuando algo se rompio afuera.
+  workflow_dispatch:
 
 jobs:
-  cv-pdf:
-    # Pages crea el deployment en `pending` y lo pasa a `success` cuando publicó.
-    # Sin este filtro el job correría dos o tres veces por deploy, y las de
-    # `pending` fallarían siempre porque la URL todavía no sirve nada.
-    if: github.event.deployment_status.state == 'success'
+  publicado:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
-        with:
-          # El commit que se deployó, no la punta de la rama: si alguien pushea
-          # mientras el deploy corre, los tests compararían el PDF publicado
-          # contra un dataset que todavía no está arriba.
-          ref: ${{ github.event.deployment.sha }}
       - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 24
           cache: pnpm
-      # Sin Chromium: acá no se genera ningún PDF, solo se lee uno.
+      # Sin Chromium: aca no se genera ningun PDF, solo se lee uno.
       - run: pnpm install --frozen-lockfile
 
-      - name: Esperar a que /cv.pdf responda
-        env:
-          BASE: ${{ github.event.deployment_status.environment_url }}
+      - name: Resolver la URL de esta rama
         run: |
-          # El primer pedido después de un deploy es siempre un miss de caché, o
-          # sea un render completo de Browser Rendering (~3-5 s). Se reintenta
-          # para no confundir "todavía no calentó" con "está roto".
-          URL="${BASE%/}/cv.pdf"
-          echo "PDF_SOURCE=$URL" >> "$GITHUB_ENV"
-          for intento in $(seq 1 8); do
-            codigo=$(curl -s -o /dev/null -w '%{http_code}' --max-time 60 "$URL" || echo 000)
-            echo "intento $intento → HTTP $codigo"
-            if [ "$codigo" = "200" ]; then exit 0; fi
-            # 503 = faltan los secrets en ese entorno de Pages. Cortar acá y
-            # decirlo, en vez de reintentar ocho veces algo que no va a cambiar.
-            if [ "$codigo" = "503" ]; then
-              echo "::error::$URL devuelve 503: faltan BROWSER_RENDERING_ACCOUNT_ID / BROWSER_RENDERING_TOKEN en este entorno de Pages"
+          # `main` es la Production branch; el resto usa el alias por rama que
+          # arma Pages, `<rama>.<proyecto>.pages.dev`.
+          case "${{ github.ref_name }}" in
+            main)    sitio="https://cribbnicolas.pages.dev" ;;
+            staging) sitio="https://staging.cribbnicolas.pages.dev" ;;
+            *)
+              echo "::error::rama ${{ github.ref_name }} sin URL conocida. Revisa el filtro del workflow."
               exit 1
+              ;;
+          esac
+          echo "SITIO=$sitio" >> "$GITHUB_ENV"
+          echo "PDF_SOURCE=$sitio/cv.pdf" >> "$GITHUB_ENV"
+          echo "sitio: $sitio"
+
+      - name: Esperar a que Cloudflare publique este commit
+        run: |
+          # Se pregunta por el commit y no por "responde 200": el deploy
+          # anterior ya responde 200 todo el tiempo, asi que eso no distingue
+          # nada.
+          esperado="${{ github.sha }}"
+          echo "esperando commit $esperado en $SITIO/build.json"
+
+          for intento in $(seq 1 30); do
+            # `?t=` para no comerse una respuesta cacheada justo cuando el valor
+            # acaba de cambiar.
+            cuerpo=$(curl -s --max-time 20 "$SITIO/build.json?t=$(date +%s)" || echo '{}')
+            publicado=$(printf '%s' "$cuerpo" | sed -n 's/.*"commit"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p')
+            echo "  intento $intento: publicado=${publicado:-<sin respuesta>}"
+
+            if [ "$publicado" = "$esperado" ]; then
+              echo "publicado"
+              exit 0
             fi
-            sleep 10
+
+            sleep 20
           done
-          echo "::error::$URL nunca devolvió 200"
+
+          echo "::error::$SITIO nunca llego a servir $esperado. O el build de Pages fallo, o /build.json no existe en el deploy publicado."
           exit 1
 
-      # Las mismas assertions que el gate pre-deploy, contra la URL publicada.
       - name: El PDF servido pasa la capa 1 del embudo
         run: pnpm run test:pdf
 
-      # HEAD tiene su propio step porque tiene su propio ruteo: `onRequestGet`
-      # no matchea HEAD, y cuando faltaba el handler esta ruta devolvía
-      # `200 text/html` —la misma respuesta que una ruta inexistente— mientras
-      # el GET andaba perfecto. Un test sobre el cuerpo del GET no lo ve.
       - name: El HEAD declara un PDF, no una pagina
         run: |
           # `-w '%{content_type}'` en vez de parsear la cabecera con grep: el
-          # header viene terminado en CR y sacarlo a mano fue justo lo que rompio
-          # este archivo (un CR literal adentro del YAML). curl lo entrega limpio.
+          # header viene terminado en CR y sacarlo a mano fue lo que una vez
+          # rompio este archivo (un CR literal adentro del YAML).
           tipo=$(curl -sI -o /dev/null -w '%{content_type}' --max-time 60 "$PDF_SOURCE")
           echo "HEAD $PDF_SOURCE -> $tipo"
           case "$tipo" in
             application/pdf*) exit 0 ;;
             *) echo "::error::HEAD devuelve '$tipo' en vez de application/pdf: el handler de HEAD no matchea la Function" ; exit 1 ;;
           esac
+
+      # Lo unico que puede ver lo que pasa DESPUES del build: una inyeccion en
+      # el borde, una regla de transformacion, un _headers mal puesto.
+      - name: La respuesta servida respeta los invariantes
+        run: pnpm run test:servido

@@ -1,6 +1,6 @@
 {
   "name": "portfolio2026-content",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "private": true,
   "type": "module",
   "packageManager": "pnpm@11.1.3",
@@ -20,6 +20,7 @@
     "test:js": "tsx --test scripts/no-client-js.check.ts",
     "test:bundle": "tsx --test scripts/bundle-budget.check.ts",
     "test:landing": "tsx --test scripts/landing-unica.check.ts",
+    "test:servido": "tsx --test scripts/servido.check.ts",
     "test:version": "tsx --test scripts/version-bump.check.ts",
     "test:workflows": "tsx --test scripts/workflows.check.ts",
     "audit:todos": "tsx scripts/audit-todos.ts",
