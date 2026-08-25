@@ -1,5 +1,11 @@
 /**
- * Post-build: sirve `dist/` y le pide a Chromium que imprima `/cv`.
+ * Sirve `dist/` y le pide a Chromium que imprima `/cv` en `dist/cv.pdf`.
+ *
+ * YA NO forma parte de `pnpm run build`. El PDF de producción lo genera
+ * `functions/cv.pdf.ts` a demanda; esto existe para dos cosas: mirar el PDF en
+ * local sin deployar, y producir el archivo contra el que corre
+ * `pnpm run test:pdf` ANTES de que se publique nada. Es el gate pre-deploy, no
+ * el generador del entregable.
  *
  * Se sirve por HTTP y no por `file://` porque las rutas absolutas de los assets
  * (`/_astro/...`) no resuelven desde el sistema de archivos, y el PDF saldría

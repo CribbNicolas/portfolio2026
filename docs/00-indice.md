@@ -8,7 +8,7 @@ Todo lo que sabemos y todo lo que decidimos. Si algo no está acá, no existe.
 | [02-branding.md](./02-branding.md) | Posicionamiento, titular, About, voz, LinkedIn |
 | [03-cv.md](./03-cv.md) | Formato, contenido, bullets, checklist por postulación |
 | [04-portfolio.md](./04-portfolio.md) | Estructura, casos de estudio, capa legible por máquinas |
-| [05-deploy-y-analitica.md](./05-deploy-y-analitica.md) | El stack gratuito (Cloudflare Pages, Actions, Clarity) y los pasos para conectarlo |
+| [05-deploy-y-analitica.md](./05-deploy-y-analitica.md) | El stack gratuito (Cloudflare Pages buildea y hostea, Browser Rendering imprime el PDF, Actions es el gate, Clarity mide) y el checklist para conectarlo |
 | [06-proxima-sesion.md](./06-proxima-sesion.md) | **Handoff.** Qué quedó a medias y en qué orden atacarlo. Empezar acá |
 | [CONTRATO.md](./CONTRATO.md) | Reglas del sistema de contenido |
 
@@ -60,8 +60,8 @@ Fechadas, para saber qué revisar cuando cambie el contexto.
 - [ ] Bloques de texto para LinkedIn
 - [ ] Casos de estudio en el portfolio — antes hay que hacer la investigación de [04 §6](./04-portfolio.md#6-pendiente-de-investigar)
 - [ ] Logros del rol Freelance (2020-04 → 2022-06): hoy tiene uno solo y sus `skillIds` son `["javascript"]`. Esos 2.2 años no le aportan una conexión a ninguna otra tecnología, y por eso WordPress —declarada `core`— queda chica en el mapa
-- [ ] **Deploy** — stack decidido en [05](./05-deploy-y-analitica.md). Bloqueado en comprar el dominio
-- [ ] Analítica: Cloudflare Web Analytics + Clarity en la landing. Ver [05](./05-deploy-y-analitica.md) §2
+- [ ] **Deploy** — stack decidido y código listo en [05](./05-deploy-y-analitica.md). Falta configurar el proyecto de Pages (§3). El dominio ya no bloquea: se arranca con `*.pages.dev`
+- [ ] Analítica: Cloudflare Web Analytics + Clarity en la landing. Ver [05](./05-deploy-y-analitica.md) §3 pasos 8-9
 - [ ] Migración a Sanity (Fase 1, sin apuro)
 
 ## Nota sobre las fuentes

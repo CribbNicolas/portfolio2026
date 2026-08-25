@@ -10,7 +10,8 @@
   },
   "scripts": {
     "dev": "astro dev",
-    "build": "astro build && tsx scripts/build-pdf.ts",
+    "build": "astro build",
+    "pdf:local": "tsx scripts/build-pdf.ts",
     "preview": "astro preview",
     "typecheck": "astro sync && tsc --noEmit && astro check",
     "validate": "tsx scripts/validate.ts",

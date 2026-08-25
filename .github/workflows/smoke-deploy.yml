@@ -1,0 +1,70 @@
+# El PDF que sirve producción pasa el ATS, no solo el que produce tu máquina.
+#
+# `content-validation.yml` verifica `dist/cv.pdf`, generado con Playwright en el
+# runner. Pero el PDF que baja la gente lo imprime Browser Rendering desde
+# `functions/cv.pdf.ts`: otro Chromium, otra red, otro momento. Son las MISMAS
+# assertions (`pnpm run test:pdf`) sobre bytes distintos, y sin esto la única
+# forma de enterarse de que el PDF servido se rompió sería que un reclutador lo
+# abriera.
+#
+# Corre en CADA deploy con éxito de Cloudflare Pages —previews de `staging`
+# incluidas—, así que la rama se valida contra su propia URL antes de mergear.
+#
+# ⚠️ GitHub solo dispara `deployment_status` con la versión del workflow que
+# está en la rama por defecto. Hasta que este archivo llegue a `main`, no se
+# ejecuta. Es esperable en el primer merge, no un bug.
+name: smoke-deploy
+
+on:
+  deployment_status:
+
+jobs:
+  cv-pdf:
+    # Pages crea el deployment en `pending` y lo pasa a `success` cuando publicó.
+    # Sin este filtro el job correría dos o tres veces por deploy, y las de
+    # `pending` fallarían siempre porque la URL todavía no sirve nada.
+    if: github.event.deployment_status.state == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # El commit que se deployó, no la punta de la rama: si alguien pushea
+          # mientras el deploy corre, los tests compararían el PDF publicado
+          # contra un dataset que todavía no está arriba.
+          ref: ${{ github.event.deployment.sha }}
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      # Sin Chromium: acá no se genera ningún PDF, solo se lee uno.
+      - run: pnpm install --frozen-lockfile
+
+      - name: Esperar a que /cv.pdf responda
+        env:
+          BASE: ${{ github.event.deployment_status.environment_url }}
+        run: |
+          # El primer pedido después de un deploy es siempre un miss de caché, o
+          # sea un render completo de Browser Rendering (~3-5 s). Se reintenta
+          # para no confundir "todavía no calentó" con "está roto".
+          URL="${BASE%/}/cv.pdf"
+          echo "PDF_SOURCE=$URL" >> "$GITHUB_ENV"
+          for intento in $(seq 1 8); do
+            codigo=$(curl -s -o /dev/null -w '%{http_code}' --max-time 60 "$URL" || echo 000)
+            echo "intento $intento → HTTP $codigo"
+            if [ "$codigo" = "200" ]; then exit 0; fi
+            # 503 = faltan los secrets en ese entorno de Pages. Cortar acá y
+            # decirlo, en vez de reintentar ocho veces algo que no va a cambiar.
+            if [ "$codigo" = "503" ]; then
+              echo "::error::$URL devuelve 503: faltan BROWSER_RENDERING_ACCOUNT_ID / BROWSER_RENDERING_TOKEN en este entorno de Pages"
+              exit 1
+            fi
+            sleep 10
+          done
+          echo "::error::$URL nunca devolvió 200"
+          exit 1
+
+      # Las mismas assertions que el gate pre-deploy, contra la URL publicada.
+      - name: El PDF servido pasa la capa 1 del embudo
+        run: pnpm run test:pdf
