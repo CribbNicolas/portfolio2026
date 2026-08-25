@@ -1,6 +1,6 @@
 # Hace ciertas las afirmaciones de los docs: las reglas duras son CI, no intenciones.
 # Equivalente local (todos tienen que pasar):
-#   pnpm run typecheck && pnpm run validate && pnpm test && pnpm run build && pnpm run pdf:local && pnpm run test:pdf && pnpm run test:js && pnpm run test:bundle && pnpm run test:landing && pnpm run audit:todos
+#   pnpm run test:workflows && pnpm run typecheck && pnpm run validate && pnpm test && pnpm run build && pnpm run pdf:local && pnpm run test:pdf && pnpm run test:js && pnpm run test:bundle && pnpm run test:landing && pnpm run audit:todos
 name: content-validation
 
 on:
@@ -32,6 +32,9 @@ jobs:
       # con package.json en vez de arreglarlo en silencio. En CI eso es lo que se
       # quiere — un lockfile desactualizado tiene que romper el build, no pasar.
       - run: pnpm install --frozen-lockfile
+      # Primero de todo: si un workflow no parsea, GitHub lo marca fallido SIN
+      # JOBS y el gate que ese archivo define deja de correr sin avisar. Pasó.
+      - run: pnpm run test:workflows
       - run: pnpm run typecheck
       - run: pnpm run validate
       - run: pnpm test

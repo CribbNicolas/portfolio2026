@@ -257,6 +257,10 @@ En GitHub: Settings → Branches → Add rule sobre `main`.
 - Require a pull request before merging.
 - Require status checks to pass → **`validate`** (el job de `content-validation.yml`).
 
+**La misma regla sobre `staging`**, y ahí "Require a pull request" no es
+opcional: `version-gate.yml` se dispara con el evento `pull_request`, así que un
+push directo lo saltea entero y publica sin subir la versión.
+
 Sin esto, "todo verde antes de mergear" es una intención, no un mecanismo — y el
 orden viejo (deployar sólo después de la secuencia completa) se perdería sin
 reemplazo, porque Pages publica apenas ve el push.
@@ -360,6 +364,7 @@ Las tres preguntas que vale la pena mirar:
 - [x] **`/cv.pdf` verificado en producción** (§3 paso 5) — 10/10, tagged incluido
 - [ ] Preview deployments en **Custom branches → include `staging`** (§3 paso 2b). NO "All non-Production branches": deployaría `develop`
 - [ ] `main` protegida con el check `validate` (§3 paso 6)
+- [ ] `staging` protegida con "Require a pull request": sin PR, `version-gate.yml` no corre y se puede publicar sin subir la versión ([08](./08-ramas-y-versionado.md) §3)
 - [x] `smoke-deploy.yml` en `main` — dispara desde el próximo deploy
 - [ ] Página 404 propia: hoy una ruta inexistente devuelve `200` con HTML en vez de `404`. Es un soft-404 y los crawlers lo penalizan. Se arregla con `src/pages/404.astro`
 - [ ] Dominio comprado, apuntado, y `SITE_URL` actualizado (§3 paso 7)

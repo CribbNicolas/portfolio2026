@@ -96,6 +96,8 @@ scripts/
   version.ts          Comparación de versiones. Puro, sin I/O. Acepta SOLO x.y.z.
   version.test.ts     Tests de lo anterior. Corre en `pnpm test`.
   version-bump.check.ts  Gate del bump. Lee git, por eso no es *.test.ts.
+  workflows.check.ts  Los .yml de CI parsean. Existe porque un CR incrustado dejó
+                      smoke-deploy.yml inválido tres commits sin que se notara.
 ```
 
 **No toques sin pensarlo:**
@@ -122,12 +124,13 @@ pnpm run test:js     # política de JS por página sobre todo dist/ (necesita bu
 pnpm run test:bundle # presupuesto de bytes del mapa de la home (necesita build)
 pnpm run test:landing # /cv aislada + sección CV sincronizada con el PDF (necesita build)
 pnpm run test:version # el PR sube package.json.version. Necesita: git fetch origin staging
+pnpm run test:workflows # los .yml de CI parsean y declaran jobs. Corre PRIMERO en CI
 pnpm run audit:todos # lista TODOs publicados. No bloquea
 pnpm run audit:deps  # pnpm audit --audit-level high
 ```
 
 **Corré la secuencia completa antes de dar cualquier cosa por hecha:**
-`pnpm run typecheck && pnpm run validate && pnpm test && pnpm run build && pnpm run pdf:local && pnpm run test:pdf && pnpm run test:js && pnpm run test:bundle && pnpm run test:landing && pnpm run audit:todos`.
+`pnpm run test:workflows && pnpm run typecheck && pnpm run validate && pnpm test && pnpm run build && pnpm run pdf:local && pnpm run test:pdf && pnpm run test:js && pnpm run test:bundle && pnpm run test:landing && pnpm run audit:todos`.
 Si `validate` falla, el mensaje dice qué regla se violó y cómo arreglarla; leelo,
 no lo saltees. Todo eso corre en CI en cada push
 (`.github/workflows/content-validation.yml`; repo ya en GitHub, privado) —

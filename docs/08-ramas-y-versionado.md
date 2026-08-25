@@ -107,6 +107,12 @@ Además clasifica el salto y, si no es un escalón limpio —`0.1.0 → 0.3.0`,
 `1.2.3 → 2.0.1`— lo dice **sin bloquear**. Saltar a veces es a propósito, pero
 es también la firma exacta de un typo, y callarlo sería peor que avisar de más.
 
+**El agujero conocido: el gate sólo mira PRs.** Un push directo a `staging`
+—sin PR— no pasa por `version-gate.yml` y publica sin subir el número. No es un
+descuido del check: GitHub no puede correr un check de PR donde no hay PR. Se
+tapa protegiendo `staging` igual que `main`, con "Require a pull request before
+merging". Hasta que eso esté, la regla depende de no saltearse el flujo.
+
 **Correrlo antes de abrir el PR:**
 
 ```bash
@@ -130,6 +136,10 @@ La lógica pura está en `scripts/version.ts` y se testea en `pnpm test`
    contra el `/cv.pdf` publicado. Mirar que pase.
 4. PR **`staging` → `main`**. Sin tocar la versión. Al mergear, producción.
    El smoke corre de nuevo, ahora contra producción.
+
+Un lote que todavía no llegó a `staging` es **un solo release**, por más commits
+que tenga. La versión sube una vez, en el PR que lo mergea — no una vez por
+commit.
 
 **El único paso que se puede olvidar es el 2**, y es el único que tiene un check
 propio.
