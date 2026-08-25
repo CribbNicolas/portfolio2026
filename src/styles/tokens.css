@@ -23,11 +23,18 @@
   --acento: #b0472a;
   --acento-tenue: #fbeee9;
   --linea: #e5e3df;
+  /* Translúcido a propósito: la píldora lleva `backdrop-filter`, y con un
+     fondo opaco el blur no se vería. */
+  --fondo-pildora: rgb(255 255 255 / 0.82);
 
   --fuente: "Manrope", system-ui, -apple-system, sans-serif;
 
   /* Unidad de espacio única. Todo margen y padding es un múltiplo de esto. */
   --espacio: 8px;
+  /* Ancho de TODAS las secciones de la landing. Un solo valor: si el hero, el
+     mapa, los proyectos y el CV no comparten borde, la página se lee como
+     cuatro páginas pegadas. 45rem es la medida que `/cv` ya venía usando. */
+  --ancho: 45rem;
   --radio: 10px;
   --sombra: 0 1px 2px rgb(23 24 28 / 0.04), 0 8px 24px rgb(23 24 28 / 0.06);
 }
@@ -46,6 +53,7 @@
     --acento: #e2825f;
     --acento-tenue: #2c1c16;
     --linea: #2c2f36;
+    --fondo-pildora: rgb(19 20 23 / 0.78);
   }
 }
 

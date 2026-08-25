@@ -1,0 +1,66 @@
+---
+/**
+ * Los proyectos, en lista compacta con link público.
+ *
+ * Es la sección "Casos" que `docs/04` §1 tenía pendiente, en su versión
+ * honesta: `problem.short` y `outcome.short` todavía tienen TODO en dos de los
+ * tres proyectos, así que el formato problema → decisión → resultado del §2 no
+ * se puede llenar sin inventar. `solution.short` está limpio en los tres.
+ *
+ * Componente tonto: recibe los proyectos ya resueltos y un mapa de nombres de
+ * skill. No filtra ni ordena por visibility (invariante 1).
+ *
+ * El `id` de cada tarjeta es el que espera `buildHoverCss`: con eso el hover
+ * cruzado con el mapa funciona SIN JavaScript, con reglas que ya existen.
+ */
+import type { Project } from "@content";
+import { nodeId } from "@content";
+import { ID_ITEM } from "../../lib/lab-hover-css";
+
+interface Props {
+  proyectos: Project[];
+  /** skillId → nombre canónico. Lo arma la página desde la vista. */
+  nombreDeSkill: Map<string, string>;
+}
+
+const { proyectos, nombreDeSkill } = Astro.props;
+
+/** Qué se muestra al lado del nombre. `archived` no se etiqueta: no aporta. */
+const ESTADO: Partial<Record<Project["status"], string>> = {
+  "in-progress": "En curso",
+  prototype: "Prototipo",
+};
+---
+
+<ul class="proyectos">
+  {proyectos.map((p) => (
+    <li
+      class="proyecto"
+      id={ID_ITEM(nodeId("project", p.id))}
+      data-node={nodeId("project", p.id)}
+    >
+      <h3 class="proyecto__nombre">
+        {p.name}
+        {ESTADO[p.status] && <span class="proyecto__estado">{ESTADO[p.status]}</span>}
+      </h3>
+      {p.client && <p class="proyecto__cliente">{p.client}</p>}
+      <p class="proyecto__solucion">{p.solution.short}</p>
+      <ul class="proyecto__stack">
+        {p.skillIds.map((id) => {
+          const nombre = nombreDeSkill.get(id);
+          return nombre ? <li>{nombre}</li> : null;
+        })}
+      </ul>
+      {p.links.length > 0 && (
+        <p class="proyecto__links">
+          {p.links.map((l, i) => (
+            <>
+              {i > 0 && " · "}
+              <a href={l.url} rel="noopener">{l.label}</a>
+            </>
+          ))}
+        </p>
+      )}
+    </li>
+  ))}
+</ul>

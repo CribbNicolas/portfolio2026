@@ -1,6 +1,6 @@
 # Hace ciertas las afirmaciones de los docs: las reglas duras son CI, no intenciones.
 # Equivalente local (todos tienen que pasar):
-#   pnpm run typecheck && pnpm run validate && pnpm test && pnpm run build && pnpm run test:pdf && pnpm run test:js && pnpm run test:bundle && pnpm run audit:todos
+#   pnpm run typecheck && pnpm run validate && pnpm test && pnpm run build && pnpm run test:pdf && pnpm run test:js && pnpm run test:bundle && pnpm run test:landing && pnpm run audit:todos
 name: content-validation
 
 on:
@@ -65,6 +65,10 @@ jobs:
       # Presupuesto de bytes de /lab. El chunk de three tiene que quedar afuera
       # del camino crítico, no solo "ser lazy" de palabra.
       - run: pnpm run test:bundle
+      # La landing es la unica puerta: /cv sin links entrantes y con noindex, y
+      # su seccion CV sincronizada con el PDF. Sin esto, alguien agrega un link
+      # "ver CV completo" en tres meses y nadie se entera.
+      - run: pnpm run test:landing
 
       # No bloquea: son datos pendientes conocidos. Queda en el log para verlos.
       - run: pnpm run audit:todos

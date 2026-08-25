@@ -1,7 +1,7 @@
 # Spec — Landing única: mapa, proyectos y CV en una sola página
 
 Fecha: 2026-08-21
-Estado: **aprobado**, pendiente de implementar.
+Estado: **implementado** el 2026-08-24.
 
 Reemplaza la navegación de dos páginas por una landing sola. `/cv` deja de ser
 un destino y pasa a ser lo que siempre fue por debajo: la fuente de impresión

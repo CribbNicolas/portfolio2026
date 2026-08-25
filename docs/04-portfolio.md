@@ -6,18 +6,38 @@ Dos objetivos a la vez: convencer a un equipo que contrata y cerrar clientes fre
 
 ## 1. Estructura
 
+Desde el 2026-08-24 el sitio es **una sola página navegable**. El orden real
+es el del spec de la landing única §3:
+
 ```
-1. Hero          → quién sos + qué construís + CTA. Una frase, no un párrafo.   [hecho]
-2. Contacto      → mail + LinkedIn. Sin formulario de 8 campos.                 [hecho]
-3. Stack         → el mapa de conocimiento. Ver §7.                             [hecho]
-4. Casos         → 3 proyectos en formato problema → decisión → resultado.      [pendiente]
-5. Servicios     → qué te pueden contratar a hacer (lado freelance).            [pendiente]
-6. Sobre mí      → historia corta, con voz. No un CV repetido.                  [pendiente]
+┌─ Barra fija    Mapa · Proyectos · CV · contacto · [↓ CV]  (sigue el scroll) [hecho]
+├─ Hero          nombre, rol, tagline. Sin botones.                 [hecho]
+├─ #mapa         Mapa de conocimiento. Ver §7.                     [hecho]
+├─ #proyectos    Proyectos, con link público                       [hecho]
+├─ #cv           El CV completo, superficie cv-ats                 [hecho]
+└─ #cv           el bloque más largo, y el último                 [hecho]
 ```
 
-El orden de la lista NO es el orden final de la página: hoy el contacto está en
-el hero porque no hay nada entre medio que justifique bajarlo. Cuando existan
-los casos, vuelve al pie.
+Lo que sigue pendiente:
+
+```
+Servicios       → qué te pueden contratar a hacer (lado freelance). [pendiente]
+Sobre mí        → historia corta, con voz. No un CV repetido.       [pendiente]
+```
+
+**"Casos" está hecho en su versión de lista compacta, no en el formato caso de
+estudio del §2.** Esa versión larga —problema → decisión → resultado— sigue
+pendiente porque `problem.short` y `outcome.short` tienen `TODO` en dos de los
+tres proyectos, y llenarlos a ojo viola el invariante 4. Los `links` de los tres
+también están vacíos: el componente renderiza el link solo cuando existe, así
+que cargarlos es editar el dataset, no tocar código.
+
+El contacto no está en el hero ni en el pie: vive en la píldora, que acompaña
+todo el scroll. En una sola página, el pie está detrás del CV entero — que es
+el bloque más largo— y el hero solo lo ve quien no bajó todavía.
+
+Las cuatro secciones comparten ancho (`--ancho`, 45rem). Es un solo token: con
+anchos distintos la página se lee como cuatro páginas pegadas.
 
 **El Stack no es una grilla de logos.** Ver §7: es un grafo, y el tamaño de cada
 tecnología es un dato derivado, no una opinión.

@@ -15,20 +15,30 @@
  * al browser: el cliente recibe coordenadas ya resueltas.
  */
 import Base from "../layouts/Base.astro";
-import { content, formatSeniority, buildKnowledgeGraph, layoutGraph } from "@content";
+import { content, formatSeniority, formatDateRange, formatYearMonth, buildKnowledgeGraph, layoutGraph } from "@content";
 import { buildPersonJsonLd } from "../lib/jsonld";
 import { buildSvgMapa } from "../lib/graph-svg";
 import { buildHoverCss, ID_ITEM } from "../lib/lab-hover-css";
 import GraphSvg from "../components/lab/GraphSvg.astro";
+import ListaProyectos from "../components/proyectos/ListaProyectos.astro";
+import Section from "../components/cv/Section.astro";
+import RoleBlock from "../components/cv/RoleBlock.astro";
+import SkillList from "../components/cv/SkillList.astro";
 
 import "@fontsource/manrope/400.css";
 import "@fontsource/manrope/600.css";
 import "@fontsource/manrope/800.css";
 import "../styles/tokens.css";
 import "../styles/home.css";
+import "../styles/cv.css";
+import "../styles/proyectos.css";
 import "../styles/lab.css";
 
 const view = await content.getView("portfolio", "es");
+// Regla 7: `cv-ats` recorta por prioridad (cutoff 3) y topea en 5 logros por
+// rol; `portfolio` no recorta nada. La sección de abajo tiene que mostrar
+// EXACTAMENTE lo que sale impreso, porque el botón de descarga promete "el CV".
+const viewCv = await content.getView("cv-ats", "es");
 const { identity } = view;
 const jsonLd = buildPersonJsonLd(view, new URL(Astro.site!));
 
@@ -59,6 +69,13 @@ const items = posicionado.nodes
 
 const conEvidencia = items.filter((n) => n.degree > 0).length;
 const afinidades = posicionado.edges.filter((e) => e.kind === "afinidad").length;
+
+// skillId → nombre canónico, para el stack de cada proyecto. Se arma acá y no
+// en el componente: `view.skills` viene agrupado por categoría, y aplanarlo es
+// trabajo de la página, no del componente tonto.
+const nombreDeSkill = new Map(
+  Object.values(view.skills).flat().map((s) => [s.id, s.name]),
+);
 ---
 
 <Base
@@ -71,6 +88,57 @@ const afinidades = posicionado.edges.filter((e) => e.kind === "afinidad").length
   <div class="lab">
     <canvas class="lab__campo" data-lab-campo aria-hidden="true"></canvas>
 
+    {/*
+      Índice y contacto en una píldora que acompaña el scroll. Reemplaza a los
+      botones del hero: el CTA de descarga ya lo cubre el flotante de abajo, y
+      dos botones grandes arriba empujaban el mapa fuera de la primera pantalla.
+
+      `href="#cv"` y NO `/cv` — esa ruta existe solo para imprimir el PDF, y
+      `landing-unica.check.ts` verifica que nadie la linkee.
+
+      Sin JS la píldora ya está fija y es usable: el script solo le agrega el
+      retraso al desplazarse. Por eso el `transform` inicial vive en el CSS.
+    */}
+    <div class="barra" data-pildora>
+      <header class="pildora">
+        <nav class="pildora__nav" aria-label="Secciones">
+          <a href="#mapa">Mapa</a>
+          <a href="#proyectos">Proyectos</a>
+          <a href="#cv">CV</a>
+        </nav>
+
+        <span class="pildora__sep" aria-hidden="true"></span>
+
+        <ul class="pildora__contacto">
+          <li>
+            <a href={`mailto:${identity.contact.email}`}>
+              <span class="pildora__largo">{identity.contact.email}</span>
+              <span class="pildora__corto">Email</span>
+            </a>
+          </li>
+          {identity.links.map((link) => (
+            <li><a href={link.url} rel="me noopener">{link.label}</a></li>
+          ))}
+        </ul>
+      </header>
+
+      {/*
+        El CTA vive al lado del índice y no en una esquina: es la única acción
+        de la página, y separarla del resto de la navegación la volvía un
+        elemento suelto. Comparte el desfase de la barra, así que las dos
+        piezas se mueven como una.
+      */}
+      <a
+        class="descarga"
+        href="/cv.pdf"
+        download="Nicolas-Cribb-Barbaro-Full-Stack-Developer.pdf"
+      >
+        <span class="descarga__flecha" aria-hidden="true">↓</span>
+        <span class="pildora__largo">Descargar CV</span>
+        <span class="pildora__corto">CV</span>
+      </a>
+    </div>
+
     <main class="lab__contenido">
       <section class="home lab__hero">
         <p class="home__kicker">{identity.brandTitle}</p>
@@ -79,23 +147,9 @@ const afinidades = posicionado.edges.filter((e) => e.kind === "afinidad").length
           {identity.searchTitle} · {formatSeniority(view.yearsOfExperience)} · {identity.location.city}, {identity.location.country}
         </p>
         <p class="home__tagline">{identity.tagline.short}</p>
-
-        <div class="home__actions">
-          <a class="btn btn--primary" href="/cv">Ver el CV</a>
-          <a class="btn" href="/cv.pdf" download="Nicolas-Cribb-Barbaro-Full-Stack-Developer.pdf">
-            Descargar en PDF
-          </a>
-        </div>
-
-        <ul class="home__links">
-          <li><a href={`mailto:${identity.contact.email}`}>{identity.contact.email}</a></li>
-          {identity.links.map((link) => (
-            <li><a href={link.url} rel="me noopener">{link.label}</a></li>
-          ))}
-        </ul>
       </section>
 
-      <section class="lab__mapa-seccion">
+      <section id="mapa" class="lab__mapa-seccion">
         <div class="lab__intro">
           <h2 class="lab__titulo">Mapa de conocimiento</h2>
           <p class="lab__bajada">
@@ -178,6 +232,50 @@ const afinidades = posicionado.edges.filter((e) => e.kind === "afinidad").length
             en el núcleo. El mapa muestra el hueco en vez de taparlo.
           </p>
         </div>
+      </section>
+
+      <section id="proyectos" class="proyectos-seccion">
+        <h2 class="lab__titulo">Proyectos</h2>
+        <ListaProyectos proyectos={view.projects} nombreDeSkill={nombreDeSkill} />
+      </section>
+
+      <section id="cv" class="cv">
+        <h2 class="cv__seccion-titulo">Currículum</h2>
+
+        <Section title="Perfil">
+          <p class="profile">{viewCv.identity.summary.short}</p>
+        </Section>
+
+        <Section title="Habilidades técnicas">
+          <SkillList skills={viewCv.skills} />
+        </Section>
+
+        <Section title="Experiencia">
+          {viewCv.experience.map((role) => <RoleBlock role={role} />)}
+        </Section>
+
+        <Section title="Educación">
+          {viewCv.education.map((e) => (
+            <div class="entry">
+              <p class="entry__title">{e.degree}{e.field && <> — {e.field}</>}</p>
+              <p class="entry__meta">
+                {e.institution}
+                {e.end && <> · {e.start ? formatDateRange(e.start, e.end) : formatYearMonth(e.end)}</>}
+                {e.status === "partial" && <> · Cursado parcial</>}
+                {e.status === "in-progress" && <> · En curso</>}
+              </p>
+            </div>
+          ))}
+        </Section>
+
+        <Section title="Idiomas">
+          {viewCv.languages.map((l) => (
+            <p class="skill-group">
+              <span class="skill-group__label">{l.name}:</span>{" "}
+              {l.level === "native" ? "Nativo" : l.level}
+            </p>
+          ))}
+        </Section>
       </section>
     </main>
   </div>

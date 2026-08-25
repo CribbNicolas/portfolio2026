@@ -8,6 +8,8 @@ Todo lo que sabemos y todo lo que decidimos. Si algo no está acá, no existe.
 | [02-branding.md](./02-branding.md) | Posicionamiento, titular, About, voz, LinkedIn |
 | [03-cv.md](./03-cv.md) | Formato, contenido, bullets, checklist por postulación |
 | [04-portfolio.md](./04-portfolio.md) | Estructura, casos de estudio, capa legible por máquinas |
+| [05-deploy-y-analitica.md](./05-deploy-y-analitica.md) | El stack gratuito (Cloudflare Pages, Actions, Clarity) y los pasos para conectarlo |
+| [06-proxima-sesion.md](./06-proxima-sesion.md) | **Handoff.** Qué quedó a medias y en qué orden atacarlo. Empezar acá |
 | [CONTRATO.md](./CONTRATO.md) | Reglas del sistema de contenido |
 
 ---
@@ -32,6 +34,12 @@ Fechadas, para saber qué revisar cuando cambie el contexto.
 | 2026-08 | Se avanzó con el mapa **antes** de la investigación de diseño de [04 §6](./04-portfolio.md#6-pendiente-de-investigar) | El mapa es la única superficie que muestra el grafo de datos; postergarlo por tipografías era postergar lo que diferencia el sitio. La investigación sigue pendiente para los casos de estudio |
 | 2026-08 | La **home envía JavaScript**; `/cv` sigue en cero | El mapa lo necesita. `/cv` no es negociable: el PDF se imprime desde ahí y un script cambia el render en silencio. Lista blanca en `no-client-js.check.ts` |
 | 2026-08 | Tamaño de nodo = **años de uso × conexiones**, por raíz | Un tamaño fijo por tipo no decía nada. Los años se derivan de `since` o de la evidencia fechada — nunca se estiman |
+| 2026-08-24 | El sitio es una **landing única**: hero, índice de anclas, mapa, proyectos y el CV completo en `/` | Un CV no necesita navegación. Dos páginas partían en dos la única visita que vas a tener |
+| 2026-08-24 | `/cv` deja de ser destino: `noindex`, sin links entrantes, solo fuente de impresión del PDF | Es lo que siempre fue por debajo. Lo sostiene `landing-unica.check.ts`, no la buena memoria |
+| 2026-08-24 | La sección CV de la landing usa `cv-ats`, no `portfolio` | El botón promete "el CV": si la sección mostrara más logros que el PDF, la promesa sería falsa. El test compara los conteos |
+| 2026-08-24 | El índice y el botón flotante son anclas y un `<a download>`, sin JS | El presupuesto de la home es para el mapa. Navegación que cuesta bytes es navegación mal hecha |
+| 2026-08-24 | El índice, el contacto y la descarga pasan a una **barra fija** que sigue el scroll; el hero pierde sus botones | Los dos botones grandes empujaban el mapa fuera de la primera pantalla. La navegación y la única acción de la página tienen que estar disponibles en todo el scroll, no solo arriba. Juntas y no en esquinas opuestas: separar el CTA del índice lo volvía un elemento suelto |
+| 2026-08-24 | Todas las secciones comparten `--ancho` (45rem) | Con anchos distintos (hero 40, mapa 52, CV 45) la página se leía como cuatro páginas pegadas. 45rem es la medida que `/cv` ya usaba |
 
 ## Estado
 
@@ -45,11 +53,15 @@ Fechadas, para saber qué revisar cuando cambie el contexto.
 - [x] Frontend consumiendo `getView()`
 - [x] Generadores de salida: CV PDF, `/cv` HTML, JSON-LD, `llms.txt`, `/cv.json`
 - [x] Mapa de conocimiento en la home (SVG server-rendered + WebGL opcional)
+- [x] Landing única: índice de anclas, sección de proyectos y el CV completo en `/`; `/cv` aislada con `noindex` y `test:landing`
+- [ ] **Links de los proyectos** — los tres tienen `links: []`. La sección los renderiza solo si existen: es editar el dataset, no tocar código
 - [ ] **Métricas** — el hueco más importante. Ver [03-cv.md](./03-cv.md#métricas-pendientes)
 - [ ] Confirmar datos de Hogarth
 - [ ] Bloques de texto para LinkedIn
 - [ ] Casos de estudio en el portfolio — antes hay que hacer la investigación de [04 §6](./04-portfolio.md#6-pendiente-de-investigar)
 - [ ] Logros del rol Freelance (2020-04 → 2022-06): hoy tiene uno solo y sus `skillIds` son `["javascript"]`. Esos 2.2 años no le aportan una conexión a ninguna otra tecnología, y por eso WordPress —declarada `core`— queda chica en el mapa
+- [ ] **Deploy** — stack decidido en [05](./05-deploy-y-analitica.md). Bloqueado en comprar el dominio
+- [ ] Analítica: Cloudflare Web Analytics + Clarity en la landing. Ver [05](./05-deploy-y-analitica.md) §2
 - [ ] Migración a Sanity (Fase 1, sin apuro)
 
 ## Nota sobre las fuentes
