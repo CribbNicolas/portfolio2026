@@ -1,6 +1,6 @@
 # 08 — Ramas y versionado
 
-Decidido el 2026-08-25, al agregar `develop`.
+Decidido el 2026-08-25, al agregar `develop` y hacer el repo público.
 
 ---
 
@@ -9,9 +9,9 @@ Decidido el 2026-08-25, al agregar `develop`.
 ```
 feature/*  ──►  develop  ──►  staging  ──►  main
    |              |             |            |
- trabajo      acumula       preview      producción
-              sin deploy    en Pages     cribbnicolas.pages.dev
-                            + smoke
+ trabajo      integración    preview      producción
+              sin deploy     en Pages     cribbnicolas.pages.dev
+              + bump         + smoke
 ```
 
 | Rama | Qué es | Deploya |
@@ -40,17 +40,48 @@ calidad no depende de si algo se publica. Lo que cambia es lo demás:
 | Workflow | Cuándo |
 |---|---|
 | `content-validation.yml` | Todo push y todo PR |
-| `version-gate.yml` | Sólo PRs que apuntan a `staging` |
+| `version-gate.yml` | Sólo PRs que apuntan a `develop` |
 | `smoke-deploy.yml` | Cada deploy con éxito de Pages (o sea: `staging` y `main`) |
 
 ---
 
-## 2. `package.json` es la única fuente de verdad de la versión
+## 2. Nadie pushea directo a las tres ramas
 
-**Revisado el 2026-08-25:** `package.json:3` es hoy la única declaración de
-versión del repo. No hay otra en `content/`, `src/`, `scripts/` ni
-`astro.config.mjs`, y **nada la consume**: no sale en `/cv.json`, ni en
-`/llms.txt`, ni en un `<meta>`. Es bookkeeping interno, a propósito.
+Se hace cumplir con **rulesets de GitHub**, no con hooks locales.
+
+Se evaluó un hook `pre-push` y se descartó: un hook corre en la máquina de quien
+pushea, y el botón "Merge pull request" corre en los servidores de GitHub. O sea
+que el hook tapaba el caso chico —el push por distracción— y dejaba abierto el
+grande. Los rulesets tapan los dos, del lado del servidor, sin que nadie tenga
+que instalar nada.
+
+**Por eso el repo es público.** Los rulesets no están disponibles en repos
+privados con plan Free; en repos públicos andan en todos los planes. Esa es la
+razón técnica del cambio, y el motivo por el que el teléfono salió del dataset
+antes (ver §3).
+
+Configuración, un ruleset por rama:
+
+| Rama | Reglas |
+|---|---|
+| `main` | Require a pull request (0 approvals) · Require status checks: `validate` · Block force pushes · Restrict deletions |
+| `staging` | Igual que `main` |
+| `develop` | Igual, más el status check **`bump`** |
+
+**`Required approvals` en 0, no en 1.** GitHub no deja aprobar el propio PR. Con
+1, un repo de una sola persona queda trabado sin salida.
+
+**`Require linear history`: no.** Prohíbe merge commits, y el historial de este
+repo los usa.
+
+---
+
+## 3. `package.json` es la única fuente de verdad de la versión
+
+**Revisado el 2026-08-25:** `package.json:3` es la única declaración de versión
+del repo. No hay otra en `content/`, `src/`, `scripts/` ni `astro.config.mjs`, y
+**nada la consume**: no sale en `/cv.json`, ni en `/llms.txt`, ni en un `<meta>`.
+Es bookkeeping interno, a propósito.
 
 **Por qué no se expone.** Un número de versión en la salida es una promesa: que
 alguien lo va a poder usar para decidir algo. Hoy no hay quién. Cuando lo haya
@@ -62,18 +93,36 @@ contrato sin contraparte.
 `package.json` en build time, nunca que se escriba a mano en dos lados. Dos
 números escritos a mano se desincronizan; la única duda es cuándo.
 
+### El teléfono, y por qué ya no está
+
+El dataset llevaba un teléfono con `publishPhoneOn: ["cv", "cv-short"]` — o sea,
+declarado para el CV diseñado y el de una página, y filtrado de todo lo demás
+por la regla 8. Ninguna de esas dos superficies está construida todavía, así que
+no se imprimía en ningún lado.
+
+Al hacer el repo público, ese número habría quedado en texto plano en un JSON
+indexable. Se sacó el **valor**; la maquinaria queda intacta: el campo `phone?`
+sigue en el schema, el filtro sigue en `resolveView`, y el test de la regla 8
+ahora inyecta un número obviamente falso y verifica el filtro en vez de depender
+de que el dataset lleve uno. Cargar un teléfono mañana no requiere tocar código.
+
+Hay un segundo test que ancla la decisión: si alguien vuelve a poner un número
+en el dataset, falla y explica que el repo es público y que eso entra al
+historial de git, de donde no sale sin reescribirlo.
+
 ---
 
-## 3. La versión sube al mergear a `staging`
+## 4. La versión sube al entrar a `develop`
 
-**La regla:** todo PR que apunta a `staging` sube `package.json.version`. Sin
+**La regla:** todo PR que apunta a `develop` sube `package.json.version`. Sin
 excepción, y lo hace cumplir `version-gate.yml`.
 
-**Por qué ahí y no en `main`.** `staging` es donde algo se vuelve mirable por
-alguien que no lo escribió. Ese es el evento que un número de versión tiene que
-identificar. El merge a `main` no vuelve a tocarlo: arrastra el número que ya
-trae, así que la versión en producción es idéntica a la que se verificó en
-preview — que es toda la gracia.
+**Por qué en `develop` y no más adelante.** Es donde entra cada cambio, de a
+uno. Si se versionara en `staging`, un lote de seis PRs compartiría un solo
+número y la versión dejaría de identificar cuál de los seis rompió algo. Los
+PRs de `develop` → `staging` y `staging` → `main` **no vuelven a tocar el
+número: lo arrastran.** Así la versión que se ve en producción es exactamente la
+que se verificó en preview, y antes en integración.
 
 **Por qué a mano y no automático.** Elegir entre patch, minor y major es una
 decisión semántica sobre qué cambió para quien consume el sitio, y una máquina
@@ -82,9 +131,9 @@ números que suben pero no significan nada.
 
 Las alternativas se descartaron por razones concretas, no por gusto:
 
-- **Bot que commitea a `staging`**: necesita un token con escritura sobre una
-  rama protegida, y deja a `staging` con un commit que `develop` no tiene →
-  conflicto en el próximo merge, todas las veces.
+- **Bot que commitea a la rama**: necesita un token con escritura sobre una rama
+  protegida, y deja la rama con un commit que la de origen no tiene → conflicto
+  en el próximo merge, todas las veces.
 - **Derivarlo de conventional commits**: hace que el versionado dependa de que
   los mensajes de commit sean siempre correctos. Cambia un problema de
   disciplina por otro, y suma una dependencia.
@@ -101,22 +150,16 @@ En un sitio personal, `major` va a ser raro. Ese es el punto: que cuando pase,
 se note.
 
 **Qué verifica el gate, exactamente.** Que la versión del PR sea
-**estrictamente mayor** que la de `staging`. Eso es duro y bloquea.
+**estrictamente mayor** que la de `develop`. Eso es duro y bloquea.
 
 Además clasifica el salto y, si no es un escalón limpio —`0.1.0 → 0.3.0`,
 `1.2.3 → 2.0.1`— lo dice **sin bloquear**. Saltar a veces es a propósito, pero
 es también la firma exacta de un typo, y callarlo sería peor que avisar de más.
 
-**El agujero conocido: el gate sólo mira PRs.** Un push directo a `staging`
-—sin PR— no pasa por `version-gate.yml` y publica sin subir el número. No es un
-descuido del check: GitHub no puede correr un check de PR donde no hay PR. Se
-tapa protegiendo `staging` igual que `main`, con "Require a pull request before
-merging". Hasta que eso esté, la regla depende de no saltearse el flujo.
-
 **Correrlo antes de abrir el PR:**
 
 ```bash
-git fetch origin staging
+git fetch origin develop
 pnpm run test:version
 ```
 
@@ -126,20 +169,17 @@ La lógica pura está en `scripts/version.ts` y se testea en `pnpm test`
 
 ---
 
-## 4. El flujo, en orden
+## 5. El flujo, en orden
 
-1. Ramificar de `develop`. Trabajar. PR **a `develop`**.
-   `content-validation.yml` corre. No se deploya nada.
-2. Cuando lo acumulado valga la pena publicar: PR **`develop` → `staging`**,
-   **con el bump de versión en el mismo PR**. `version-gate.yml` lo verifica.
+1. Ramificar de `develop`. Trabajar. PR **a `develop`**, **con el bump de
+   versión en el mismo PR**. Corren `content-validation.yml` y
+   `version-gate.yml`. No se deploya nada.
+2. Cuando lo acumulado valga la pena publicar: PR **`develop` → `staging`**, sin
+   tocar la versión.
 3. Al mergear, Pages deploya la preview y `smoke-deploy.yml` corre `test:pdf`
    contra el `/cv.pdf` publicado. Mirar que pase.
-4. PR **`staging` → `main`**. Sin tocar la versión. Al mergear, producción.
+4. PR **`staging` → `main`**. Tampoco toca la versión. Al mergear, producción.
    El smoke corre de nuevo, ahora contra producción.
 
-Un lote que todavía no llegó a `staging` es **un solo release**, por más commits
-que tenga. La versión sube una vez, en el PR que lo mergea — no una vez por
-commit.
-
-**El único paso que se puede olvidar es el 2**, y es el único que tiene un check
-propio.
+**El único paso que se puede olvidar es el bump del 1**, y es el único que tiene
+un check propio.

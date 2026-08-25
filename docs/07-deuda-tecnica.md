@@ -193,3 +193,154 @@ incluidas—, así que el ciclo es "pushear a `staging` y mirar el smoke", no
 **Salida, si alguna vez molesta:** un túnel (`cloudflared tunnel`) que exponga el
 `wrangler pages dev` local con una URL pública. Es infra para un problema que
 hoy se resuelve esperando un minuto a una preview. No parece que valga la pena.
+
+---
+
+## 7. La API pública publica campos internos
+
+**Severidad: media.** Es contrato con terceros, y ahora el repo es público.
+
+`/cv.json` sirve la superficie `public-api`, pero `resolveView` sólo filtra
+`phone` y `streetAddress`. Todo lo demás pasa entero. Medido sobre
+`dist/cv.json` del build del 2026-08-25:
+
+```
+publishPhoneOn expuesto: true
+claves "priority"  en la salida: 40
+claves "visibility" en la salida: 40
+```
+
+`visibility` y `priority` son **decisiones editoriales internas**: dicen qué
+logro considerás de primera línea y cuál de tercera, y en qué superficies
+decidiste no mostrar algo. Un reclutador que abra el JSON ve el ranking que
+hiciste de tu propio trabajo. `publishPhoneOn` además describe una política de
+privacidad que no le importa a nadie afuera.
+
+**Por qué no se arregló acá.** Tocar `resolveView` es tocar el archivo del que
+depende la regla 8, y hacerlo en medio de un cambio de deploy es pedirla.
+
+**Arreglo.** En `resolveView`, para la superficie `public-api`, mapear los
+`Achievement` y `Skill` a una forma sin `visibility` ni `publishPhoneOn`. Es
+una proyección, no un filtro: el tipo de salida tendría que ser distinto del de
+las superficies internas, y ahí está el trabajo real.
+
+---
+
+## 8. `/cv.json` y `/llms.txt` no tienen un solo test
+
+**Severidad: media.** Son las dos superficies que consumen agentes, y las dos
+únicas sin gate.
+
+`/cv` tiene diez tests sobre el PDF, la landing tiene tres checks, el bundle
+tiene presupuesto. Estos dos endpoints no tienen nada. Por ahí ya entró un bug
+real de `formatRoleTitle` en `llms.txt` (registrado en el PR #1).
+
+**Comprobarlo:**
+
+```bash
+ls src/pages/*.test.ts        # no existe ninguno
+grep -rl "cv.json" --include="*.check.ts" scripts/   # solo landing-unica, y de refilón
+```
+
+**Arreglo.** Un `endpoints.check.ts` que, sobre `dist/`, verifique que
+`cv.json` parsea, que trae las claves que el contrato promete, y que
+`llms.txt` no tiene campos vacíos ni títulos de rol partidos. Encaja con los
+otros checks que ya leen `dist/`.
+
+---
+
+## 9. El agrupado de skills está duplicado, y divergió
+
+**Severidad: baja.** Nadie se rompe; el CV y el JSON dicen lo mismo distinto.
+
+Dos lugares agrupan skills por categoría, sin compartir nada:
+
+| Dónde | Cómo |
+|---|---|
+| `src/components/cv/SkillList.astro:22` | Array `GRUPOS`, etiquetas en español y **orden editorial** — primero lo que más se busca en un aviso |
+| `src/pages/llms.txt.ts:32` | `Object.entries(view.skills)` crudo: claves en inglés, orden de inserción |
+
+O sea que el CV dice `Lenguajes: ...` y `/llms.txt` dice `- language: ...`, en
+otro orden. Un agente que compare las dos superficies ve dos taxonomías.
+
+**Arreglo.** Mover `GRUPOS` a `content/schema/` y que los dos importen de ahí.
+Es el mismo patrón que ya se aplicó con `formatMetric` (regla 4) y con
+`pdf-options.ts`: cuando dos salidas tienen que decir lo mismo, la definición
+va en un solo lado.
+
+---
+
+## 10. Nada verifica que las fuentes estén embebidas en el PDF
+
+**Severidad: baja, con cola larga.**
+
+Se comprobó a mano una vez y se embeben. Pero si algún día dejaran de
+embeberse, el PDF se vería bien en tu máquina —que tiene Manrope instalada— y
+saldría con una fuente de fallback en la de cualquier otro. Ninguno de los diez
+tests del PDF lo mira: todos verifican el TEXTO extraído, que no cambia.
+
+**Riesgo nuevo desde el 2026-08-25:** el PDF ahora lo imprime Browser Rendering,
+otro Chromium en otra máquina. Es exactamente el cambio que podría romper esto
+sin que nada avise.
+
+**Arreglo.** `pdfjs` expone las fuentes de cada página; un test que afirme que
+todas están embebidas entra en `pdf-output.check.ts`, y como ese archivo ya
+corre contra el PDF publicado (`PDF_SOURCE`), cubriría los dos caminos de una.
+
+---
+
+## 11. `pnpm audit`: 5 vulnerabilidades transitivas, una high
+
+**Severidad: baja en la práctica, alta en el papel.**
+
+Medido el 2026-08-25 — y son más que las 3 que registraba el PR #1:
+
+```
+5 vulnerabilities found
+Severity: 2 low | 2 moderate | 1 high
+```
+
+La high es `sharp <0.35.0`, por la cadena `. > astro > sharp`.
+
+**Por qué la exposición real es chica.** La salida es HTML estático: no hay
+runtime del lado del servidor que un atacante pueda alcanzar. `sharp` corre en
+build time, sobre imágenes que ponés vos.
+
+**Por qué es deuda igual.** `pnpm run audit:deps` está en los comandos del
+repo, y hoy siempre falla. Un comando que siempre falla deja de leerse — el
+mismo problema del punto 2, con otra cara.
+
+**Arreglo.** El fix de fondo es subir Astro, que es un major. Mientras tanto,
+`pnpm.overrides` para forzar `sharp >= 0.35.0` y ver si el árbol lo aguanta.
+
+---
+
+## 12. Tres criterios de aceptación viven en un plan, no en CI
+
+**Severidad: baja.**
+
+El plan `docs/superpowers/plans/2026-08-13-cv-como-sistema.md` deja tres
+criterios como comandos sueltos para pegar en la terminal. Un criterio de
+aceptación que no corre solo es una intención, que es justo lo que
+`docs/CONTRATO.md` §7 dice que no se hace.
+
+Uno de los tres, el que verificaba que el teléfono no llegara a `dist/`, quedó
+sin objeto el 2026-08-25: el dataset ya no lleva teléfono. Los otros dos hay
+que leerlos y decidir si valen un check o si ya los cubre otro.
+
+---
+
+## 13. Dos cosas nunca se miraron a ojo
+
+**Severidad: no medible, y por eso está acá.**
+
+- **El hover cruzado tarjeta ↔ mapa.** Está verificado que los ids del DOM
+  coinciden 3/3 con las reglas `:has()` y que no hay huérfanos. Eso prueba que
+  el CSS apunta a algo, no que se vea bien.
+- **La inercia de la píldora.** Simulada antes de commitear —arrastra 19.9 px,
+  cruza el cero 200 ms después de frenar, rebota 3.5 px— y apagada bajo
+  `prefers-reduced-motion`. Los números son correctos; la sensación hay que
+  sentirla.
+
+No hay test que reemplace abrir el navegador. Queda anotado para que no se
+confunda "verde en CI" con "revisado".

@@ -10,19 +10,61 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { content } from "./index";
+import { resolveView } from "../schema/resolve-view";
 import { validateDataset } from "../schema/validation";
 import { formatMetric } from "../schema/format-metric";
 import datasetEs from "../data/content.es.json";
 
 test("regla 8: phone solo en las superficies de publishPhoneOn", async () => {
-  const cv = await content.getView("cv", "es"); // cv ∈ publishPhoneOn
-  assert.ok(cv.identity.contact.phone, "phone debería estar presente en cv");
+  // El dataset real ya no lleva teléfono (decisión del 2026-08-25, al hacer el
+  // repo público). Antes este test leía el número de ahí, y por eso dependía de
+  // un dato que no tiene por qué existir: el día que se sacara, iba a fallar
+  // por la razón equivocada — "falta el teléfono" en vez de "el filtro se
+  // rompió".
+  //
+  // Ahora el número se inyecta acá, obviamente falso, y se verifica el FILTRO,
+  // que es lo que la regla 8 promete. La maquinaria sigue testeada aunque el
+  // campo esté vacío, así que volver a cargar un teléfono mañana no necesita
+  // tocar nada.
+  const base = await content.getDataset("es");
+  const conTelefono = {
+    ...base,
+    identity: {
+      ...base.identity,
+      contact: {
+        ...base.identity.contact,
+        phone: "+00 0 000 000-0000",
+        publishPhoneOn: ["cv" as const],
+      },
+    },
+  };
 
-  const pub = await content.getView("public-api", "es"); // no ∈ publishPhoneOn
+  const cv = resolveView(conTelefono, "cv"); // cv ∈ publishPhoneOn
   assert.equal(
-    pub.identity.contact.phone,
-    undefined,
-    "phone NO debe salir en public-api",
+    cv.identity.contact.phone,
+    "+00 0 000 000-0000",
+    "phone debería salir en una superficie listada en publishPhoneOn",
+  );
+
+  const pub = resolveView(conTelefono, "public-api"); // no ∈ publishPhoneOn
+  assert.equal(pub.identity.contact.phone, undefined, "phone NO debe salir en public-api");
+});
+
+test("regla 8: hoy el dataset no lleva teléfono, y ninguna superficie lo publica", () => {
+  // Ancla la decisión: si alguien vuelve a cargar un número, este test le
+  // recuerda que el repo es público y que el dato entra al historial de git,
+  // donde no se puede sacar sin reescribirlo.
+  // `in` y no `.phone`: al no estar la clave en el JSON, TypeScript ya no la
+  // declara en el tipo inferido y leerla no compila. Que el compilador también
+  // lo note es una garantía extra, no un obstáculo.
+  assert.ok(
+    !("phone" in datasetEs.identity.contact),
+    "el dataset volvió a tener teléfono: el repo es público, eso queda en el historial",
+  );
+  assert.deepEqual(
+    datasetEs.identity.contact.publishPhoneOn,
+    [],
+    "publishPhoneOn dejó de estar vacío sin que haya teléfono que publicar",
   );
 });
 

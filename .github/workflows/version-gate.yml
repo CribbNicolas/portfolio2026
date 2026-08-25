@@ -1,19 +1,20 @@
-# La versión de package.json sube en cada merge a `staging`.
+# La versión de package.json sube en cada PR que entra a `develop`.
 #
 # `package.json` es la única fuente de verdad del versionado (docs/08). Esa
-# afirmación es cierta sólo mientras el número cambie cuando cambia lo
-# publicado. Dos releases con el mismo número no es un detalle de prolijidad:
-# es que la versión dejó de identificar qué hay deployado, o sea que dejó de
-# servir para lo único que sirve.
+# afirmación es cierta sólo mientras el número cambie cuando cambia el código.
+# Dos cambios con el mismo número no es un detalle de prolijidad: es que la
+# versión dejó de identificar qué hay adentro, o sea que dejó de servir para lo
+# único que sirve.
 #
-# Sólo sobre PRs que apuntan a `staging`. Los de `develop` acumulan trabajo sin
-# versionar —esa es toda la razón de que `develop` exista— y el de
-# `staging` → `main` no vuelve a tocar el número: lo arrastra.
+# Se versiona en `develop` y no más adelante porque ahí es donde entra cada
+# cambio, uno por uno. `develop` → `staging` y `staging` → `main` no vuelven a
+# tocar el número: lo arrastran. Así la versión que se ve en producción es
+# exactamente la que se verificó en preview, y antes en integración.
 name: version-gate
 
 on:
   pull_request:
-    branches: [staging]
+    branches: [develop]
 
 jobs:
   bump:
@@ -22,7 +23,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       # El checkout de un PR trae sólo la rama del PR. Sin esto,
-      # `git show origin/staging:package.json` falla por una razón que no tiene
+      # `git show origin/develop:package.json` falla por una razón que no tiene
       # nada que ver con la versión, y el error confunde.
       - name: Traer la rama base
         run: git fetch --depth=1 origin ${{ github.base_ref }}
