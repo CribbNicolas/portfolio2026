@@ -263,3 +263,43 @@ html {
     scroll-behavior: auto;
   }
 }
+
+/* --- Pie ----------------------------------------------------------------
+   Solo lleva la línea de privacidad de Clarity. No es una sección: no entra
+   en el índice de la píldora ni en `scroll-margin-top`, porque nadie navega
+   hacia acá — se lee si se llega scrolleando, que es todo lo que tiene que
+   pasar. Comparte `--ancho` con el resto para no romper el borde común. */
+.pie {
+  max-width: var(--ancho);
+  margin: 0 auto;
+  padding: calc(var(--espacio) * 6) calc(var(--espacio) * 2.5)
+    calc(var(--espacio) * 5);
+  border-top: 1px solid var(--linea);
+}
+
+.pie p {
+  margin: 0;
+  color: var(--tinta-suave);
+  font-size: 0.8125rem;
+  line-height: 1.6;
+  /* Más angosto que el resto: es letra chica, y una línea de 45rem a este
+     tamaño obliga al ojo a buscar dónde sigue. */
+  max-width: 38rem;
+}
+
+.pie a {
+  color: var(--tinta-suave);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.pie a:hover {
+  color: var(--acento);
+}
+
+@media (min-width: 40rem) {
+  .pie {
+    padding: calc(var(--espacio) * 8) calc(var(--espacio) * 4)
+      calc(var(--espacio) * 6);
+  }
+}

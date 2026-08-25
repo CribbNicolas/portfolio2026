@@ -292,21 +292,50 @@ mismo mecanismo.
 
 ### Paso 9 — Microsoft Clarity
 
+**El código ya está.** Se integró con el paquete `@microsoft/clarity`, no con
+el snippet inline: viene tipado, y su `init()` chequea si el tag ya existe
+antes de inyectarlo, así que llamarlo dos veces no lo duplica.
+
+Lo que falta es la cuenta y la variable:
+
 1. Crear cuenta en `clarity.microsoft.com`, proyecto nuevo, anotar el
    **Project ID**.
-2. El snippet va **solo en la landing**. Dos formas, en orden de preferencia:
-   - En `src/pages/index.astro`, dentro del `<Base>` con `slot="head"`. Es la
-     página que ya está en `PAGINAS_CON_JS`, así que no hay que tocar ningún
-     check.
-   - En `Base.astro` con una guarda por ruta. Más frágil: si mañana aparece otra
-     página, hay que acordarse de la guarda.
-3. El Project ID no es secreto —viaja en el HTML de cada visita— pero conviene
-   leerlo de una variable de entorno igual, para no tener que tocar código si
-   cambia de proyecto.
+2. Cargarlo en Pages → Settings → Variables and Secrets como
+   `PUBLIC_CLARITY_ID`, **plaintext y SOLO en Production**.
 
-**Después de agregarlo, correr `pnpm run build && pnpm run test:js` y verificar
-que `/cv` sigue en cero JS.** Es exactamente el escenario que ese check existe
-para atajar, y ahora un fallo ahí sale impreso en el PDF.
+**Solo en Production, a propósito.** Si también estuviera en Preview, cada
+deploy de `staging` grabaría sesiones y las mezclaría con las reales. El
+dataset de Clarity no se puede filtrar por entorno después.
+
+El prefijo `PUBLIC_` es de Astro: es lo que hace que Vite inline el valor en el
+bundle del browser. Sin ese prefijo la variable existe en build y no llega al
+cliente.
+
+**Cuánto pesa.** El paquete es un wrapper de ~800 bytes que inyecta
+`<script async src="https://www.clarity.ms/tag/<id>">`; el payload real se
+sirve desde `clarity.ms` y no cuenta contra `TECHO_CRITICO_KB`. Medido:
+
+| Escenario | Chunk crítico de la home |
+|---|---|
+| Sin `PUBLIC_CLARITY_ID` | **2.10 KB** gzip — idéntico a no tener Clarity |
+| Con `PUBLIC_CLARITY_ID` | **2.41 KB** gzip, techo 4 KB |
+
+Sin la variable, Vite descarta el import entero por tree-shaking: en `pnpm run
+dev` y en cualquier build sin configurar, la analítica no existe ni pesa.
+
+**Dónde vive y por qué ahí:** `src/scripts/analitica.ts`, llamado desde el
+`<script>` de `src/pages/index.astro`. **Nunca desde `Base.astro`** — `/cv` es
+de donde Browser Rendering imprime el PDF, y un script de terceros ahí cambia el
+render en producción sin que ningún test del PDF lo note: el texto extraído
+sigue siendo el mismo. Lo custodia `no-client-js.check.ts` con un test que
+nombra el riesgo ("la analítica vive SOLO en la landing").
+
+**Sin Subresource Integrity**, y no por olvido: el tag de `clarity.ms` lo
+actualiza Microsoft del lado del servidor, así que un hash fijo lo rompería en
+la primera versión nueva.
+
+La línea de privacidad del §5 ya está puesta, en el `<footer class="pie">` de la
+landing.
 
 ---
 
@@ -373,5 +402,5 @@ Las tres preguntas que vale la pena mirar:
 - [ ] Página 404 propia: hoy una ruta inexistente devuelve `200` con HTML en vez de `404`. Es un soft-404 y los crawlers lo penalizan. Se arregla con `src/pages/404.astro`
 - [ ] Dominio comprado, apuntado, y `SITE_URL` actualizado (§3 paso 7)
 - [ ] Cloudflare Web Analytics activo (§3 paso 8)
-- [ ] Clarity en la landing + `test:js` verde (§3 paso 9)
-- [ ] Línea de privacidad en el pie
+- [ ] Cuenta de Clarity creada y `PUBLIC_CLARITY_ID` cargada en Pages, **solo en Production** (§3 paso 9)
+- [x] Línea de privacidad en el pie
