@@ -9,9 +9,19 @@
 interface Props {
   title: string;
   description: string;
+  /**
+   * Si es `true`, la página emite Open Graph y Twitter Card.
+   *
+   * Es opt-in y no un default con excepciones, a propósito. `/cv` va con
+   * `noindex` y no es un destino compartible —existe para que Browser Rendering
+   * imprima el PDF—, y el 404 tampoco. Con un default en `true` habría que
+   * acordarse de apagarlo en cada página nueva; así, olvidarse significa no
+   * emitir etiquetas, que es el lado seguro del error.
+   */
+  compartible?: boolean;
 }
 
-const { title, description } = Astro.props;
+const { title, description, compartible = false } = Astro.props;
 const canonical = new URL(Astro.url.pathname, Astro.site);
 ---
 
@@ -23,6 +33,46 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
     <title>{title}</title>
     <meta name="description" content={description} />
     <link rel="canonical" href={canonical} />
+
+    {/*
+      SVG y no `.ico`: pesa menos de 1 KB, escala a cualquier tamaño y responde
+      al modo oscuro desde adentro. Lo soportan todos los navegadores actuales;
+      los muy viejos —Safari anterior a 15— no muestran ninguno, que es
+      exactamente lo que pasaba hasta ahora.
+    */}
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+
+    {
+      compartible && (
+        <Fragment>
+          {/*
+            Open Graph. Sin esto, pegar el link en LinkedIn o WhatsApp muestra
+            una URL pelada — y pegar el link ES el canal por el que se
+            distribuye un portfolio.
+
+            Todavía SIN `og:image`: una imagen social hay que generarla, y
+            apuntar a una que no existe da una tarjeta rota, que es peor que una
+            sin imagen. Con título y descripción la tarjeta ya sale, solo que
+            sin el bloque visual. Ver docs/07 §17.
+          */}
+          <meta property="og:type" content="profile" />
+          <meta property="og:title" content={title} />
+          <meta property="og:description" content={description} />
+          <meta property="og:url" content={canonical.toString()} />
+          <meta property="og:locale" content="es_AR" />
+
+          {/*
+            `summary` y no `summary_large_image`: el grande reserva el espacio
+            de la imagen y sin ella se degrada peor. Cuando exista la imagen,
+            cambia acá y se agrega `og:image` arriba.
+          */}
+          <meta name="twitter:card" content="summary" />
+          <meta name="twitter:title" content={title} />
+          <meta name="twitter:description" content={description} />
+        </Fragment>
+      )
+    }
+
     <slot name="head" />
   </head>
   <body>

@@ -478,9 +478,34 @@ mensaje de error lo dice para que quien lo lea sepa dónde mirar.
 
 ---
 
-## 17. El `<head>` tiene siete etiquetas
+## 17. El `<head>` tiene siete etiquetas — **CASI RESUELTO 2026-08-25**
 
-**Severidad: alta para un portfolio, y es la deuda más visible que queda.**
+Hecho: Open Graph y Twitter Card en la landing, favicon SVG, `sitemap-index.xml`
+con `/cv` excluida, y un `robots.txt` propio que anuncia el sitemap y los dos
+endpoints para agentes.
+
+**Falta la imagen social.** Es lo único que queda de esta entrada, y quedó
+aparte porque tiene una decisión adentro: generarla en build desde el dato, o
+poner un PNG a mano. Ver §18.
+
+**Una corrección a lo que decía esta entrada:** afirmaba que *"sin `og:image` no
+hay tarjeta aunque estén las etiquetas"*. Es falso. LinkedIn, Slack y WhatsApp
+muestran una tarjeta de título y descripción sin imagen; lo que falta es el
+bloque visual, no la tarjeta. Por eso se emitieron las etiquetas ahora en vez de
+esperar a la imagen, y por eso `twitter:card` va en `summary` y no en
+`summary_large_image`: el grande reserva el espacio de la imagen y sin ella se
+degrada peor.
+
+**Dos cosas sin verificar contra un deploy:**
+
+- Que `src/pages/robots.txt.ts` le gane al `robots.txt` gestionado de
+  Cloudflare. Se comprueba abriendo `/robots.txt` en la preview de `staging`.
+- Cómo se ve la tarjeta de verdad. Se comprueba pegando la URL de la preview en
+  un chat.
+
+Lo de abajo queda como registro de por qué existía.
+
+**Severidad: era alta para un portfolio.**
 
 Medido sobre producción el 2026-08-25:
 
@@ -527,3 +552,34 @@ referencie, esas tres salidas dependen de que alguien las adivine.
    el mismo criterio tipográfico del sitio; no hace falta diseñarla a mano.
 3. Favicon.
 4. `@astrojs/sitemap` y un `public/robots.txt` con la línea `Sitemap:`.
+
+
+---
+
+## 18. Falta la imagen social
+
+**Severidad: media.** Sale de partir la §17: las etiquetas ya están, la imagen
+no, y no hay **ni un solo asset de imagen en el repo**.
+
+Con título y descripción la tarjeta ya sale. Con imagen ocupa cuatro veces más
+espacio en un feed, que es la diferencia entre que el link se note y que pase.
+
+**La decisión que hay adentro**, y por eso no se hizo de una:
+
+| Camino | A favor | En contra |
+|---|---|---|
+| Generarla en build desde el dato | Se mantiene sola cuando el nombre o el título cambian; usa los mismos tokens tipográficos | Rasterizar necesita un browser, y el builder de Cloudflare no tiene Chromium — el mismo problema que sacó al PDF del build |
+| Un PNG a mano en `public/` | Diez minutos | Se desactualiza en silencio |
+| Una Function como `/cv.pdf` | Consistente con lo que ya existe | Un crawler que espera 3-5 s puede cortar, y gasta presupuesto de Browser Rendering en cada scrape |
+
+**SVG no es opción:** LinkedIn, Facebook y WhatsApp no renderizan `og:image` en
+SVG. Tiene que ser PNG o JPEG.
+
+El camino más probable es el primero con una vuelta: generarla con
+`pnpm run og:local` —Playwright, igual que `pdf:local`— y **commitear el PNG**.
+Así no hay costo en runtime ni dependencia del builder, y un check puede avisar
+si el dato cambió y la imagen no se regeneró.
+
+Al agregarla hay que cambiar también `twitter:card` a `summary_large_image` y
+sumar `og:image`, `og:image:width`, `og:image:height` y `og:image:alt` en
+`Base.astro`.

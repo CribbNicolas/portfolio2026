@@ -91,9 +91,16 @@ const nombreDeSkill = new Map(
 );
 ---
 
+{/*
+  `compartible` emite Open Graph y Twitter Card. Es la ÚNICA página que las
+  lleva: `/cv` va con noindex y existe solo para imprimir el PDF, y el 404 no es
+  un destino. En `Base.astro` es opt-in, así que olvidarse en una página nueva
+  significa no emitirlas — el lado seguro del error.
+*/}
 <Base
   title={`${identity.fullName} — ${identity.searchTitle}`}
   description={identity.summary.short}
+  compartible
 >
   <script type="application/ld+json" slot="head" set:html={JSON.stringify(jsonLd)} />
   <style is:inline set:html={hoverCss} slot="head" />
