@@ -41,6 +41,8 @@ functions/              Cloudflare Pages Functions. Lo ÚNICO del repo que corre
   _pdf.ts             Las piezas puras (cuerpo del pedido, clave de caché, cabeceras). El guion bajo lo saca del ruteo de Pages.
   _pdf.test.ts        Custodia que el PDF servido pida las MISMAS opciones que el PDF testeado.
 docs/                   Ver docs/00-indice.md. El "por qué" de cada decisión de diseño vive acá.
+                        07-deuda-tecnica.md — lo encontrado fuera de scope y no arreglado. Mirarlo ANTES de
+                        "arreglar de paso" algo: puede que ya esté anotado con su porqué.
 src/
   pages/cv.astro      El CV en HTML. ÚNICA fuente del layout; de acá sale el PDF.
                       NO es un destino navegable: `noindex` y cero links entrantes.

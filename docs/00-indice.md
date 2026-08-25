@@ -8,6 +8,7 @@ Todo lo que sabemos y todo lo que decidimos. Si algo no está acá, no existe.
 | [02-branding.md](./02-branding.md) | Posicionamiento, titular, About, voz, LinkedIn |
 | [03-cv.md](./03-cv.md) | Formato, contenido, bullets, checklist por postulación |
 | [04-portfolio.md](./04-portfolio.md) | Estructura, casos de estudio, capa legible por máquinas |
+| [07-deuda-tecnica.md](./07-deuda-tecnica.md) | Lo que se encontró trabajando en otra cosa y NO se arregló ahí mismo. Con cómo comprobarlo y qué cuesta |
 | [05-deploy-y-analitica.md](./05-deploy-y-analitica.md) | El stack gratuito (Cloudflare Pages buildea y hostea, Browser Rendering imprime el PDF, Actions es el gate, Clarity mide) y el checklist para conectarlo |
 | [06-proxima-sesion.md](./06-proxima-sesion.md) | **Handoff.** Qué quedó a medias y en qué orden atacarlo. Empezar acá |
 | [CONTRATO.md](./CONTRATO.md) | Reglas del sistema de contenido |
