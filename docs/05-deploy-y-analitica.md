@@ -89,7 +89,7 @@ Clarity entra en la landing sin tocar los gates de CI:
 ## 2. Dónde corre cada cosa
 
 ```
-push a cualquier rama
+push a cualquier rama (feature/* · develop · staging · main)
       |
       +--> GitHub Actions · content-validation.yml       <- GATE DE CALIDAD
       |      typecheck · validate · test · build
@@ -98,6 +98,7 @@ push a cualquier rama
       |      audit:todos (no bloquea)
       |
       +--> Cloudflare Pages · build automatico           <- PUBLICA
+             solo staging y main. develop y feature/* NO deployan
              pnpm run build -> dist/
              staging -> URL de preview
              main    -> produccion
@@ -117,10 +118,14 @@ es de dónde salen los bytes (`PDF_SOURCE`).
 **Actions ya no deployea.** No hay token de Cloudflare en GitHub, y por lo tanto
 no hay nada que rotar si un log se filtra. Pages buildea el repo por su cuenta.
 
-**El flujo de trabajo es `staging` → `main`.** Se trabaja en `staging`, que tiene
-su propia URL de preview con la Function funcionando; el smoke corre contra esa
-preview. Recién cuando todo está verde se mergea a `main`, que es la rama de
-producción. Para que "verde" signifique algo, hay que proteger `main` — paso 6.
+**El flujo es `feature/*` → `develop` → `staging` → `main`.** `develop` acumula
+PRs sin deployar nada; `staging` publica una preview real con la Function
+andando, y ahí corre el smoke; `main` es producción. El detalle —y la regla de
+versionado que va con esto— está en
+[08-ramas-y-versionado](./08-ramas-y-versionado.md).
+
+Para que "verde antes de mergear" signifique algo, hay que proteger `main` —
+paso 6.
 
 ---
 
@@ -158,6 +163,22 @@ preview builds de `staging` las necesitan igual):
 | `NODE_VERSION` | `24` | La build image v3 arranca en Node 18.17.1. `package.json` pide `>=22.12` y `astro sync` no levanta con 18. |
 | `PNPM_VERSION` | `11.1.3` | La v3 trae pnpm 10.11.1. `packageManager` declara `pnpm@11.1.3` y `engines` pide `>=11`. |
 | `SITE_URL` | tu URL | Sin esto el JSON-LD y el canonical salen apuntando a `https://portfolio.invalid` (`astro.config.mjs:6`). **Hasta que compres el dominio, poné la URL de `*.pages.dev`** — así el sitio queda coherente desde el primer deploy. En Preview conviene dejar la misma. |
+
+### Paso 2b — Qué ramas deployan
+
+**Settings → Builds & deployments → Configure Preview deployments →
+Custom branches.**
+
+| Campo | Valor |
+|---|---|
+| Include | `staging` |
+| Exclude | *(vacío)* |
+
+**No** pongas "All non-Production branches": con esa opción, `develop` y cada
+rama de feature disparan un build y un deploy, que es exactamente lo que
+`develop` existe para evitar (ver [08](./08-ramas-y-versionado.md) §1).
+
+`main` no se lista acá: es la Production branch y deploya por serlo.
 
 ### Paso 3 — El token de Browser Rendering
 
@@ -337,7 +358,7 @@ Las tres preguntas que vale la pena mirar:
 - [x] `BROWSER_RENDERING_*` cargadas en Production (§3 paso 4)
 - [ ] `BROWSER_RENDERING_*` cargadas también en **Preview** — sin esto el `/cv.pdf` de las previews da 503
 - [x] **`/cv.pdf` verificado en producción** (§3 paso 5) — 10/10, tagged incluido
-- [ ] Preview deployments en **All non-Production branches** (Settings → Builds & deployments)
+- [ ] Preview deployments en **Custom branches → include `staging`** (§3 paso 2b). NO "All non-Production branches": deployaría `develop`
 - [ ] `main` protegida con el check `validate` (§3 paso 6)
 - [x] `smoke-deploy.yml` en `main` — dispara desde el próximo deploy
 - [ ] Página 404 propia: hoy una ruta inexistente devuelve `200` con HTML en vez de `404`. Es un soft-404 y los crawlers lo penalizan. Se arregla con `src/pages/404.astro`
