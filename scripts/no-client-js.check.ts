@@ -92,3 +92,26 @@ for (const archivo of paginas) {
     assert.deepEqual(refs, [], `${ruta} referencia bundles JS: ${refs.join(", ")}`);
   });
 }
+
+test("la analítica vive SOLO en la landing", async () => {
+  // Los tests de arriba ya lo cubren de rebote: Clarity en `Base.astro` haría
+  // que `/cv` emitiera un `<script src>` y varios fallarían. Pero fallarían
+  // diciendo "cv/index.html no puede cargar JS", y quien lea eso va a buscar el
+  // problema en el mapa, no en la analítica.
+  //
+  // Esto nombra el riesgo: `/cv` es de donde Browser Rendering imprime el PDF,
+  // y un script de terceros ahí cambia el render en producción sin que ningún
+  // test del PDF lo note — el texto extraído sigue siendo el mismo.
+  const culpables: string[] = [];
+  for (const archivo of paginas) {
+    const ruta = relative(DIST, archivo).split(sep).join("/");
+    if (ruta === "index.html") continue;
+    if (/clarity/i.test(await readFile(archivo, "utf8"))) culpables.push(ruta);
+  }
+  assert.deepEqual(
+    culpables,
+    [],
+    `Clarity llegó a ${culpables.join(", ")}. Va SOLO en index.astro: si se ` +
+      "movió a Base.astro, /cv dejó de estar en cero JS y el PDF se imprime desde ahí.",
+  );
+});
