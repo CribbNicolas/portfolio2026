@@ -18,9 +18,25 @@ es solo deuda del código y de la infra.
 
 ---
 
-## 1. Soft-404: una ruta inexistente devuelve `200`
+## 1. Soft-404: una ruta inexistente devuelve `200` — **RESUELTO 2026-08-25**
 
-**Severidad: media.** Es la única de la lista que un tercero puede ver.
+Arreglado con `src/pages/404.astro`. Astro lo emite como `dist/404.html` y
+Pages lo sirve con el estado correcto. Queda anclado por dos tests en
+`landing-unica.check.ts`: que el archivo exista, y que ninguna página linkee
+`/cv` —el test viejo miraba sólo la landing, y desde que hay más de una página
+eso dejaba de cubrir lo que el invariante prometía—.
+
+De paso apareció un bug en otro test: **"la landing NO repite el encabezado del
+CV" venía pasando por casualidad.** Buscaba `cv__name` en el HTML entero, así
+que matcheaba también el selector dentro de un `<style>`. Astro decide inlinear
+o dejar externa una hoja según el chunking, o sea que el resultado dependía de
+cuántas páginas tuviera el sitio: al agregar la 404, `cv.css` pasó a inline y el
+test empezó a fallar sin que la landing cambiara una línea. Ahora mira el
+marcado, no las hojas.
+
+El registro de por qué existía queda abajo.
+
+**Severidad: era media.** Era la única de la lista que un tercero podía ver.
 
 Cloudflare Pages no encuentra un `404.html` en `dist/` —Astro no lo genera
 porque no hay una página `404`— y sirve HTML con estado `200` para cualquier

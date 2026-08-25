@@ -1,0 +1,61 @@
+# A `main` solo entra `staging`. A `staging` solo entra `develop`.
+#
+# Los rulesets de GitHub no saben de dónde VIENE un pull request: miran la rama
+# que se actualiza, no la que aporta los commits. Se puede exigir que haya un
+# PR, y que pasen checks, pero no que el origen sea una rama concreta. Esto es
+# el pedazo que falta.
+#
+# Sin esto, el flujo de docs/08 es una intención: nada impide abrir un PR de
+# `feature/lo-que-sea` directo a `main` y saltearse, de una sola vez, la
+# preview de staging, el smoke sobre el PDF publicado y el bump de versión.
+#
+# Se requiere como status check `flujo` en los rulesets de `main` y `staging`.
+# No corre sobre PRs a `develop`: ahí entra cualquier rama de trabajo, que es
+# justamente para lo que `develop` existe.
+#
+# Escape para un hotfix urgente: no hay, a propósito. Un camino alternativo que
+# nadie usa se pudre sin que nadie lo note. Si algún día hace falta ir directo a
+# `main`, la salida es desactivar el check en el ruleset por un rato y volverlo
+# a activar — dos clicks, y queda registrado en el log de auditoría del repo.
+name: flujo-de-ramas
+
+on:
+  pull_request:
+    branches: [main, staging]
+
+jobs:
+  flujo:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: El PR viene de la rama que corresponde
+        env:
+          BASE: ${{ github.base_ref }}
+          ORIGEN: ${{ github.head_ref }}
+          REPO_ORIGEN: ${{ github.event.pull_request.head.repo.full_name }}
+          REPO_BASE: ${{ github.repository }}
+        run: |
+          case "$BASE" in
+            main)    esperada=staging ;;
+            staging) esperada=develop ;;
+            *)
+              echo "::error::este workflow no deberia correr sobre '$BASE'. Revisa el filtro de ramas del propio workflow."
+              exit 1
+              ;;
+          esac
+
+          # El repo es publico: cualquiera puede forkear y abrir un PR desde una
+          # rama que se llame `staging`. `head_ref` solo trae el NOMBRE, asi que
+          # sin este chequeo un fork pasaria el filtro por llamarse igual.
+          if [ "$REPO_ORIGEN" != "$REPO_BASE" ]; then
+            echo "::error::este PR viene del fork $REPO_ORIGEN. El flujo interno solo admite ramas de $REPO_BASE."
+            exit 1
+          fi
+
+          if [ "$ORIGEN" = "$esperada" ]; then
+            echo "$ORIGEN -> $BASE: correcto"
+            exit 0
+          fi
+
+          echo "::error::'$ORIGEN' no puede mergear a '$BASE'. El flujo es feature/* -> develop -> staging -> main (docs/08 seccion 5): a '$BASE' solo entra '$esperada'."
+          exit 1
