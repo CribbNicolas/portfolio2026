@@ -1,9 +1,12 @@
 /**
- * Gate: un merge a `staging` tiene que subir la versión de `package.json`.
+ * Gate: todo PR que entra a `develop` tiene que subir la versión de `package.json`.
  *
  * `package.json` es la ÚNICA fuente de verdad del versionado (docs/08). Esa
- * afirmación solo vale si el número cambia cuando cambia lo publicado, y eso no
- * se sostiene con disciplina: se sostiene con un check que rompe el PR.
+ * afirmación solo vale si el número cambia cuando cambia el código, y eso no se
+ * sostiene con disciplina: se sostiene con un check que rompe el PR.
+ *
+ * Se versiona en `develop` porque ahí entra cada cambio de a uno. Los PRs de
+ * `develop` → `staging` → `main` arrastran el número, no lo tocan.
  *
  * El bump se hace A MANO, en el mismo PR. Elegir entre patch, minor y major es
  * una decisión semántica sobre qué cambió para quien consume el sitio, y una
@@ -26,7 +29,7 @@ import { verificarBump } from "./version";
  * `github.base_ref`; en local el default sirve para chequear antes de abrir
  * el PR.
  */
-const BASE = process.env.VERSION_BASE_REF ?? "origin/staging";
+const BASE = process.env.VERSION_BASE_REF ?? "origin/develop";
 
 function versionDe(json: string): string {
   const v = JSON.parse(json).version;

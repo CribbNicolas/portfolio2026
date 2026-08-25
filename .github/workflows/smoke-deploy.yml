@@ -73,11 +73,14 @@ jobs:
       # no matchea HEAD, y cuando faltaba el handler esta ruta devolvía
       # `200 text/html` —la misma respuesta que una ruta inexistente— mientras
       # el GET andaba perfecto. Un test sobre el cuerpo del GET no lo ve.
-      - name: El HEAD declara un PDF, no una página
+      - name: El HEAD declara un PDF, no una pagina
         run: |
-          tipo=$(curl -sI --max-time 60 "$PDF_SOURCE" | grep -i '^content-type:' | tr -d '')
-          echo "$tipo"
+          # `-w '%{content_type}'` en vez de parsear la cabecera con grep: el
+          # header viene terminado en CR y sacarlo a mano fue justo lo que rompio
+          # este archivo (un CR literal adentro del YAML). curl lo entrega limpio.
+          tipo=$(curl -sI -o /dev/null -w '%{content_type}' --max-time 60 "$PDF_SOURCE")
+          echo "HEAD $PDF_SOURCE -> $tipo"
           case "$tipo" in
-            *application/pdf*) exit 0 ;;
-            *) echo "::error::HEAD $PDF_SOURCE devuelve '$tipo': el handler de HEAD no está matcheando la Function"; exit 1 ;;
+            application/pdf*) exit 0 ;;
+            *) echo "::error::HEAD devuelve '$tipo' en vez de application/pdf: el handler de HEAD no matchea la Function" ; exit 1 ;;
           esac

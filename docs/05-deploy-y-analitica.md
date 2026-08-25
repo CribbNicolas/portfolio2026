@@ -257,6 +257,15 @@ En GitHub: Settings → Branches → Add rule sobre `main`.
 - Require a pull request before merging.
 - Require status checks to pass → **`validate`** (el job de `content-validation.yml`).
 
+**La misma regla sobre `staging` y sobre `develop`**, y en `develop` además el
+check `bump`. Ahí "Require a pull request" no es opcional: `version-gate.yml` se
+dispara con el evento `pull_request`, así que un push directo lo saltea entero y
+mete código sin subir la versión.
+
+Los rulesets sólo se aplican en repos públicos con plan Free — esa es la razón
+por la que este repo es público. El detalle está en
+[08](./08-ramas-y-versionado.md) §2.
+
 Sin esto, "todo verde antes de mergear" es una intención, no un mecanismo — y el
 orden viejo (deployar sólo después de la secuencia completa) se perdería sin
 reemplazo, porque Pages publica apenas ve el push.
@@ -359,7 +368,7 @@ Las tres preguntas que vale la pena mirar:
 - [ ] `BROWSER_RENDERING_*` cargadas también en **Preview** — sin esto el `/cv.pdf` de las previews da 503
 - [x] **`/cv.pdf` verificado en producción** (§3 paso 5) — 10/10, tagged incluido
 - [ ] Preview deployments en **Custom branches → include `staging`** (§3 paso 2b). NO "All non-Production branches": deployaría `develop`
-- [ ] `main` protegida con el check `validate` (§3 paso 6)
+- [ ] Repo público y un ruleset por rama —`main`, `staging`, `develop`— con "Require a pull request" y los status checks requeridos ([08](./08-ramas-y-versionado.md) §2)
 - [x] `smoke-deploy.yml` en `main` — dispara desde el próximo deploy
 - [ ] Página 404 propia: hoy una ruta inexistente devuelve `200` con HTML en vez de `404`. Es un soft-404 y los crawlers lo penalizan. Se arregla con `src/pages/404.astro`
 - [ ] Dominio comprado, apuntado, y `SITE_URL` actualizado (§3 paso 7)
