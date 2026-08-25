@@ -66,6 +66,9 @@ src/
   lib/graph-svg.ts    PositionedGraph → lista de dibujo. Niebla, orden de pintado, etiquetas.
   lib/lab-hover-css.ts  Grafo → reglas :has(). El hover cruzado funciona SIN JS.
   scripts/analitica.ts  Clarity. SOLO lo llama index.astro; nunca Base.astro (/cv en cero JS).
+                      El beacon de Cloudflare Web Analytics va en index.astro, tambien a mano:
+                      habilitarlo desde el dashboard de Pages lo inyecta en TODO el sitio y
+                      no-client-js.check.ts no lo veria (mira dist/, no lo servido).
                       Sin PUBLIC_CLARITY_ID el import se va por tree-shaking y no pesa nada.
   scripts/lab/        Lo ÚNICO que se bundlea para el browser. Ver §Frontend del mapa.
   scripts/lab/pildora.ts  Retraso de la barra flotante al scrollear. Adorno: detrás de

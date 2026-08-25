@@ -42,6 +42,19 @@ const viewCv = await content.getView("cv-ats", "es");
 const { identity } = view;
 const jsonLd = buildPersonJsonLd(view, new URL(Astro.site!));
 
+/**
+ * El token del beacon de Cloudflare Web Analytics.
+ *
+ * NO es secreto: viaja en el HTML de cada visita, igual que el ID de Clarity.
+ * Se lee de una variable igual, por lo mismo — para rotarlo o apagar la
+ * medición sin tocar código, y porque así el token no vive en un repo público
+ * donde queda en el historial aunque después se cambie.
+ *
+ * Si no está definida, el `<script>` no se renderiza: en dev y en cualquier
+ * build sin configurar, la analítica no existe.
+ */
+const beaconCloudflare: string | undefined = import.meta.env.PUBLIC_CF_BEACON_TOKEN;
+
 const grafo = buildKnowledgeGraph(view);
 const posicionado = layoutGraph(grafo);
 const mapa = buildSvgMapa(posicionado);
@@ -282,8 +295,13 @@ const nombreDeSkill = new Map(
     {/*
       La línea de privacidad. Clarity usa cookies y graba sesiones; decirlo es
       lo mínimo razonable si llega tráfico de la UE (docs/05 §5). Vive acá y no
-      en `Base.astro` porque Clarity tampoco vive ahí: si mañana se saca la
-      analítica, esta línea se va con ella y no queda huérfana en `/cv`.
+      en `Base.astro` porque la analítica tampoco vive ahí: si mañana se saca,
+      esta línea se va con ella y no queda huérfana en `/cv`.
+
+      Cloudflare Web Analytics se nombra aparte porque NO es lo mismo: no usa
+      cookies ni identifica a nadie. Meter las dos en la misma frase daría a
+      entender que las dos graban, y sería exagerar en la dirección que no
+      corresponde.
     */}
     <footer class="pie">
       <p>
@@ -292,10 +310,39 @@ const nombreDeSkill = new Map(
         <a
           href="https://privacy.microsoft.com/privacystatement"
           rel="noopener noreferrer"
-          target="_blank">Su política de privacidad</a>.
+          target="_blank">Su política de privacidad</a>. También uso Cloudflare
+        Web Analytics para el tráfico y la velocidad de carga: no usa cookies ni
+        identifica visitantes.
       </p>
     </footer>
   </div>
+
+  {/*
+    El beacon de Cloudflare Web Analytics.
+
+    Va a mano y NO desde el dashboard de Pages. Habilitarlo ahí hace que
+    Cloudflare inyecte el snippet en TODO el sitio en el próximo deploy, y eso
+    metería JavaScript en `/cv` — que es de donde Browser Rendering imprime el
+    PDF. Peor: la inyección pasa en el borde, después del build, así que
+    `no-client-js.check.ts` no la vería. El invariante se rompería en producción
+    con todos los checks en verde. Ver docs/05 §3 paso 8.
+
+    `is:inline` explícito: Astro lo trataría así igual por tener atributos, pero
+    declararlo evita un hint más de `astro(4000)` (deuda técnica §4).
+
+    Sin Subresource Integrity, por lo mismo que el tag de Clarity: el beacon lo
+    actualiza Cloudflare del lado del servidor y un hash fijo lo rompería en la
+    primera versión nueva. Lo que acota el riesgo es dónde corre — solo la
+    landing, que no tiene formularios ni credenciales.
+  */}
+  {beaconCloudflare && (
+    <script
+      is:inline
+      type="module"
+      src="https://static.cloudflareinsights.com/beacon.min.js"
+      data-cf-beacon={JSON.stringify({ token: beaconCloudflare })}
+    />
+  )}
 
   <script type="application/json" data-lab-datos set:html={datosGrafo} />
   <script>
