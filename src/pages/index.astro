@@ -99,27 +99,45 @@ const nombreDeSkill = new Map(
       Sin JS la píldora ya está fija y es usable: el script solo le agrega el
       retraso al desplazarse. Por eso el `transform` inicial vive en el CSS.
     */}
-    <header class="pildora" data-pildora>
-      <nav class="pildora__nav" aria-label="Secciones">
-        <a href="#mapa">Mapa</a>
-        <a href="#proyectos">Proyectos</a>
-        <a href="#cv">CV</a>
-      </nav>
+    <div class="barra" data-pildora>
+      <header class="pildora">
+        <nav class="pildora__nav" aria-label="Secciones">
+          <a href="#mapa">Mapa</a>
+          <a href="#proyectos">Proyectos</a>
+          <a href="#cv">CV</a>
+        </nav>
 
-      <span class="pildora__sep" aria-hidden="true"></span>
+        <span class="pildora__sep" aria-hidden="true"></span>
 
-      <ul class="pildora__contacto">
-        <li>
-          <a href={`mailto:${identity.contact.email}`}>
-            <span class="pildora__largo">{identity.contact.email}</span>
-            <span class="pildora__corto">Email</span>
-          </a>
-        </li>
-        {identity.links.map((link) => (
-          <li><a href={link.url} rel="me noopener">{link.label}</a></li>
-        ))}
-      </ul>
-    </header>
+        <ul class="pildora__contacto">
+          <li>
+            <a href={`mailto:${identity.contact.email}`}>
+              <span class="pildora__largo">{identity.contact.email}</span>
+              <span class="pildora__corto">Email</span>
+            </a>
+          </li>
+          {identity.links.map((link) => (
+            <li><a href={link.url} rel="me noopener">{link.label}</a></li>
+          ))}
+        </ul>
+      </header>
+
+      {/*
+        El CTA vive al lado del índice y no en una esquina: es la única acción
+        de la página, y separarla del resto de la navegación la volvía un
+        elemento suelto. Comparte el desfase de la barra, así que las dos
+        piezas se mueven como una.
+      */}
+      <a
+        class="descarga"
+        href="/cv.pdf"
+        download="Nicolas-Cribb-Barbaro-Full-Stack-Developer.pdf"
+      >
+        <span class="descarga__flecha" aria-hidden="true">↓</span>
+        <span class="pildora__largo">Descargar CV</span>
+        <span class="pildora__corto">CV</span>
+      </a>
+    </div>
 
     <main class="lab__contenido">
       <section class="home lab__hero">
@@ -260,19 +278,6 @@ const nombreDeSkill = new Map(
         </Section>
       </section>
     </main>
-
-    {/*
-      Acompaña todo el scroll: el del hero sirve para el que decide en los
-      primeros diez segundos, este para el que ya leyó. Fuera de `.lab__mapa`,
-      así que no le roba eventos de puntero al mapa.
-    */}
-    <a
-      class="descarga-flotante"
-      href="/cv.pdf"
-      download="Nicolas-Cribb-Barbaro-Full-Stack-Developer.pdf"
-    >
-      <span aria-hidden="true">↓</span> Descargar CV
-    </a>
   </div>
 
   <script type="application/json" data-lab-datos set:html={datosGrafo} />

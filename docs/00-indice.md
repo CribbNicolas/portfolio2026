@@ -37,7 +37,7 @@ Fechadas, para saber qué revisar cuando cambie el contexto.
 | 2026-08-24 | `/cv` deja de ser destino: `noindex`, sin links entrantes, solo fuente de impresión del PDF | Es lo que siempre fue por debajo. Lo sostiene `landing-unica.check.ts`, no la buena memoria |
 | 2026-08-24 | La sección CV de la landing usa `cv-ats`, no `portfolio` | El botón promete "el CV": si la sección mostrara más logros que el PDF, la promesa sería falsa. El test compara los conteos |
 | 2026-08-24 | El índice y el botón flotante son anclas y un `<a download>`, sin JS | El presupuesto de la home es para el mapa. Navegación que cuesta bytes es navegación mal hecha |
-| 2026-08-24 | El índice y el contacto pasan a una **píldora fija** que sigue el scroll; el hero pierde sus botones | Los dos botones grandes empujaban el mapa fuera de la primera pantalla, y el CTA de descarga ya lo cubre el flotante. La navegación tiene que estar disponible en todo el scroll, no solo arriba |
+| 2026-08-24 | El índice, el contacto y la descarga pasan a una **barra fija** que sigue el scroll; el hero pierde sus botones | Los dos botones grandes empujaban el mapa fuera de la primera pantalla. La navegación y la única acción de la página tienen que estar disponibles en todo el scroll, no solo arriba. Juntas y no en esquinas opuestas: separar el CTA del índice lo volvía un elemento suelto |
 | 2026-08-24 | Todas las secciones comparten `--ancho` (45rem) | Con anchos distintos (hero 40, mapa 52, CV 45) la página se leía como cuatro páginas pegadas. 45rem es la medida que `/cv` ya usaba |
 
 ## Estado

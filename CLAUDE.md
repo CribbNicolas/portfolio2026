@@ -53,8 +53,9 @@ src/
   lib/graph-svg.ts    PositionedGraph → lista de dibujo. Niebla, orden de pintado, etiquetas.
   lib/lab-hover-css.ts  Grafo → reglas :has(). El hover cruzado funciona SIN JS.
   scripts/lab/        Lo ÚNICO que se bundlea para el browser. Ver §Frontend del mapa.
-  scripts/lab/pildora.ts  Retraso de la píldora al scrollear. Adorno: detrás de
+  scripts/lab/pildora.ts  Retraso de la barra flotante al scrollear. Adorno: detrás de
                       `prefers-reduced-motion` y el rAF se apaga solo al frenar.
+                      Lee `scrollY` DENTRO del frame, no en el listener.
   scripts/lab/interaccion.ts  Arrastre, foco de vecindario, tooltip. No importa three:
                       el renderer le pasa una función `proyectar`. Cambiar de
                       renderer no toca este archivo.

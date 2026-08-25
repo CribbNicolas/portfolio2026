@@ -61,37 +61,183 @@
 
 }
 
-/* --- Píldora de navegación y descarga flotante --------------------------- */
+/* --- Barra flotante: índice, contacto y descarga ------------------------ */
 
-/* z-index 10: `.lab__campo` es `position: fixed` y `.lab__contenido` es
-   `z-index: 1`. Sin esto el botón queda debajo del contenido. */
-.descarga-flotante {
+/*
+ * `.barra` es lo que se mueve; `.pildora` y `.descarga` son las dos piezas.
+ * El desfase del scroll se aplica acá para que viajen como una sola cosa.
+ *
+ * `translate(-50%, 0)` vive en el CSS y no en el script: sin JS tiene que
+ * quedar centrada igual. El script solo pisa ese `transform` mientras hay
+ * movimiento, y lo devuelve a "" al frenar.
+ *
+ * z-index 10: `.lab__campo` es `fixed` y `.lab__contenido` es `z-index: 1`.
+ */
+.barra {
   position: fixed;
-  right: calc(var(--espacio) * 2);
-  bottom: calc(var(--espacio) * 2);
+  top: calc(var(--espacio) * 1.5);
+  left: 50%;
+  transform: translate(-50%, 0);
   z-index: 10;
-  display: inline-flex;
+
+  display: flex;
   align-items: center;
-  gap: calc(var(--espacio) * 0.75);
-  padding: 0.75em 1.25em;
+  gap: calc(var(--espacio) * 1);
+  max-width: calc(100vw - var(--espacio) * 3);
+
+  /* Promueve a capa propia: sin esto el navegador repinta la barra Y lo que
+     tiene debajo en cada frame del desfase. */
+  will-change: transform;
+}
+
+.pildora,
+.descarga {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  height: calc(var(--espacio) * 5.5);
   border-radius: 999px;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.pildora {
+  gap: calc(var(--espacio) * 0.5);
+  padding: 0 calc(var(--espacio) * 0.75);
+  border: 1px solid var(--linea);
+  background: var(--fondo-pildora);
+
+  /* Dos sombras: una corta que la despega del fondo y una larga y difusa que
+     le da altura. Una sola de las dos la deja plana o la ensucia. */
+  box-shadow:
+    0 1px 2px rgb(23 24 28 / 0.06),
+    0 8px 28px rgb(23 24 28 / 0.1);
+
+  /* El fondo de la página es un canvas animado: sin blur, el texto se lee
+     encima del movimiento y cansa. */
+  backdrop-filter: blur(14px) saturate(1.4);
+  -webkit-backdrop-filter: blur(14px) saturate(1.4);
+}
+
+.pildora__nav,
+.pildora__contacto {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  min-width: 0;
+}
+
+.pildora a {
+  display: block;
+  color: var(--tinta-suave);
+  text-decoration: none;
+  padding: calc(var(--espacio) * 0.75) calc(var(--espacio) * 1.25);
+  border-radius: 999px;
+  /* Solo color y fondo: transicionar `all` acá arrastraría el `transform` de
+     la barra y pelearía con el rAF del desfase. */
+  transition: color 0.18s ease, background-color 0.18s ease;
+}
+
+.pildora__nav a {
+  color: var(--tinta);
+}
+
+.pildora a:hover {
+  color: var(--acento);
+  background: var(--acento-tenue);
+}
+
+/* Un hairline, no una barra: separa sin cortar. */
+.pildora__sep {
+  width: 1px;
+  height: calc(var(--espacio) * 2.5);
+  flex: none;
+  margin: 0 calc(var(--espacio) * 0.75);
+  background: var(--linea);
+}
+
+/* --- La descarga -------------------------------------------------------- */
+
+.descarga {
+  gap: calc(var(--espacio) * 0.75);
+  padding: 0 calc(var(--espacio) * 2);
+  flex: none;
   background: var(--acento);
   color: var(--fondo);
-  font-size: 0.875rem;
   font-weight: 700;
   text-decoration: none;
-  box-shadow: 0 6px 24px rgb(0 0 0 / 0.18);
+  /* La segunda sombra va teñida del acento: una sombra neutra debajo de un
+     botón de color lo deja sucio. `color-mix` primero y una neutra de
+     fallback antes, porque si el navegador no lo soporta se cae la
+     declaración entera y el botón queda plano. */
+  box-shadow:
+    0 1px 2px rgb(23 24 28 / 0.08),
+    0 8px 28px rgb(23 24 28 / 0.14);
+  box-shadow:
+    0 1px 2px rgb(23 24 28 / 0.08),
+    0 8px 28px color-mix(in srgb, var(--acento) 32%, transparent);
+  transition: filter 0.18s ease;
 }
 
-.descarga-flotante:hover {
-  filter: brightness(1.08);
+.descarga:hover {
+  filter: brightness(1.07);
 }
 
-/* El PDF sale de `/cv`, que no tiene este botón. La regla está por si alguien
+/* La flecha baja sola al pasar el mouse: dice qué hace el botón sin una línea
+   de texto más. */
+.descarga__flecha {
+  display: inline-block;
+  transition: transform 0.18s ease;
+}
+
+.descarga:hover .descarga__flecha {
+  transform: translateY(2px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .descarga__flecha {
+    transition: none;
+  }
+}
+
+/* --- Qué se cae al angostar --------------------------------------------- */
+
+/* El mail entero solo cuando hay lugar. Abajo de eso, la etiqueta corta. */
+.pildora__largo {
+  display: none;
+}
+
+@media (min-width: 62rem) {
+  .pildora__largo {
+    display: inline;
+  }
+
+  .pildora__corto {
+    display: none;
+  }
+}
+
+/* El contacto es lo primero que se cae: en pantallas chicas el índice es lo
+   que hace falta para moverse, y el mail vive igual en el CV de abajo. */
+@media (max-width: 34rem) {
+  .pildora__contacto,
+  .pildora__sep {
+    display: none;
+  }
+
+  .descarga {
+    padding: 0 calc(var(--espacio) * 1.5);
+  }
+}
+
+/* El PDF sale de `/cv`, que no tiene esta barra. La regla está por si alguien
    imprime la landing desde el browser. */
 @media print {
-  .descarga-flotante,
-  .pildora {
+  .barra {
     display: none;
   }
 }

@@ -10,12 +10,12 @@ Desde el 2026-08-24 el sitio es **una sola página navegable**. El orden real
 es el del spec de la landing única §3:
 
 ```
-┌─ Píldora fija  Mapa · Proyectos · CV · contacto  (sigue el scroll) [hecho]
+┌─ Barra fija    Mapa · Proyectos · CV · contacto · [↓ CV]  (sigue el scroll) [hecho]
 ├─ Hero          nombre, rol, tagline. Sin botones.                 [hecho]
 ├─ #mapa         Mapa de conocimiento. Ver §7.                     [hecho]
 ├─ #proyectos    Proyectos, con link público                       [hecho]
 ├─ #cv           El CV completo, superficie cv-ats                 [hecho]
-└─ [↓ PDF]       botón flotante, acompaña todo el scroll           [hecho]
+└─ #cv           el bloque más largo, y el último                 [hecho]
 ```
 
 Lo que sigue pendiente:
