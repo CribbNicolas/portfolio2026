@@ -13,7 +13,8 @@
 # Dashboard → Workers & Pages → panel derecho. No es secreto.
 BROWSER_RENDERING_ACCOUNT_ID=
 
-# Token con UN permiso: Account → Browser Rendering → Edit. Nada más.
+# Token con UN permiso: Developer Platform → Browser Run → Edit. Nada más.
+# (Browser Run es el nombre nuevo de Browser Rendering; el path de la API no cambió.)
 # Si aparece en un log o en un commit: revocalo y generá otro. Rotarlo cuesta
 # dos minutos, limpiar el historial de git no.
 BROWSER_RENDERING_TOKEN=

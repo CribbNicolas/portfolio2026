@@ -163,8 +163,14 @@ preview builds de `staging` las necesitan igual):
 
 My Profile → **API Tokens** → **Create Token** → **Custom token**.
 
-- Permiso: **Account → Browser Rendering → Edit**. Uno solo. Nada más.
+- Permiso: **Developer Platform → Browser Run → Edit**. Uno solo. Nada más.
 - Sin fecha de expiración, o con recordatorio de renovación.
+
+> **Browser Run es Browser Rendering.** Cloudflare renombró el producto y lo
+> reagrupó en el selector de permisos; los docs viejos —y varias páginas nuevas—
+> lo siguen llamando "Browser Rendering - Edit". Es el mismo permiso. El path de
+> la REST API **no** cambió: sigue siendo `/accounts/<id>/browser-rendering/pdf`,
+> que es lo que usa `functions/_pdf.ts`.
 
 Este token **no** es el de deploy — ese ya no existe. Da permiso para pedir
 renders en tu cuenta. Si aparece en un log o en un commit, revocalo y generá
@@ -198,7 +204,7 @@ la última extensión), pero no está probado contra un deploy.
 | El PDF se abre | Todo bien | Seguir al paso 6 |
 | HTML / 404 | La ruta no matcheó la Function | Renombrar a `functions/cv-pdf.ts` y agregar `/cv.pdf /cv-pdf 200` en `public/_redirects` (rewrite, no redirect: la URL sigue siendo `/cv.pdf`) |
 | `503 El PDF no está configurado` | Faltan las variables del paso 4 en ese entorno | Cargarlas en **Preview** también |
-| `502 No se pudo generar el PDF` | El token no tiene el permiso, o la cuenta no tiene Browser Rendering habilitado | Revisar el paso 3 |
+| `502 No se pudo generar el PDF` | El token no tiene el permiso (Browser Run → Edit), o la cuenta no tiene el producto habilitado | Revisar el paso 3 |
 | `429` | Se agotaron los 10 min del día | Esperar. A este volumen no debería pasar |
 
 Si el PDF abre pero **sin tagging**, el smoke lo va a decir con el mensaje `el
