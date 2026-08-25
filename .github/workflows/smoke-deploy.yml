@@ -83,6 +83,46 @@ jobs:
           echo "::error::$SITIO nunca llego a servir $esperado. O el build de Pages fallo, o /build.json no existe en el deploy publicado."
           exit 1
 
+      - name: Calentar el PDF, tolerando el 429 de Browser Rendering
+        run: |
+          # Un 429 significa "espera", no "el PDF esta roto". El plan gratuito
+          # da 3 browsers concurrentes y una instancia nueva cada 20 segundos, y
+          # la cadena staging -> main son DOS deploys seguidos por diseno: cada
+          # uno pide un render en frio con minutos de diferencia. Medido: la
+          # primera corrida de este workflow fallo exactamente asi, con el sitio
+          # sano —la verificacion manual pasaba 13/13 minutos despues—.
+          #
+          # Sin este paso, el gate se pone en rojo por cuota y entrena a
+          # ignorarlo, que es la peor forma de perder un gate.
+          #
+          # Ademas de tolerar el 429, deja el PDF en el cache de borde del colo
+          # que le toco al runner, asi que el test de abajo pega cache y no
+          # gasta OTRO render.
+          for intento in $(seq 1 6); do
+            codigo=$(curl -s -o /dev/null -w '%{http_code}' --max-time 90 "$PDF_SOURCE" || echo 000)
+            echo "  intento $intento: HTTP $codigo"
+
+            case "$codigo" in
+              200) echo "PDF listo y cacheado"; exit 0 ;;
+              429)
+                # Se respeta el Retry-After que propaga la Function si vino.
+                espera=$(curl -sI --max-time 30 "$PDF_SOURCE" | sed -n 's/^[Rr]etry-[Aa]fter:[[:space:]]*\([0-9]*\).*/\1/p')
+                espera=${espera:-30}
+                echo "  cuota de Browser Rendering; reintento en ${espera}s"
+                sleep "$espera"
+                ;;
+              *)
+                # 502, 503, 504 o red caida: puede ser transitorio, pero no es
+                # cuota. Se reintenta pocas veces y con menos paciencia.
+                echo "  respuesta inesperada; reintento en 15s"
+                sleep 15
+                ;;
+            esac
+          done
+
+          echo "::error::$PDF_SOURCE no llego a devolver 200 despues de 6 intentos. Si el ultimo fue 429, se agoto la cuota diaria de Browser Rendering; cualquier otro codigo es un fallo real de la Function."
+          exit 1
+
       - name: El PDF servido pasa la capa 1 del embudo
         run: pnpm run test:pdf
 

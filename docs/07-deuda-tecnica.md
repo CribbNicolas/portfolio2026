@@ -429,3 +429,49 @@ que sí sirve JS, falla — o sea que el test distingue, no pasa siempre.
 invariantes. El presupuesto de bytes y la sincronía landing↔PDF se siguen
 midiendo solo sobre `dist/`. Ampliarlo es sumar tests a ese archivo; no hace
 falta arquitectura nueva.
+
+---
+
+## 16. El smoke trataba un 429 como un PDF roto — **RESUELTO 2026-08-25**
+
+**Severidad: era media.** No rompía el sitio; rompía la confianza en el gate.
+
+La primera corrida real del smoke sobre `main` falló así:
+
+```
+https://cribbnicolas.pages.dev/cv.pdf devolvió 429 Too Many Requests
+```
+
+El sitio estaba perfecto: la verificación manual contra esa misma URL, minutos
+después, pasaba 13/13.
+
+**Qué había pasado.** La cadena `staging` → `main` son **dos deploys seguidos
+por diseño**, y cada uno pide un render en frío a Browser Rendering. Corrieron
+con 105 segundos de diferencia (21:43 y 21:44:58) y se cruzaron con los límites
+del plan gratuito: 3 browsers concurrentes, una instancia nueva cada 20 s.
+
+**La incoherencia.** `functions/cv.pdf.ts` maneja el 429 explícitamente —lo
+propaga con su `Retry-After` en vez de devolver un PDF roto— y esa parte
+funcionó. Pero el smoke trataba cualquier respuesta distinta de 200 como fallo.
+Un 429 dice "esperá", no "está roto", y el gate no distinguía.
+
+Eso importa más de lo que parece: **un gate que se pone en rojo por cuota
+entrena a ignorarlo**, y un gate que se ignora ya no existe. Es la misma familia
+de problemas que las entradas 14 y 15, con otra cara — no que no corra, sino que
+corra y mienta.
+
+**Arreglo.** Un paso previo en `smoke-deploy.yml` que calienta el PDF tolerando
+el 429: reintenta hasta 6 veces respetando el `Retry-After` que propaga la
+Function, y distingue el 429 (cuota, paciencia larga) de un 5xx (fallo real,
+paciencia corta). Como efecto secundario deja el PDF en el caché de borde del
+colo que le tocó al runner, así que el test siguiente pega caché y **no gasta
+otro render**.
+
+`pdf-output.check.ts` además separa el mensaje del 429 del resto, para que
+alguien que lo corra a mano no salga a depurar la Function cuando no hay nada
+que depurar.
+
+**Lo que queda abierto:** si algún día los 10 minutos diarios de browser se
+agotan de verdad, el smoke va a fallar y va a tener razón. No hay forma de
+distinguir "cuota diaria agotada" de "cuota momentánea" desde afuera; el
+mensaje de error lo dice para que quien lo lea sepa dónde mirar.
