@@ -1,4 +1,10 @@
 node_modules/
+# Credenciales locales (Cloudflare, Clarity). NUNCA se commitean: el token de
+# Pages tiene permiso de escritura sobre los deploys de la cuenta.
+.env
+.env.*
+!.env.example
+.dev.vars
 dist/
 .astro/
 # Scratch de ejecución de planes (ledger, briefs, reportes). El registro real es git.

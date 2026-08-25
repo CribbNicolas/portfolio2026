@@ -10,8 +10,8 @@ Desde el 2026-08-24 el sitio es **una sola página navegable**. El orden real
 es el del spec de la landing única §3:
 
 ```
-┌─ Hero          nombre, rol, tagline, contacto                    [hecho]
-│  Índice        Mapa · Proyectos · CV  (anclas, sin JS)           [hecho]
+┌─ Píldora fija  Mapa · Proyectos · CV · contacto  (sigue el scroll) [hecho]
+├─ Hero          nombre, rol, tagline. Sin botones.                 [hecho]
 ├─ #mapa         Mapa de conocimiento. Ver §7.                     [hecho]
 ├─ #proyectos    Proyectos, con link público                       [hecho]
 ├─ #cv           El CV completo, superficie cv-ats                 [hecho]
@@ -32,8 +32,12 @@ tres proyectos, y llenarlos a ojo viola el invariante 4. Los `links` de los tres
 también están vacíos: el componente renderiza el link solo cuando existe, así
 que cargarlos es editar el dataset, no tocar código.
 
-El contacto sigue en el hero y no en el pie: en una sola página, bajarlo lo
-esconde detrás de todo el CV.
+El contacto no está en el hero ni en el pie: vive en la píldora, que acompaña
+todo el scroll. En una sola página, el pie está detrás del CV entero — que es
+el bloque más largo— y el hero solo lo ve quien no bajó todavía.
+
+Las cuatro secciones comparten ancho (`--ancho`, 45rem). Es un solo token: con
+anchos distintos la página se lee como cuatro páginas pegadas.
 
 **El Stack no es una grilla de logos.** Ver §7: es un grafo, y el tamaño de cada
 tecnología es un dato derivado, no una opinión.

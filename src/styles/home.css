@@ -6,7 +6,7 @@
 
 .home {
   padding: calc(var(--espacio) * 6) calc(var(--espacio) * 2.5);
-  max-width: 40rem;
+  max-width: var(--ancho);
   margin: 0 auto;
 }
 
@@ -46,63 +46,6 @@
   letter-spacing: -0.02em;
 }
 
-.home__actions {
-  display: flex;
-  flex-direction: column;
-  gap: calc(var(--espacio) * 1.5);
-  margin: 0 0 calc(var(--espacio) * 4.5);
-}
-
-.btn {
-  display: block;
-  text-align: center;
-  padding: calc(var(--espacio) * 2);
-  text-decoration: none;
-  border-radius: var(--radio);
-  font-weight: 700;
-  font-size: 1rem;
-  border: 1px solid var(--linea);
-  color: var(--tinta);
-}
-
-.btn--primary {
-  background: var(--acento);
-  border-color: var(--acento);
-  color: #fff;
-  box-shadow: var(--sombra);
-}
-
-.btn:hover {
-  border-color: var(--acento);
-  color: var(--acento);
-}
-
-.btn--primary:hover {
-  color: #fff;
-  filter: brightness(1.06);
-}
-
-.home__links {
-  margin: 0;
-  list-style: none;
-  padding-left: 0;
-}
-
-.home__links li {
-  margin-bottom: calc(var(--espacio) * 1.25);
-}
-
-.home__links a {
-  color: var(--tinta);
-  text-decoration: none;
-  font-weight: 600;
-  border-bottom: 2px solid var(--acento-tenue);
-}
-
-.home__links a:hover {
-  border-bottom-color: var(--acento);
-}
-
 @media (min-width: 40rem) {
   .home {
     padding: calc(var(--espacio) * 11) calc(var(--espacio) * 4);
@@ -116,43 +59,9 @@
     font-size: 1.625rem;
   }
 
-  .home__actions {
-    flex-direction: row;
-  }
-
-  .btn {
-    flex: 1;
-  }
 }
 
-@media screen and (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) .btn--primary {
-    color: #1a0f0a;
-  }
-}
-
-/* --- Índice y descarga flotante ----------------------------------------- */
-
-.home__indice {
-  display: flex;
-  flex-wrap: wrap;
-  gap: calc(var(--espacio) * 2.5);
-  margin-top: calc(var(--espacio) * 3);
-  font-size: 0.875rem;
-  font-weight: 600;
-}
-
-.home__indice a {
-  color: var(--tinta-suave);
-  text-decoration: none;
-  border-bottom: 1px solid var(--linea);
-  padding-bottom: 0.15em;
-}
-
-.home__indice a:hover {
-  color: var(--acento);
-  border-bottom-color: var(--acento);
-}
+/* --- Píldora de navegación y descarga flotante --------------------------- */
 
 /* z-index 10: `.lab__campo` es `position: fixed` y `.lab__contenido` es
    `z-index: 1`. Sin esto el botón queda debajo del contenido. */
@@ -182,9 +91,18 @@
    imprime la landing desde el browser. */
 @media print {
   .descarga-flotante,
-  .home__indice {
+  .pildora {
     display: none;
   }
+}
+
+/* La píldora es `fixed`: sin esto, el salto de ancla deja el título de la
+   sección debajo de ella. Es el alto de la píldora más su separación de
+   arriba, más aire. */
+#mapa,
+#proyectos,
+#cv {
+  scroll-margin-top: calc(var(--espacio) * 9);
 }
 
 /* El scroll suave es lo que hace que el índice se lea como navegación y no
@@ -197,5 +115,100 @@ html {
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;
+  }
+}
+
+/*
+ * La píldora: índice + contacto, fija arriba y centrada.
+ *
+ * `translate(-50%, 0)` en el CSS y no en el script: sin JS tiene que quedar
+ * centrada igual. El script solo pisa ese `transform` mientras hay scroll en
+ * movimiento, y lo devuelve a "" al frenar.
+ *
+ * z-index 10, igual que la descarga flotante: `.lab__campo` es `fixed` y
+ * `.lab__contenido` es `z-index: 1`.
+ */
+.pildora {
+  position: fixed;
+  top: calc(var(--espacio) * 1.5);
+  left: 50%;
+  transform: translate(-50%, 0);
+  z-index: 10;
+
+  display: flex;
+  align-items: center;
+  gap: calc(var(--espacio) * 1.5);
+  max-width: calc(100vw - var(--espacio) * 3);
+  padding: calc(var(--espacio) * 1) calc(var(--espacio) * 2);
+
+  border: 1px solid var(--linea);
+  border-radius: 999px;
+  background: var(--fondo-pildora);
+  box-shadow: var(--sombra);
+
+  /* El fondo de la página es un canvas animado: sin blur, la píldora se lee
+     encima del movimiento y cansa. */
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
+
+.pildora__nav,
+.pildora__contacto {
+  display: flex;
+  align-items: center;
+  gap: calc(var(--espacio) * 1.5);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.pildora a {
+  color: var(--tinta-suave);
+  text-decoration: none;
+  white-space: nowrap;
+  padding: calc(var(--espacio) * 0.5) calc(var(--espacio) * 0.75);
+  border-radius: 999px;
+}
+
+.pildora a:hover {
+  color: var(--acento);
+  background: var(--acento-tenue);
+}
+
+.pildora__nav a {
+  color: var(--tinta);
+}
+
+.pildora__sep {
+  width: 1px;
+  align-self: stretch;
+  background: var(--linea);
+}
+
+/* El mail entero solo cuando hay lugar. Abajo de eso dice "Email": una
+   píldora que se sale de la pantalla no es navegación. */
+.pildora__largo {
+  display: none;
+}
+
+@media (min-width: 56rem) {
+  .pildora__largo {
+    display: inline;
+  }
+
+  .pildora__corto {
+    display: none;
+  }
+}
+
+/* El contacto es lo primero que se cae: en pantallas chicas el índice es lo
+   que hace falta para moverse, y el mail vive igual en el CV de abajo. */
+@media (max-width: 30rem) {
+  .pildora__contacto,
+  .pildora__sep {
+    display: none;
   }
 }

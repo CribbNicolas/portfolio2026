@@ -42,14 +42,15 @@
   z-index: 1;
 }
 
+/* Deja lugar para la píldora, que es `fixed` y arranca pisando el hero. */
 .lab__hero {
-  padding-top: calc(var(--espacio) * 9);
+  padding-top: calc(var(--espacio) * 12);
 }
 
 /* --- La sección del mapa ------------------------------------------------ */
 
 .lab__mapa-seccion {
-  max-width: 40rem;
+  max-width: var(--ancho);
   margin: 0 auto;
   padding: calc(var(--espacio) * 4) calc(var(--espacio) * 2.5) calc(var(--espacio) * 8);
 }
@@ -520,10 +521,6 @@
 }
 
 @media (min-width: 40rem) {
-  .lab__mapa-seccion {
-    max-width: 52rem;
-  }
-
   .lab__mapa {
     aspect-ratio: 4 / 3;
   }

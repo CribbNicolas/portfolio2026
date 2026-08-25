@@ -20,7 +20,7 @@
 
 .cv {
   padding: calc(var(--espacio) * 4) calc(var(--espacio) * 2.5);
-  max-width: 45rem;
+  max-width: var(--ancho);
   margin: 0 auto;
 }
 

@@ -53,11 +53,14 @@ src/
   lib/graph-svg.ts    PositionedGraph → lista de dibujo. Niebla, orden de pintado, etiquetas.
   lib/lab-hover-css.ts  Grafo → reglas :has(). El hover cruzado funciona SIN JS.
   scripts/lab/        Lo ÚNICO que se bundlea para el browser. Ver §Frontend del mapa.
+  scripts/lab/pildora.ts  Retraso de la píldora al scrollear. Adorno: detrás de
+                      `prefers-reduced-motion` y el rAF se apaga solo al frenar.
   scripts/lab/interaccion.ts  Arrastre, foco de vecindario, tooltip. No importa three:
                       el renderer le pasa una función `proyectar`. Cambiar de
                       renderer no toca este archivo.
   styles/cv.css       Una columna. Prohibido flex/grid/table (rompe el parseo).
   styles/proyectos.css  La lista de proyectos. Jerarquía tipográfica, sin tarjetas con sombra.
+  styles/tokens.css   `--ancho` es el ancho de TODAS las secciones. Un solo valor, a propósito.
   styles/lab.css      El mapa. Los dos canvas son pointer-events:none. Eso es lo que hace
                       cierta la promesa de "no captura el mouse".
 content/schema/

@@ -9,10 +9,16 @@
  */
 
 import { puedeIntentar } from "./capacidad";
+import { seguirScroll } from "./pildora";
 import { crearBusHover } from "./hover-bus";
 import type { LabDatos, Escena } from "./types";
 
 export function iniciar(): void {
+  // Antes del early return del grafo: la píldora existe aunque el mapa no
+  // llegue a montarse, y no depende de sus datos.
+  const pildora = document.querySelector<HTMLElement>("[data-pildora]");
+  if (pildora) seguirScroll(pildora);
+
   const datosEl = document.querySelector<HTMLScriptElement>("[data-lab-datos]");
   const canvasGrafo = document.querySelector<HTMLCanvasElement>("[data-lab-grafo]");
   const canvasCampo = document.querySelector<HTMLCanvasElement>("[data-lab-campo]");

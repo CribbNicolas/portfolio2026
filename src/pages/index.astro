@@ -88,6 +88,39 @@ const nombreDeSkill = new Map(
   <div class="lab">
     <canvas class="lab__campo" data-lab-campo aria-hidden="true"></canvas>
 
+    {/*
+      Índice y contacto en una píldora que acompaña el scroll. Reemplaza a los
+      botones del hero: el CTA de descarga ya lo cubre el flotante de abajo, y
+      dos botones grandes arriba empujaban el mapa fuera de la primera pantalla.
+
+      `href="#cv"` y NO `/cv` — esa ruta existe solo para imprimir el PDF, y
+      `landing-unica.check.ts` verifica que nadie la linkee.
+
+      Sin JS la píldora ya está fija y es usable: el script solo le agrega el
+      retraso al desplazarse. Por eso el `transform` inicial vive en el CSS.
+    */}
+    <header class="pildora" data-pildora>
+      <nav class="pildora__nav" aria-label="Secciones">
+        <a href="#mapa">Mapa</a>
+        <a href="#proyectos">Proyectos</a>
+        <a href="#cv">CV</a>
+      </nav>
+
+      <span class="pildora__sep" aria-hidden="true"></span>
+
+      <ul class="pildora__contacto">
+        <li>
+          <a href={`mailto:${identity.contact.email}`}>
+            <span class="pildora__largo">{identity.contact.email}</span>
+            <span class="pildora__corto">Email</span>
+          </a>
+        </li>
+        {identity.links.map((link) => (
+          <li><a href={link.url} rel="me noopener">{link.label}</a></li>
+        ))}
+      </ul>
+    </header>
+
     <main class="lab__contenido">
       <section class="home lab__hero">
         <p class="home__kicker">{identity.brandTitle}</p>
@@ -96,31 +129,6 @@ const nombreDeSkill = new Map(
           {identity.searchTitle} · {formatSeniority(view.yearsOfExperience)} · {identity.location.city}, {identity.location.country}
         </p>
         <p class="home__tagline">{identity.tagline.short}</p>
-
-        <div class="home__actions">
-          <a class="btn btn--primary" href="#cv">Ver el CV</a>
-          <a class="btn" href="/cv.pdf" download="Nicolas-Cribb-Barbaro-Full-Stack-Developer.pdf">
-            Descargar en PDF
-          </a>
-        </div>
-
-        {/*
-          El índice reemplaza a la navegación entre páginas: son anclas dentro
-          de la misma landing. `href="#cv"` y NO `/cv` — esa ruta existe solo
-          para imprimir el PDF, y hay un test que verifica que nadie la linkee.
-        */}
-        <nav class="home__indice" aria-label="Secciones">
-          <a href="#mapa">Mapa</a>
-          <a href="#proyectos">Proyectos</a>
-          <a href="#cv">CV</a>
-        </nav>
-
-        <ul class="home__links">
-          <li><a href={`mailto:${identity.contact.email}`}>{identity.contact.email}</a></li>
-          {identity.links.map((link) => (
-            <li><a href={link.url} rel="me noopener">{link.label}</a></li>
-          ))}
-        </ul>
       </section>
 
       <section id="mapa" class="lab__mapa-seccion">
