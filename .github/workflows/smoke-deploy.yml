@@ -68,3 +68,16 @@ jobs:
       # Las mismas assertions que el gate pre-deploy, contra la URL publicada.
       - name: El PDF servido pasa la capa 1 del embudo
         run: pnpm run test:pdf
+
+      # HEAD tiene su propio step porque tiene su propio ruteo: `onRequestGet`
+      # no matchea HEAD, y cuando faltaba el handler esta ruta devolvía
+      # `200 text/html` —la misma respuesta que una ruta inexistente— mientras
+      # el GET andaba perfecto. Un test sobre el cuerpo del GET no lo ve.
+      - name: El HEAD declara un PDF, no una página
+        run: |
+          tipo=$(curl -sI --max-time 60 "$PDF_SOURCE" | grep -i '^content-type:' | tr -d '')
+          echo "$tipo"
+          case "$tipo" in
+            *application/pdf*) exit 0 ;;
+            *) echo "::error::HEAD $PDF_SOURCE devuelve '$tipo': el handler de HEAD no está matcheando la Function"; exit 1 ;;
+          esac

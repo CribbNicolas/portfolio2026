@@ -194,10 +194,26 @@ Las lee `functions/cv.pdf.ts`. **Cargalas en Production Y en Preview**, o el
 Pushear `staging`, esperar el deploy y abrir
 `https://<hash>.<proyecto>.pages.dev/cv.pdf`.
 
-**Esto es lo primero que hay que mirar, antes que cualquier otra cosa.** Lo que
-está sin verificar contra Cloudflare real es si Pages rutea un archivo con punto
-en el nombre: `functions/cv.pdf.ts` debería mapear a `/cv.pdf` (Pages saca solo
-la última extensión), pero no está probado contra un deploy.
+**Esto es lo primero que hay que mirar, antes que cualquier otra cosa.**
+
+**Verificado el 2026-08-25** contra `https://cribbnicolas.pages.dev`, primer
+deploy de producción:
+
+| Qué | Medido |
+|---|---|
+| Ruteo del punto en el nombre | `functions/cv.pdf.ts` → `/cv.pdf`. **Anda.** No hizo falta el rewrite |
+| `GET /cv.pdf` en frío | `200 application/pdf`, 56.743 bytes, 5,04 s |
+| `GET /cv.pdf` cacheado | 0,28 s. El caché de borde acierta |
+| `pnpm run test:pdf` contra esa URL | **10/10** |
+| `tagged` y `outline` | **Browser Rendering los honra.** Era la duda que quedaba abierta: no hace falta migrar a Workers |
+| `HEAD /cv.pdf` | Devolvía `200 text/html`. **Bug encontrado acá**, arreglado con `onRequestHead` |
+
+El HEAD es el que casi se escapa: el GET andaba perfecto y los diez tests
+pasaban. `onRequestGet` matchea solo GET, así que el HEAD caía al manejador de
+assets estáticos y devolvía la misma página que una ruta inexistente. Ahora
+`smoke-deploy.yml` lo verifica en un step propio.
+
+La tabla de abajo queda como referencia para la próxima vez que algo falle.
 
 | Qué ves | Qué significa | Qué hacer |
 |---|---|---|
@@ -207,10 +223,11 @@ la última extensión), pero no está probado contra un deploy.
 | `502 No se pudo generar el PDF` | El token no tiene el permiso (Browser Run → Edit), o la cuenta no tiene el producto habilitado | Revisar el paso 3 |
 | `429` | Se agotaron los 10 min del día | Esperar. A este volumen no debería pasar |
 
-Si el PDF abre pero **sin tagging**, el smoke lo va a decir con el mensaje `el
-PDF no está tagged`. Significaría que Browser Rendering ignora `tagged`/`outline`
-en `pdfOptions`. La salida entonces es migrar el hosting a Workers con assets
-estáticos, donde el binding da Puppeteer completo — no aflojar el test.
+Si alguna vez el PDF abre pero **sin tagging**, el smoke lo va a decir con el
+mensaje `el PDF no está tagged`. Hoy no pasa —está medido—, pero significaría
+que Browser Rendering dejó de honrar `tagged`/`outline` en `pdfOptions`. La
+salida entonces es migrar el hosting a Workers con assets estáticos, donde el
+binding da Puppeteer completo — no aflojar el test.
 
 ### Paso 6 — Proteger `main`
 
@@ -314,13 +331,16 @@ Las tres preguntas que vale la pena mirar:
 
 ## 7. Estado
 
-- [ ] Proyecto de Cloudflare Pages creado, conectado al repo (§3 paso 1)
-- [ ] `NODE_VERSION`, `PNPM_VERSION`, `SITE_URL` cargadas en Production y Preview (§3 paso 2)
-- [ ] Token de Browser Rendering creado (§3 paso 3)
-- [ ] `BROWSER_RENDERING_*` cargadas en Production y Preview (§3 paso 4)
-- [ ] **`/cv.pdf` verificado en la preview de `staging`** (§3 paso 5) — bloquea el merge a `main`
+- [x] Proyecto de Cloudflare Pages creado, conectado al repo (§3 paso 1) — `cribbnicolas.pages.dev`
+- [x] `NODE_VERSION`, `PNPM_VERSION`, `SITE_URL` cargadas (§3 paso 2)
+- [x] Token de Browser Run creado (§3 paso 3)
+- [x] `BROWSER_RENDERING_*` cargadas en Production (§3 paso 4)
+- [ ] `BROWSER_RENDERING_*` cargadas también en **Preview** — sin esto el `/cv.pdf` de las previews da 503
+- [x] **`/cv.pdf` verificado en producción** (§3 paso 5) — 10/10, tagged incluido
+- [ ] Preview deployments en **All non-Production branches** (Settings → Builds & deployments)
 - [ ] `main` protegida con el check `validate` (§3 paso 6)
-- [ ] `smoke-deploy.yml` en `main` y disparando (solo funciona una vez que está en la rama por defecto)
+- [x] `smoke-deploy.yml` en `main` — dispara desde el próximo deploy
+- [ ] Página 404 propia: hoy una ruta inexistente devuelve `200` con HTML en vez de `404`. Es un soft-404 y los crawlers lo penalizan. Se arregla con `src/pages/404.astro`
 - [ ] Dominio comprado, apuntado, y `SITE_URL` actualizado (§3 paso 7)
 - [ ] Cloudflare Web Analytics activo (§3 paso 8)
 - [ ] Clarity en la landing + `test:js` verde (§3 paso 9)
