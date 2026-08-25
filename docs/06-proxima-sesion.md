@@ -39,22 +39,26 @@ píldora y no encima, que las cuatro secciones compartan `left` y `width`.
 
 ---
 
-## 2. Deploy — bloqueado en el dominio
+## 2. Deploy — falta la configuración en Cloudflare
 
-Todo el detalle en [`05-deploy-y-analitica.md`](./05-deploy-y-analitica.md).
-El stack está decidido y documentado; falta ejecutarlo.
+Todo el detalle y el checklist paso a paso en
+[`05-deploy-y-analitica.md`](./05-deploy-y-analitica.md) §3. El código ya está:
+lo que falta es tocar el dashboard.
 
-**El dominio bloquea al resto.** Sin él no hay `SITE_URL`, y el JSON-LD y el
-canonical salen apuntando a `https://portfolio.invalid`.
+**El dominio ya NO bloquea.** Se arranca con la URL de `*.pages.dev` en
+`SITE_URL` y se cambia cuando el dominio exista. Lo que sí bloquea el merge a
+`main` es verificar `/cv.pdf` en la preview de `staging` (§3 paso 5): esa ruta
+la sirve una Pages Function y no está probada contra un deploy real.
 
-- [ ] Comprar el dominio y definir `SITE_URL`
-- [ ] Crear el proyecto en Cloudflare Pages
-- [ ] Cargar `CLOUDFLARE_API_TOKEN` y `CLOUDFLARE_ACCOUNT_ID` como **secrets de
-      GitHub** (no alcanza el `.env` local: Actions no lo ve) y `SITE_URL` como
-      variable
-- [ ] Agregar el step de deploy al workflow — **después** de toda la secuencia
-      de verificación y solo en `main`
-- [ ] Apuntar el dominio propio a Pages
+- [ ] Crear el proyecto en Pages con **Connect to Git** (el build corre ahí)
+- [ ] `NODE_VERSION=24`, `PNPM_VERSION=11.1.3`, `SITE_URL` — Production y Preview
+- [ ] Token con permiso **Browser Rendering → Edit** + Account ID
+- [ ] `BROWSER_RENDERING_ACCOUNT_ID` y `BROWSER_RENDERING_TOKEN` — Production y
+      Preview. Sin esto `/cv.pdf` devuelve 503
+- [ ] **Abrir `/cv.pdf` en la preview de `staging`** — si devuelve HTML, Pages no
+      rutea el punto del nombre: renombrar a `cv-pdf.ts` + rewrite en `_redirects`
+- [ ] Proteger `main` con el check `validate` requerido
+- [ ] Comprar el dominio, apuntarlo, actualizar `SITE_URL`
 - [ ] Cloudflare Web Analytics
 - [ ] Clarity en la landing, y correr `pnpm run test:js` para confirmar que
       `/cv` sigue en cero JS

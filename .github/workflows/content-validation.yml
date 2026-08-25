@@ -1,6 +1,6 @@
 # Hace ciertas las afirmaciones de los docs: las reglas duras son CI, no intenciones.
 # Equivalente local (todos tienen que pasar):
-#   pnpm run typecheck && pnpm run validate && pnpm test && pnpm run build && pnpm run test:pdf && pnpm run test:js && pnpm run test:bundle && pnpm run test:landing && pnpm run audit:todos
+#   pnpm run typecheck && pnpm run validate && pnpm test && pnpm run build && pnpm run pdf:local && pnpm run test:pdf && pnpm run test:js && pnpm run test:bundle && pnpm run test:landing && pnpm run audit:todos
 name: content-validation
 
 on:
@@ -36,8 +36,14 @@ jobs:
       - run: pnpm run validate
       - run: pnpm test
 
-      # El PDF necesita Chromium. Va en un step propio para que un fallo de
-      # descarga del browser no se confunda con un fallo del CV.
+      # El PDF de PRODUCCIÓN ya no sale de acá: lo genera `functions/cv.pdf.ts`
+      # a demanda con Browser Rendering, y por eso `pnpm run build` corre en
+      # Cloudflare sin Chromium. Chromium sigue instalándose SOLO para el gate:
+      # `pdf:local` produce el PDF que `test:pdf` verifica antes de publicar
+      # nada. Que el PDF SERVIDO también pase está en `smoke-deploy.yml`.
+      #
+      # Va en un step propio para que un fallo de descarga del browser no se
+      # confunda con un fallo del CV.
       - name: Cache de browsers de Playwright
         uses: actions/cache@v4
         with:
@@ -48,13 +54,16 @@ jobs:
       # descargar. Una corrida se colgó 6 h ahí porque los mirrors de Ubuntu no
       # respondían — mismo commit que había pasado en 1 min. La imagen de
       # ubuntu-latest ya trae las librerías que Chromium necesita.
-      # Si algún día Chromium no arranca, el fallo sale en el step `build` de
-      # abajo y la vuelta atrás es agregar `--with-deps` de nuevo.
+      # Si algún día Chromium no arranca, el fallo sale en el step `pdf:local`
+      # de abajo y la vuelta atrás es agregar `--with-deps` de nuevo.
       - name: Instalar Chromium
         timeout-minutes: 5
         run: pnpm exec playwright install chromium
 
       - run: pnpm run build
+      # `build` es solo `astro build`. El PDF se genera aparte, y ese es
+      # exactamente el corte que permite que Cloudflare Pages corra el build.
+      - run: pnpm run pdf:local
       # Acá se verifica que el CV pasa la capa 1 del embudo: texto extraíble,
       # orden de lectura sano, sin TODOs, sin teléfono, máximo 2 páginas.
       - run: pnpm run test:pdf

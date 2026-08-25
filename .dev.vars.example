@@ -1,0 +1,22 @@
+# Plantilla de las variables que ve `functions/cv.pdf.ts` cuando corre local con
+# `pnpm exec wrangler pages dev dist`. Copiar a `.dev.vars`, que está en
+# .gitignore.
+#
+# En producción estos MISMOS nombres se configuran en el dashboard de Cloudflare
+# Pages (Settings → Variables and Secrets), no en un archivo. Ver
+# docs/05-deploy-y-analitica.md §2.
+#
+# Para trabajar en el CV no hacen falta: `pnpm run dev` sirve `/cv` en HTML y
+# `pnpm run pdf:local` imprime el PDF con Playwright, los dos sin tocar la nube.
+# Esto es solo para probar la Function.
+
+# Dashboard → Workers & Pages → panel derecho. No es secreto.
+BROWSER_RENDERING_ACCOUNT_ID=
+
+# Token con UN permiso: Account → Browser Rendering → Edit. Nada más.
+# Si aparece en un log o en un commit: revocalo y generá otro. Rotarlo cuesta
+# dos minutos, limpiar el historial de git no.
+BROWSER_RENDERING_TOKEN=
+
+# Opcional. Con qué nombre guarda el archivo quien lo baja. Default: cv.pdf
+PDF_FILENAME=

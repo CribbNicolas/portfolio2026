@@ -2,9 +2,10 @@
  * Verificación del PDF generado. Esto es lo que convierte "el CV pasa el ATS"
  * de intención en test (invariante 7).
  *
- * El nombre NO termina en `.test.ts` a propósito: `npm test` descubre todos los
- * `*.test.ts` y correría este antes de que exista `dist/cv.pdf`. Se corre
- * aparte, después del build, con `npm run test:pdf`.
+ * El nombre NO termina en `.test.ts` a propósito: `pnpm test` descubre todos los
+ * `*.test.ts` y correría este antes de que exista el PDF. Se corre aparte, con
+ * `pnpm run test:pdf`, y contra dos fuentes distintas según `PDF_SOURCE` — ver
+ * abajo.
  */
 
 import { test } from "node:test";
@@ -16,12 +17,54 @@ import { readFile } from "node:fs/promises";
 import { getDocument } from "pdfjs-dist/legacy/build/pdf.mjs";
 import { content, formatRoleTitle } from "../content/source/index";
 
-const PDF = "dist/cv.pdf";
+/**
+ * De dónde salen los bytes que se verifican.
+ *
+ * Por defecto `dist/cv.pdf`, el que produce `pnpm run pdf:local` con Playwright:
+ * ese es el gate PRE-deploy y no depende de la red de nadie.
+ *
+ * Con `PDF_SOURCE=https://…/cv.pdf` los MISMOS tests corren contra la URL
+ * publicada. Eso es lo único que prueba que el PDF que sirve `functions/cv.pdf.ts`
+ * pasa el ATS, y no solo el que produce tu máquina: son dos Chromium distintos
+ * —Playwright local contra Browser Rendering— sobre el mismo layout, y la única
+ * forma de saber que imprimen igual es medir los dos.
+ */
+const FUENTE = process.env.PDF_SOURCE ?? "dist/cv.pdf";
+
+let crudo: Uint8Array | undefined;
+
+/**
+ * Los bytes del PDF, leídos UNA sola vez.
+ *
+ * Cada test llamaba a `readFile` por su cuenta, que con un archivo local es
+ * gratis; contra una URL serían nueve requests —y nueve renders si el caché de
+ * borde no acierta—. Devuelve una copia porque pdf.js se queda con el
+ * `Uint8Array` que recibe: reusar el mismo lo deja vacío en el segundo test.
+ */
+async function cargar(): Promise<Uint8Array> {
+  if (!crudo) {
+    if (FUENTE.startsWith("http://") || FUENTE.startsWith("https://")) {
+      const res = await fetch(FUENTE);
+      assert.ok(res.ok, `${FUENTE} devolvió ${res.status} ${res.statusText}`);
+      // Un 200 con HTML es el síntoma de que la ruta no matcheó la Function y
+      // Pages devolvió el sitio. Sin este chequeo el fallo sale como
+      // "InvalidPDFException" y se busca en el lado equivocado.
+      const tipo = res.headers.get("content-type") ?? "";
+      assert.ok(
+        tipo.includes("application/pdf"),
+        `${FUENTE} devolvió content-type "${tipo}": esa ruta no está sirviendo un PDF`,
+      );
+      crudo = new Uint8Array(await res.arrayBuffer());
+    } else {
+      crudo = new Uint8Array(await readFile(FUENTE));
+    }
+  }
+  return crudo.slice();
+}
 
 /** Texto del PDF en orden de extracción: exactamente lo que ve un parser. */
 async function extraer(): Promise<{ texto: string; paginas: number }> {
-  const buf = await readFile(PDF);
-  const doc = await getDocument({ data: new Uint8Array(buf) }).promise;
+  const doc = await getDocument({ data: await cargar() }).promise;
 
   let texto = "";
   for (let i = 1; i <= doc.numPages; i++) {
@@ -131,8 +174,7 @@ test("capa 1: los títulos de rol y los bullets se extraen enteros", async () =>
 test("el PDF sale tagged y con outline, como se prometió", async () => {
   // `tagged: true` y `outline: true` son opciones explícitas de renderPdf. Sin
   // esto, si Chrome dejara de honrarlas nadie se enteraría.
-  const buf = await readFile(PDF);
-  const doc = await getDocument({ data: new Uint8Array(buf) }).promise;
+  const doc = await getDocument({ data: await cargar() }).promise;
 
   const markInfo = await doc.getMarkInfo();
   assert.ok(markInfo?.Marked, "el PDF no está tagged: se pierde el orden de lectura explícito");

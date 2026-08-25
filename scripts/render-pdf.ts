@@ -1,14 +1,19 @@
 /**
- * La costura del PDF.
+ * La costura del PDF, por Playwright.
  *
- * Recibe una URL, no un componente. Hoy la URL es `dist/` servido en localhost;
- * el día que exista una ruta SSR que arme un CV por aviso, esa ruta se le pasa
- * acá y este archivo no cambia una línea. Ese es todo el motivo de que la firma
- * sea así.
+ * Recibe una URL, no un componente. En producción el PDF NO sale de acá: sale
+ * de `functions/cv.pdf.ts`, que le pide el mismo render a Browser Rendering.
+ * Este archivo queda como la herramienta de verificación —es lo que produce el
+ * `dist/cv.pdf` contra el que corre `pnpm run test:pdf` antes de deployar— y
+ * como la forma de mirar el PDF en local sin depender de la red de nadie.
+ *
+ * Las opciones de impresión NO viven acá: viven en `scripts/pdf-options.ts`,
+ * compartidas con la Function. Ver el porqué en ese archivo.
  */
 
 import { writeFile } from "node:fs/promises";
 import { chromium } from "playwright";
+import { OPCIONES_PDF } from "./pdf-options";
 
 export interface RenderPdfOptions {
   url: string;
@@ -26,19 +31,7 @@ export async function renderPdf({ url, out }: RenderPdfOptions): Promise<Buffer>
     // sale distinto en cada máquina.
     await page.evaluate(() => document.fonts.ready);
 
-    const buffer = await page.pdf({
-      format: "a4",
-      printBackground: true,
-      // El @page del CSS manda sobre estas opciones: los márgenes viven con el
-      // layout, no repartidos entre CSS y script.
-      preferCSSPageSize: true,
-      // PDF accesible: deja el orden de lectura explícito adentro del archivo
-      // en vez de que el parser lo deduzca de las coordenadas.
-      tagged: true,
-      outline: true,
-      // Los headers y footers de Chrome rompen el parseo (docs/01 §1).
-      displayHeaderFooter: false,
-    });
+    const buffer = await page.pdf({ ...OPCIONES_PDF });
 
     if (out) await writeFile(out, buffer);
     return buffer;

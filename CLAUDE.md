@@ -34,7 +34,12 @@ content/
     index.ts            ⚠️ La ÚNICA línea que cambia al migrar a Sanity. Todo el frontend importa de acá.
     content-source.test.ts  Tests de reglas 7,8 + locale (lo que el schema NO valida).
 scripts/validate.ts     Entry point de `npm run validate`.
-.github/workflows/      content-validation.yml — typecheck + validate + test + build + test:pdf + audit:todos en cada push. Sube dist/cv.pdf como artifact. Activo (repo en GitHub).
+.github/workflows/      content-validation.yml — typecheck + validate + test + build + pdf:local + test:pdf + los tres checks + audit:todos en cada push. Sube dist/cv.pdf como artifact. NO deployea: de eso se encarga Cloudflare Pages.
+                        smoke-deploy.yml — corre test:pdf contra el /cv.pdf PUBLICADO en cada deploy con éxito de Pages (previews de staging incluidas). Solo dispara si el archivo está en la rama por defecto.
+functions/              Cloudflare Pages Functions. Lo ÚNICO del repo que corre en runtime.
+  cv.pdf.ts           GET /cv.pdf. Le pide a Browser Rendering que imprima nuestro propio /cv y cachea el resultado. Reemplaza al dist/cv.pdf estático.
+  _pdf.ts             Las piezas puras (cuerpo del pedido, clave de caché, cabeceras). El guion bajo lo saca del ruteo de Pages.
+  _pdf.test.ts        Custodia que el PDF servido pida las MISMAS opciones que el PDF testeado.
 docs/                   Ver docs/00-indice.md. El "por qué" de cada decisión de diseño vive acá.
 src/
   pages/cv.astro      El CV en HTML. ÚNICA fuente del layout; de acá sale el PDF.
@@ -70,9 +75,14 @@ content/schema/
   knowledge-graph.ts  ContentView → grafo. Incluye la afinidad skill↔skill derivada.
   graph-layout.ts     Fuerzas en 3D + proyección. Determinista, corre SOLO en build.
 scripts/
-  render-pdf.ts       renderPdf({ url }). Recibe URL, no componente: es la costura a SSR.
-  build-pdf.ts        Sirve dist/ e imprime /cv → dist/cv.pdf.
-  pdf-output.check.ts Verifica el PDF generado. No es *.test.ts a propósito.
+  pdf-options.ts      ÚNICA definición de las opciones de impresión. La comparten render-pdf.ts
+                      (Playwright, el gate) y functions/cv.pdf.ts (producción). Si vivieran
+                      separadas, el PDF testeado y el PDF servido divergirían en silencio.
+  render-pdf.ts       renderPdf({ url }). Recibe URL, no componente. YA NO genera el entregable:
+                      produce el dist/cv.pdf contra el que corre el gate pre-deploy.
+  build-pdf.ts        Sirve dist/ e imprime /cv → dist/cv.pdf. Fuera de `build`: es `pdf:local`.
+  pdf-output.check.ts Verifica el PDF. Con PDF_SOURCE=<url> corre las MISMAS assertions contra
+                      el PDF publicado. No es *.test.ts a propósito.
   no-client-js.check.ts  Política de JS por página en todo dist/. Blinda /cv.
   bundle-budget.check.ts Presupuesto de la home: three fuera del camino crítico.
   landing-unica.check.ts La landing es la única puerta: /cv sin links ni indexar, y la
@@ -97,8 +107,9 @@ pnpm run typecheck   # astro sync && tsc --noEmit && astro check
 pnpm run validate    # tsx scripts/validate.ts — Zod + reglas duras
 pnpm test            # tsx --test — reglas 7,8, locale y el grafo
 pnpm run dev         # astro dev
-pnpm run build       # astro build + genera dist/cv.pdf
-pnpm run test:pdf    # verifica el PDF generado (necesita build previo)
+pnpm run build       # SOLO astro build. Sin Chromium: por eso corre en Cloudflare Pages
+pnpm run pdf:local   # imprime dist/cv.pdf con Playwright. Gate pre-deploy, no el entregable
+pnpm run test:pdf    # verifica el PDF (necesita pdf:local previo, o PDF_SOURCE=<url>)
 pnpm run test:js     # política de JS por página sobre todo dist/ (necesita build)
 pnpm run test:bundle # presupuesto de bytes del mapa de la home (necesita build)
 pnpm run test:landing # /cv aislada + sección CV sincronizada con el PDF (necesita build)
@@ -107,7 +118,7 @@ pnpm run audit:deps  # pnpm audit --audit-level high
 ```
 
 **Corré la secuencia completa antes de dar cualquier cosa por hecha:**
-`pnpm run typecheck && pnpm run validate && pnpm test && pnpm run build && pnpm run test:pdf && pnpm run test:js && pnpm run test:bundle && pnpm run test:landing && pnpm run audit:todos`.
+`pnpm run typecheck && pnpm run validate && pnpm test && pnpm run build && pnpm run pdf:local && pnpm run test:pdf && pnpm run test:js && pnpm run test:bundle && pnpm run test:landing && pnpm run audit:todos`.
 Si `validate` falla, el mensaje dice qué regla se violó y cómo arreglarla; leelo,
 no lo saltees. Todo eso corre en CI en cada push
 (`.github/workflows/content-validation.yml`; repo ya en GitHub, privado) —
@@ -159,8 +170,10 @@ asumir que `validate` cubre algo, mirá esta tabla:
 ## Frontend del mapa (lo único con JavaScript)
 
 **La home es la ÚNICA página que envía JS.** `/cv` sigue en cero y eso NO es
-negociable: el PDF se renderiza desde ahí con Playwright esperando
-`networkidle`, así que un script que se cuele cambia el PDF en silencio.
+negociable: el PDF se renderiza desde ahí esperando `networkidle`, así que un
+script que se cuele cambia el PDF en silencio. **Desde el 2026-08-25 eso pasó de
+romper tu build a romper producción:** el PDF lo imprime `functions/cv.pdf.ts`
+sobre la página PUBLICADA, no sobre tu `dist/`.
 `PAGINAS_CON_JS` en `no-client-js.check.ts` es la lista blanca —agregar una
 página es una decisión explícita en un diff, no un accidente.
 
