@@ -475,3 +475,55 @@ que depurar.
 agotan de verdad, el smoke va a fallar y va a tener razón. No hay forma de
 distinguir "cuota diaria agotada" de "cuota momentánea" desde afuera; el
 mensaje de error lo dice para que quien lo lea sepa dónde mirar.
+
+---
+
+## 17. El `<head>` tiene siete etiquetas
+
+**Severidad: alta para un portfolio, y es la deuda más visible que queda.**
+
+Medido sobre producción el 2026-08-25:
+
+```
+etiquetas en <head>:  7   (charset, viewport, title, description,
+                           canonical, 2 hojas de estilo)
+og:*                  0
+twitter:*             0
+JSON-LD               1   (Person, server-rendered)
+/favicon.ico          404
+/favicon.svg          404
+/sitemap.xml          404
+```
+
+**Por qué es alta y no cosmética.** El canal por el que un portfolio se
+distribuye es pegar el link: LinkedIn, WhatsApp, un mail, un mensaje a un
+reclutador. Sin Open Graph, todos esos lugares muestran **una URL pelada**, sin
+título, sin descripción y sin imagen — al lado de cualquier otro link que sí
+tiene tarjeta. Es la primera impresión, y hoy no existe.
+
+Y no alcanza con agregar las etiquetas: **no hay ni un solo asset de imagen en
+el repo**. Sin `og:image` no hay tarjeta aunque el resto esté.
+
+**Lo que sí está bien**, para no tocarlo de más: `canonical` correcto desde que
+`SITE_URL` se aplicó, `lang="es"`, `/cv` con `noindex` a propósito, y ningún
+`x-robots-tag` que bloquee la indexación de `pages.dev`.
+
+**Sobre `robots.txt`:** hoy Cloudflare sirve uno gestionado que son **solo
+comentarios** —cero `User-agent`, cero `Disallow`, cero `Sitemap:`—. O sea que
+no restringe nada, pero tampoco anuncia nada. Al agregar `public/robots.txt` hay
+que **verificar contra un deploy si el nuestro le gana al gestionado**: no está
+probado.
+
+**Para búsqueda por IA el contenido ya está** —`/llms.txt`, `/cv.json` y el
+JSON-LD—; lo que falta es descubrimiento. Sin sitemap ni `robots.txt` que los
+referencie, esas tres salidas dependen de que alguien las adivine.
+
+**Arreglo, por orden de impacto:**
+
+1. `og:*` + `twitter:*` en `Base.astro`, derivados del `title`/`description` que
+   ya recibe. Cuidado: `/cv` **no** debe llevarlos — es `noindex` y no es un
+   destino compartible.
+2. Una imagen social. Puede generarse en build desde el nombre y el título con
+   el mismo criterio tipográfico del sitio; no hace falta diseñarla a mano.
+3. Favicon.
+4. `@astrojs/sitemap` y un `public/robots.txt` con la línea `Sitemap:`.
