@@ -1,0 +1,155 @@
+---
+/**
+ * La página que Cloudflare Pages sirve cuando una ruta no existe.
+ *
+ * Existe para arreglar un soft-404: sin un `dist/404.html`, Pages devolvía
+ * `200 text/html` para cualquier ruta inventada (deuda técnica §1, medido el
+ * 2026-08-25). Un crawler que pide una URL rota y recibe "todo bien, acá hay
+ * una página" trata al sitio como de calidad baja. Astro emite esta página
+ * como `dist/404.html` y Pages la sirve con el estado correcto sin más config.
+ *
+ * Cero JavaScript, como todo salvo la home. Está fuera de `PAGINAS_CON_JS` en
+ * `no-client-js.check.ts` y así tiene que quedarse.
+ *
+ * NO linkea `/cv`, a propósito. Esa ruta existe solo para que Browser Rendering
+ * imprima el PDF: tiene `noindex` y cero links entrantes, y el destino del
+ * lector es el ancla `#cv` de la landing. Un "¿buscabas el CV?" acá rompería
+ * esa promesa desde la única página que nadie revisa.
+ */
+import Base from "../layouts/Base.astro";
+
+import "@fontsource/manrope/400.css";
+import "@fontsource/manrope/600.css";
+import "@fontsource/manrope/800.css";
+import "../styles/tokens.css";
+
+/**
+ * Los mismos destinos que el índice de la landing, con el ancla adelante: quien
+ * cayó acá venía buscando algo, y estas son las tres cosas que hay.
+ */
+const DESTINOS = [
+  { href: "/#mapa", label: "El mapa de conocimiento" },
+  { href: "/#proyectos", label: "Los proyectos" },
+  { href: "/#cv", label: "El CV completo" },
+];
+---
+
+<Base
+  title="Esta página no existe"
+  description="La dirección que pediste no corresponde a ninguna página de este sitio."
+>
+  {/*
+    Redundante con el estado 404 que devuelve Pages, y puesto igual: si algún
+    día el hosting volviera a servir esto con un 200 —que es exactamente el bug
+    que esta página arregla—, el `noindex` evita que se indexe igual.
+  */}
+  <meta name="robots" content="noindex, follow" slot="head" />
+
+  <main class="error">
+    <p class="error__codigo">404</p>
+    <h1 class="error__titulo">Esta página no existe</h1>
+    <p class="error__texto">
+      La dirección que pediste no corresponde a ninguna página del sitio. Puede
+      que el link estuviera mal copiado, o que apuntara a algo que ya no está.
+    </p>
+
+    <nav class="error__destinos" aria-label="Secciones del sitio">
+      <ul>
+        {DESTINOS.map((d) => (
+          <li><a href={d.href}>{d.label}</a></li>
+        ))}
+      </ul>
+    </nav>
+
+    <p class="error__volver"><a href="/">Volver al inicio</a></p>
+  </main>
+</Base>
+
+<style>
+  /* Una columna centrada, sin tarjeta ni sombra: la estética del sitio se hace
+     con tipografía y espaciado (mismo criterio que `cv.css`). */
+  .error {
+    max-width: var(--ancho);
+    margin: 0 auto;
+    padding: calc(var(--espacio) * 12) calc(var(--espacio) * 3);
+  }
+
+  /* Grande y en acento, pero como dato y no como decoración: es lo primero que
+     le dice al lector qué pasó, antes de leer una palabra. */
+  .error__codigo {
+    margin: 0;
+    font-size: 3.5rem;
+    font-weight: 800;
+    line-height: 1;
+    letter-spacing: -0.04em;
+    color: var(--acento);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .error__titulo {
+    margin: calc(var(--espacio) * 1.5) 0 0;
+    font-size: 1.75rem;
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    line-height: 1.15;
+  }
+
+  .error__texto {
+    margin: calc(var(--espacio) * 2) 0 0;
+    max-width: 34rem;
+    color: var(--tinta-suave);
+    font-size: 1.0625rem;
+  }
+
+  .error__destinos {
+    margin-top: calc(var(--espacio) * 5);
+    border-top: 1px solid var(--linea);
+    padding-top: calc(var(--espacio) * 3);
+  }
+
+  .error__destinos ul {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .error__destinos li + li {
+    margin-top: calc(var(--espacio) * 1.5);
+  }
+
+  .error__destinos a {
+    font-size: 1.0625rem;
+    font-weight: 700;
+    color: var(--tinta);
+    text-decoration: none;
+  }
+
+  .error__destinos a:hover,
+  .error__volver a:hover {
+    color: var(--acento);
+  }
+
+  .error__volver {
+    margin: calc(var(--espacio) * 4) 0 0;
+  }
+
+  .error__volver a {
+    color: var(--tinta-suave);
+    font-weight: 600;
+    font-size: 0.9375rem;
+  }
+
+  @media (min-width: 40rem) {
+    .error {
+      padding: calc(var(--espacio) * 16) calc(var(--espacio) * 4);
+    }
+
+    .error__codigo {
+      font-size: 4.5rem;
+    }
+
+    .error__titulo {
+      font-size: 2.25rem;
+    }
+  }
+</style>
