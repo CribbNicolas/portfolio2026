@@ -8,7 +8,7 @@
  *
  * Why a loose template and not a page in `src/pages/`: a page gets built, lands
  * in `dist/`, and the three checks walking `dist/` — `no-client-js`,
- * `bundle-budget`, `landing-unica` — would have to learn to ignore it. An
+ * `bundle-budget`, `single-landing` — would have to learn to ignore it. An
  * exception inside a check is a permanent crack. It would also be an indexable
  * route that is not a destination, exactly what the single landing promises
  * does not exist.

@@ -11,7 +11,7 @@
  *
  * The name does NOT end in `.test.ts` on purpose: it needs a prior build to
  * look at `dist/`. Same reason as `pdf-output.check.ts` and
- * `landing-unica.check.ts`.
+ * `single-landing.check.ts`.
  */
 
 import { test } from "node:test";
@@ -122,7 +122,7 @@ test("Twitter asks for the large card, not the small one", () => {
 
 test("/cv still emits no social tags", async () => {
   // The `Base.astro` opt-in already covers this, and so does
-  // `landing-unica.check.ts`, but the image is new: if someone adds it as a
+  // `single-landing.check.ts`, but the image is new: if someone adds it as a
   // layout default, /cv would become shareable without anybody deciding it.
   const cv = await readFile(join("dist", "cv", "index.html"), "utf8");
   assert.doesNotMatch(cv, /og:image/, "/cv emits og:image and should not");

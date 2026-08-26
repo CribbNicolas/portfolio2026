@@ -1,20 +1,20 @@
 ---
 /**
- * La página que Cloudflare Pages sirve cuando una ruta no existe.
+ * The page Cloudflare Pages serves when a route does not exist.
  *
- * Existe para arreglar un soft-404: sin un `dist/404.html`, Pages devolvía
- * `200 text/html` para cualquier ruta inventada (deuda técnica §1, medido el
- * 2026-08-25). Un crawler que pide una URL rota y recibe "todo bien, acá hay
- * una página" trata al sitio como de calidad baja. Astro emite esta página
- * como `dist/404.html` y Pages la sirve con el estado correcto sin más config.
+ * It exists to fix a soft 404: without a `dist/404.html`, Pages returned
+ * `200 text/html` for any made-up route (technical debt §1, measured on
+ * 2026-08-25). A crawler asking for a broken URL and receiving "all good, there
+ * is a page here" treats the site as low quality. Astro emits this page as
+ * `dist/404.html` and Pages serves it with the right status, no further config.
  *
- * Cero JavaScript, como todo salvo la home. Está fuera de `PAGINAS_CON_JS` en
- * `no-client-js.check.ts` y así tiene que quedarse.
+ * Zero JavaScript, like everything except the home. It sits outside
+ * `PAGES_WITH_JS` in `no-client-js.check.ts` and has to stay that way.
  *
- * NO linkea `/cv`, a propósito. Esa ruta existe solo para que Browser Rendering
- * imprima el PDF: tiene `noindex` y cero links entrantes, y el destino del
- * lector es el ancla `#cv` de la landing. Un "¿buscabas el CV?" acá rompería
- * esa promesa desde la única página que nadie revisa.
+ * It does NOT link to `/cv`, on purpose. That route exists only so Browser
+ * Rendering can print the PDF: it carries `noindex` and zero incoming links,
+ * and the reader's destination is the landing's `#cv` anchor. A "looking for
+ * the CV?" here would break that promise from the one page nobody reviews.
  */
 import Base from "../layouts/Base.astro";
 
@@ -24,10 +24,10 @@ import "@fontsource/manrope/800.css";
 import "../styles/tokens.css";
 
 /**
- * Los mismos destinos que el índice de la landing, con el ancla adelante: quien
- * cayó acá venía buscando algo, y estas son las tres cosas que hay.
+ * The same destinations as the landing's index, anchor included: whoever ended
+ * up here was looking for something, and these are the three things there are.
  */
-const DESTINOS = [
+const DESTINATIONS = [
   { href: "/#mapa", label: "El mapa de conocimiento" },
   { href: "/#proyectos", label: "Los proyectos" },
   { href: "/#cv", label: "El CV completo" },
@@ -55,7 +55,7 @@ const DESTINOS = [
 
     <nav class="error__destinos" aria-label="Secciones del sitio">
       <ul>
-        {DESTINOS.map((d) => (
+        {DESTINATIONS.map((d) => (
           <li><a href={d.href}>{d.label}</a></li>
         ))}
       </ul>
@@ -66,16 +66,16 @@ const DESTINOS = [
 </Base>
 
 <style>
-  /* Una columna centrada, sin tarjeta ni sombra: la estética del sitio se hace
-     con tipografía y espaciado (mismo criterio que `cv.css`). */
+  /* One centered column, no card and no shadow: the site's aesthetic is made of
+     typography and spacing (same criterion as `cv.css`). */
   .error {
     max-width: var(--ancho);
     margin: 0 auto;
     padding: calc(var(--espacio) * 12) calc(var(--espacio) * 3);
   }
 
-  /* Grande y en acento, pero como dato y no como decoración: es lo primero que
-     le dice al lector qué pasó, antes de leer una palabra. */
+  /* Large and in the accent color, but as data and not as decoration: it is the
+     first thing telling the reader what happened, before they read a word. */
   .error__codigo {
     margin: 0;
     font-size: 3.5rem;

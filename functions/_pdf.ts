@@ -1,84 +1,85 @@
 /**
- * Las piezas puras de `functions/cv.pdf.ts`.
+ * The pure pieces of `functions/cv.pdf.ts`.
  *
- * Vive con guion bajo adelante a propósito: Cloudflare Pages excluye del ruteo
- * todo lo que empieza con `_`, así que este archivo se puede importar sin que
- * aparezca como una URL pública. El handler queda con la parte que toca red y
- * caché; todo lo que se puede decidir sin I/O está acá, y por eso tiene tests
- * (`_pdf.test.ts`) sin necesidad de levantar un Worker.
+ * It lives with a leading underscore on purpose: Cloudflare Pages excludes
+ * anything starting with `_` from routing, so this file can be imported without
+ * showing up as a public URL. The handler keeps the part that touches network
+ * and cache; everything decidable without I/O lives here, and that is why it
+ * has tests (`_pdf.test.ts`) with no Worker to start.
  */
 
 import { PDF_OPTIONS, LOAD_WAIT } from "../scripts/pdf-options";
 
 /**
- * La página que se imprime. Es la MISMA que imprime `scripts/build-pdf.ts` en
- * local: un solo layout, `src/pages/cv.astro`, y de ahí salen los dos PDFs.
+ * The page that gets printed. It is the SAME one `scripts/build-pdf.ts` prints
+ * locally: one layout, `src/pages/cv.astro`, and both PDFs come out of it.
  */
-export const RUTA_ORIGEN = "/cv";
+export const SOURCE_PATH = "/cv";
 
-/** Con qué nombre lo guarda quien lo baja, si no se configura `PDF_FILENAME`. */
-export const NOMBRE_POR_DEFECTO = "cv.pdf";
+/** The name it is saved under when `PDF_FILENAME` is not configured. */
+export const DEFAULT_FILENAME = "cv.pdf";
 
 /**
- * Una hora. El dataset cambia por deploy, no por minuto, y cada miss consume
- * del presupuesto de Browser Rendering (10 min de browser por día en el plan
- * gratuito, ~3-5 s por render). Con este TTL el costo real es una render por
- * deploy y algún miss suelto por colo.
+ * One hour. The dataset changes per deploy, not per minute, and every miss eats
+ * into the Browser Rendering budget (10 browser minutes per day on the free
+ * plan, ~3-5 s per render). With this TTL the real cost is one render per
+ * deploy plus the odd miss per colo.
  */
-export const SEGUNDOS_DE_CACHE = 3600;
+export const CACHE_SECONDS = 3600;
 
-/** Cuánto esperamos a Browser Rendering antes de cortar y devolver 504. */
+/** How long we wait for Browser Rendering before cutting off and returning 504. */
 export const TIMEOUT_MS = 45_000;
 
-export function endpointBrowserRendering(cuenta: string): string {
-  return `https://api.cloudflare.com/client/v4/accounts/${cuenta}/browser-rendering/pdf`;
+export function browserRenderingEndpoint(account: string): string {
+  return `https://api.cloudflare.com/client/v4/accounts/${account}/browser-rendering/pdf`;
 }
 
 /**
- * El cuerpo del POST a Browser Rendering.
+ * The body of the POST to Browser Rendering.
  *
- * `url` se arma desde el origen del pedido y no desde una constante: así la
- * Function imprime la preview cuando corre en una preview de Pages y la
- * producción cuando corre en producción, sin configuración por entorno. Un
- * `SITE_URL` hardcodeado haría que el smoke de una rama testeara el PDF de
- * main, que es exactamente el bug que el smoke existe para atajar.
+ * `url` is built from the request's origin and not from a constant: that way
+ * the Function prints the preview when it runs in a Pages preview and
+ * production when it runs in production, with no per-environment config. A
+ * hard-coded `SITE_URL` would make a branch's smoke test main's PDF, which is
+ * exactly the bug the smoke exists to catch.
  */
-export function cuerpoPeticion(origen: string): string {
+export function requestBody(origin: string): string {
   return JSON.stringify({
-    url: new URL(RUTA_ORIGEN, origen).toString(),
+    url: new URL(SOURCE_PATH, origin).toString(),
     pdfOptions: PDF_OPTIONS,
     gotoOptions: { waitUntil: LOAD_WAIT },
   });
 }
 
 /**
- * La clave de caché, normalizada.
+ * The cache key, normalized.
  *
- * Se descarta el query string: `/cv.pdf?utm_source=linkedin` es el mismo PDF
- * que `/cv.pdf`, y sin normalizar cada campaña con su propio parámetro sería un
- * miss —o sea, un render pago— por visitante.
+ * The query string is dropped: `/cv.pdf?utm_source=linkedin` is the same PDF as
+ * `/cv.pdf`, and without normalizing, every campaign with its own parameter
+ * would be a miss — that is, a paid render — per visitor.
  */
-export function claveDeCache(urlPedida: string): Request {
-  const url = new URL(urlPedida);
+export function cacheKey(requestedUrl: string): Request {
+  const url = new URL(requestedUrl);
   url.search = "";
   url.hash = "";
   return new Request(url.toString(), { method: "GET" });
 }
 
 /**
- * `inline` y no `attachment`: el que hace click quiere VER el CV, y un download
- * forzado en el medio de la landing es fricción. El nombre igual viaja, así que
- * quien lo guarda no termina con un `download.pdf` en Descargas.
+ * `inline` and not `attachment`: whoever clicks wants to SEE the CV, and a
+ * forced download in the middle of the landing is friction. The name still
+ * travels, so anyone who saves it does not end up with a `download.pdf` in
+ * their Downloads folder.
  */
-export function cabecerasPdf(nombreArchivo: string): Headers {
+export function pdfHeaders(filename: string): Headers {
   return new Headers({
     "content-type": "application/pdf",
-    "content-disposition": `inline; filename="${nombreArchivo}"`,
-    "cache-control": `public, max-age=${SEGUNDOS_DE_CACHE}`,
-    // El CV es público y lo consumen agentes y scrapers de reclutamiento.
+    "content-disposition": `inline; filename="${filename}"`,
+    "cache-control": `public, max-age=${CACHE_SECONDS}`,
+    // The CV is public and is consumed by agents and recruiting scrapers.
     "access-control-allow-origin": "*",
-    // El PDF sale de nuestro propio `/cv`. Si alguna vez el content-type
-    // llegara mal, que el browser no adivine.
+    // The PDF comes from our own `/cv`. If the content-type ever arrived wrong,
+    // do not let the browser guess.
     "x-content-type-options": "nosniff",
   });
 }

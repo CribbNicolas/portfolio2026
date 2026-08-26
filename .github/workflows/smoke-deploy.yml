@@ -1,4 +1,4 @@
-# Verifica el sitio PUBLICADO: que el PDF pase el ATS, y que `/cv` siga en cero
+# Verifica el site PUBLICADO: que el PDF pase el ATS, y que `/cv` siga en cero
 # JavaScript en la respuesta real y no en el `dist/` que produjo el build.
 #
 # `content-validation.yml` verifica `dist/cv.pdf`, generado con Playwright en el
@@ -46,16 +46,16 @@ jobs:
           # `main` es la Production branch; el resto usa el alias por rama que
           # arma Pages, `<rama>.<proyecto>.pages.dev`.
           case "${{ github.ref_name }}" in
-            main)    sitio="https://cribbnicolas.pages.dev" ;;
-            staging) sitio="https://staging.cribbnicolas.pages.dev" ;;
+            main)    site="https://cribbnicolas.pages.dev" ;;
+            staging) site="https://staging.cribbnicolas.pages.dev" ;;
             *)
               echo "::error::rama ${{ github.ref_name }} sin URL conocida. Revisa el filtro del workflow."
               exit 1
               ;;
           esac
-          echo "SITIO=$sitio" >> "$GITHUB_ENV"
-          echo "PDF_SOURCE=$sitio/cv.pdf" >> "$GITHUB_ENV"
-          echo "sitio: $sitio"
+          echo "SITE=$site" >> "$GITHUB_ENV"
+          echo "PDF_SOURCE=$site/cv.pdf" >> "$GITHUB_ENV"
+          echo "site: $site"
 
       - name: Esperar a que Cloudflare publique este commit
         run: |
@@ -63,12 +63,12 @@ jobs:
           # anterior ya responde 200 todo el tiempo, asi que eso no distingue
           # nada.
           esperado="${{ github.sha }}"
-          echo "esperando commit $esperado en $SITIO/build.json"
+          echo "esperando commit $esperado en $SITE/build.json"
 
           for intento in $(seq 1 30); do
             # `?t=` para no comerse una respuesta cacheada justo cuando el valor
             # acaba de cambiar.
-            cuerpo=$(curl -s --max-time 20 "$SITIO/build.json?t=$(date +%s)" || echo '{}')
+            cuerpo=$(curl -s --max-time 20 "$SITE/build.json?t=$(date +%s)" || echo '{}')
             publicado=$(printf '%s' "$cuerpo" | sed -n 's/.*"commit"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p')
             echo "  intento $intento: publicado=${publicado:-<sin respuesta>}"
 
@@ -80,7 +80,7 @@ jobs:
             sleep 20
           done
 
-          echo "::error::$SITIO nunca llego a servir $esperado. O el build de Pages fallo, o /build.json no existe en el deploy publicado."
+          echo "::error::$SITE nunca llego a servir $esperado. O el build de Pages fallo, o /build.json no existe en el deploy publicado."
           exit 1
 
       - name: Calentar el PDF, tolerando el 429 de Browser Rendering
@@ -89,7 +89,7 @@ jobs:
           # da 3 browsers concurrentes y una instancia nueva cada 20 segundos, y
           # la cadena staging -> main son DOS deploys seguidos por diseno: cada
           # uno pide un render en frio con minutos de diferencia. Medido: la
-          # primera corrida de este workflow fallo exactamente asi, con el sitio
+          # primera corrida de este workflow fallo exactamente asi, con el site
           # sano —la verificacion manual pasaba 13/13 minutos despues—.
           #
           # Sin este paso, el gate se pone en rojo por cuota y entrena a
@@ -141,4 +141,4 @@ jobs:
       # Lo unico que puede ver lo que pasa DESPUES del build: una inyeccion en
       # el borde, una regla de transformacion, un _headers mal puesto.
       - name: La respuesta servida respeta los invariantes
-        run: pnpm run test:servido
+        run: pnpm run test:served

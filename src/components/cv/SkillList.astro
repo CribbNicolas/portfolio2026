@@ -1,12 +1,13 @@
 ---
 /**
- * Skills agrupadas por categoría, en texto corrido separado por comas.
+ * Skills grouped by category, as running text separated by commas.
  *
- * Sin barras de progreso ni puntos de nivel: ningún parser los lee y a un
- * técnico le generan desconfianza (docs/03 §2 y CONTRATO §4).
+ * No progress bars and no level dots: no parser reads them and they make a
+ * technical reader suspicious (docs/03 §2 and CONTRATO §4).
  *
- * Se imprime `Skill.name` canónico y NUNCA los `aliases`: repetir variantes del
- * mismo término BAJA el score en matchers semánticos (docs/01 §3). Los aliases
+ * The canonical `Skill.name` is printed and NEVER the `aliases`: repeating
+ * variants of the same term LOWERS the score in semantic matchers (docs/01 §3).
+ * The aliases
  * son dato para el generador por-aviso, no texto del CV.
  */
 import type { ContentView, SkillCategory } from "@content";
@@ -17,8 +18,8 @@ interface Props {
 
 const { skills } = Astro.props;
 
-// Orden y etiquetas de las categorías. El orden es editorial: primero lo que
-// más se busca en un aviso. Las categorías vacías no se imprimen.
+// Category order and labels. The order is editorial: what is searched for most
+// in a job post comes first. Empty categories are not printed.
 const GRUPOS: Array<[SkillCategory, string]> = [
   ["language", "Lenguajes"],
   ["frontend", "Frontend"],

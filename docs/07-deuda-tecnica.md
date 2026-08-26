@@ -22,7 +22,7 @@ es solo deuda del código y de la infra.
 
 Arreglado con `src/pages/404.astro`. Astro lo emite como `dist/404.html` y
 Pages lo sirve con el estado correcto. Queda anclado por dos tests en
-`landing-unica.check.ts`: que el archivo exista, y que ninguna página linkee
+`single-landing.check.ts`: que el archivo exista, y que ninguna página linkee
 `/cv` —el test viejo miraba sólo la landing, y desde que hay más de una página
 eso dejaba de cubrir lo que el invariante prometía—.
 
@@ -63,7 +63,7 @@ un cambio de arquitectura.
 
 **Ojo al arreglarlo:** esa página entra en el radar de dos checks. Va a tener
 que estar en la lista de `no-client-js.check.ts` si lleva JS —no debería—, y
-`landing-unica.check.ts` verifica que nadie linkee a `/cv`, así que el 404 no
+`single-landing.check.ts` verifica que nadie linkee a `/cv`, así que el 404 no
 puede ofrecer "¿buscabas el CV?" con un link ahí.
 
 ---
@@ -255,7 +255,7 @@ real de `formatRoleTitle` en `llms.txt` (registrado en el PR #1).
 
 ```bash
 ls src/pages/*.test.ts        # no existe ninguno
-grep -rl "cv.json" --include="*.check.ts" scripts/   # solo landing-unica, y de refilón
+grep -rl "cv.json" --include="*.check.ts" scripts/   # solo single-landing, y de refilón
 ```
 
 **Arreglo.** Un `endpoints.check.ts` que, sobre `dist/`, verifique que
@@ -405,7 +405,7 @@ anterior cada vez que el build tardara de más, **y pasaría en verde**.
 
 **Severidad: era media, y con un caso concreto encima.**
 
-`no-client-js.check.ts`, `bundle-budget.check.ts` y `landing-unica.check.ts`
+`no-client-js.check.ts`, `bundle-budget.check.ts` y `single-landing.check.ts`
 leen archivos de `dist/`. Todo lo que pase **después** del build es invisible
 para ellos: una inyección en el borde, una regla de transformación, un
 `_headers` mal puesto.

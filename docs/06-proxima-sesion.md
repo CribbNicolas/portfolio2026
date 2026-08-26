@@ -158,7 +158,7 @@ sitio traería tres problemas que este repo ya pagó por evitar:
    mismo que hizo descartar Keystatic.
 2. Una página en `src/pages/` se buildea. Que "solo funcione en local" pasaría a
    depender de una guarda por `import.meta.env.DEV`, o sea de que nadie la rompa.
-3. `no-client-js`, `bundle-budget` y `landing-unica` recorren todo `dist/`. Un
+3. `no-client-js`, `bundle-budget` y `single-landing` recorren todo `dist/`. Un
    editor con formularios los obligaría a tener excepciones, y una excepción en
    un check es una grieta permanente.
 

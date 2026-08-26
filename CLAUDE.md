@@ -120,7 +120,7 @@ scripts/
                       el PDF publicado. No es *.test.ts a propósito.
   no-client-js.check.ts  Política de JS por página en todo dist/. Blinda /cv.
   bundle-budget.check.ts Presupuesto de la home: three fuera del camino crítico.
-  landing-unica.check.ts La landing es la única puerta: /cv sin links ni indexar, y la
+  single-landing.check.ts La landing es la única puerta: /cv sin links ni indexar, y la
                       sección CV de la landing sincronizada con el PDF. Además: existe 404.html.
   servido.check.ts    Lo ÚNICO que verifica la respuesta SERVIDA y no dist/. Corre desde el
                       smoke. Ataja lo que pasa después del build: inyecciones en el borde.

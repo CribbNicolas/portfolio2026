@@ -1,18 +1,19 @@
 ---
 /**
- * La home: identidad + el mapa de conocimiento.
+ * The home: identity + the knowledge map.
  *
- * El mapa es la vista que cumple la promesa del CONTRATO §3 — los `Achievement`
- * viven sueltos para poder cruzarlos, y ninguna otra superficie los cruza.
- * Vivió en `/lab` mientras la home era un placeholder; ahora es la portada.
- * Decisión fechada en `docs/00-indice.md` y estructura en `docs/04` §1.
+ * The map is the view that delivers on the promise of CONTRATO §3 —
+ * `Achievement`s live loose so they can be cross-referenced, and no other
+ * surface cross-references them. It lived at `/lab` while the home was a
+ * placeholder; now it is the front page. Decision dated in `docs/00-indice.md`
+ * and structure in `docs/04` §1.
  *
- * Es la ÚNICA página del sitio que envía JavaScript, y por eso está en
- * `PAGINAS_CON_JS` de `scripts/no-client-js.check.ts`. `/cv` sigue en cero: de
- * ahí sale el PDF, y un script que se cuele cambia el render en silencio.
+ * It is the ONLY page on the site that ships JavaScript, which is why it is in
+ * `PAGES_WITH_JS` in `scripts/no-client-js.check.ts`. `/cv` stays at zero: the
+ * PDF comes from there, and a script slipping in changes the render silently.
  *
- * TODO el cálculo del graph corre acá, en build. Nada de esa derivación viaja
- * al browser: el cliente recibe coordenadas ya resueltas.
+ * ALL the graph computation runs here, at build time. None of that derivation
+ * travels to the browser: the client receives already resolved coordinates.
  */
 import Base from "../layouts/Base.astro";
 import { content, formatSeniority, formatDateRange, formatYearMonth, buildKnowledgeGraph, layoutGraph } from "@content";
@@ -36,23 +37,24 @@ import "../styles/proyectos.css";
 import "../styles/lab.css";
 
 const view = await content.getView("portfolio", "es");
-// Regla 7: `cv-ats` recorta por prioridad (cutoff 3) y topea en 5 logros por
-// rol; `portfolio` no recorta nada. La sección de abajo tiene que mostrar
-// EXACTAMENTE lo que sale impreso, porque el botón de descarga promete "el CV".
+// Rule 7: `cv-ats` cuts by priority (cutoff 3) and caps at 5 achievements per
+// role; `portfolio` cuts nothing. The section below has to show EXACTLY what
+// gets printed, because the download button promises "the CV".
 const viewCv = await content.getView("cv-ats", "es");
 const { identity } = view;
 const jsonLd = buildPersonJsonLd(view, new URL(Astro.site!));
 
 /**
- * El token del beacon de Cloudflare Web Analytics.
+ * The Cloudflare Web Analytics beacon token.
  *
- * NO es secreto: viaja en el HTML de cada visita, igual que el ID de Clarity.
- * Se lee de una variable igual, por lo mismo — para rotarlo o apagar la
- * medición sin tocar código, y porque así el token no vive en un repo público
- * donde queda en el historial aunque después se cambie.
+ * It is NOT a secret: it travels in the HTML of every visit, same as the
+ * Clarity ID. It is read from a variable anyway, for the same reason — to
+ * rotate it or switch the measurement off without touching code, and so the
+ * token does not live in a public repo where it stays in the history even after
+ * being changed.
  *
- * Si no está definida, el `<script>` no se renderiza: en dev y en cualquier
- * build sin configurar, la analítica no existe.
+ * When it is undefined the `<script>` is not rendered: in dev and in any
+ * unconfigured build, the analytics do not exist.
  */
 const cloudflareBeacon: string | undefined = import.meta.env.PUBLIC_CF_BEACON_TOKEN;
 
@@ -61,9 +63,9 @@ const positioned = layoutGraph(graph);
 const map = buildSvgMap(positioned);
 const hoverCss = buildHoverCss(positioned);
 
-// Lo que el runtime 3D necesita. Coordenadas ya redondeadas por `layoutGraph`.
-// Claves de una letra: esto viaja en el HTML de cada visita, y con 37 nodos los
-// nombres largos de propiedad costarían más que los datos.
+// What the 3D runtime needs. Coordinates already rounded by `layoutGraph`.
+// One-letter keys: this travels in the HTML of every visit, and with 37 nodes
+// long property names would cost more than the data.
 const graphData = JSON.stringify({
   nodes: positioned.nodes.map((n) => ({
     i: n.id, k: n.kind, x: n.x, y: n.y, z: n.z, d: n.degree,
@@ -74,9 +76,9 @@ const graphData = JSON.stringify({
   radius: positioned.framingRadius,
 });
 
-// La lista del DOM: es a la vez el contenido accesible y el lado DOM del puente
-// de hover. Se ordena por grado — lo más conectado arriba, que es lo más
-// probado, no lo alfabéticamente primero.
+// The DOM list: it is both the accessible content and the DOM side of the hover
+// bridge. Ordered by degree — the most connected on top, which is the most
+// proven, not whatever comes first alphabetically.
 const items = positioned.nodes
   .filter((n) => n.kind === "skill")
   .sort((a, b) => b.degree - a.degree || a.label.localeCompare(b.label, "es"));
@@ -84,19 +86,19 @@ const items = positioned.nodes
 const withEvidenceCount = items.filter((n) => n.degree > 0).length;
 const affinityCount = positioned.edges.filter((e) => e.kind === "affinity").length;
 
-// skillId → nombre canónico, para el stack de cada proyecto. Se arma acá y no
-// en el componente: `view.skills` viene agrupado por categoría, y aplanarlo es
-// trabajo de la página, no del componente tonto.
+// skillId → canonical name, for each project's stack. Built here and not in the
+// component: `view.skills` arrives grouped by category, and flattening it is the
+// page's job, not the dumb component's.
 const skillNameById = new Map(
   Object.values(view.skills).flat().map((s) => [s.id, s.name]),
 );
 ---
 
 {/*
-  `shareable` emite Open Graph y Twitter Card. Es la ÚNICA página que las
-  lleva: `/cv` va con noindex y existe solo para imprimir el PDF, y el 404 no es
-  un destino. En `Base.astro` es opt-in, así que olvidarse en una página nueva
-  significa no emitirlas — el lado seguro del error.
+  `shareable` emits Open Graph and a Twitter Card. It is the ONLY page carrying
+  them: `/cv` has noindex and exists only to print the PDF, and the 404 is not a
+  destination. In `Base.astro` it is opt-in, so forgetting it on a new page
+  means not emitting them — the safe side of the mistake.
 */}
 <Base
   title={`${identity.fullName} — ${identity.searchTitle}`}
@@ -115,7 +117,7 @@ const skillNameById = new Map(
       dos botones grandes arriba empujaban el mapa fuera de la primera pantalla.
 
       `href="#cv"` y NO `/cv` — esa ruta existe solo para imprimir el PDF, y
-      `landing-unica.check.ts` verifica que nadie la linkee.
+      `single-landing.check.ts` verifica que nadie la linkee.
 
       Sin JS la píldora ya está fija y es usable: el script solo le agrega el
       retraso al desplazarse. Por eso el `transform` inicial vive en el CSS.
@@ -363,11 +365,11 @@ const skillNameById = new Map(
 
   <script type="application/json" data-lab-data set:html={graphData} />
   <script>
-    // La analítica va PRIMERO, y no es un descuido: `Clarity.init` solo inyecta
-    // un `<script async>` y su propio try/catch se traga cualquier error, así
-    // que no puede tirar. `iniciar()` sí toca el DOM y puede fallar en un
-    // dispositivo raro — al revés, un fallo del mapa se llevaría puesta la
-    // medición, que es justo lo que sirve para entender ese fallo.
+    // Analytics go FIRST, and that is not an oversight: `Clarity.init` only
+    // injects a `<script async>` and its own try/catch swallows any error, so it
+    // cannot throw. `start()` does touch the DOM and can fail on an odd device —
+    // the other way around, a map failure would take the measurement with it,
+    // which is exactly what helps understand that failure.
     import { startAnalytics } from "../scripts/analytics";
     import { start } from "../scripts/lab/boot";
     startAnalytics();

@@ -1,17 +1,18 @@
 ---
 /**
- * El CV en HTML. De esta misma página sale el PDF (scripts/build-pdf.ts), así
- * que HTML y PDF no se pueden desincronizar: hay un solo layout.
+ * The CV in HTML. The PDF comes out of this same page (scripts/build-pdf.ts),
+ * so HTML and PDF cannot drift apart: there is one layout.
  *
- * Superficie `cv-ats`. Por ahora es la única que se renderiza; agregar un
- * `cv` diseñado más adelante es agregar otra página que pida otra superficie,
- * sin tocar nada de esto.
+ * `cv-ats` surface. For now it is the only one rendered; adding a designed `cv`
+ * later means adding another page asking for another surface, without touching
+ * any of this.
  *
- * Dos cosas NO se renderizan a propósito:
- *  - `LanguageSkill.note`: hoy contiene un TODO y `resolveView` no filtra
- *    `languages`. Si se imprimiera, el TODO saldría en el PDF.
- *  - `Project.outcome`: dos de los tres proyectos tienen el outcome en TODO, y
- *    los proyectos ya viven en el portfolio. El CV no lleva sección de proyectos.
+ * Two things are deliberately NOT rendered:
+ *  - `LanguageSkill.note`: today it holds a TODO and `resolveView` does not
+ *    filter `languages`. If it printed, the TODO would reach the PDF.
+ *  - `Project.outcome`: two of the three projects have their outcome as a TODO,
+ *    and the projects already live in the portfolio. The CV carries no projects
+ *    section.
  */
 import Base from "../layouts/Base.astro";
 import Header from "../components/cv/Header.astro";
@@ -30,10 +31,10 @@ import "../styles/cv.css";
 const view = await content.getView("cv-ats", "es");
 const { identity } = view;
 
-// El JSON-LD sale de `public-api`, no de `cv-ats`: son dos superficies
-// distintas cargadas en la misma página.
-const viewPublica = await content.getView("public-api", "es");
-const jsonLd = buildPersonJsonLd(viewPublica, new URL(Astro.site!));
+// The JSON-LD comes from `public-api`, not from `cv-ats`: two different
+// surfaces loaded on the same page.
+const publicView = await content.getView("public-api", "es");
+const jsonLd = buildPersonJsonLd(publicView, new URL(Astro.site!));
 ---
 
 <Base
@@ -46,7 +47,7 @@ const jsonLd = buildPersonJsonLd(viewPublica, new URL(Astro.site!));
     `/cv` existe para que `build-pdf.ts` la imprima, no para que la visiten: el
     lector llega al CV por el ancla `#cv` de la landing. Indexarla partiría en
     dos la única visita, y el que cayera acá no vería ni el mapa ni los
-    proyectos. `scripts/landing-unica.check.ts` verifica esto.
+    proyectos. `scripts/single-landing.check.ts` verifica esto.
   */}
   <meta name="robots" content="noindex, follow" slot="head" />
   <main class="cv">

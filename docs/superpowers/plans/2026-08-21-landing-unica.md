@@ -8,7 +8,7 @@
 
 **Tech Stack:** Astro 6 estático, TypeScript ESM, `node:test` vía `tsx --test`, pnpm 11.
 
-**Spec:** `docs/superpowers/specs/2026-08-21-landing-unica-design.md`
+**Spec:** `docs/superpowers/specs/2026-08-21-single-landing-design.md`
 
 ## Global Constraints
 
@@ -36,7 +36,7 @@
 | `src/components/proyectos/ListaProyectos.astro` | **Crear.** Componente tonto: recibe proyectos y un mapa de nombres de skill, escribe la lista |
 | `src/styles/proyectos.css` | **Crear.** Estilos de la lista de proyectos |
 | `src/styles/home.css` | **Modificar.** Índice del hero y botón flotante |
-| `scripts/landing-unica.check.ts` | **Crear.** Verifica sobre `dist/` que `/cv` esté aislada y que la sección CV de la landing no se desincronice del PDF |
+| `scripts/single-landing.check.ts` | **Crear.** Verifica sobre `dist/` que `/cv` esté aislada y que la sección CV de la landing no se desincronice del PDF |
 | `package.json` | **Modificar.** Script `test:landing` |
 | `.github/workflows/content-validation.yml` | **Modificar.** Step del check nuevo |
 
@@ -631,7 +631,7 @@ animacion y el reset de tokens.css no la alcanza."
 
 **Files:**
 - Modify: `src/pages/cv.astro`
-- Create: `scripts/landing-unica.check.ts`
+- Create: `scripts/single-landing.check.ts`
 - Modify: `package.json`
 - Modify: `.github/workflows/content-validation.yml`
 
@@ -645,7 +645,7 @@ Este test es lo que impide que la decisión se desarme sola. Sin él, en tres me
 
 - [ ] **Step 1: Escribir el check (que va a fallar)**
 
-`scripts/landing-unica.check.ts`:
+`scripts/single-landing.check.ts`:
 
 ```ts
 /**
@@ -739,7 +739,7 @@ test("la landing NO repite el encabezado del CV", () => {
 En `package.json`, después de `"test:bundle"`:
 
 ```json
-    "test:landing": "tsx --test scripts/landing-unica.check.ts",
+    "test:landing": "tsx --test scripts/single-landing.check.ts",
 ```
 
 ```bash
@@ -759,7 +759,7 @@ En `src/pages/cv.astro`, dentro del `<Base ...>`, junto al `<script type="applic
     `/cv` existe para que `build-pdf.ts` la imprima, no para que la visiten: el
     lector llega al CV por el ancla `#cv` de la landing. Indexarla partiría en
     dos la única visita, y el que cayera acá no vería ni el mapa ni los
-    proyectos. `scripts/landing-unica.check.ts` verifica esto.
+    proyectos. `scripts/single-landing.check.ts` verifica esto.
   */}
   <meta name="robots" content="noindex, follow" slot="head" />
 ```
@@ -783,7 +783,7 @@ Actualizá también el comentario del encabezado del archivo, que lista la secue
 - [ ] **Step 6: Commit**
 
 ```bash
-git add src/pages/cv.astro scripts/landing-unica.check.ts package.json .github/workflows/content-validation.yml
+git add src/pages/cv.astro scripts/single-landing.check.ts package.json .github/workflows/content-validation.yml
 git commit -m "feat: /cv deja de ser destino, con un test que lo sostiene
 
 noindex y cero links entrantes. La ruta sigue porque build-pdf.ts la imprime
@@ -804,7 +804,7 @@ superficie los conteos dejan de coincidir en silencio."
 - Modify: `docs/00-indice.md`
 - Modify: `CLAUDE.md`
 - Modify: `README.md`
-- Modify: `docs/superpowers/specs/2026-08-21-landing-unica-design.md`
+- Modify: `docs/superpowers/specs/2026-08-21-single-landing-design.md`
 
 - [ ] **Step 1: Medir**
 
@@ -835,9 +835,9 @@ Todos verdes salvo `audit:todos`, que reporta sin bloquear.
 
 `docs/04-portfolio.md` §1: la estructura pasa a ser la del spec §3 (Hero → índice → mapa → proyectos → CV), con "Casos" marcado como hecho en su versión de lista compacta y el formato caso de estudio del §2 anotado como pendiente de que se escriban `problem.short` y `outcome.short`.
 
-`docs/00-indice.md`: sumá a las decisiones fechadas —2026-08-21— que el sitio pasa a ser una landing única y que `/cv` queda como fuente de impresión, con `noindex` y sin links, sostenido por `landing-unica.check.ts`. En Estado, marcá los proyectos como hechos y dejá anotado que los `links` siguen vacíos.
+`docs/00-indice.md`: sumá a las decisiones fechadas —2026-08-21— que el sitio pasa a ser una landing única y que `/cv` queda como fuente de impresión, con `noindex` y sin links, sostenido por `single-landing.check.ts`. En Estado, marcá los proyectos como hechos y dejá anotado que los `links` siguen vacíos.
 
-`CLAUDE.md`: en el mapa de archivos, `pages/cv.astro` pasa a decir que no es un destino navegable; sumá `components/proyectos/`, `styles/proyectos.css` y `scripts/landing-unica.check.ts`. En §Comandos, sumá `pnpm run test:landing` y actualizá la secuencia completa.
+`CLAUDE.md`: en el mapa de archivos, `pages/cv.astro` pasa a decir que no es un destino navegable; sumá `components/proyectos/`, `styles/proyectos.css` y `scripts/single-landing.check.ts`. En §Comandos, sumá `pnpm run test:landing` y actualizá la secuencia completa.
 
 `README.md`: la descripción del sitio pasa de dos páginas a una landing; sumá `test:landing` a la lista de comandos.
 

@@ -29,8 +29,8 @@ Medido sobre `dist/` el 2026-08-25.
 | `theme-color`, claro y oscuro | `Base.astro` | `og-output.check.ts` |
 | `robots.txt` con la línea `Sitemap:` | `src/pages/robots.txt.ts` | — |
 | `sitemap-index.xml`, con `/cv` excluida | `@astrojs/sitemap` en `astro.config.mjs` | — |
-| `404.html` propia | `src/pages/404.astro` | `landing-unica.check.ts` |
-| Landing indexable, `/cv` con `noindex` y sin links entrantes | — | `landing-unica.check.ts` |
+| `404.html` propia | `src/pages/404.astro` | `single-landing.check.ts` |
+| Landing indexable, `/cv` con `noindex` y sin links entrantes | — | `single-landing.check.ts` |
 
 **Las etiquetas sociales son opt-in**, no un default con excepciones: `/cv` y el
 404 no las emiten porque nadie se acordó de apagarlas, sino porque hay que pedir

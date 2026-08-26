@@ -1,45 +1,44 @@
 ---
 /**
- * La marca completa: el aro abierto con la N adentro.
+ * The complete brand: the open ring with the N inside.
  *
- * Son las dos mitades de un mismo sistema. El aro solo vive en
- * `public/favicon.svg` y es el ícono chico; acá se le suma la N, que es lo que
- * aparece recién cuando hay lugar para leerla. El aro ES la C del apellido, así
- * que el contenedor no es un adorno: entre las dos piezas dicen «NC».
+ * They are two halves of one system. The ring alone lives in
+ * `public/favicon.svg` and is the small icon; here the N is added, and it only
+ * appears once there is room to read it. The ring IS the C of the surname, so
+ * the container is not decoration: between the two pieces they say «NC».
  *
- * A diferencia del favicon, este SVG SÍ hereda el CSS de la página, así que los
- * colores salen de `var(--acento)` y `var(--tinta)` en vez de estar escritos a
- * mano. Por eso el modo oscuro acá no necesita una sola línea: los tokens ya se
- * redefinen solos en `tokens.css`. El favicon repite los hexadecimales porque
- * no le queda otra, y ese es el único lugar donde se duplican.
+ * Unlike the favicon, this SVG DOES inherit the page CSS, so the colors come
+ * from `var(--acento)` and `var(--tinta)` instead of being written by hand.
+ * That is why dark mode needs not a single line here: the tokens already
+ * redefine themselves in `tokens.css`. The favicon repeats the hex values
+ * because it has no choice, and that is the only place they are duplicated.
  *
- * Va inline y no como `<img src>`: un pedido más para 300 bytes no se paga, y
- * un `<img>` no podría leer los tokens.
+ * It goes inline and not as an `<img src>`: one more request for 300 bytes does
+ * not pay for itself, and an `<img>` could not read the tokens.
  */
 import { RING_PATH, BRAND_VIEWBOX, N_WEIGHT, N_PATH } from "../lib/brand";
 
 interface Props {
-  /** Lado del cuadrado, en px. La caja de dibujo siempre es 32×32. */
+  /** Side of the square, in px. The drawing box is always 32×32. */
   size?: number;
   /**
-   * Texto para lectores de pantalla. Con `null` el logo queda decorativo: es lo
-   * correcto cuando el nombre ya está escrito al lado.
+   * Text for screen readers. With `null` the logo is decorative: the right
+   * choice when the name is already written next to it.
    */
   label?: string | null;
   class?: string;
 }
 
-const { size = 26, label = "Nicolás Cribb", class: clase } = Astro.props;
+const { size = 26, label = "Nicolás Cribb", class: className } = Astro.props;
 
-// La geometría NO vive acá: sale de `src/lib/brand.ts`, que es la fuente única
-// que comparten este logo y el generador de la tarjeta de Open Graph. La pata
-// derecha de la N se pasa de la abertura del aro a propósito — es lo que ata
-// las dos piezas en una figura sola en vez de dejar una letra apoyada adentro
-// de un anillo.
+// The geometry does NOT live here: it comes from `src/lib/brand.ts`, the single
+// source shared by this logo and the Open Graph card generator. The right leg of
+// the N overshoots the opening of the ring on purpose — that is what ties the
+// two pieces into one figure instead of leaving a letter propped inside a ring.
 ---
 
 <svg
-  class={clase}
+  class={className}
   viewBox={BRAND_VIEWBOX}
   width={size}
   height={size}
