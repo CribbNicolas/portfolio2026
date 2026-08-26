@@ -95,7 +95,7 @@ test("existe una página 404 propia", () => {
 });
 
 test("solo la landing emite Open Graph", () => {
-  // `compartible` es opt-in en `Base.astro`, pero eso solo evita el olvido en
+  // `shareable` es opt-in en `Base.astro`, pero eso solo evita el olvido en
   // una dirección: nada impide marcarla en `/cv`. Y ahí sería peor que un
   // descuido — esa página va con `noindex`, así que estaríamos pidiéndole al
   // crawler que no la indexe y ofreciéndole una tarjeta para compartirla.
@@ -109,7 +109,7 @@ test("solo la landing emite Open Graph", () => {
     conOg,
     [],
     `estas páginas emiten Open Graph: ${conOg.join(", ")}. Solo la landing es ` +
-      "compartible; /cv es noindex y el 404 no es un destino.",
+      "shareable; /cv es noindex y el 404 no es un destino.",
   );
 
   assert.ok(

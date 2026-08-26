@@ -1,16 +1,16 @@
 /**
- * La tarjeta social: que exista, que entre en los límites que imponen las
- * plataformas, que no haya quedado vieja, y que el HTML publicado la apunte.
+ * The social card: that it exists, that it fits the limits the platforms
+ * impose, that it has not gone stale, and that the published HTML points at it.
  *
- * Existe porque `public/og.jpg` es un artefacto COMMITEADO —se genera con
- * `pnpm run og:local` y no en el build, porque el builder de Cloudflare no
- * tiene Chromium (docs/07 §18)—. Un artefacto commiteado se desincroniza en
- * silencio: cambiás el rol en el dataset, el sitio dice una cosa y la imagen
- * que ve LinkedIn sigue diciendo la otra. Nadie se entera hasta que alguien
- * comparte el link.
+ * It exists because `public/og.jpg` is a COMMITTED artifact — generated with
+ * `pnpm run og:local` and not in the build, because the Cloudflare builder has
+ * no Chromium (docs/07 §18). A committed artifact drifts out of sync silently:
+ * you change the role in the dataset, the site says one thing and the image
+ * LinkedIn sees keeps saying the other. Nobody finds out until someone shares
+ * the link.
  *
- * El nombre NO termina en `.test.ts` a propósito: necesita un build previo para
- * mirar `dist/`. Mismo motivo que `pdf-output.check.ts` y
+ * The name does NOT end in `.test.ts` on purpose: it needs a prior build to
+ * look at `dist/`. Same reason as `pdf-output.check.ts` and
  * `landing-unica.check.ts`.
  */
 
@@ -19,168 +19,168 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 
-import { ARO_PATH } from "../src/lib/marca";
-import { FOTO, huella, ICONO, IMAGEN, LOCK, MARCA, PLANTILLA, textosOg } from "./og-datos";
-import { ICONO_LADO, OG_ALTO, OG_ANCHO, OG_PESO_MAXIMO } from "./og-template";
+import { RING_PATH } from "../src/lib/brand";
+import { PHOTO, fingerprint, ICON, IMAGE, LOCK, BRAND, TEMPLATE, ogTexts } from "./og-data";
+import { ICON_SIDE, OG_HEIGHT, OG_WIDTH, OG_MAX_BYTES } from "./og-template";
 
-const jpeg = await readFile(IMAGEN);
+const jpeg = await readFile(IMAGE);
 const lock = JSON.parse(await readFile(LOCK, "utf8")) as {
-  huella: string;
-  ancho: number;
-  alto: number;
-  textos: Record<string, string>;
+  fingerprint: string;
+  width: number;
+  height: number;
+  texts: Record<string, string>;
 };
 const landing = await readFile(join("dist", "index.html"), "utf8");
 
 /**
- * El alto y el ancho reales del JPEG, leídos del marcador SOF.
+ * The real width and height of the JPEG, read from the SOF marker.
  *
- * Se parsea a mano en vez de sumar una dependencia de imágenes: son veinte
- * líneas y el precedente está en `build-pdf.ts`, que levanta su propio servidor
- * por el mismo motivo —"agregar una dependencia para esto sería más superficie
- * de mantenimiento que el problema que resuelve"—.
+ * Parsed by hand rather than adding an image dependency: it is twenty lines,
+ * and the precedent is `build-pdf.ts`, which starts its own server for the same
+ * reason — "adding a dependency for this would be more maintenance surface than
+ * the problem it solves".
  */
-function medirJpeg(bin: Buffer): { ancho: number; alto: number } {
-  let i = 2; // saltar SOI
+function measureJpeg(bin: Buffer): { width: number; height: number } {
+  let i = 2; // skip SOI
   while (i < bin.length) {
     if (bin[i] !== 0xff) {
       i++;
       continue;
     }
-    const marcador = bin[i + 1];
-    // Los SOF (C0–CF) traen las dimensiones. C4, C8 y CC no son SOF.
-    if (marcador >= 0xc0 && marcador <= 0xcf && marcador !== 0xc4 && marcador !== 0xc8 && marcador !== 0xcc) {
-      return { alto: bin.readUInt16BE(i + 5), ancho: bin.readUInt16BE(i + 7) };
+    const marker = bin[i + 1];
+    // The SOFs (C0–CF) carry the dimensions. C4, C8 and CC are not SOFs.
+    if (marker >= 0xc0 && marker <= 0xcf && marker !== 0xc4 && marker !== 0xc8 && marker !== 0xcc) {
+      return { height: bin.readUInt16BE(i + 5), width: bin.readUInt16BE(i + 7) };
     }
-    if (marcador === 0xd8 || marcador === 0xd9) {
+    if (marker === 0xd8 || marker === 0xd9) {
       i += 2;
       continue;
     }
     i += 2 + bin.readUInt16BE(i + 2);
   }
-  throw new Error(`${IMAGEN} no parece un JPEG: no se encontró el marcador SOF.`);
+  throw new Error(`${IMAGE} does not look like a JPEG: no SOF marker found.`);
 }
 
-test("la tarjeta mide 1200×630", () => {
-  const { ancho, alto } = medirJpeg(jpeg);
-  // 1.91:1 es lo que piden Facebook, LinkedIn, WhatsApp, Slack y Discord, y
-  // también el `summary_large_image` de Twitter. Fuera de esa relación cada
-  // plataforma recorta por su cuenta y la cara queda cortada en alguna.
-  assert.equal(ancho, OG_ANCHO, `ancho ${ancho}, esperado ${OG_ANCHO}`);
-  assert.equal(alto, OG_ALTO, `alto ${alto}, esperado ${OG_ALTO}`);
+test("the card measures 1200×630", () => {
+  const { width, height } = measureJpeg(jpeg);
+  // 1.91:1 is what Facebook, LinkedIn, WhatsApp, Slack and Discord ask for, and
+  // also Twitter's `summary_large_image`. Outside that ratio each platform crops
+  // on its own and the face ends up cut off in one of them.
+  assert.equal(width, OG_WIDTH, `width ${width}, expected ${OG_WIDTH}`);
+  assert.equal(height, OG_HEIGHT, `height ${height}, expected ${OG_HEIGHT}`);
 });
 
-test("la tarjeta entra en el techo de peso de WhatsApp", () => {
+test("the card fits WhatsApp's weight ceiling", () => {
   assert.ok(
-    jpeg.byteLength <= OG_PESO_MAXIMO,
-    `og.jpg pesa ${(jpeg.byteLength / 1024).toFixed(0)} KB y el techo es ${OG_PESO_MAXIMO / 1024} KB. ` +
-      `Pasado ese punto WhatsApp no muestra la previsualización: bajá CALIDAD en scripts/build-og.ts.`,
+    jpeg.byteLength <= OG_MAX_BYTES,
+    `og.jpg weighs ${(jpeg.byteLength / 1024).toFixed(0)} KB and the ceiling is ${OG_MAX_BYTES / 1024} KB. ` +
+      `Past that point WhatsApp does not show the preview: lower QUALITY in scripts/build-og.ts.`,
   );
 });
 
-test("la tarjeta no quedó vieja: la huella coincide con el dataset", async () => {
-  const textos = await textosOg();
-  const foto = await readFile(FOTO);
-  const plantilla = await readFile(PLANTILLA);
-  const marca = await readFile(MARCA);
+test("the card has not gone stale: the fingerprint matches the dataset", async () => {
+  const texts = await ogTexts();
+  const photo = await readFile(PHOTO);
+  const template = await readFile(TEMPLATE);
+  const brand = await readFile(BRAND);
 
   assert.equal(
-    huella(textos, foto, plantilla, marca),
-    lock.huella,
-    "Cambió el dataset, la foto, la plantilla o la marca, y los artefactos siguen siendo los de antes.\n" +
-      "Corré `pnpm run og:local` y commiteá og.jpg + apple-touch-icon.png junto con og.lock.json.",
+    fingerprint(texts, photo, template, brand),
+    lock.fingerprint,
+    "The dataset, the photo, the template or the brand changed, and the artifacts are still the old ones.\n" +
+      "Run `pnpm run og:local` and commit og.jpg + apple-touch-icon.png together with og.lock.json.",
   );
 });
 
-test("los textos de la tarjeta salen del dataset", async () => {
-  // No alcanza con que la huella cierre: si alguien edita el lock a mano para
-  // silenciar el test anterior, esto lo vuelve a agarrar contra la fuente real.
-  assert.deepEqual(lock.textos, await textosOg());
+test("the card texts come from the dataset", async () => {
+  // The fingerprint matching is not enough: if someone edits the lock by hand
+  // to silence the previous test, this catches it again against the real source.
+  assert.deepEqual(lock.texts, await ogTexts());
 });
 
-test("la landing publica og:image absoluta y con sus medidas", () => {
-  // Absoluta y no relativa: ningún scraper resuelve rutas relativas, y una
-  // `og:image` que no se puede pedir es lo mismo que no tenerla.
-  const imagen = landing.match(/<meta property="og:image" content="([^"]+)"/);
-  assert.ok(imagen, "falta og:image en la landing");
-  assert.match(imagen[1], /^https?:\/\/\S+\/og\.jpg$/, `og:image no es absoluta: ${imagen[1]}`);
+test("the landing publishes an absolute og:image with its dimensions", () => {
+  // Absolute and not relative: no scraper resolves relative paths, and an
+  // `og:image` that cannot be fetched is the same as having none.
+  const image = landing.match(/<meta property="og:image" content="([^"]+)"/);
+  assert.ok(image, "og:image missing from the landing");
+  assert.match(image[1], /^https?:\/\/\S+\/og\.jpg$/, `og:image is not absolute: ${image[1]}`);
 
-  // LinkedIn y Slack reservan el hueco con estas dos antes de bajar la imagen.
-  // Sin ellas la tarjeta salta de tamaño cuando termina de cargar.
-  assert.match(landing, new RegExp(`<meta property="og:image:width" content="${OG_ANCHO}"`));
-  assert.match(landing, new RegExp(`<meta property="og:image:height" content="${OG_ALTO}"`));
-  assert.match(landing, /<meta property="og:image:alt" content="[^"]+"/, "og:image sin alt");
+  // LinkedIn and Slack reserve the space with these two before downloading the
+  // image. Without them the card jumps size once it finishes loading.
+  assert.match(landing, new RegExp(`<meta property="og:image:width" content="${OG_WIDTH}"`));
+  assert.match(landing, new RegExp(`<meta property="og:image:height" content="${OG_HEIGHT}"`));
+  assert.match(landing, /<meta property="og:image:alt" content="[^"]+"/, "og:image with no alt");
 });
 
-test("Twitter pide la tarjeta grande, no la chica", () => {
-  // `summary` reserva un cuadrado chico al costado del texto. Ahora que hay
-  // imagen de 1.91:1, la que corresponde es `summary_large_image`: si quedara
-  // en `summary`, Twitter recortaría la tarjeta a un cuadradito.
+test("Twitter asks for the large card, not the small one", () => {
+  // `summary` reserves a small square beside the text. Now that there is a
+  // 1.91:1 image, the right one is `summary_large_image`: left on `summary`,
+  // Twitter would crop the card into a little square.
   assert.match(landing, /<meta name="twitter:card" content="summary_large_image"/);
   assert.match(landing, /<meta name="twitter:image" content="https?:\/\/\S+\/og\.jpg"/);
 });
 
-test("/cv sigue sin emitir etiquetas sociales", async () => {
-  // El opt-in de `Base.astro` ya lo cubre y `landing-unica.check.ts` también,
-  // pero la imagen es nueva: si alguien la agrega como default del layout, /cv
-  // pasaría a ser compartible sin que nadie lo decida.
+test("/cv still emits no social tags", async () => {
+  // The `Base.astro` opt-in already covers this, and so does
+  // `landing-unica.check.ts`, but the image is new: if someone adds it as a
+  // layout default, /cv would become shareable without anybody deciding it.
   const cv = await readFile(join("dist", "cv", "index.html"), "utf8");
-  assert.doesNotMatch(cv, /og:image/, "/cv emite og:image y no debería");
+  assert.doesNotMatch(cv, /og:image/, "/cv emits og:image and should not");
 });
 
-test("el ícono de iOS existe, es PNG y mide 180×180", async () => {
-  // Safari NO acepta SVG para `apple-touch-icon`. Sin este bitmap, guardar el
-  // sitio en la pantalla de inicio no da un ícono: da una captura reducida de
-  // la página, ilegible.
-  const png = await readFile(ICONO);
-  // La firma PNG. Si alguien lo reemplaza por un JPEG renombrado, iOS no lo
-  // muestra y la extensión del archivo no delata nada.
-  assert.deepEqual([...png.subarray(0, 4)], [0x89, 0x50, 0x4e, 0x47], `${ICONO} no es un PNG`);
-  // El IHDR arranca en el byte 8 y trae ancho y alto como enteros de 32 bits.
-  assert.equal(png.readUInt32BE(16), ICONO_LADO);
-  assert.equal(png.readUInt32BE(20), ICONO_LADO);
+test("the iOS icon exists, is a PNG and measures 180×180", async () => {
+  // Safari does NOT accept SVG for `apple-touch-icon`. Without this bitmap,
+  // saving the site to the home screen does not give an icon: it gives an
+  // unreadable shrunken screenshot of the page.
+  const png = await readFile(ICON);
+  // The PNG signature. If someone replaces it with a renamed JPEG, iOS does not
+  // show it and the file extension gives nothing away.
+  assert.deepEqual([...png.subarray(0, 4)], [0x89, 0x50, 0x4e, 0x47], `${ICON} is not a PNG`);
+  // The IHDR starts at byte 8 and carries width and height as 32-bit integers.
+  assert.equal(png.readUInt32BE(16), ICON_SIDE);
+  assert.equal(png.readUInt32BE(20), ICON_SIDE);
 });
 
-test("todas las páginas declaran el ícono de iOS y el color del chrome", async () => {
-  const paginas = [
+test("every page declares the iOS icon and the chrome color", async () => {
+  const pages = [
     ["landing", landing],
     ["/cv", await readFile(join("dist", "cv", "index.html"), "utf8")],
     ["404", await readFile(join("dist", "404.html"), "utf8")],
   ] as const;
 
-  for (const [nombre, html] of paginas) {
-    assert.match(html, /rel="apple-touch-icon" href="\/apple-touch-icon\.png"/, `${nombre}: sin apple-touch-icon`);
-    // Dos etiquetas y no una: el sitio tiene modo oscuro, y con un solo valor
-    // la barra del sistema queda clara sobre una página oscura o al revés.
-    assert.match(html, /name="theme-color" content="#ffffff"/, `${nombre}: sin theme-color claro`);
-    assert.match(html, /name="theme-color" content="#131417"/, `${nombre}: sin theme-color oscuro`);
+  for (const [name, html] of pages) {
+    assert.match(html, /rel="apple-touch-icon" href="\/apple-touch-icon\.png"/, `${name}: no apple-touch-icon`);
+    // Two tags and not one: the site has a dark mode, and with a single value
+    // the system bar ends up light over a dark page or the other way around.
+    assert.match(html, /name="theme-color" content="#ffffff"/, `${name}: no light theme-color`);
+    assert.match(html, /name="theme-color" content="#131417"/, `${name}: no dark theme-color`);
   }
 });
 
-test("el favicon dibuja el mismo aro que src/lib/marca.ts", async () => {
-  // El favicon es un archivo estático: no puede importar el módulo, así que su
-  // `d=` es la única copia de esa geometría fuera de `marca.ts`. Esto es lo que
-  // impide que se separen — ajustás la curva en un lado y el ícono de la
-  // pestaña se queda con la vieja para siempre.
+test("the favicon draws the same ring as src/lib/brand.ts", async () => {
+  // The favicon is a static file: it cannot import the module, so its `d=` is
+  // the only copy of that geometry outside `brand.ts`. This is what keeps them
+  // from separating — you adjust the curve on one side and the tab icon keeps
+  // the old one forever.
   const favicon = await readFile("public/favicon.svg", "utf8");
   assert.ok(
-    favicon.includes(ARO_PATH),
-    "public/favicon.svg no dibuja el aro de src/lib/marca.ts. Copiá ARO_PATH ahí.",
+    favicon.includes(RING_PATH),
+    "public/favicon.svg does not draw the ring from src/lib/brand.ts. Copy RING_PATH there.",
   );
 });
 
-test("el favicon parsea como XML", async () => {
-  // Un SVG que se carga como imagen se parsea en XML ESTRICTO, y XML prohíbe
-  // dos guiones seguidos adentro de un comentario. Cuando pasa, no hay error
-  // visible en ningún lado: no hay consola, no hay 404, el archivo se sirve con
-  // 200 y simplemente no aparece el ícono. Eso ya ocurrió una vez, por escribir
-  // los nombres de los custom properties en un comentario.
+test("the favicon parses as XML", async () => {
+  // An SVG loaded as an image is parsed as STRICT XML, and XML forbids two
+  // consecutive hyphens inside a comment. When it happens there is no visible
+  // error anywhere: no console, no 404, the file is served with a 200 and the
+  // icon simply does not appear. That already happened once, from writing the
+  // custom property names inside a comment.
   const favicon = await readFile("public/favicon.svg", "utf8");
-  for (const comentario of favicon.match(/<!--[\s\S]*?-->/g) ?? []) {
+  for (const comment of favicon.match(/<!--[\s\S]*?-->/g) ?? []) {
     assert.ok(
-      !comentario.slice(4, -3).includes("--"),
-      "Hay un comentario con dos guiones seguidos en public/favicon.svg.\n" +
-        "XML lo prohíbe y el favicon deja de renderizar sin avisar.",
+      !comment.slice(4, -3).includes("--"),
+      "There is a comment with two consecutive hyphens in public/favicon.svg.\n" +
+        "XML forbids it and the favicon silently stops rendering.",
     );
   }
 });

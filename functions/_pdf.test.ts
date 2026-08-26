@@ -13,7 +13,7 @@
 
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { OPCIONES_PDF, ESPERA_CARGA } from "../scripts/pdf-options";
+import { PDF_OPTIONS, LOAD_WAIT } from "../scripts/pdf-options";
 import {
   NOMBRE_POR_DEFECTO,
   RUTA_ORIGEN,
@@ -29,13 +29,13 @@ test("el cuerpo pide exactamente las mismas opciones que el PDF que se testea", 
   // el PDF que baja la gente deja de ser el PDF que pasó `test:pdf` y nadie se
   // entera. Por eso `pdf-options.ts` es una sola fuente y esto lo custodia.
   const cuerpo = JSON.parse(cuerpoPeticion("https://ejemplo.com"));
-  assert.deepEqual(cuerpo.pdfOptions, OPCIONES_PDF);
-  assert.equal(cuerpo.gotoOptions.waitUntil, ESPERA_CARGA);
+  assert.deepEqual(cuerpo.pdfOptions, PDF_OPTIONS);
+  assert.equal(cuerpo.gotoOptions.waitUntil, LOAD_WAIT);
 });
 
 test("tagged y outline viajan en el pedido", () => {
   // Redundante con el test de arriba a propósito: si alguien decidiera sacar
-  // `tagged` de `OPCIONES_PDF`, aquel test seguiría en verde (compara contra la
+  // `tagged` de `PDF_OPTIONS`, aquel test seguiría en verde (compara contra la
   // misma constante que cambió). Este falla, y el mensaje dice qué se perdió.
   const { pdfOptions } = JSON.parse(cuerpoPeticion("https://ejemplo.com"));
   assert.equal(pdfOptions.tagged, true, "sin tagged el PDF pierde el orden de lectura explícito");

@@ -1,35 +1,35 @@
 ---
-import { OG_ALTO, OG_ANCHO } from "../../scripts/og-template";
+import { OG_HEIGHT, OG_WIDTH } from "../../scripts/og-template";
 
 /**
- * Layout base. Su única responsabilidad es el `<head>`.
+ * Base layout. Its only responsibility is the `<head>`.
  *
- * El slot `head` existe para que cada página inyecte su JSON-LD server-rendered:
- * los crawlers no ejecutan JS, así que tiene que salir en el HTML del server
+ * The `head` slot exists so each page can inject its server-rendered JSON-LD:
+ * crawlers do not execute JS, so it has to be in the server HTML
  * (docs/04 §3).
  */
 interface Props {
   title: string;
   description: string;
   /**
-   * Si es `true`, la página emite Open Graph y Twitter Card.
+   * When `true`, the page emits Open Graph and a Twitter Card.
    *
-   * Es opt-in y no un default con excepciones, a propósito. `/cv` va con
-   * `noindex` y no es un destino compartible —existe para que Browser Rendering
-   * imprima el PDF—, y el 404 tampoco. Con un default en `true` habría que
-   * acordarse de apagarlo en cada página nueva; así, olvidarse significa no
-   * emitir etiquetas, que es el lado seguro del error.
+   * Opt-in rather than a default with exceptions, on purpose. `/cv` carries
+   * `noindex` and is not a shareable destination — it exists so Browser
+   * Rendering can print the PDF — and neither is the 404. With a `true` default
+   * you would have to remember to switch it off on every new page; this way,
+   * forgetting means emitting no tags, which is the safe side of the mistake.
    */
-  compartible?: boolean;
+  shareable?: boolean;
 }
 
-const { title, description, compartible = false } = Astro.props;
+const { title, description, shareable = false } = Astro.props;
 const canonical = new URL(Astro.url.pathname, Astro.site);
 
-// Las medidas salen del mismo módulo que las usa para generar el JPEG: si algún
-// día la tarjeta cambia de tamaño, las etiquetas lo siguen solas en vez de
-// mentirle a LinkedIn sobre el hueco que tiene que reservar.
-const imagenSocial = new URL("/og.jpg", Astro.site);
+// The dimensions come from the same module that uses them to generate the
+// JPEG: if the card ever changes size, the tags follow on their own instead of
+// lying to LinkedIn about the space it has to reserve.
+const socialImage = new URL("/og.jpg", Astro.site);
 ---
 
 <!doctype html>
@@ -42,44 +42,44 @@ const imagenSocial = new URL("/og.jpg", Astro.site);
     <link rel="canonical" href={canonical} />
 
     {/*
-      SVG y no `.ico`: pesa menos de 1 KB, escala a cualquier tamaño y responde
-      al modo oscuro desde adentro. Lo soportan todos los navegadores actuales;
-      los muy viejos —Safari anterior a 15— no muestran ninguno, que es
-      exactamente lo que pasaba hasta ahora.
+      SVG and not `.ico`: under 1 KB, scales to any size and responds to dark
+      mode from the inside. Every current browser supports it; very old ones —
+      Safari before 15 — show none at all, which is exactly what happened up to
+      now.
     */}
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
 
     {/*
-      El ícono de la pantalla de inicio de iOS. Existe aparte porque Safari NO
-      acepta SVG acá: tiene que ser un bitmap. Sin este archivo, guardar el
-      sitio en la pantalla de inicio no da un ícono sino una captura reducida de
-      la página. Lo genera `pnpm run og:local` junto con la tarjeta social.
+      The iOS home screen icon. It exists separately because Safari does NOT
+      accept SVG here: it has to be a bitmap. Without this file, saving the site
+      to the home screen gives a shrunken screenshot of the page instead of an
+      icon. `pnpm run og:local` generates it alongside the social card.
 
-      Un solo tamaño: desde iOS 8 alcanza con 180×180 y el sistema deriva los
-      demás.
+      One size only: since iOS 8, 180×180 is enough and the system derives the
+      rest.
     */}
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
 
     {/*
-      Tiñe el chrome del browser en Android y la barra de estado en iOS. Son dos
-      etiquetas y no una porque el sitio tiene modo oscuro: con un solo valor,
-      la barra queda clara sobre una página oscura o al revés.
+      Tints the browser chrome on Android and the status bar on iOS. Two tags
+      and not one because the site has a dark mode: with a single value the bar
+      ends up light over a dark page, or the other way around.
 
-      Los valores son el token `fondo` de `tokens.css` en cada modo. Es la
-      segunda —y última— copia de un color fuera de ese archivo: acá no hay
-      `var()` que valga, porque quien lee esto es el sistema operativo y no la
-      cascada.
+      The values are the `fondo` token from `tokens.css` in each mode. This is
+      the second — and last — copy of a color outside that file: no `var()`
+      works here, because what reads this is the operating system and not the
+      cascade.
     */}
     <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
     <meta name="theme-color" content="#131417" media="(prefers-color-scheme: dark)" />
 
     {
-      compartible && (
+      shareable && (
         <Fragment>
           {/*
-            Open Graph. Sin esto, pegar el link en LinkedIn o WhatsApp muestra
-            una URL pelada — y pegar el link ES el canal por el que se
-            distribuye un portfolio.
+            Open Graph. Without this, pasting the link into LinkedIn or
+            WhatsApp shows a bare URL — and pasting the link IS the channel a
+            portfolio is distributed through.
           */}
           <meta property="og:type" content="profile" />
           <meta property="og:title" content={title} />
@@ -88,37 +88,38 @@ const imagenSocial = new URL("/og.jpg", Astro.site);
           <meta property="og:locale" content="es_AR" />
 
           {/*
-            La imagen. UNA sola para todas las redes: Facebook, LinkedIn,
-            WhatsApp, Slack, Discord y Twitter leen la misma `og:image`, y lo
-            que cambia entre ellas es cómo la recortan, no qué archivo piden.
+            The image. ONE for every network: Facebook, LinkedIn, WhatsApp,
+            Slack, Discord and Twitter all read the same `og:image`, and what
+            differs between them is how they crop it, not which file they ask
+            for.
 
-            Absoluta y no relativa: ningún scraper resuelve rutas relativas, y
-            una `og:image` que no se puede pedir es igual a no tenerla.
+            Absolute and not relative: no scraper resolves relative paths, and
+            an `og:image` that cannot be fetched is the same as having none.
 
-            `width`/`height` porque LinkedIn y Slack reservan el hueco con esas
-            dos antes de bajar la imagen; sin ellas la tarjeta salta de tamaño
-            cuando termina de cargar.
+            `width`/`height` because LinkedIn and Slack reserve the space with
+            those two before downloading the image; without them the card jumps
+            size once it finishes loading.
 
-            El archivo lo genera `pnpm run og:local` y está COMMITEADO — no sale
-            del build, porque rasterizar necesita Chromium y el builder de
-            Cloudflare no lo tiene. `og-output.check.ts` verifica que no haya
-            quedado vieja respecto del dataset.
+            The file is generated by `pnpm run og:local` and is COMMITTED — it
+            does not come out of the build, because rasterizing needs Chromium
+            and the Cloudflare builder does not have it. `og-output.check.ts`
+            verifies it has not gone stale against the dataset.
           */}
-          <meta property="og:image" content={imagenSocial.toString()} />
+          <meta property="og:image" content={socialImage.toString()} />
           <meta property="og:image:type" content="image/jpeg" />
-          <meta property="og:image:width" content={String(OG_ANCHO)} />
-          <meta property="og:image:height" content={String(OG_ALTO)} />
+          <meta property="og:image:width" content={String(OG_WIDTH)} />
+          <meta property="og:image:height" content={String(OG_HEIGHT)} />
           <meta property="og:image:alt" content={`${title}. Retrato y marca.`} />
 
           {/*
-            `summary_large_image` y no `summary`: el chico reserva un cuadrado
-            al costado del texto y recortaría una tarjeta de 1.91:1 a un
-            cuadradito. Estaba en `summary` mientras no había imagen.
+            `summary_large_image` and not `summary`: the small one reserves a
+            square beside the text and would crop a 1.91:1 card into a little
+            square. It was on `summary` while there was no image.
           */}
           <meta name="twitter:card" content="summary_large_image" />
           <meta name="twitter:title" content={title} />
           <meta name="twitter:description" content={description} />
-          <meta name="twitter:image" content={imagenSocial.toString()} />
+          <meta name="twitter:image" content={socialImage.toString()} />
           <meta name="twitter:image:alt" content={`${title}. Retrato y marca.`} />
         </Fragment>
       )

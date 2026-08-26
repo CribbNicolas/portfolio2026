@@ -8,7 +8,7 @@
  * (`_pdf.test.ts`) sin necesidad de levantar un Worker.
  */
 
-import { OPCIONES_PDF, ESPERA_CARGA } from "../scripts/pdf-options";
+import { PDF_OPTIONS, LOAD_WAIT } from "../scripts/pdf-options";
 
 /**
  * La página que se imprime. Es la MISMA que imprime `scripts/build-pdf.ts` en
@@ -46,8 +46,8 @@ export function endpointBrowserRendering(cuenta: string): string {
 export function cuerpoPeticion(origen: string): string {
   return JSON.stringify({
     url: new URL(RUTA_ORIGEN, origen).toString(),
-    pdfOptions: OPCIONES_PDF,
-    gotoOptions: { waitUntil: ESPERA_CARGA },
+    pdfOptions: PDF_OPTIONS,
+    gotoOptions: { waitUntil: LOAD_WAIT },
   });
 }
 

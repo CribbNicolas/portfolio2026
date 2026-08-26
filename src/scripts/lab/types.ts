@@ -1,58 +1,59 @@
 /**
- * Tipos que cruzan la frontera cliente↔servidor.
+ * Types crossing the client↔server boundary.
  *
- * Este archivo NO importa nada en runtime, y es el ÚNICO lugar por donde los
- * tipos entran a `src/scripts/`. La regla existe por dos motivos concretos:
+ * This file imports NOTHING at runtime, and it is the ONLY way types enter
+ * `src/scripts/`. The rule exists for two concrete reasons:
  *
- * 1. Un `import` de `@content` desde código de cliente arrastra zod y el
- *    dataset entero al browser: `json-source.ts` importa los dos de forma
- *    estática. Mismo problema que documenta `src/lib/jsonld.ts`.
- * 2. Un import estático de `graph-3d` desde cualquier módulo hace que Rollup
- *    meta three en el chunk crítico, aunque el otro import sea dinámico.
+ * 1. An `import` of `@content` from client code drags zod and the whole dataset
+ *    into the browser: `json-source.ts` imports both statically. Same problem
+ *    documented in `src/lib/jsonld.ts`.
+ * 2. A static import of `graph-3d` from any module makes Rollup hoist three
+ *    into the critical chunk, even when the other import is dynamic.
  */
 
 export type LabNodeKind = "skill" | "role" | "project" | "achievement";
 
-/** Claves cortas: esto viaja en el HTML de cada visita. */
-export interface LabNodo {
+/** Short keys: this travels inside the HTML of every visit. */
+export interface LabNode {
   i: string;
   k: LabNodeKind;
   x: number;
   y: number;
   z: number;
-  /** Grado. Es el `Nc` de la fórmula de tamaño y ordena la lista del DOM. */
+  /** Degree. The `Nc` of the size formula, and what orders the DOM list. */
   d: number;
   /**
-   * Multiplicador del radio base del tipo: años de uso × conexiones, por raíz.
-   * 1 fuera de las skills. Se calcula en build (`knowledge-graph.ts`) — acá solo
-   * se multiplica, para que el `<svg>` y el 3D dibujen exactamente lo mismo.
+   * Multiplier over the kind's base radius: years of use × connections, by
+   * square root. 1 outside skills. Computed at build time
+   * (`knowledge-graph.ts`) — here it is only multiplied, so the `<svg>` and the
+   * 3D draw exactly the same thing.
    */
   r: number;
-  /** Nombre visible. */
+  /** Visible name. */
   n: string;
-  /** Texto real del tooltip: el logro, el contexto del rol, la solución. */
+  /** Real tooltip text: the achievement, the role context, the solution. */
   t: string;
-  /** Categoría de la skill. Va en el panel, nunca en el color (spec §4). */
+  /** The skill category. Goes in the panel, never in the color (spec §4). */
   c?: string;
 }
 
-export interface LabArista {
+export interface LabEdge {
   s: string;
   t: string;
-  /** true = afinidad (skill↔skill derivada), false = estructura del dataset. */
+  /** true = affinity (derived skill↔skill), false = structure from the dataset. */
   a: boolean;
   w: number;
 }
 
-export interface LabDatos {
-  nodes: LabNodo[];
-  edges: LabArista[];
-  radio: number;
+export interface LabData {
+  nodes: LabNode[];
+  edges: LabEdge[];
+  radius: number;
 }
 
-/** Lo que expone cada módulo de render. Permite cambiar de renderer sin tocar nada más. */
-export interface Escena {
-  destruir(): void;
-  /** Enfoca un nodo desde afuera del canvas (la lista del DOM, con teclado). */
-  enfocar?(id: string | null): void;
+/** What every render module exposes. Lets the renderer change with nothing else moving. */
+export interface LabScene {
+  destroy(): void;
+  /** Focuses a node from outside the canvas (the DOM list, with a keyboard). */
+  focusNode?(id: string | null): void;
 }

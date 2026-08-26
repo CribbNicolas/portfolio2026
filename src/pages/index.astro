@@ -11,17 +11,17 @@
  * `PAGINAS_CON_JS` de `scripts/no-client-js.check.ts`. `/cv` sigue en cero: de
  * ahí sale el PDF, y un script que se cuele cambia el render en silencio.
  *
- * TODO el cálculo del grafo corre acá, en build. Nada de esa derivación viaja
+ * TODO el cálculo del graph corre acá, en build. Nada de esa derivación viaja
  * al browser: el cliente recibe coordenadas ya resueltas.
  */
 import Base from "../layouts/Base.astro";
 import { content, formatSeniority, formatDateRange, formatYearMonth, buildKnowledgeGraph, layoutGraph } from "@content";
 import { buildPersonJsonLd } from "../lib/jsonld";
-import { buildSvgMapa } from "../lib/graph-svg";
-import { buildHoverCss, ID_ITEM } from "../lib/lab-hover-css";
+import { buildSvgMap } from "../lib/graph-svg";
+import { buildHoverCss, ITEM_ID } from "../lib/lab-hover-css";
 import Logo from "../components/Logo.astro";
 import GraphSvg from "../components/lab/GraphSvg.astro";
-import ListaProyectos from "../components/proyectos/ListaProyectos.astro";
+import ProjectList from "../components/projects/ProjectList.astro";
 import Section from "../components/cv/Section.astro";
 import RoleBlock from "../components/cv/RoleBlock.astro";
 import SkillList from "../components/cv/SkillList.astro";
@@ -54,46 +54,46 @@ const jsonLd = buildPersonJsonLd(view, new URL(Astro.site!));
  * Si no está definida, el `<script>` no se renderiza: en dev y en cualquier
  * build sin configurar, la analítica no existe.
  */
-const beaconCloudflare: string | undefined = import.meta.env.PUBLIC_CF_BEACON_TOKEN;
+const cloudflareBeacon: string | undefined = import.meta.env.PUBLIC_CF_BEACON_TOKEN;
 
-const grafo = buildKnowledgeGraph(view);
-const posicionado = layoutGraph(grafo);
-const mapa = buildSvgMapa(posicionado);
-const hoverCss = buildHoverCss(posicionado);
+const graph = buildKnowledgeGraph(view);
+const positioned = layoutGraph(graph);
+const map = buildSvgMap(positioned);
+const hoverCss = buildHoverCss(positioned);
 
 // Lo que el runtime 3D necesita. Coordenadas ya redondeadas por `layoutGraph`.
 // Claves de una letra: esto viaja en el HTML de cada visita, y con 37 nodos los
 // nombres largos de propiedad costarían más que los datos.
-const datosGrafo = JSON.stringify({
-  nodes: posicionado.nodes.map((n) => ({
+const graphData = JSON.stringify({
+  nodes: positioned.nodes.map((n) => ({
     i: n.id, k: n.kind, x: n.x, y: n.y, z: n.z, d: n.degree,
-    r: Math.round(n.escalaRadio * 100) / 100,
-    n: n.label, t: n.detail, ...(n.categoria ? { c: n.categoria } : {}),
+    r: Math.round(n.radiusScale * 100) / 100,
+    n: n.label, t: n.detail, ...(n.category ? { c: n.category } : {}),
   })),
-  edges: posicionado.edges.map((e) => ({ s: e.source, t: e.target, a: e.kind === "afinidad", w: e.weight })),
-  radio: posicionado.radioEncuadre,
+  edges: positioned.edges.map((e) => ({ s: e.source, t: e.target, a: e.kind === "affinity", w: e.weight })),
+  radius: positioned.framingRadius,
 });
 
 // La lista del DOM: es a la vez el contenido accesible y el lado DOM del puente
 // de hover. Se ordena por grado — lo más conectado arriba, que es lo más
 // probado, no lo alfabéticamente primero.
-const items = posicionado.nodes
+const items = positioned.nodes
   .filter((n) => n.kind === "skill")
   .sort((a, b) => b.degree - a.degree || a.label.localeCompare(b.label, "es"));
 
-const conEvidencia = items.filter((n) => n.degree > 0).length;
-const afinidades = posicionado.edges.filter((e) => e.kind === "afinidad").length;
+const withEvidenceCount = items.filter((n) => n.degree > 0).length;
+const affinityCount = positioned.edges.filter((e) => e.kind === "affinity").length;
 
 // skillId → nombre canónico, para el stack de cada proyecto. Se arma acá y no
 // en el componente: `view.skills` viene agrupado por categoría, y aplanarlo es
 // trabajo de la página, no del componente tonto.
-const nombreDeSkill = new Map(
+const skillNameById = new Map(
   Object.values(view.skills).flat().map((s) => [s.id, s.name]),
 );
 ---
 
 {/*
-  `compartible` emite Open Graph y Twitter Card. Es la ÚNICA página que las
+  `shareable` emite Open Graph y Twitter Card. Es la ÚNICA página que las
   lleva: `/cv` va con noindex y existe solo para imprimir el PDF, y el 404 no es
   un destino. En `Base.astro` es opt-in, así que olvidarse en una página nueva
   significa no emitirlas — el lado seguro del error.
@@ -101,13 +101,13 @@ const nombreDeSkill = new Map(
 <Base
   title={`${identity.fullName} — ${identity.searchTitle}`}
   description={identity.summary.short}
-  compartible
+  shareable
 >
   <script type="application/ld+json" slot="head" set:html={JSON.stringify(jsonLd)} />
   <style is:inline set:html={hoverCss} slot="head" />
 
   <div class="lab">
-    <canvas class="lab__campo" data-lab-campo aria-hidden="true"></canvas>
+    <canvas class="lab__campo" data-lab-field aria-hidden="true"></canvas>
 
     {/*
       Índice y contacto en una píldora que acompaña el scroll. Reemplaza a los
@@ -187,9 +187,9 @@ const nombreDeSkill = new Map(
             tecnología, por rol y por proyecto. Esto es ese cruce, dibujado.
           </p>
           <dl class="lab__cifras">
-            <div><dt>Nodos</dt><dd>{posicionado.nodes.length}</dd></div>
-            <div><dt>Conexiones</dt><dd>{posicionado.edges.length}</dd></div>
-            <div><dt>Por afinidad</dt><dd>{afinidades}</dd></div>
+            <div><dt>Nodos</dt><dd>{positioned.nodes.length}</dd></div>
+            <div><dt>Conexiones</dt><dd>{positioned.edges.length}</dd></div>
+            <div><dt>Por afinidad</dt><dd>{affinityCount}</dd></div>
           </dl>
         </div>
 
@@ -205,21 +205,21 @@ const nombreDeSkill = new Map(
           aria-label="Mapa de conocimiento. Arrastrá para rotar, hacé click en un nodo para ver qué lo respalda. Las flechas también rotan."
         >
           <GraphSvg
-            mapa={mapa}
-            totalNodos={posicionado.nodes.length}
-            totalAristas={posicionado.edges.length}
+            map={map}
+            totalNodes={positioned.nodes.length}
+            totalEdges={positioned.edges.length}
           />
-          <canvas class="lab__canvas" data-lab-grafo aria-hidden="true"></canvas>
+          <canvas class="lab__canvas" data-lab-graph aria-hidden="true"></canvas>
           {/*
             Las etiquetas del 3D viven en el DOM, no en WebGL: un atlas de fuente
             costaría más que toda la escena y el texto saldría borroso. Están
             server-rendered y ocultas hasta que el 3D monta; el SVG trae las suyas.
           */}
           <div class="lab__etiquetas" aria-hidden="true">
-            {posicionado.nodes
+            {positioned.nodes
               .filter((n) => n.kind === "role" || n.kind === "project")
               .map((n) => (
-                <span class={`lab__etiqueta-3d lab__etiqueta-3d--${n.kind}`} data-lab-etiqueta data-node={n.id}>
+                <span class={`lab__etiqueta-3d lab__etiqueta-3d--${n.kind}`} data-lab-label data-node={n.id}>
                   {n.label}
                 </span>
               ))}
@@ -238,13 +238,13 @@ const nombreDeSkill = new Map(
 
         <div class="lab__indice">
           <h3 class="lab__indice-titulo">
-            Stack <span class="lab__indice-nota">{conEvidencia} de {items.length} con evidencia</span>
+            Stack <span class="lab__indice-nota">{withEvidenceCount} de {items.length} con evidencia</span>
           </h3>
           <ul class="lab__lista">
             {items.map((n) => (
               <li>
                 <span
-                  id={ID_ITEM(n.id)}
+                  id={ITEM_ID(n.id)}
                   class={n.degree > 0 ? "lab__item" : "lab__item lab__item--hueco"}
                   data-node={n.id}
                   tabindex="0"
@@ -257,7 +257,7 @@ const nombreDeSkill = new Map(
             ))}
           </ul>
           <p class="lab__nota">
-            Las {items.length - conEvidencia} tecnologías sin conexiones son reales: las uso,
+            Las {items.length - withEvidenceCount} tecnologías sin conexiones son reales: las uso,
             pero todavía no escribí el logro que lo demuestre. Van huecas y chicas, agrupadas
             en el núcleo. El mapa muestra el hueco en vez de taparlo.
           </p>
@@ -266,7 +266,7 @@ const nombreDeSkill = new Map(
 
       <section id="proyectos" class="proyectos-seccion">
         <h2 class="lab__titulo">Proyectos</h2>
-        <ListaProyectos proyectos={view.projects} nombreDeSkill={nombreDeSkill} />
+        <ProjectList projects={view.projects} skillNameById={skillNameById} />
       </section>
 
       <section id="cv" class="cv">
@@ -352,25 +352,25 @@ const nombreDeSkill = new Map(
     primera versión nueva. Lo que acota el riesgo es dónde corre — solo la
     landing, que no tiene formularios ni credenciales.
   */}
-  {beaconCloudflare && (
+  {cloudflareBeacon && (
     <script
       is:inline
       type="module"
       src="https://static.cloudflareinsights.com/beacon.min.js"
-      data-cf-beacon={JSON.stringify({ token: beaconCloudflare })}
+      data-cf-beacon={JSON.stringify({ token: cloudflareBeacon })}
     />
   )}
 
-  <script type="application/json" data-lab-datos set:html={datosGrafo} />
+  <script type="application/json" data-lab-data set:html={graphData} />
   <script>
     // La analítica va PRIMERO, y no es un descuido: `Clarity.init` solo inyecta
     // un `<script async>` y su propio try/catch se traga cualquier error, así
     // que no puede tirar. `iniciar()` sí toca el DOM y puede fallar en un
     // dispositivo raro — al revés, un fallo del mapa se llevaría puesta la
     // medición, que es justo lo que sirve para entender ese fallo.
-    import { iniciarAnalitica } from "../scripts/analitica";
-    import { iniciar } from "../scripts/lab/boot";
-    iniciarAnalitica();
-    iniciar();
+    import { startAnalytics } from "../scripts/analytics";
+    import { start } from "../scripts/lab/boot";
+    startAnalytics();
+    start();
   </script>
 </Base>
