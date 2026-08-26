@@ -1,10 +1,10 @@
 /**
- * Tests del contrato de contenido. Corren en CI (`npm test`).
+ * Tests of the content contract. They run in CI (`pnpm test`).
  *
- * Verifican las reglas que se rompen EN SILENCIO: las 7 y 8 no las valida el
- * schema, viven en `resolveView`. El día que alguien escriba `sanity-source.ts`
- * y se olvide de delegar, estos tests son lo único que lo caza antes de publicar
- * un `streetAddress` o un teléfono donde no va.
+ * They cover the rules that break SILENTLY: 7 and 8 are not validated by the
+ * schema, they live in `resolveView`. The day someone writes `sanity-source.ts`
+ * and forgets to delegate, these tests are the only thing that catches it
+ * before a `streetAddress` or a phone number gets published where it must not.
  */
 
 import { test } from "node:test";
@@ -15,19 +15,19 @@ import { validateDataset } from "../schema/validation";
 import { formatMetric } from "../schema/format-metric";
 import datasetEs from "../data/content.es.json";
 
-test("regla 8: phone solo en las superficies de publishPhoneOn", async () => {
-  // El dataset real ya no lleva teléfono (decisión del 2026-08-25, al hacer el
-  // repo público). Antes este test leía el número de ahí, y por eso dependía de
-  // un dato que no tiene por qué existir: el día que se sacara, iba a fallar
-  // por la razón equivocada — "falta el teléfono" en vez de "el filtro se
-  // rompió".
+test("rule 8: phone only on the surfaces in publishPhoneOn", async () => {
+  // The real dataset no longer carries a phone number (decided 2026-08-25, when
+  // the repo went public). This test used to read the number from there, which
+  // made it depend on a datum that has no reason to exist: the day it was
+  // removed it would have failed for the wrong reason — "the phone is missing"
+  // instead of "the filter broke".
   //
-  // Ahora el número se inyecta acá, obviamente falso, y se verifica el FILTRO,
-  // que es lo que la regla 8 promete. La maquinaria sigue testeada aunque el
-  // campo esté vacío, así que volver a cargar un teléfono mañana no necesita
-  // tocar nada.
+  // The number is now injected here, obviously fake, and what gets verified is
+  // the FILTER, which is what rule 8 promises. The machinery stays tested even
+  // with the field empty, so loading a phone number again tomorrow needs no
+  // change here.
   const base = await content.getDataset("es");
-  const conTelefono = {
+  const withPhone = {
     ...base,
     identity: {
       ...base.identity,
@@ -39,78 +39,79 @@ test("regla 8: phone solo en las superficies de publishPhoneOn", async () => {
     },
   };
 
-  const cv = resolveView(conTelefono, "cv"); // cv ∈ publishPhoneOn
+  const cv = resolveView(withPhone, "cv"); // cv ∈ publishPhoneOn
   assert.equal(
     cv.identity.contact.phone,
     "+00 0 000 000-0000",
-    "phone debería salir en una superficie listada en publishPhoneOn",
+    "phone should appear on a surface listed in publishPhoneOn",
   );
 
-  const pub = resolveView(conTelefono, "public-api"); // no ∈ publishPhoneOn
-  assert.equal(pub.identity.contact.phone, undefined, "phone NO debe salir en public-api");
+  const pub = resolveView(withPhone, "public-api"); // not ∈ publishPhoneOn
+  assert.equal(pub.identity.contact.phone, undefined, "phone must NOT appear in public-api");
 });
 
-test("regla 8: hoy el dataset no lleva teléfono, y ninguna superficie lo publica", () => {
-  // Ancla la decisión: si alguien vuelve a cargar un número, este test le
-  // recuerda que el repo es público y que el dato entra al historial de git,
-  // donde no se puede sacar sin reescribirlo.
-  // `in` y no `.phone`: al no estar la clave en el JSON, TypeScript ya no la
-  // declara en el tipo inferido y leerla no compila. Que el compilador también
-  // lo note es una garantía extra, no un obstáculo.
+test("rule 8: the dataset carries no phone today, and no surface publishes one", () => {
+  // Anchors the decision: if someone loads a number again, this test reminds
+  // them the repo is public and the datum enters the git history, where it
+  // cannot be removed without rewriting it.
+  // `in` and not `.phone`: with the key absent from the JSON, TypeScript no
+  // longer declares it in the inferred type and reading it does not compile.
+  // Having the compiler notice too is an extra guarantee, not an obstacle.
   assert.ok(
     !("phone" in datasetEs.identity.contact),
-    "el dataset volvió a tener teléfono: el repo es público, eso queda en el historial",
+    "the dataset has a phone number again: the repo is public, that stays in the history",
   );
   assert.deepEqual(
     datasetEs.identity.contact.publishPhoneOn,
     [],
-    "publishPhoneOn dejó de estar vacío sin que haya teléfono que publicar",
+    "publishPhoneOn stopped being empty with no phone number to publish",
   );
 });
 
-test("regla 8: streetAddress nunca sale en ninguna superficie", async () => {
+test("rule 8: streetAddress never leaves on any surface", async () => {
   for (const surface of ["cv", "cv-ats", "portfolio", "public-api"] as const) {
     const view = await content.getView(surface, "es");
     assert.equal(
       view.identity.location.streetAddress,
       undefined,
-      `streetAddress no debe salir en ${surface}`,
+      `streetAddress must not appear in ${surface}`,
     );
   }
 });
 
-test("regla 7: cv-short corta más agresivo que portfolio", async () => {
+test("rule 7: cv-short cuts harder than portfolio", async () => {
   const short = await content.getView("cv-short", "es");
   const portfolio = await content.getView("portfolio", "es");
   const bullets = (v: typeof short) =>
     v.experience.reduce((n, r) => n + r.achievements.length, 0);
   assert.ok(
     bullets(short) <= bullets(portfolio),
-    "cv-short no puede tener más bullets que portfolio",
+    "cv-short cannot hold more bullets than portfolio",
   );
 });
 
-test("strict: una clave desconocida en el dataset tira error, no se descarta", () => {
-  // Sin `.strict()` en los schemas Zod, un campo que existe en el JSON pero no en
-  // el schema se dropea en silencio. Esto lo bloquea: si alguien agrega un campo a
-  // una interface y se olvida del schema, el dato con ese campo revienta acá.
-  const conBasura = structuredClone(datasetEs) as Record<string, unknown>;
-  (conBasura.identity as Record<string, unknown>).campoInventado = "x";
-  assert.throws(() => validateDataset(conBasura), /Unrecognized key|campoInventado/i);
+test("strict: an unknown key in the dataset throws instead of being dropped", () => {
+  // Without `.strict()` on the Zod schemas, a field present in the JSON but
+  // absent from the schema is dropped silently. This blocks it: if someone adds
+  // a field to an interface and forgets the schema, data carrying that field
+  // blows up right here.
+  const withGarbage = structuredClone(datasetEs) as Record<string, unknown>;
+  (withGarbage.identity as Record<string, unknown>).campoInventado = "x";
+  assert.throws(() => validateDataset(withGarbage), /Unrecognized key|campoInventado/i);
 });
 
-test("locale sin dataset tira error, no devuelve otro en silencio", async () => {
+test("a locale with no dataset throws instead of silently returning another", async () => {
   await assert.rejects(
     () => content.getView("cv", "en"),
-    /Locale no soportado/,
+    /Unsupported locale/,
   );
 });
 
-// Regla 4: una Metric `estimated` se renderiza con "~" o "aprox.".
-// Este test estuvo en `todo` hasta que existió `formatMetric`. La cobertura
-// completa vive en `content/schema/format.test.ts`; acá queda el caso mínimo
-// porque este archivo es el que documenta las reglas que el schema no valida.
-test("regla 4: Metric estimated se renderiza con ~", () => {
+// Rule 4: an `estimated` Metric renders with "~" or "aprox.".
+// This test sat in `todo` until `formatMetric` existed. Full coverage lives in
+// `content/schema/format.test.ts`; the minimal case stays here because this
+// file is the one documenting the rules the schema does not validate.
+test("rule 4: an estimated Metric renders with ~", () => {
   const out = formatMetric({ label: "tiempo de build", delta: "40%", confidence: "estimated" });
   assert.match(String(out), /~|aprox\./);
 });
