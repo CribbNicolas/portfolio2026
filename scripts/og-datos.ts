@@ -17,7 +17,10 @@ import { content, formatSeniority } from "../content/source/index";
 
 export const FOTO = "public/foto.jpeg";
 export const IMAGEN = "public/og.jpg";
+export const ICONO = "public/apple-touch-icon.png";
 export const PLANTILLA = "scripts/og-template.ts";
+/** La geometría de la marca. Entra en la huella: los dos artefactos la dibujan. */
+export const MARCA = "src/lib/marca.ts";
 export const LOCK = "og.lock.json";
 
 /** Los textos de la tarjeta, todos derivados del dataset. Nada escrito a mano. */
@@ -41,8 +44,10 @@ export async function textosOg(): Promise<Record<string, string>> {
  * regenera, el sitio dice una cosa y la imagen que ve LinkedIn dice otra, sin
  * que nada falle. Este número es lo que convierte ese silencio en un test rojo.
  *
- * Incluye el fuente de la plantilla a propósito: retocar el diseño también
- * invalida el JPEG, no solo cambiar un dato del dataset.
+ * Incluye el fuente de la plantilla Y el de `marca.ts` a propósito: retocar el
+ * diseño, o ajustar una curva del logo, también invalidan los artefactos — no
+ * solo cambiar un dato del dataset. Sin `marca.ts` adentro, cambiar la marca
+ * dejaba la tarjeta y el ícono de iOS dibujando la vieja y nada fallaba.
  *
  * Los saltos de línea de la plantilla se normalizan antes de hashear. El repo
  * corre con `core.autocrlf=true`, así que el archivo llega con CRLF a Windows y
@@ -50,11 +55,12 @@ export async function textosOg(): Promise<Record<string, string>> {
  * y en el runner de CI, y el gate fallaría sin que nada hubiera cambiado. La
  * foto NO se toca — es binaria, y "normalizarla" la corrompería.
  */
-export function huella(textos: Record<string, string>, foto: Buffer, plantilla: Buffer): string {
-  return createHash("sha256")
-    .update(JSON.stringify(textos))
-    .update(foto)
-    .update(plantilla.toString("utf8").replace(/\r\n/g, "\n"))
-    .digest("hex")
-    .slice(0, 16);
+export function huella(
+  textos: Record<string, string>,
+  foto: Buffer,
+  ...fuentes: Buffer[]
+): string {
+  const h = createHash("sha256").update(JSON.stringify(textos)).update(foto);
+  for (const f of fuentes) h.update(f.toString("utf8").replace(/\r\n/g, "\n"));
+  return h.digest("hex").slice(0, 16);
 }

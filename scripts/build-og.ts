@@ -20,8 +20,8 @@ import { readFile, writeFile } from "node:fs/promises";
 import { chromium } from "playwright";
 
 import { marcaSvg } from "../src/lib/marca";
-import { FOTO, huella, IMAGEN, LOCK, PLANTILLA, textosOg } from "./og-datos";
-import { buildOgHtml, OG_ALTO, OG_ANCHO, OG_PESO_MAXIMO } from "./og-template";
+import { FOTO, huella, ICONO, IMAGEN, LOCK, MARCA, PLANTILLA, textosOg } from "./og-datos";
+import { buildIconoHtml, buildOgHtml, ICONO_LADO, OG_ALTO, OG_ANCHO, OG_PESO_MAXIMO } from "./og-template";
 
 /**
  * Calidad del JPEG. 84 deja la foto limpia y el archivo bien abajo del techo de
@@ -46,10 +46,11 @@ async function fuenteCss(): Promise<string> {
 }
 
 async function main(): Promise<void> {
-  const [textos, foto, plantilla] = await Promise.all([
+  const [textos, foto, plantilla, marcaFuente] = await Promise.all([
     textosOg(),
     readFile(FOTO),
     readFile(PLANTILLA),
+    readFile(MARCA),
   ]);
 
   const html = buildOgHtml({
@@ -61,6 +62,7 @@ async function main(): Promise<void> {
 
   const browser = await chromium.launch();
   let jpeg: Buffer;
+  let icono: Buffer;
   try {
     // Escala 1: el viewport ES el tamaño final, así que no hay reescalado que
     // ablande los bordes del texto.
@@ -72,6 +74,14 @@ async function main(): Promise<void> {
     await page.evaluate(() => document.fonts.ready);
 
     jpeg = await page.screenshot({ type: "jpeg", quality: CALIDAD });
+
+    // El icono de iOS, en el mismo browser: levantar Chromium dos veces para
+    // dibujar 180x180 seria pagar dos arranques por un archivo de 2 KB.
+    // PNG y no JPEG: son cuatro colores planos, y el JPEG les mete artefactos
+    // justo en el borde del aro, que es todo lo que se ve a ese tamano.
+    const chico = await browser.newPage({ viewport: { width: ICONO_LADO, height: ICONO_LADO } });
+    await chico.setContent(buildIconoHtml(marcaSvg({ tam: 116, acento: "#b0472a", tinta: "#17181c" })));
+    icono = await chico.screenshot({ type: "png" });
   } finally {
     await browser.close();
   }
@@ -84,12 +94,13 @@ async function main(): Promise<void> {
   }
 
   await writeFile(IMAGEN, jpeg);
+  await writeFile(ICONO, icono);
   await writeFile(
     LOCK,
     JSON.stringify(
       {
         _: "Generado por `pnpm run og:local`. NO editar a mano: og-output.check.ts lo compara con el dataset.",
-        huella: huella(textos, foto, plantilla),
+        huella: huella(textos, foto, plantilla, marcaFuente),
         ancho: OG_ANCHO,
         alto: OG_ALTO,
         textos,
@@ -99,7 +110,10 @@ async function main(): Promise<void> {
     ) + "\n",
   );
 
-  console.log(`og.jpg escrito — ${(jpeg.byteLength / 1024).toFixed(0)} KB de ${OG_PESO_MAXIMO / 1024} KB`);
+  console.log(
+    `og.jpg — ${(jpeg.byteLength / 1024).toFixed(0)} KB de ${OG_PESO_MAXIMO / 1024} KB · ` +
+      `apple-touch-icon.png — ${(icono.byteLength / 1024).toFixed(1)} KB`,
+  );
 }
 
 main().catch((err) => {

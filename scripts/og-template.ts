@@ -136,6 +136,39 @@ body {
 </html>`;
 }
 
+/**
+ * El lado del ícono de iOS. 180 es lo que pide el iPhone a 3x, y el tamaño
+ * único que Apple recomienda declarar desde iOS 8: los demás los deriva solo.
+ */
+export const ICONO_LADO = 180;
+
+/**
+ * El ícono de la pantalla de inicio de iOS.
+ *
+ * Existe aparte del favicon porque Safari **no acepta SVG** para
+ * `apple-touch-icon`: tiene que ser un bitmap. Sin este archivo, guardar el
+ * sitio en la pantalla de inicio no da un ícono sino una captura reducida de la
+ * página, ilegible.
+ *
+ * Lleva la marca COMPLETA —el aro con la N— y no solo el aro: acá hay 180 px,
+ * que es cuatro veces lo que tiene un favicon, y a ese tamaño las letras se
+ * leen sin problema. La regla de "silueta sola" era por los 16 px, no por
+ * gusto.
+ *
+ * Fondo opaco y esquinas cuadradas a propósito: iOS aplica su propia máscara
+ * redondeada y compone la transparencia sobre negro, así que redondear acá deja
+ * un borde raro y dejarlo transparente lo pone sobre un cuadrado negro.
+ */
+export function buildIconoHtml(marca: string): string {
+  return `<!doctype html>
+<html>
+<head><meta charset="utf-8"></head>
+<body style="margin:0;width:${ICONO_LADO}px;height:${ICONO_LADO}px;background:${FONDO};display:flex;align-items:center;justify-content:center">
+${marca}
+</body>
+</html>`;
+}
+
 /** Los textos salen del dataset, no de nosotros: pueden traer `&` o comillas. */
 function escapar(s: string): string {
   return s

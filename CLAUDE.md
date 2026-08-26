@@ -49,6 +49,9 @@ docs/                   Ver docs/00-indice.md. El "por qué" de cada decisión d
                         LEELO antes de abrir un PR: el de develop falla si no subís la versión.
                         07-deuda-tecnica.md — lo encontrado fuera de scope y no arreglado. Mirarlo ANTES de
                         "arreglar de paso" algo: puede que ya esté anotado con su porqué.
+                        09-seo-y-metadata.md — qué emite el <head>, y sobre todo qué NO emite A PROPÓSITO y
+                        bajo qué condición reconsiderarlo. LEELO antes de "agregar la etiqueta que falta":
+                        og:site_name, hreflang, profile:*, webmanifest y favicon.ico están DECIDIDOS, no olvidados.
 src/
   pages/cv.astro      El CV en HTML. ÚNICA fuente del layout; de acá sale el PDF.
                       NO es un destino navegable: `noindex` y cero links entrantes.

@@ -49,6 +49,30 @@ const imagenSocial = new URL("/og.jpg", Astro.site);
     */}
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
 
+    {/*
+      El ícono de la pantalla de inicio de iOS. Existe aparte porque Safari NO
+      acepta SVG acá: tiene que ser un bitmap. Sin este archivo, guardar el
+      sitio en la pantalla de inicio no da un ícono sino una captura reducida de
+      la página. Lo genera `pnpm run og:local` junto con la tarjeta social.
+
+      Un solo tamaño: desde iOS 8 alcanza con 180×180 y el sistema deriva los
+      demás.
+    */}
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+
+    {/*
+      Tiñe el chrome del browser en Android y la barra de estado en iOS. Son dos
+      etiquetas y no una porque el sitio tiene modo oscuro: con un solo valor,
+      la barra queda clara sobre una página oscura o al revés.
+
+      Los valores son el token `fondo` de `tokens.css` en cada modo. Es la
+      segunda —y última— copia de un color fuera de ese archivo: acá no hay
+      `var()` que valga, porque quien lee esto es el sistema operativo y no la
+      cascada.
+    */}
+    <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#131417" media="(prefers-color-scheme: dark)" />
+
     {
       compartible && (
         <Fragment>

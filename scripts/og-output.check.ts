@@ -20,8 +20,8 @@ import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 
 import { ARO_PATH } from "../src/lib/marca";
-import { FOTO, huella, IMAGEN, LOCK, PLANTILLA, textosOg } from "./og-datos";
-import { OG_ALTO, OG_ANCHO, OG_PESO_MAXIMO } from "./og-template";
+import { FOTO, huella, ICONO, IMAGEN, LOCK, MARCA, PLANTILLA, textosOg } from "./og-datos";
+import { ICONO_LADO, OG_ALTO, OG_ANCHO, OG_PESO_MAXIMO } from "./og-template";
 
 const jpeg = await readFile(IMAGEN);
 const lock = JSON.parse(await readFile(LOCK, "utf8")) as {
@@ -82,12 +82,13 @@ test("la tarjeta no quedó vieja: la huella coincide con el dataset", async () =
   const textos = await textosOg();
   const foto = await readFile(FOTO);
   const plantilla = await readFile(PLANTILLA);
+  const marca = await readFile(MARCA);
 
   assert.equal(
-    huella(textos, foto, plantilla),
+    huella(textos, foto, plantilla, marca),
     lock.huella,
-    "Cambió el dataset, la foto o la plantilla, y `public/og.jpg` sigue siendo el de antes.\n" +
-      "Corré `pnpm run og:local` y commiteá el JPEG junto con og.lock.json.",
+    "Cambió el dataset, la foto, la plantilla o la marca, y los artefactos siguen siendo los de antes.\n" +
+      "Corré `pnpm run og:local` y commiteá og.jpg + apple-touch-icon.png junto con og.lock.json.",
   );
 });
 
@@ -125,6 +126,35 @@ test("/cv sigue sin emitir etiquetas sociales", async () => {
   // pasaría a ser compartible sin que nadie lo decida.
   const cv = await readFile(join("dist", "cv", "index.html"), "utf8");
   assert.doesNotMatch(cv, /og:image/, "/cv emite og:image y no debería");
+});
+
+test("el ícono de iOS existe, es PNG y mide 180×180", async () => {
+  // Safari NO acepta SVG para `apple-touch-icon`. Sin este bitmap, guardar el
+  // sitio en la pantalla de inicio no da un ícono: da una captura reducida de
+  // la página, ilegible.
+  const png = await readFile(ICONO);
+  // La firma PNG. Si alguien lo reemplaza por un JPEG renombrado, iOS no lo
+  // muestra y la extensión del archivo no delata nada.
+  assert.deepEqual([...png.subarray(0, 4)], [0x89, 0x50, 0x4e, 0x47], `${ICONO} no es un PNG`);
+  // El IHDR arranca en el byte 8 y trae ancho y alto como enteros de 32 bits.
+  assert.equal(png.readUInt32BE(16), ICONO_LADO);
+  assert.equal(png.readUInt32BE(20), ICONO_LADO);
+});
+
+test("todas las páginas declaran el ícono de iOS y el color del chrome", async () => {
+  const paginas = [
+    ["landing", landing],
+    ["/cv", await readFile(join("dist", "cv", "index.html"), "utf8")],
+    ["404", await readFile(join("dist", "404.html"), "utf8")],
+  ] as const;
+
+  for (const [nombre, html] of paginas) {
+    assert.match(html, /rel="apple-touch-icon" href="\/apple-touch-icon\.png"/, `${nombre}: sin apple-touch-icon`);
+    // Dos etiquetas y no una: el sitio tiene modo oscuro, y con un solo valor
+    // la barra del sistema queda clara sobre una página oscura o al revés.
+    assert.match(html, /name="theme-color" content="#ffffff"/, `${nombre}: sin theme-color claro`);
+    assert.match(html, /name="theme-color" content="#131417"/, `${nombre}: sin theme-color oscuro`);
+  }
 });
 
 test("el favicon dibuja el mismo aro que src/lib/marca.ts", async () => {
