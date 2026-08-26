@@ -1,4 +1,6 @@
 ---
+import { OG_ALTO, OG_ANCHO } from "../../scripts/og-template";
+
 /**
  * Layout base. Su única responsabilidad es el `<head>`.
  *
@@ -9,10 +11,25 @@
 interface Props {
   title: string;
   description: string;
+  /**
+   * Si es `true`, la página emite Open Graph y Twitter Card.
+   *
+   * Es opt-in y no un default con excepciones, a propósito. `/cv` va con
+   * `noindex` y no es un destino compartible —existe para que Browser Rendering
+   * imprima el PDF—, y el 404 tampoco. Con un default en `true` habría que
+   * acordarse de apagarlo en cada página nueva; así, olvidarse significa no
+   * emitir etiquetas, que es el lado seguro del error.
+   */
+  compartible?: boolean;
 }
 
-const { title, description } = Astro.props;
+const { title, description, compartible = false } = Astro.props;
 const canonical = new URL(Astro.url.pathname, Astro.site);
+
+// Las medidas salen del mismo módulo que las usa para generar el JPEG: si algún
+// día la tarjeta cambia de tamaño, las etiquetas lo siguen solas en vez de
+// mentirle a LinkedIn sobre el hueco que tiene que reservar.
+const imagenSocial = new URL("/og.jpg", Astro.site);
 ---
 
 <!doctype html>
@@ -23,6 +40,90 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
     <title>{title}</title>
     <meta name="description" content={description} />
     <link rel="canonical" href={canonical} />
+
+    {/*
+      SVG y no `.ico`: pesa menos de 1 KB, escala a cualquier tamaño y responde
+      al modo oscuro desde adentro. Lo soportan todos los navegadores actuales;
+      los muy viejos —Safari anterior a 15— no muestran ninguno, que es
+      exactamente lo que pasaba hasta ahora.
+    */}
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+
+    {/*
+      El ícono de la pantalla de inicio de iOS. Existe aparte porque Safari NO
+      acepta SVG acá: tiene que ser un bitmap. Sin este archivo, guardar el
+      sitio en la pantalla de inicio no da un ícono sino una captura reducida de
+      la página. Lo genera `pnpm run og:local` junto con la tarjeta social.
+
+      Un solo tamaño: desde iOS 8 alcanza con 180×180 y el sistema deriva los
+      demás.
+    */}
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+
+    {/*
+      Tiñe el chrome del browser en Android y la barra de estado en iOS. Son dos
+      etiquetas y no una porque el sitio tiene modo oscuro: con un solo valor,
+      la barra queda clara sobre una página oscura o al revés.
+
+      Los valores son el token `fondo` de `tokens.css` en cada modo. Es la
+      segunda —y última— copia de un color fuera de ese archivo: acá no hay
+      `var()` que valga, porque quien lee esto es el sistema operativo y no la
+      cascada.
+    */}
+    <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#131417" media="(prefers-color-scheme: dark)" />
+
+    {
+      compartible && (
+        <Fragment>
+          {/*
+            Open Graph. Sin esto, pegar el link en LinkedIn o WhatsApp muestra
+            una URL pelada — y pegar el link ES el canal por el que se
+            distribuye un portfolio.
+          */}
+          <meta property="og:type" content="profile" />
+          <meta property="og:title" content={title} />
+          <meta property="og:description" content={description} />
+          <meta property="og:url" content={canonical.toString()} />
+          <meta property="og:locale" content="es_AR" />
+
+          {/*
+            La imagen. UNA sola para todas las redes: Facebook, LinkedIn,
+            WhatsApp, Slack, Discord y Twitter leen la misma `og:image`, y lo
+            que cambia entre ellas es cómo la recortan, no qué archivo piden.
+
+            Absoluta y no relativa: ningún scraper resuelve rutas relativas, y
+            una `og:image` que no se puede pedir es igual a no tenerla.
+
+            `width`/`height` porque LinkedIn y Slack reservan el hueco con esas
+            dos antes de bajar la imagen; sin ellas la tarjeta salta de tamaño
+            cuando termina de cargar.
+
+            El archivo lo genera `pnpm run og:local` y está COMMITEADO — no sale
+            del build, porque rasterizar necesita Chromium y el builder de
+            Cloudflare no lo tiene. `og-output.check.ts` verifica que no haya
+            quedado vieja respecto del dataset.
+          */}
+          <meta property="og:image" content={imagenSocial.toString()} />
+          <meta property="og:image:type" content="image/jpeg" />
+          <meta property="og:image:width" content={String(OG_ANCHO)} />
+          <meta property="og:image:height" content={String(OG_ALTO)} />
+          <meta property="og:image:alt" content={`${title}. Retrato y marca.`} />
+
+          {/*
+            `summary_large_image` y no `summary`: el chico reserva un cuadrado
+            al costado del texto y recortaría una tarjeta de 1.91:1 a un
+            cuadradito. Estaba en `summary` mientras no había imagen.
+          */}
+          <meta name="twitter:card" content="summary_large_image" />
+          <meta name="twitter:title" content={title} />
+          <meta name="twitter:description" content={description} />
+          <meta name="twitter:image" content={imagenSocial.toString()} />
+          <meta name="twitter:image:alt" content={`${title}. Retrato y marca.`} />
+        </Fragment>
+      )
+    }
+
     <slot name="head" />
   </head>
   <body>

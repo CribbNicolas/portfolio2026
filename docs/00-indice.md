@@ -10,8 +10,9 @@ Todo lo que sabemos y todo lo que decidimos. Si algo no está acá, no existe.
 | [04-portfolio.md](./04-portfolio.md) | Estructura, casos de estudio, capa legible por máquinas |
 | [08-ramas-y-versionado.md](./08-ramas-y-versionado.md) | Las cuatro ramas, cuál deploya, y por qué la versión sube al mergear a `staging` |
 | [07-deuda-tecnica.md](./07-deuda-tecnica.md) | Lo que se encontró trabajando en otra cosa y NO se arregló ahí mismo. Con cómo comprobarlo y qué cuesta |
+| [09-seo-y-metadata.md](./09-seo-y-metadata.md) | Qué emite el `<head>` y qué NO emite a propósito, con la condición que haría reconsiderar cada omisión. Una deuda se paga; una decisión se revisa |
 | [05-deploy-y-analitica.md](./05-deploy-y-analitica.md) | El stack gratuito (Cloudflare Pages buildea y hostea, Browser Rendering imprime el PDF, Actions es el gate, Clarity mide) y el checklist para conectarlo |
-| [06-proxima-sesion.md](./06-proxima-sesion.md) | **Handoff.** Qué quedó a medias y en qué orden atacarlo. Empezar acá |
+| [06-proxima-sesion.md](./06-proxima-sesion.md) | **El plan de trabajo en tres fases**, con cómo proceder en cada tarea. Empezar acá |
 | [CONTRATO.md](./CONTRATO.md) | Reglas del sistema de contenido |
 
 ---
