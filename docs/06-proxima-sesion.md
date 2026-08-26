@@ -109,6 +109,32 @@ un PR; los cosméticos (`§2`, `§3`, `§4`) entran bien juntos en otro porque
 comparten la historia "bajar el ruido que tapa la señal nueva". Cada PR sube la
 versión (ver [`08`](./08-ramas-y-versionado.md) §4).
 
+### 1.4 Migrar el repo a inglés — decidido el 2026-08-26
+
+Identificadores **y comentarios**. El repo ya está mezclado: `resolveView`,
+`checkRules`, `formatMetric` y todos los campos del dataset están en inglés;
+`aniosDeSkill`, `afinidadDeSkills`, `nodosSinEvidencia`, los archivos de
+`src/scripts/lab/` (`capacidad.ts`, `interaccion.ts`, `grafo-3d.ts`,
+`pildora.ts`), `marca.ts`, `og-datos.ts` y `servido.check.ts` no. Los
+comentarios son **2189 líneas en 64 archivos**.
+
+**Va en su propia rama y sin ningún cambio de comportamiento adentro.** Un
+rename mezclado con lógica nueva produce un diff que nadie puede revisar, y si
+algo se rompe no se sabe cuál de las dos cosas fue.
+
+**Lo que hay que mirar antes de renombrar un archivo:** `no-client-js.check.ts`
+y `bundle-budget.check.ts` grepean rutas y nombres de chunk, y `lab-hover-css.ts`
+emite ids que `ListaProyectos.astro` tiene que seguir matcheando. CLAUDE.md ya
+avisa que renombrar `lab/` rompe los greps de CI. La secuencia completa de
+checks es la red: si pasa entera, el rename no se llevó nada puesto.
+
+**Los comentarios son el activo, no el ruido.** Acá explican el porqué de cada
+decisión; traducirlos de apuro los convierte en el "qué", que es justo lo que
+esta convención prohíbe. Traducir preservando el argumento, no la sintaxis.
+
+Mientras tanto, **todo lo nuevo se escribe ya en inglés** — la convención
+actualizada está en `CLAUDE.md`.
+
 ---
 
 ## 2. Fase 2 — `pnpm run editor`

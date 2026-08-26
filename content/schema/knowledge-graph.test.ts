@@ -139,13 +139,16 @@ test("la proyección produce perspectiva real", () => {
 // TAMAÑO: peso = años × conexiones
 // ---------------------------------------------------------------------------
 
-test("aniosDeSkill: `since` gana sobre el span derivado", () => {
+test("aniosDeSkill: declared `periods` are UNIONed with the evidence, not a replacement", () => {
   const anios = aniosDeSkill(view);
-  // React declara `since: 2022-10`. La evidencia arranca en AdsMovil (2022-06),
-  // así que si el derivado ganara daría MÁS años. El dato declarado manda.
-  const derivado = monthsBetween("2022-06", null) / 12;
-  assert.ok(anios.get("react")! < derivado, "el span derivado le ganó al `since` declarado");
-  assert.ok(Math.abs(anios.get("react")! - monthsBetween("2022-10", null) / 12) < 0.01);
+  // React declares a period from 2022-10, but the evidence starts earlier:
+  // AdsMovil (2022-06), still open at Dinkum. A declared period ADDS what no
+  // achievement records; it never erases real evidence.
+  const withEvidence = monthsBetween("2022-06", null) / 12;
+  assert.ok(
+    Math.abs(anios.get("react")! - withEvidence) < 0.01,
+    `the declared period hid the evidence: ${anios.get("react")} vs ${withEvidence}`,
+  );
 });
 
 test("aniosDeSkill: el span cruza roles y se extiende hasta hoy si alguno sigue abierto", () => {
@@ -164,7 +167,7 @@ test("aniosDeSkill: un proyecto sin `roleId` igual aporta su propia fecha", () =
   }
 });
 
-test("aniosDeSkill: sin evidencia con fecha y sin `since`, cero", () => {
+test("aniosDeSkill: sin evidencia con fecha y sin `periods`, cero", () => {
   const anios = aniosDeSkill(view);
   const huerfanas = graph.nodes.filter((n) => n.kind === "skill" && n.degree === 0);
   assert.ok(huerfanas.length > 0, "el dataset ya no tiene skills sin evidencia: revisar el test");

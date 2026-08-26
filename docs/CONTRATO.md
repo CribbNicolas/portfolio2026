@@ -46,6 +46,8 @@ Estas se validan en CI. Si fallan, no deployea.
 
 **`Skill.aliases`.** El generador de CV-por-aviso puede emitir la variante exacta que usa la oferta ("Vue.js" y no "Vue") sin que vos edites nada. Los parsers viejos matchean literal; la capa LLM ya razona sinónimos, pero la vieja corre primero.
 
+**`Skill.periods` es una lista, y los años son la suma de los tramos fusionados.** Una tecnología se deja y se retoma: React 2019–2021 y 2024–2025 son tres años, no los seis que diría un span de punta a punta. La fusión cubre el caso opuesto —usarla en dos trabajos a la vez no son dos veces los mismos años—. Lo declarado se UNE con lo que ya implican los roles y proyectos que la citan: declarar sirve para agregar lo que ningún logro registra, nunca para tapar evidencia real. El cálculo vive en `monthsFromPeriods` (`dates.ts`), porque la regla 1 dice que toda duración sale de ahí.
+
 ---
 
 ## 4. Lo que el schema NO hace a propósito

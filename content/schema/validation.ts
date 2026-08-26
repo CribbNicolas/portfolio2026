@@ -66,6 +66,11 @@ const link = z.object({
   ]),
 }).strict();
 
+const skillPeriod = z.object({
+  start: yearMonth,
+  end: yearMonth.optional(),
+}).strict();
+
 const media = z.object({
   kind: z.enum(["image", "gif", "video"]),
   url: z.string(),
@@ -122,7 +127,7 @@ const skill = z.object({
   ]),
   aliases: z.array(z.string()),
   level: z.enum(["core", "working", "familiar"]),
-  since: yearMonth.optional(),
+  periods: z.array(skillPeriod).optional(),
   active: z.boolean(),
   visibility,
 }).strict();
@@ -334,6 +339,36 @@ export function checkRules(data: ContentDataset): RuleViolation[] {
         rule: 3,
         message: `"${s.name}" está declarada como core pero ningún logro ni proyecto la referencia. O la bajás a working, o escribís dónde la usaste.`,
       });
+    }
+  }
+
+  // Coherencia de `Skill.periods`. No es una regla numerada del contrato: es
+  // coherencia de forma, del mismo tipo que la integridad referencial de abajo.
+  // Zod verifica que un período tenga `start` y `end` con formato YYYY-MM;
+  // que `end` venga DESPUÉS y que dos períodos declarados no se pisen no lo
+  // puede expresar un tipo. `monthsFromPeriods` fusiona los solapados, así que
+  // sin esta regla un período duplicado se absorbería en silencio.
+  for (const s of data.skills) {
+    const periods = s.periods ?? [];
+    for (const p of periods) {
+      if (p.end && toMonths(p.end) <= toMonths(p.start)) {
+        violations.push({
+          rule: 0,
+          message: `Skill "${s.id}": el período ${p.start} → ${p.end} termina antes de empezar, o dura cero meses.`,
+        });
+      }
+    }
+    for (let i = 0; i < periods.length; i++) {
+      for (let j = i + 1; j < periods.length; j++) {
+        const a = { start: periods[i].start, end: periods[i].end ?? null };
+        const b = { start: periods[j].start, end: periods[j].end ?? null };
+        if (overlaps(a, b, now)) {
+          violations.push({
+            rule: 0,
+            message: `Skill "${s.id}": los períodos ${a.start}→${a.end ?? "hoy"} y ${b.start}→${b.end ?? "hoy"} se pisan. Fusionalos en uno.`,
+          });
+        }
+      }
     }
   }
 
