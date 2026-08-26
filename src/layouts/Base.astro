@@ -1,4 +1,6 @@
 ---
+import { OG_ALTO, OG_ANCHO } from "../../scripts/og-template";
+
 /**
  * Layout base. Su única responsabilidad es el `<head>`.
  *
@@ -23,6 +25,11 @@ interface Props {
 
 const { title, description, compartible = false } = Astro.props;
 const canonical = new URL(Astro.url.pathname, Astro.site);
+
+// Las medidas salen del mismo módulo que las usa para generar el JPEG: si algún
+// día la tarjeta cambia de tamaño, las etiquetas lo siguen solas en vez de
+// mentirle a LinkedIn sobre el hueco que tiene que reservar.
+const imagenSocial = new URL("/og.jpg", Astro.site);
 ---
 
 <!doctype html>
@@ -49,11 +56,6 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
             Open Graph. Sin esto, pegar el link en LinkedIn o WhatsApp muestra
             una URL pelada — y pegar el link ES el canal por el que se
             distribuye un portfolio.
-
-            Todavía SIN `og:image`: una imagen social hay que generarla, y
-            apuntar a una que no existe da una tarjeta rota, que es peor que una
-            sin imagen. Con título y descripción la tarjeta ya sale, solo que
-            sin el bloque visual. Ver docs/07 §17.
           */}
           <meta property="og:type" content="profile" />
           <meta property="og:title" content={title} />
@@ -62,13 +64,38 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
           <meta property="og:locale" content="es_AR" />
 
           {/*
-            `summary` y no `summary_large_image`: el grande reserva el espacio
-            de la imagen y sin ella se degrada peor. Cuando exista la imagen,
-            cambia acá y se agrega `og:image` arriba.
+            La imagen. UNA sola para todas las redes: Facebook, LinkedIn,
+            WhatsApp, Slack, Discord y Twitter leen la misma `og:image`, y lo
+            que cambia entre ellas es cómo la recortan, no qué archivo piden.
+
+            Absoluta y no relativa: ningún scraper resuelve rutas relativas, y
+            una `og:image` que no se puede pedir es igual a no tenerla.
+
+            `width`/`height` porque LinkedIn y Slack reservan el hueco con esas
+            dos antes de bajar la imagen; sin ellas la tarjeta salta de tamaño
+            cuando termina de cargar.
+
+            El archivo lo genera `pnpm run og:local` y está COMMITEADO — no sale
+            del build, porque rasterizar necesita Chromium y el builder de
+            Cloudflare no lo tiene. `og-output.check.ts` verifica que no haya
+            quedado vieja respecto del dataset.
           */}
-          <meta name="twitter:card" content="summary" />
+          <meta property="og:image" content={imagenSocial.toString()} />
+          <meta property="og:image:type" content="image/jpeg" />
+          <meta property="og:image:width" content={String(OG_ANCHO)} />
+          <meta property="og:image:height" content={String(OG_ALTO)} />
+          <meta property="og:image:alt" content={`${title}. Retrato y marca.`} />
+
+          {/*
+            `summary_large_image` y no `summary`: el chico reserva un cuadrado
+            al costado del texto y recortaría una tarjeta de 1.91:1 a un
+            cuadradito. Estaba en `summary` mientras no había imagen.
+          */}
+          <meta name="twitter:card" content="summary_large_image" />
           <meta name="twitter:title" content={title} />
           <meta name="twitter:description" content={description} />
+          <meta name="twitter:image" content={imagenSocial.toString()} />
+          <meta name="twitter:image:alt" content={`${title}. Retrato y marca.`} />
         </Fragment>
       )
     }

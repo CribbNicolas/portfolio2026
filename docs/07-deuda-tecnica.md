@@ -478,15 +478,14 @@ mensaje de error lo dice para que quien lo lea sepa dónde mirar.
 
 ---
 
-## 17. El `<head>` tiene siete etiquetas — **CASI RESUELTO 2026-08-25**
+## 17. El `<head>` tiene siete etiquetas — **RESUELTO 2026-08-25**
 
 Hecho: Open Graph y Twitter Card en la landing, favicon SVG, `sitemap-index.xml`
 con `/cv` excluida, y un `robots.txt` propio que anuncia el sitemap y los dos
 endpoints para agentes.
 
-**Falta la imagen social.** Es lo único que queda de esta entrada, y quedó
-aparte porque tiene una decisión adentro: generarla en build desde el dato, o
-poner un PNG a mano. Ver §18.
+La imagen social era lo único que quedaba, y también está hecha: ver §18, que
+se cerró el mismo día.
 
 **Una corrección a lo que decía esta entrada:** afirmaba que *"sin `og:image` no
 hay tarjeta aunque estén las etiquetas"*. Es falso. LinkedIn, Slack y WhatsApp
@@ -556,10 +555,37 @@ referencie, esas tres salidas dependen de que alguien las adivine.
 
 ---
 
-## 18. Falta la imagen social
+## 18. Falta la imagen social — **RESUELTO 2026-08-25**
 
-**Severidad: media.** Sale de partir la §17: las etiquetas ya están, la imagen
-no, y no hay **ni un solo asset de imagen en el repo**.
+**Resuelto.** `public/og.jpg` existe, lo genera `pnpm run og:local` y está
+commiteado. Salió el camino que la entrada anotaba como "el más probable":
+Playwright en local, el archivo al repo.
+
+Lo que se decidió al hacerlo, y que esta entrada no preveía:
+
+- **JPEG y no PNG.** No es preferencia: WhatsApp no llega a mostrar la
+  previsualización si la imagen pesa de más, y un PNG de 1200×630 con una foto
+  adentro se va bien arriba de ese techo. El JPEG a calidad 84 pesa 61 KB contra
+  un tope de 300 KB, y el techo es un test, no un comentario.
+- **UNA sola imagen para todas las redes.** Facebook, LinkedIn, WhatsApp, Slack,
+  Discord y Twitter leen la MISMA etiqueta `og:image`. Lo que cambia entre ellas
+  es cómo la recortan, no qué archivo piden. No hacía falta una por plataforma.
+- **`twitter:card` pasó a `summary_large_image`.** Con una imagen de 1.91:1, el
+  `summary` que había la recortaría a un cuadradito.
+- **La huella normaliza los saltos de línea.** El repo corre con
+  `core.autocrlf=true`: sin normalizar, el hash de la plantilla daba distinto en
+  Windows y en el runner de CI, y el gate fallaba sin que nada hubiera cambiado.
+
+También salió de acá `src/lib/marca.ts`: la geometría de la marca la dibujaban
+el logo del header y la tarjeta social, y una `d=` copiada diverge la primera
+vez que alguien ajusta una curva. `public/favicon.svg` no puede importarla —es
+un archivo estático— así que `og-output.check.ts` verifica que su path siga
+siendo el del módulo.
+
+Lo de abajo queda como registro de la decisión.
+
+**Severidad: era media.** Salía de partir la §17: las etiquetas ya estaban, la
+imagen no, y no había **ni un solo asset de imagen en el repo**.
 
 Con título y descripción la tarjeta ya sale. Con imagen ocupa cuatro veces más
 espacio en un feed, que es la diferencia entre que el link se note y que pase.

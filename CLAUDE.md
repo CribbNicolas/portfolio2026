@@ -34,7 +34,7 @@ content/
     index.ts            ⚠️ La ÚNICA línea que cambia al migrar a Sanity. Todo el frontend importa de acá.
     content-source.test.ts  Tests de reglas 7,8 + locale (lo que el schema NO valida).
 scripts/validate.ts     Entry point de `npm run validate`.
-.github/workflows/      content-validation.yml — typecheck + validate + test + build + pdf:local + test:pdf + los tres checks + audit:todos en cada push. Sube dist/cv.pdf como artifact. NO deployea: de eso se encarga Cloudflare Pages.
+.github/workflows/      content-validation.yml — typecheck + validate + test + build + pdf:local + test:pdf + los cuatro checks + audit:todos en cada push. Sube dist/cv.pdf como artifact. NO deployea: de eso se encarga Cloudflare Pages.
                         smoke-deploy.yml — corre test:pdf contra el /cv.pdf PUBLICADO en cada deploy con éxito de Pages (previews de staging incluidas). Solo dispara si el archivo está en la rama por defecto.
                         version-gate.yml — solo en PRs a develop: package.json.version tiene que subir.
                         flujo-de-ramas.yml — solo en PRs a staging/main: verifica de qué rama vienen.
@@ -65,6 +65,12 @@ src/
   components/lab/GraphSvg.astro  El mapa en SVG. NO es placeholder: es el fallback real.
                       El prefijo `lab` es el nombre del BLOQUE (el mapa), no de una ruta:
                       `/lab` ya no existe. Renombrarlo rompería los greps de CI.
+  components/Logo.astro  La marca completa: el aro con la N adentro. La geometría NO vive
+                      acá, sale de lib/marca.ts. Usa var(--acento)/var(--tinta), así que el
+                      modo oscuro le sale de los tokens sin CSS propio.
+  lib/marca.ts        ÚNICA fuente de la geometría de la marca. La comparten el logo del
+                      header y la tarjeta social. public/favicon.svg NO puede importarla
+                      (es estático): og-output.check.ts verifica que no diverjan.
   lib/jsonld.ts       ContentView → schema.org Person.
   lib/graph-svg.ts    PositionedGraph → lista de dibujo. Niebla, orden de pintado, etiquetas.
   lib/lab-hover-css.ts  Grafo → reglas :has(). El hover cruzado funciona SIN JS.
@@ -91,6 +97,14 @@ content/schema/
   knowledge-graph.ts  ContentView → grafo. Incluye la afinidad skill↔skill derivada.
   graph-layout.ts     Fuerzas en 3D + proyección. Determinista, corre SOLO en build.
 scripts/
+  og-template.ts      El HTML de la tarjeta social. PURO: recibe textos y binarios ya
+                      resueltos. No es una página de src/pages/ a propósito — se buildearía
+                      y los tres checks que recorren dist/ tendrían que aprender a ignorarla.
+  og-datos.ts         Lo que comparten el generador y su check: los textos derivados del
+                      dataset y la huella. Aparte porque build-og.ts es entry point.
+  build-og.ts         Escribe public/og.jpg + og.lock.json. `og:local`, fuera del build.
+  og-output.check.ts  Medidas, techo de peso de WhatsApp, que la imagen no haya quedado
+                      vieja, y que el favicon siga dibujando el aro de lib/marca.ts.
   pdf-options.ts      ÚNICA definición de las opciones de impresión. La comparten render-pdf.ts
                       (Playwright, el gate) y functions/cv.pdf.ts (producción). Si vivieran
                       separadas, el PDF testeado y el PDF servido divergirían en silencio.
@@ -132,10 +146,12 @@ pnpm test            # tsx --test — reglas 7,8, locale y el grafo
 pnpm run dev         # astro dev
 pnpm run build       # SOLO astro build. Sin Chromium: por eso corre en Cloudflare Pages
 pnpm run pdf:local   # imprime dist/cv.pdf con Playwright. Gate pre-deploy, no el entregable
+pnpm run og:local    # escribe public/og.jpg (la tarjeta social) + og.lock.json. Se COMMITEA
 pnpm run test:pdf    # verifica el PDF (necesita pdf:local previo, o PDF_SOURCE=<url>)
 pnpm run test:js     # política de JS por página sobre todo dist/ (necesita build)
 pnpm run test:bundle # presupuesto de bytes del mapa de la home (necesita build)
 pnpm run test:landing # /cv aislada + sección CV sincronizada con el PDF (necesita build)
+pnpm run test:og     # la tarjeta social no quedó vieja + el favicon parsea (necesita build)
 pnpm run test:servido # verifica el sitio PUBLICADO. Necesita SITIO=https://…  (no dist/)
 pnpm run test:version # el PR sube package.json.version. Necesita: git fetch origin develop
 pnpm run test:workflows # los .yml de CI parsean y declaran jobs. Corre PRIMERO en CI
@@ -144,7 +160,7 @@ pnpm run audit:deps  # pnpm audit --audit-level high
 ```
 
 **Corré la secuencia completa antes de dar cualquier cosa por hecha:**
-`pnpm run test:workflows && pnpm run typecheck && pnpm run validate && pnpm test && pnpm run build && pnpm run pdf:local && pnpm run test:pdf && pnpm run test:js && pnpm run test:bundle && pnpm run test:landing && pnpm run audit:todos`.
+`pnpm run test:workflows && pnpm run typecheck && pnpm run validate && pnpm test && pnpm run build && pnpm run pdf:local && pnpm run test:pdf && pnpm run test:js && pnpm run test:bundle && pnpm run test:landing && pnpm run test:og && pnpm run audit:todos`.
 Si `validate` falla, el mensaje dice qué regla se violó y cómo arreglarla; leelo,
 no lo saltees. Todo eso corre en CI en cada push
 (`.github/workflows/content-validation.yml`; repo ya en GitHub, privado) —

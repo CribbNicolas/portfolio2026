@@ -1,0 +1,11 @@
+{
+  "_": "Generado por `pnpm run og:local`. NO editar a mano: og-output.check.ts lo compara con el dataset.",
+  "huella": "78da8c1a5e6464a3",
+  "ancho": 1200,
+  "alto": 630,
+  "textos": {
+    "nombre": "Nicolás Agustín Cribb Barbaro",
+    "kicker": "Product Engineer",
+    "rol": "Desarrollador Full Stack · 6+ años · Rosario, Argentina"
+  }
+}
