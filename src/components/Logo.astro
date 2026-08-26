@@ -1,0 +1,60 @@
+---
+/**
+ * La marca completa: el aro abierto con la N adentro.
+ *
+ * Son las dos mitades de un mismo sistema. El aro solo vive en
+ * `public/favicon.svg` y es el ícono chico; acá se le suma la N, que es lo que
+ * aparece recién cuando hay lugar para leerla. El aro ES la C del apellido, así
+ * que el contenedor no es un adorno: entre las dos piezas dicen «NC».
+ *
+ * A diferencia del favicon, este SVG SÍ hereda el CSS de la página, así que los
+ * colores salen de `var(--acento)` y `var(--tinta)` en vez de estar escritos a
+ * mano. Por eso el modo oscuro acá no necesita una sola línea: los tokens ya se
+ * redefinen solos en `tokens.css`. El favicon repite los hexadecimales porque
+ * no le queda otra, y ese es el único lugar donde se duplican.
+ *
+ * Va inline y no como `<img src>`: un pedido más para 300 bytes no se paga, y
+ * un `<img>` no podría leer los tokens.
+ */
+import { ARO_PATH, MARCA_VIEWBOX, N_GROSOR, N_PATH } from "../lib/marca";
+
+interface Props {
+  /** Lado del cuadrado, en px. La caja de dibujo siempre es 32×32. */
+  size?: number;
+  /**
+   * Texto para lectores de pantalla. Con `null` el logo queda decorativo: es lo
+   * correcto cuando el nombre ya está escrito al lado.
+   */
+  label?: string | null;
+  class?: string;
+}
+
+const { size = 26, label = "Nicolás Cribb", class: clase } = Astro.props;
+
+// La geometría NO vive acá: sale de `src/lib/marca.ts`, que es la fuente única
+// que comparten este logo y el generador de la tarjeta de Open Graph. La pata
+// derecha de la N se pasa de la abertura del aro a propósito — es lo que ata
+// las dos piezas en una figura sola en vez de dejar una letra apoyada adentro
+// de un anillo.
+---
+
+<svg
+  class={clase}
+  viewBox={MARCA_VIEWBOX}
+  width={size}
+  height={size}
+  role={label ? "img" : undefined}
+  aria-label={label ?? undefined}
+  aria-hidden={label ? undefined : "true"}
+  focusable="false"
+>
+  <path d={ARO_PATH} fill="var(--acento)" />
+  <path
+    d={N_PATH}
+    fill="none"
+    stroke="var(--tinta)"
+    stroke-width={N_GROSOR}
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+</svg>

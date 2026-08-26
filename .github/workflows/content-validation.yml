@@ -81,6 +81,14 @@ jobs:
       # su seccion CV sincronizada con el PDF. Sin esto, alguien agrega un link
       # "ver CV completo" en tres meses y nadie se entera.
       - run: pnpm run test:landing
+      # La tarjeta social. `public/og.jpg` está COMMITEADO —rasterizar necesita
+      # Chromium y el builder de Cloudflare no lo tiene—, así que puede quedar
+      # vieja en silencio: cambia el rol en el dataset, el sitio dice una cosa y
+      # lo que ve LinkedIn sigue diciendo la otra. Esto compara la huella de las
+      # entradas contra la del JPEG y falla si alguien se olvidó de `og:local`.
+      # NO regenera la imagen en CI: los bytes de un JPEG no son reproducibles
+      # entre versiones de Chromium, así que compararlos sería un test tornasol.
+      - run: pnpm run test:og
 
       # No bloquea: son datos pendientes conocidos. Queda en el log para verlos.
       - run: pnpm run audit:todos

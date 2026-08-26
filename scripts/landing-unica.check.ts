@@ -17,6 +17,7 @@
 
 import { test } from "node:test";
 import assert from "node:assert/strict";
+import { accessSync, constants } from "node:fs";
 import { readdir, readFile } from "node:fs/promises";
 import { join, relative, sep } from "node:path";
 
@@ -91,6 +92,42 @@ test("existe una página 404 propia", () => {
     `no hay 404.html en ${DIST}/. Sin él, una ruta inexistente devuelve 200 y ` +
       `el sitio vuelve al soft-404. Se genera desde src/pages/404.astro.`,
   );
+});
+
+test("solo la landing emite Open Graph", () => {
+  // `compartible` es opt-in en `Base.astro`, pero eso solo evita el olvido en
+  // una dirección: nada impide marcarla en `/cv`. Y ahí sería peor que un
+  // descuido — esa página va con `noindex`, así que estaríamos pidiéndole al
+  // crawler que no la indexe y ofreciéndole una tarjeta para compartirla.
+  const conOg: string[] = [];
+  for (const archivo of paginas) {
+    const ruta = relative(DIST, archivo).split(sep).join("/");
+    if (ruta === "index.html") continue;
+    if (contenidos.get(archivo)!.includes('property="og:')) conOg.push(ruta);
+  }
+  assert.deepEqual(
+    conOg,
+    [],
+    `estas páginas emiten Open Graph: ${conOg.join(", ")}. Solo la landing es ` +
+      "compartible; /cv es noindex y el 404 no es un destino.",
+  );
+
+  assert.ok(
+    landing.includes('property="og:title"'),
+    "la landing dejó de emitir Open Graph: pegar el link vuelve a mostrar una URL pelada",
+  );
+});
+
+test("el favicon y el sitemap existen de verdad", () => {
+  // `Base.astro` linkea /favicon.svg en las tres páginas y robots.txt anuncia
+  // el sitemap. Si los archivos no están, cada visita se lleva un 404 silencioso
+  // y el sitemap anunciado no existe — peor que no anunciarlo.
+  for (const archivo of ["favicon.svg", "sitemap-index.xml"]) {
+    assert.doesNotThrow(
+      () => accessSync(join(DIST, archivo), constants.F_OK),
+      `falta ${DIST}/${archivo}, y algo lo referencia.`,
+    );
+  }
 });
 
 test("`/cv` no se indexa", () => {
