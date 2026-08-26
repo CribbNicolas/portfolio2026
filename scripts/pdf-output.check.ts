@@ -45,6 +45,15 @@ async function cargar(): Promise<Uint8Array> {
   if (!crudo) {
     if (FUENTE.startsWith("http://") || FUENTE.startsWith("https://")) {
       const res = await fetch(FUENTE);
+      // El 429 se distingue del resto a propósito: no dice "el PDF está roto",
+      // dice "esperá". Es la cuota de Browser Rendering, y confundir las dos
+      // cosas manda a depurar la Function cuando no hay nada que depurar.
+      assert.ok(
+        res.status !== 429,
+        `${FUENTE} devolvió 429: es la cuota de Browser Rendering, no un fallo del PDF. ` +
+          "El plan gratuito da 3 browsers concurrentes y una instancia nueva cada 20 s. " +
+          "Esperá un minuto y repetí; si persiste, se agotaron los 10 min de browser del día.",
+      );
       assert.ok(res.ok, `${FUENTE} devolvió ${res.status} ${res.statusText}`);
       // Un 200 con HTML es el síntoma de que la ruta no matcheó la Function y
       // Pages devolvió el sitio. Sin este chequeo el fallo sale como

@@ -429,3 +429,183 @@ que sí sirve JS, falla — o sea que el test distingue, no pasa siempre.
 invariantes. El presupuesto de bytes y la sincronía landing↔PDF se siguen
 midiendo solo sobre `dist/`. Ampliarlo es sumar tests a ese archivo; no hace
 falta arquitectura nueva.
+
+---
+
+## 16. El smoke trataba un 429 como un PDF roto — **RESUELTO 2026-08-25**
+
+**Severidad: era media.** No rompía el sitio; rompía la confianza en el gate.
+
+La primera corrida real del smoke sobre `main` falló así:
+
+```
+https://cribbnicolas.pages.dev/cv.pdf devolvió 429 Too Many Requests
+```
+
+El sitio estaba perfecto: la verificación manual contra esa misma URL, minutos
+después, pasaba 13/13.
+
+**Qué había pasado.** La cadena `staging` → `main` son **dos deploys seguidos
+por diseño**, y cada uno pide un render en frío a Browser Rendering. Corrieron
+con 105 segundos de diferencia (21:43 y 21:44:58) y se cruzaron con los límites
+del plan gratuito: 3 browsers concurrentes, una instancia nueva cada 20 s.
+
+**La incoherencia.** `functions/cv.pdf.ts` maneja el 429 explícitamente —lo
+propaga con su `Retry-After` en vez de devolver un PDF roto— y esa parte
+funcionó. Pero el smoke trataba cualquier respuesta distinta de 200 como fallo.
+Un 429 dice "esperá", no "está roto", y el gate no distinguía.
+
+Eso importa más de lo que parece: **un gate que se pone en rojo por cuota
+entrena a ignorarlo**, y un gate que se ignora ya no existe. Es la misma familia
+de problemas que las entradas 14 y 15, con otra cara — no que no corra, sino que
+corra y mienta.
+
+**Arreglo.** Un paso previo en `smoke-deploy.yml` que calienta el PDF tolerando
+el 429: reintenta hasta 6 veces respetando el `Retry-After` que propaga la
+Function, y distingue el 429 (cuota, paciencia larga) de un 5xx (fallo real,
+paciencia corta). Como efecto secundario deja el PDF en el caché de borde del
+colo que le tocó al runner, así que el test siguiente pega caché y **no gasta
+otro render**.
+
+`pdf-output.check.ts` además separa el mensaje del 429 del resto, para que
+alguien que lo corra a mano no salga a depurar la Function cuando no hay nada
+que depurar.
+
+**Lo que queda abierto:** si algún día los 10 minutos diarios de browser se
+agotan de verdad, el smoke va a fallar y va a tener razón. No hay forma de
+distinguir "cuota diaria agotada" de "cuota momentánea" desde afuera; el
+mensaje de error lo dice para que quien lo lea sepa dónde mirar.
+
+---
+
+## 17. El `<head>` tiene siete etiquetas — **RESUELTO 2026-08-25**
+
+Hecho: Open Graph y Twitter Card en la landing, favicon SVG, `sitemap-index.xml`
+con `/cv` excluida, y un `robots.txt` propio que anuncia el sitemap y los dos
+endpoints para agentes.
+
+La imagen social era lo único que quedaba, y también está hecha: ver §18, que
+se cerró el mismo día.
+
+**Una corrección a lo que decía esta entrada:** afirmaba que *"sin `og:image` no
+hay tarjeta aunque estén las etiquetas"*. Es falso. LinkedIn, Slack y WhatsApp
+muestran una tarjeta de título y descripción sin imagen; lo que falta es el
+bloque visual, no la tarjeta. Por eso se emitieron las etiquetas ahora en vez de
+esperar a la imagen, y por eso `twitter:card` va en `summary` y no en
+`summary_large_image`: el grande reserva el espacio de la imagen y sin ella se
+degrada peor.
+
+**Dos cosas sin verificar contra un deploy:**
+
+- Que `src/pages/robots.txt.ts` le gane al `robots.txt` gestionado de
+  Cloudflare. Se comprueba abriendo `/robots.txt` en la preview de `staging`.
+- Cómo se ve la tarjeta de verdad. Se comprueba pegando la URL de la preview en
+  un chat.
+
+Lo de abajo queda como registro de por qué existía.
+
+**Severidad: era alta para un portfolio.**
+
+Medido sobre producción el 2026-08-25:
+
+```
+etiquetas en <head>:  7   (charset, viewport, title, description,
+                           canonical, 2 hojas de estilo)
+og:*                  0
+twitter:*             0
+JSON-LD               1   (Person, server-rendered)
+/favicon.ico          404
+/favicon.svg          404
+/sitemap.xml          404
+```
+
+**Por qué es alta y no cosmética.** El canal por el que un portfolio se
+distribuye es pegar el link: LinkedIn, WhatsApp, un mail, un mensaje a un
+reclutador. Sin Open Graph, todos esos lugares muestran **una URL pelada**, sin
+título, sin descripción y sin imagen — al lado de cualquier otro link que sí
+tiene tarjeta. Es la primera impresión, y hoy no existe.
+
+Y no alcanza con agregar las etiquetas: **no hay ni un solo asset de imagen en
+el repo**. Sin `og:image` no hay tarjeta aunque el resto esté.
+
+**Lo que sí está bien**, para no tocarlo de más: `canonical` correcto desde que
+`SITE_URL` se aplicó, `lang="es"`, `/cv` con `noindex` a propósito, y ningún
+`x-robots-tag` que bloquee la indexación de `pages.dev`.
+
+**Sobre `robots.txt`:** hoy Cloudflare sirve uno gestionado que son **solo
+comentarios** —cero `User-agent`, cero `Disallow`, cero `Sitemap:`—. O sea que
+no restringe nada, pero tampoco anuncia nada. Al agregar `public/robots.txt` hay
+que **verificar contra un deploy si el nuestro le gana al gestionado**: no está
+probado.
+
+**Para búsqueda por IA el contenido ya está** —`/llms.txt`, `/cv.json` y el
+JSON-LD—; lo que falta es descubrimiento. Sin sitemap ni `robots.txt` que los
+referencie, esas tres salidas dependen de que alguien las adivine.
+
+**Arreglo, por orden de impacto:**
+
+1. `og:*` + `twitter:*` en `Base.astro`, derivados del `title`/`description` que
+   ya recibe. Cuidado: `/cv` **no** debe llevarlos — es `noindex` y no es un
+   destino compartible.
+2. Una imagen social. Puede generarse en build desde el nombre y el título con
+   el mismo criterio tipográfico del sitio; no hace falta diseñarla a mano.
+3. Favicon.
+4. `@astrojs/sitemap` y un `public/robots.txt` con la línea `Sitemap:`.
+
+
+---
+
+## 18. Falta la imagen social — **RESUELTO 2026-08-25**
+
+**Resuelto.** `public/og.jpg` existe, lo genera `pnpm run og:local` y está
+commiteado. Salió el camino que la entrada anotaba como "el más probable":
+Playwright en local, el archivo al repo.
+
+Lo que se decidió al hacerlo, y que esta entrada no preveía:
+
+- **JPEG y no PNG.** No es preferencia: WhatsApp no llega a mostrar la
+  previsualización si la imagen pesa de más, y un PNG de 1200×630 con una foto
+  adentro se va bien arriba de ese techo. El JPEG a calidad 84 pesa 61 KB contra
+  un tope de 300 KB, y el techo es un test, no un comentario.
+- **UNA sola imagen para todas las redes.** Facebook, LinkedIn, WhatsApp, Slack,
+  Discord y Twitter leen la MISMA etiqueta `og:image`. Lo que cambia entre ellas
+  es cómo la recortan, no qué archivo piden. No hacía falta una por plataforma.
+- **`twitter:card` pasó a `summary_large_image`.** Con una imagen de 1.91:1, el
+  `summary` que había la recortaría a un cuadradito.
+- **La huella normaliza los saltos de línea.** El repo corre con
+  `core.autocrlf=true`: sin normalizar, el hash de la plantilla daba distinto en
+  Windows y en el runner de CI, y el gate fallaba sin que nada hubiera cambiado.
+
+También salió de acá `src/lib/marca.ts`: la geometría de la marca la dibujaban
+el logo del header y la tarjeta social, y una `d=` copiada diverge la primera
+vez que alguien ajusta una curva. `public/favicon.svg` no puede importarla —es
+un archivo estático— así que `og-output.check.ts` verifica que su path siga
+siendo el del módulo.
+
+Lo de abajo queda como registro de la decisión.
+
+**Severidad: era media.** Salía de partir la §17: las etiquetas ya estaban, la
+imagen no, y no había **ni un solo asset de imagen en el repo**.
+
+Con título y descripción la tarjeta ya sale. Con imagen ocupa cuatro veces más
+espacio en un feed, que es la diferencia entre que el link se note y que pase.
+
+**La decisión que hay adentro**, y por eso no se hizo de una:
+
+| Camino | A favor | En contra |
+|---|---|---|
+| Generarla en build desde el dato | Se mantiene sola cuando el nombre o el título cambian; usa los mismos tokens tipográficos | Rasterizar necesita un browser, y el builder de Cloudflare no tiene Chromium — el mismo problema que sacó al PDF del build |
+| Un PNG a mano en `public/` | Diez minutos | Se desactualiza en silencio |
+| Una Function como `/cv.pdf` | Consistente con lo que ya existe | Un crawler que espera 3-5 s puede cortar, y gasta presupuesto de Browser Rendering en cada scrape |
+
+**SVG no es opción:** LinkedIn, Facebook y WhatsApp no renderizan `og:image` en
+SVG. Tiene que ser PNG o JPEG.
+
+El camino más probable es el primero con una vuelta: generarla con
+`pnpm run og:local` —Playwright, igual que `pdf:local`— y **commitear el PNG**.
+Así no hay costo en runtime ni dependencia del builder, y un check puede avisar
+si el dato cambió y la imagen no se regeneró.
+
+Al agregarla hay que cambiar también `twitter:card` a `summary_large_image` y
+sumar `og:image`, `og:image:width`, `og:image:height` y `og:image:alt` en
+`Base.astro`.

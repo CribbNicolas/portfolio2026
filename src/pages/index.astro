@@ -19,6 +19,7 @@ import { content, formatSeniority, formatDateRange, formatYearMonth, buildKnowle
 import { buildPersonJsonLd } from "../lib/jsonld";
 import { buildSvgMapa } from "../lib/graph-svg";
 import { buildHoverCss, ID_ITEM } from "../lib/lab-hover-css";
+import Logo from "../components/Logo.astro";
 import GraphSvg from "../components/lab/GraphSvg.astro";
 import ListaProyectos from "../components/proyectos/ListaProyectos.astro";
 import Section from "../components/cv/Section.astro";
@@ -91,9 +92,16 @@ const nombreDeSkill = new Map(
 );
 ---
 
+{/*
+  `compartible` emite Open Graph y Twitter Card. Es la ÚNICA página que las
+  lleva: `/cv` va con noindex y existe solo para imprimir el PDF, y el 404 no es
+  un destino. En `Base.astro` es opt-in, así que olvidarse en una página nueva
+  significa no emitirlas — el lado seguro del error.
+*/}
 <Base
   title={`${identity.fullName} — ${identity.searchTitle}`}
   description={identity.summary.short}
+  compartible
 >
   <script type="application/ld+json" slot="head" set:html={JSON.stringify(jsonLd)} />
   <style is:inline set:html={hoverCss} slot="head" />
@@ -114,6 +122,15 @@ const nombreDeSkill = new Map(
     */}
     <div class="barra" data-pildora>
       <header class="pildora">
+        {/*
+          El logo es decorativo a propósito (`label={null}`): el nombre ya está
+          en el `<h1>` del hero, y un lector de pantalla que lo anuncie de nuevo
+          acá solo agrega ruido antes del índice.
+        */}
+        <Logo class="pildora__logo" size={26} label={null} />
+
+        <span class="pildora__sep" aria-hidden="true"></span>
+
         <nav class="pildora__nav" aria-label="Secciones">
           <a href="#mapa">Mapa</a>
           <a href="#proyectos">Proyectos</a>
