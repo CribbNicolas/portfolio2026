@@ -43,6 +43,7 @@ pnpm run test:pdf       # el PDF parsea y pasa el ATS. Necesita pdf:local, o PDF
 pnpm run test:js        # ninguna página salvo la home envía JavaScript
 pnpm run test:bundle    # home: three fuera del camino crítico y dentro del techo
 pnpm run test:landing   # /cv aislada, sección CV sincronizada con el PDF, 404 propia
+pnpm run test:og        # la tarjeta social no quedó vieja respecto del dataset
 pnpm run test:version   # el PR sube package.json.version. Necesita: git fetch origin develop
 pnpm run test:servido   # verifica el sitio PUBLICADO. Necesita SITIO=https://…
 pnpm run audit:todos    # lista TODOs publicados. No bloquea
@@ -60,12 +61,18 @@ con lo medido el 2026-08-25.
 
 | Recurso | Techo | Hoy | Definido en |
 |---|---|---|---|
-| HTML de la home | 30 KB gzip | 10.9 KB | `scripts/bundle-budget.check.ts` |
+| HTML de la home | 30 KB gzip | 11.2 KB | `scripts/bundle-budget.check.ts` |
 | JS crítico de la home | 4 KB gzip | 2.4 KB | ídem |
 | Chunk del campo WebGL | 8 KB gzip | 2.0 KB | ídem |
 | **Chunk 3D diferido** (`three`) | 150 KB gzip | **129.8 KB** | ídem |
 | **Páginas del PDF** | 2 | **2** | `scripts/pdf-output.check.ts` |
 | JS en cualquier página que no sea la home | 0 | 0 | `scripts/no-client-js.check.ts` |
+| **Tarjeta social** (`og.jpg`) | 300 KB | **61 KB** | `scripts/og-template.ts` |
+
+El techo de la tarjeta social no es prolijidad: **WhatsApp no llega a mostrar
+la previsualización si la imagen pesa de más**, así que pasarlo significa que el
+link deja de mostrar tarjeta en el canal donde más se comparte. Se regula con
+`CALIDAD` en `scripts/build-og.ts`; por eso la imagen es JPEG y no PNG.
 
 **Dos están al límite, y conviene saberlo antes de chocarlos:**
 
