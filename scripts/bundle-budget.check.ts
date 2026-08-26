@@ -124,7 +124,7 @@ test("the SVG fallback has one node per graph node", async () => {
   // compared against the derivation, not against a written number.
   const view = await content.getView("portfolio", "es");
   const expected = buildKnowledgeGraph(view).nodes.length;
-  const drawn = [...html.matchAll(/class="lab__nodo/g)].length;
+  const drawn = [...html.matchAll(/class="lab__node/g)].length;
   assert.equal(
     drawn, expected,
     `the SVG draws ${drawn} nodes and the graph has ${expected}.`,
@@ -138,8 +138,8 @@ test("the map shares the touch gesture with the browser, it does not intercept i
   const sheets = (await readdir(ASTRO)).filter((f) => f.endsWith(".css"));
   const sources = [html, ...(await Promise.all(sheets.map((f) => readFile(join(ASTRO, f), "utf8"))))]
     .map((s) => s.replace(/\s+/g, ""));
-  const ok = sources.some((src) => /\.lab__mapa--3d\{[^}]*touch-action:pan-y/.test(src));
-  assert.ok(ok, "`touch-action: pan-y` is missing on .lab__mapa--3d: the drag could hijack the scroll");
+  const ok = sources.some((src) => /\.lab__map--3d\{[^}]*touch-action:pan-y/.test(src));
+  assert.ok(ok, "`touch-action: pan-y` is missing on .lab__map--3d: the drag could hijack the scroll");
 });
 
 test("no client module listens for wheel or touchmove", async () => {
@@ -167,7 +167,7 @@ test("the canvases cannot capture the pointer", async () => {
   const sources = [html, ...(await Promise.all(sheets.map((f) => readFile(join(ASTRO, f), "utf8"))))]
     .map((s) => s.replace(/\s+/g, ""));
 
-  for (const className of ["lab__canvas", "lab__campo"]) {
+  for (const className of ["lab__canvas", "lab__field"]) {
     const found = sources.some((src) =>
       new RegExp(`\\.${className}\\{[^}]*pointer-events:none`).test(src),
     );

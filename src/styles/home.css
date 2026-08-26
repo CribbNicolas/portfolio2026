@@ -1,12 +1,12 @@
 /*
- * Layout de la home. A diferencia de cv.css, acá SÍ se puede usar flex y
- * sombras: la restricción de una sola columna existe por el parseo del PDF, y
- * la home no se imprime.
+ * Home layout. Unlike cv.css, flex and shadows ARE allowed here: the
+ * single-column constraint exists because of PDF parsing, and the home is not
+ * printed.
  */
 
 .home {
-  padding: calc(var(--espacio) * 6) calc(var(--espacio) * 2.5);
-  max-width: var(--ancho);
+  padding: calc(var(--space) * 6) calc(var(--space) * 2.5);
+  max-width: var(--width);
   margin: 0 auto;
 }
 
@@ -16,39 +16,39 @@
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 0.1em;
-  color: var(--acento);
-  background: var(--acento-tenue);
-  padding: calc(var(--espacio) * 0.75) calc(var(--espacio) * 1.25);
+  color: var(--accent);
+  background: var(--accent-faint);
+  padding: calc(var(--space) * 0.75) calc(var(--space) * 1.25);
   border-radius: 99px;
-  margin: 0 0 calc(var(--espacio) * 3);
+  margin: 0 0 calc(var(--space) * 3);
 }
 
 .home__name {
   font-size: 2.125rem;
   line-height: 1.08;
-  margin: 0 0 calc(var(--espacio) * 1.25);
+  margin: 0 0 calc(var(--space) * 1.25);
   font-weight: 800;
   letter-spacing: -0.035em;
 }
 
 .home__role {
   font-size: 1.0625rem;
-  color: var(--tinta-suave);
-  margin: 0 0 calc(var(--espacio) * 3);
+  color: var(--ink-soft);
+  margin: 0 0 calc(var(--space) * 3);
   font-weight: 600;
 }
 
 .home__tagline {
   font-size: 1.375rem;
   line-height: 1.4;
-  margin: 0 0 calc(var(--espacio) * 4.5);
+  margin: 0 0 calc(var(--space) * 4.5);
   font-weight: 700;
   letter-spacing: -0.02em;
 }
 
 @media (min-width: 40rem) {
   .home {
-    padding: calc(var(--espacio) * 11) calc(var(--espacio) * 4);
+    padding: calc(var(--space) * 11) calc(var(--space) * 4);
   }
 
   .home__name {
@@ -61,52 +61,52 @@
 
 }
 
-/* --- Barra flotante: índice, contacto y descarga ------------------------ */
+/* --- Floating bar: index, contact and download --------------------------- */
 
 /*
- * `.barra` es lo que se mueve; `.pildora` y `.descarga` son las dos piezas.
- * El desfase del scroll se aplica acá para que viajen como una sola cosa.
+ * `.bar` is what moves; `.pill` and `.download` are the two pieces. The scroll
+ * offset is applied here so they travel as one thing.
  *
- * `translate(-50%, 0)` vive en el CSS y no en el script: sin JS tiene que
- * quedar centrada igual. El script solo pisa ese `transform` mientras hay
- * movimiento, y lo devuelve a "" al frenar.
+ * `translate(-50%, 0)` lives in the CSS and not in the script: without JS it
+ * still has to be centered. The script only overrides that `transform` while
+ * there is movement, and returns it to "" once it settles.
  *
- * z-index 10: `.lab__campo` es `fixed` y `.lab__contenido` es `z-index: 1`.
+ * z-index 10: `.lab__field` es `fixed` y `.lab__content` es `z-index: 1`.
  */
-.barra {
+.bar {
   position: fixed;
-  top: calc(var(--espacio) * 1.5);
+  top: calc(var(--space) * 1.5);
   left: 50%;
   transform: translate(-50%, 0);
   z-index: 10;
 
   display: flex;
   align-items: center;
-  gap: calc(var(--espacio) * 1);
-  max-width: calc(100vw - var(--espacio) * 3);
+  gap: calc(var(--space) * 1);
+  max-width: calc(100vw - var(--space) * 3);
 
   /* Promueve a capa propia: sin esto el navegador repinta la barra Y lo que
      tiene debajo en cada frame del desfase. */
   will-change: transform;
 }
 
-.pildora,
-.descarga {
+.pill,
+.download {
   display: flex;
   align-items: center;
   min-width: 0;
-  height: calc(var(--espacio) * 5.5);
+  height: calc(var(--space) * 5.5);
   border-radius: 999px;
   font-size: 0.8125rem;
   font-weight: 600;
   white-space: nowrap;
 }
 
-.pildora {
-  gap: calc(var(--espacio) * 0.5);
-  padding: 0 calc(var(--espacio) * 0.75);
-  border: 1px solid var(--linea);
-  background: var(--fondo-pildora);
+.pill {
+  gap: calc(var(--space) * 0.5);
+  padding: 0 calc(var(--space) * 0.75);
+  border: 1px solid var(--line);
+  background: var(--bg-pill);
 
   /* Dos sombras: una corta que la despega del fondo y una larga y difusa que
      le da altura. Una sola de las dos la deja plana o la ensucia. */
@@ -114,22 +114,22 @@
     0 1px 2px rgb(23 24 28 / 0.06),
     0 8px 28px rgb(23 24 28 / 0.1);
 
-  /* El fondo de la página es un canvas animado: sin blur, el texto se lee
-     encima del movimiento y cansa. */
+  /* The page background is an animated canvas: without blur, the text reads on
+     top of the movement and tires the eye. */
   backdrop-filter: blur(14px) saturate(1.4);
   -webkit-backdrop-filter: blur(14px) saturate(1.4);
 }
 
-/* La marca, a la izquierda del índice. `flex: none` porque es lo último que se
-   puede encoger: el mail se recorta y el contacto entero se cae antes que el
-   logo, que es lo que identifica la barra cuando ya no queda nada más. */
-.pildora__logo {
+/* The brand, to the left of the index. `flex: none` because it is the last
+   thing that can shrink: the email is trimmed and the whole contact block drops
+   before the logo, which is what identifies the bar once nothing else is left. */
+.pill__logo {
   flex: none;
-  margin-left: calc(var(--espacio) * 0.5);
+  margin-left: calc(var(--space) * 0.5);
 }
 
-.pildora__nav,
-.pildora__contacto {
+.pill__nav,
+.pill__contact {
   display: flex;
   align-items: center;
   gap: 2px;
@@ -139,129 +139,129 @@
   min-width: 0;
 }
 
-.pildora a {
+.pill a {
   display: block;
-  color: var(--tinta-suave);
+  color: var(--ink-soft);
   text-decoration: none;
-  padding: calc(var(--espacio) * 0.75) calc(var(--espacio) * 1.25);
+  padding: calc(var(--space) * 0.75) calc(var(--space) * 1.25);
   border-radius: 999px;
-  /* Solo color y fondo: transicionar `all` acá arrastraría el `transform` de
-     la barra y pelearía con el rAF del desfase. */
+  /* Color and background only: transitioning `all` here would drag the bar's
+     `transform` along and fight the offset's rAF. */
   transition: color 0.18s ease, background-color 0.18s ease;
 }
 
-.pildora__nav a {
-  color: var(--tinta);
+.pill__nav a {
+  color: var(--ink);
 }
 
-.pildora a:hover {
-  color: var(--acento);
-  background: var(--acento-tenue);
+.pill a:hover {
+  color: var(--accent);
+  background: var(--accent-faint);
 }
 
-/* Un hairline, no una barra: separa sin cortar. */
-.pildora__sep {
+/* Un hairline, no una bar: separa sin cortar. */
+.pill__sep {
   width: 1px;
-  height: calc(var(--espacio) * 2.5);
+  height: calc(var(--space) * 2.5);
   flex: none;
-  margin: 0 calc(var(--espacio) * 0.75);
-  background: var(--linea);
+  margin: 0 calc(var(--space) * 0.75);
+  background: var(--line);
 }
 
-/* --- La descarga -------------------------------------------------------- */
+/* --- La download -------------------------------------------------------- */
 
-.descarga {
-  gap: calc(var(--espacio) * 0.75);
-  padding: 0 calc(var(--espacio) * 2);
+.download {
+  gap: calc(var(--space) * 0.75);
+  padding: 0 calc(var(--space) * 2);
   flex: none;
-  background: var(--acento);
-  color: var(--fondo);
+  background: var(--accent);
+  color: var(--bg);
   font-weight: 700;
   text-decoration: none;
-  /* La segunda sombra va teñida del acento: una sombra neutra debajo de un
-     botón de color lo deja sucio. `color-mix` primero y una neutra de
-     fallback antes, porque si el navegador no lo soporta se cae la
-     declaración entera y el botón queda plano. */
+  /* The second shadow is tinted with the accent: a neutral shadow under a
+     colored button leaves it looking dirty. `color-mix` second and a neutral
+     fallback first, because if the browser does not support it the whole
+     declaration is dropped and the button goes flat. */
   box-shadow:
     0 1px 2px rgb(23 24 28 / 0.08),
     0 8px 28px rgb(23 24 28 / 0.14);
   box-shadow:
     0 1px 2px rgb(23 24 28 / 0.08),
-    0 8px 28px color-mix(in srgb, var(--acento) 32%, transparent);
+    0 8px 28px color-mix(in srgb, var(--accent) 32%, transparent);
   transition: filter 0.18s ease;
 }
 
-.descarga:hover {
+.download:hover {
   filter: brightness(1.07);
 }
 
-/* La flecha baja sola al pasar el mouse: dice qué hace el botón sin una línea
-   de texto más. */
-.descarga__flecha {
+/* The arrow drops on hover: it says what the button does without one more line
+   of text. */
+.download__arrow {
   display: inline-block;
   transition: transform 0.18s ease;
 }
 
-.descarga:hover .descarga__flecha {
+.download:hover .download__arrow {
   transform: translateY(2px);
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .descarga__flecha {
+  .download__arrow {
     transition: none;
   }
 }
 
-/* --- Qué se cae al angostar --------------------------------------------- */
+/* --- What drops as it narrows -------------------------------------------- */
 
-/* El mail entero solo cuando hay lugar. Abajo de eso, la etiqueta corta. */
-.pildora__largo {
+/* The full email only when there is room. Below that, the short label. */
+.pill__long {
   display: none;
 }
 
 @media (min-width: 62rem) {
-  .pildora__largo {
+  .pill__long {
     display: inline;
   }
 
-  .pildora__corto {
+  .pill__short {
     display: none;
   }
 }
 
-/* El contacto es lo primero que se cae: en pantallas chicas el índice es lo
-   que hace falta para moverse, y el mail vive igual en el CV de abajo. */
+/* Contact is the first thing to drop: on small screens the index is what you
+   need to move around, and the email lives in the CV below anyway. */
 @media (max-width: 34rem) {
-  .pildora__contacto,
-  .pildora__sep {
+  .pill__contact,
+  .pill__sep {
     display: none;
   }
 
-  .descarga {
-    padding: 0 calc(var(--espacio) * 1.5);
+  .download {
+    padding: 0 calc(var(--space) * 1.5);
   }
 }
 
-/* El PDF sale de `/cv`, que no tiene esta barra. La regla está por si alguien
-   imprime la landing desde el browser. */
+/* The PDF comes from `/cv`, which does not have this bar. The rule is here in
+   case someone prints the landing from the browser. */
 @media print {
-  .barra {
+  .bar {
     display: none;
   }
 }
 
-/* La píldora es `fixed`: sin esto, el salto de ancla deja el título de la
-   sección debajo de ella. Es el alto de la píldora más su separación de
-   arriba, más aire. */
+/* The pill is `fixed`: without this, the anchor jump leaves the section title
+   underneath it. It is the pill's height plus its distance from the top, plus
+   some air. */
 #mapa,
 #proyectos,
 #cv {
-  scroll-margin-top: calc(var(--espacio) * 9);
+  scroll-margin-top: calc(var(--space) * 9);
 }
 
-/* El scroll suave es lo que hace que el índice se lea como navegación y no
-   como un salto. `tokens.css` anula animaciones bajo `prefers-reduced-motion`,
-   pero `scroll-behavior` no es una animación y ese reset no la alcanza. */
+/* Smooth scrolling is what makes the index read as navigation rather than as a
+   jump. `tokens.css` cancels animations under `prefers-reduced-motion`, but
+   `scroll-behavior` is not an animation and that reset does not reach it. */
 html {
   scroll-behavior: smooth;
 }
@@ -272,42 +272,42 @@ html {
   }
 }
 
-/* --- Pie ----------------------------------------------------------------
-   Solo lleva la línea de privacidad de Clarity. No es una sección: no entra
-   en el índice de la píldora ni en `scroll-margin-top`, porque nadie navega
-   hacia acá — se lee si se llega scrolleando, que es todo lo que tiene que
-   pasar. Comparte `--ancho` con el resto para no romper el borde común. */
-.pie {
-  max-width: var(--ancho);
+/* --- Footer --------------------------------------------------------------
+   It only carries Clarity's privacy line. It is not a section: it is not in the
+   pill's index and not in `scroll-margin-top`, because nobody navigates here —
+   it is read if you get there scrolling, which is all it has to do. It shares
+   `--width` with the rest so the common edge is not broken. */
+.footer {
+  max-width: var(--width);
   margin: 0 auto;
-  padding: calc(var(--espacio) * 6) calc(var(--espacio) * 2.5)
-    calc(var(--espacio) * 5);
-  border-top: 1px solid var(--linea);
+  padding: calc(var(--space) * 6) calc(var(--space) * 2.5)
+    calc(var(--space) * 5);
+  border-top: 1px solid var(--line);
 }
 
-.pie p {
+.footer p {
   margin: 0;
-  color: var(--tinta-suave);
+  color: var(--ink-soft);
   font-size: 0.8125rem;
   line-height: 1.6;
-  /* Más angosto que el resto: es letra chica, y una línea de 45rem a este
-     tamaño obliga al ojo a buscar dónde sigue. */
+  /* Narrower than the rest: it is small print, and a 45rem line at this size
+     forces the eye to hunt for where it continues. */
   max-width: 38rem;
 }
 
-.pie a {
-  color: var(--tinta-suave);
+.footer a {
+  color: var(--ink-soft);
   text-decoration: underline;
   text-underline-offset: 2px;
 }
 
-.pie a:hover {
-  color: var(--acento);
+.footer a:hover {
+  color: var(--accent);
 }
 
 @media (min-width: 40rem) {
-  .pie {
-    padding: calc(var(--espacio) * 8) calc(var(--espacio) * 4)
-      calc(var(--espacio) * 6);
+  .footer {
+    padding: calc(var(--space) * 8) calc(var(--space) * 4)
+      calc(var(--space) * 6);
   }
 }

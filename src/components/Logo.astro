@@ -8,7 +8,7 @@
  * the container is not decoration: between the two pieces they say «NC».
  *
  * Unlike the favicon, this SVG DOES inherit the page CSS, so the colors come
- * from `var(--acento)` and `var(--tinta)` instead of being written by hand.
+ * from `var(--accent)` and `var(--ink)` instead of being written by hand.
  * That is why dark mode needs not a single line here: the tokens already
  * redefine themselves in `tokens.css`. The favicon repeats the hex values
  * because it has no choice, and that is the only place they are duplicated.
@@ -47,11 +47,11 @@ const { size = 26, label = "Nicolás Cribb", class: className } = Astro.props;
   aria-hidden={label ? undefined : "true"}
   focusable="false"
 >
-  <path d={RING_PATH} fill="var(--acento)" />
+  <path d={RING_PATH} fill="var(--accent)" />
   <path
     d={N_PATH}
     fill="none"
-    stroke="var(--tinta)"
+    stroke="var(--ink)"
     stroke-width={N_WEIGHT}
     stroke-linecap="round"
     stroke-linejoin="round"

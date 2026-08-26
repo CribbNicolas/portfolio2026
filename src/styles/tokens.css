@@ -1,59 +1,59 @@
 /*
- * Sistema visual — dirección C, «Producto».
- * Elegida el 2026-08-14 entre las tres de
+ * Visual system — direction C, «Producto».
+ * Chosen on 2026-08-14 out of the three in
  * docs/superpowers/specs/2026-08-14-sistema-visual-design.md §6.
  *
- * El color se declara por ROL (--tinta, --acento), nunca por nombre de color:
- * así el modo oscuro y el modo impresión redefinen los mismos tokens sin tocar
- * un solo selector.
+ * Color is declared by ROLE (--ink, --accent), never by color name: that way
+ * dark mode and print mode redefine the same tokens without touching a single
+ * selector.
  *
- * Acá viven los tokens de PANTALLA (claro y oscuro). `cv.css` los redefine
- * aparte, en su propio `@media print`, para la variante de impresión: este
- * archivo no es el único lugar donde vive un color, es el único lugar donde
- * viven los tokens de pantalla.
+ * The SCREEN tokens (light and dark) live here. `cv.css` redefines them
+ * separately, in its own `@media print`, for the print variant: this file is
+ * not the only place a color lives, it is the only place the screen tokens
+ * live.
  */
 
 :root {
-  --fondo: #ffffff;
-  --fondo-elevado: #f7f6f4;
-  --tinta: #17181c;
-  --tinta-suave: #5f636e;
-  /* Terracota y no violeta/índigo a propósito: el gradiente violeta es el
-     default de mil templates y falla el test de voz del spec §5. */
-  --acento: #b0472a;
-  --acento-tenue: #fbeee9;
-  --linea: #e5e3df;
-  /* Translúcido a propósito: la píldora lleva `backdrop-filter`, y con un
-     fondo opaco el blur no se vería. */
-  --fondo-pildora: rgb(255 255 255 / 0.82);
+  --bg: #ffffff;
+  --bg-raised: #f7f6f4;
+  --ink: #17181c;
+  --ink-soft: #5f636e;
+  /* Terracotta and not violet/indigo on purpose: the violet gradient is the
+     default of a thousand templates and fails the voice test of spec §5. */
+  --accent: #b0472a;
+  --accent-faint: #fbeee9;
+  --line: #e5e3df;
+  /* Translucent on purpose: the pill carries `backdrop-filter`, and with an
+     opaque background the blur would not show. */
+  --bg-pill: rgb(255 255 255 / 0.82);
 
-  --fuente: "Manrope", system-ui, -apple-system, sans-serif;
+  --font: "Manrope", system-ui, -apple-system, sans-serif;
 
-  /* Unidad de espacio única. Todo margen y padding es un múltiplo de esto. */
-  --espacio: 8px;
-  /* Ancho de TODAS las secciones de la landing. Un solo valor: si el hero, el
-     mapa, los proyectos y el CV no comparten borde, la página se lee como
-     cuatro páginas pegadas. 45rem es la medida que `/cv` ya venía usando. */
-  --ancho: 45rem;
-  --radio: 10px;
-  --sombra: 0 1px 2px rgb(23 24 28 / 0.04), 0 8px 24px rgb(23 24 28 / 0.06);
+  /* A single spacing unit. Every margin and padding is a multiple of this. */
+  --space: 8px;
+  /* Width of EVERY section of the landing. One value: if the hero, the map, the
+     projects and the CV do not share an edge, the page reads as four pages
+     glued together. 45rem is the measure `/cv` was already using. */
+  --width: 45rem;
+  --radius: 10px;
+  --shadow: 0 1px 2px rgb(23 24 28 / 0.04), 0 8px 24px rgb(23 24 28 / 0.06);
 }
 
-/* Modo oscuro solo en pantalla. La impresión lo revierte siempre.
-   `screen and` es necesario, no cosmético: sin él, esta media query tiene más
-   especificidad (0,2,0) que `@media print { :root { ... } }` de cv.css
-   (0,1,0), y en un Ctrl+P con el sistema en oscuro gana el oscuro sobre el
-   papel blanco, pase lo que pase con el orden de la cascada. */
+/* Dark mode on screen only. Print always reverts it.
+   `screen and` is necessary, not cosmetic: without it this media query has more
+   specificity (0,2,0) than cv.css's `@media print { :root { ... } }` (0,1,0),
+   and on a Ctrl+P with the system in dark mode, dark wins over white paper no
+   matter what the cascade order does. */
 @media screen and (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --fondo: #131417;
-    --fondo-elevado: #1c1e23;
-    --tinta: #f0eeea;
-    --tinta-suave: #a1a5b0;
-    --acento: #e2825f;
-    --acento-tenue: #2c1c16;
-    --linea: #2c2f36;
-    --fondo-pildora: rgb(19 20 23 / 0.78);
+    --bg: #131417;
+    --bg-raised: #1c1e23;
+    --ink: #f0eeea;
+    --ink-soft: #a1a5b0;
+    --accent: #e2825f;
+    --accent-faint: #2c1c16;
+    --line: #2c2f36;
+    --bg-pill: rgb(19 20 23 / 0.78);
   }
 }
 
@@ -69,11 +69,11 @@ html {
 
 body {
   margin: 0;
-  background: var(--fondo);
-  color: var(--tinta);
-  font-family: var(--fuente);
-  /* Las ligaduras (fi, fl) se extraen del PDF como un glifo solo y ensucian el
-     texto que lee el parser. Se apagan por parseo, no por estética. */
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font);
+  /* Ligatures (fi, fl) extract from the PDF as a single glyph and dirty the
+     text the parser reads. They are off for parsing, not for aesthetics. */
   font-variant-ligatures: none;
   font-size: 16px;
   line-height: 1.55;
@@ -81,7 +81,7 @@ body {
 }
 
 :focus-visible {
-  outline: 2px solid var(--acento);
+  outline: 2px solid var(--accent);
   outline-offset: 2px;
 }
 

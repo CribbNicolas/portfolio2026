@@ -1,16 +1,16 @@
 /*
- * Layout del CV. UNA SOLA COLUMNA.
+ * CV layout. ONE SINGLE COLUMN.
  *
- * El orden del DOM es el orden en que el parser extrae el texto (docs/01 §1,
- * capa 1: "si el parseo falla, nada de lo que sigue importa"). Por eso acá no
- * hay flex, ni grid, ni tablas, ni position: absolute. La estética se hace con
- * tipografía, color y espaciado, que no mueven el orden de lectura.
+ * DOM order is the order the parser extracts the text in (docs/01 §1, layer 1:
+ * "if parsing fails, nothing that follows matters"). That is why there is no
+ * flex here, no grid, no tables and no position: absolute. The aesthetic is
+ * made of typography, color and spacing, none of which move the reading order.
  *
- * docs/01 §3 desarma el mito de que el diseño rompe el parseo: lo que lo rompe
- * es la estructura. Este archivo respeta la estructura y se toma la estética.
+ * docs/01 §3 dismantles the myth that design breaks parsing: what breaks it is
+ * the structure. This file respects the structure and takes the aesthetic.
  *
- * Tampoco hay sombras ni tarjetas: eso vive en la home. Acá la jerarquía tiene
- * que sobrevivir impresa en blanco y negro.
+ * There are no shadows and no cards either: that lives on the home. Here the
+ * hierarchy has to survive printed in black and white.
  */
 
 @page {
@@ -19,17 +19,17 @@
 }
 
 .cv {
-  padding: calc(var(--espacio) * 4) calc(var(--espacio) * 2.5);
-  max-width: var(--ancho);
+  padding: calc(var(--space) * 4) calc(var(--space) * 2.5);
+  max-width: var(--width);
   margin: 0 auto;
 }
 
-/* --- Encabezado --------------------------------------------------------- */
+/* --- Header ------------------------------------------------------------- */
 
 .cv__name {
   font-size: 1.875rem;
   line-height: 1.1;
-  margin: 0 0 calc(var(--espacio) * 1);
+  margin: 0 0 calc(var(--space) * 1);
   font-weight: 800;
   letter-spacing: -0.03em;
 }
@@ -37,34 +37,33 @@
 .cv__title {
   font-size: 1rem;
   font-weight: 700;
-  color: var(--acento);
-  margin: 0 0 calc(var(--espacio) * 2.5);
+  color: var(--accent);
+  margin: 0 0 calc(var(--space) * 2.5);
 }
 
 .cv__contact {
-  margin: 0 0 calc(var(--espacio) * 0.75);
-  color: var(--tinta-suave);
+  margin: 0 0 calc(var(--space) * 0.75);
+  color: var(--ink-soft);
   font-size: 0.9375rem;
 }
 
 .cv__contact a {
-  color: var(--tinta);
+  color: var(--ink);
   text-decoration: none;
   font-weight: 600;
-  /* Una URL partida por un salto de línea se extrae del PDF con un espacio
-     adentro y deja de ser una URL. El salto tiene que caer ENTRE links, nunca
-     dentro de uno. */
+  /* A URL broken by a line break extracts from the PDF with a space inside and
+     stops being a URL. The break has to fall BETWEEN links, never inside one. */
   white-space: nowrap;
 }
 
 .cv__contact a:hover {
-  color: var(--acento);
+  color: var(--accent);
 }
 
-/* --- Secciones ---------------------------------------------------------- */
+/* --- Sections ----------------------------------------------------------- */
 
 .section {
-  margin-top: calc(var(--espacio) * 4.5);
+  margin-top: calc(var(--space) * 4.5);
 }
 
 .section__title {
@@ -72,8 +71,8 @@
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 0.12em;
-  color: var(--tinta-suave);
-  margin: 0 0 calc(var(--espacio) * 2);
+  color: var(--ink-soft);
+  margin: 0 0 calc(var(--space) * 2);
 }
 
 .profile {
@@ -85,8 +84,8 @@
 /* --- Roles -------------------------------------------------------------- */
 
 .role {
-  margin-bottom: calc(var(--espacio) * 3.5);
-  /* Un rol partido entre dos páginas se lee como dos trabajos distintos. */
+  margin-bottom: calc(var(--space) * 3.5);
+  /* A role split across two pages reads as two different jobs. */
   break-inside: avoid;
 }
 
@@ -100,49 +99,49 @@
 
 .role__company {
   font-weight: 600;
-  color: var(--tinta-suave);
+  color: var(--ink-soft);
 }
 
 .role__meta {
-  margin: calc(var(--espacio) * 0.5) 0 0;
-  color: var(--tinta-suave);
+  margin: calc(var(--space) * 0.5) 0 0;
+  color: var(--ink-soft);
   font-size: 0.875rem;
   font-weight: 600;
   font-variant-numeric: tabular-nums;
 }
 
 .role__context {
-  margin: calc(var(--espacio) * 1.25) 0 0;
-  color: var(--tinta-suave);
+  margin: calc(var(--space) * 1.25) 0 0;
+  color: var(--ink-soft);
   font-size: 0.9375rem;
 }
 
 .role__bullets {
-  margin: calc(var(--espacio) * 1.5) 0 0;
+  margin: calc(var(--space) * 1.5) 0 0;
   padding-left: 1.15rem;
 }
 
 .role__bullets li {
-  margin-bottom: calc(var(--espacio) * 1.125);
+  margin-bottom: calc(var(--space) * 1.125);
 }
 
 .role__bullets li::marker {
-  color: var(--acento);
+  color: var(--accent);
 }
 
 .metric {
-  color: var(--acento);
+  color: var(--accent);
   font-weight: 800;
   font-variant-numeric: tabular-nums;
-  background: var(--acento-tenue);
+  background: var(--accent-faint);
   padding: 1px 6px;
   border-radius: 6px;
 }
 
-/* --- Skills, educación, idiomas ----------------------------------------- */
+/* --- Skills, education, languages ---------------------------------------- */
 
 .skill-group {
-  margin: 0 0 calc(var(--espacio) * 1.25);
+  margin: 0 0 calc(var(--space) * 1.25);
   font-size: 0.9375rem;
 }
 
@@ -151,7 +150,7 @@
 }
 
 .entry {
-  margin-bottom: calc(var(--espacio) * 2.25);
+  margin-bottom: calc(var(--space) * 2.25);
   break-inside: avoid;
 }
 
@@ -162,13 +161,13 @@
 }
 
 .entry__meta {
-  margin: calc(var(--espacio) * 0.25) 0 0;
-  color: var(--tinta-suave);
+  margin: calc(var(--space) * 0.25) 0 0;
+  color: var(--ink-soft);
   font-size: 0.875rem;
   font-variant-numeric: tabular-nums;
 }
 
-/* --- Tablet y desktop: solo ensanchan. Mobile-first. --------------------- */
+/* --- Tablet and desktop: they only widen. Mobile-first. --------------------- */
 
 @media (min-width: 40rem) {
   body {
@@ -176,7 +175,7 @@
   }
 
   .cv {
-    padding: calc(var(--espacio) * 7) calc(var(--espacio) * 4);
+    padding: calc(var(--space) * 7) calc(var(--space) * 4);
   }
 
   .cv__name {
@@ -188,16 +187,16 @@
   }
 }
 
-/* --- Impresión: siempre claro, pase lo que pase en pantalla -------------- */
+/* --- Print: always light, whatever happens on screen --------------------- */
 
 @media print {
   :root {
-    --fondo: #fff;
-    --tinta: #000;
-    --tinta-suave: #4a4e58;
-    --acento: #8f3a22;
-    --acento-tenue: transparent;
-    --linea: #ddd;
+    --bg: #fff;
+    --ink: #000;
+    --ink-soft: #4a4e58;
+    --accent: #8f3a22;
+    --accent-faint: transparent;
+    --line: #ddd;
   }
 
   body {
@@ -233,16 +232,16 @@
     padding: 0;
   }
 
-  /* NINGÚN tracking sobrevive a la impresión. Dos motivos, los dos vistos:
-     - Positivo: separaba los glifos y los títulos salían "P E R F I L", así que
-       ningún parser los mapeaba a un campo.
-     - Negativo: achica también el avance del espacio, y hay visores que por
-       debajo de cierto umbral deciden que no hay espacio y devuelven
-       "NicolásAgustínCribbBarbaro" al copiar. El PDF guarda el espacio igual
-       —pdfjs lo ve— pero no vale la pena depender del criterio de cada visor
-       justo en el campo del nombre.
-     En pantalla el tracking se mantiene; al imprimir se anula, y a estos
-     tamaños no se nota. */
+  /* NO tracking survives printing. Two reasons, both observed:
+     - Positive: it separated the glyphs and the headings came out "P E R F I L",
+       so no parser mapped them to a field.
+     - Negative: it also shrinks the advance of the space, and there are viewers
+       that below a certain threshold decide there is no space and return
+       "NicolásAgustínCribbBarbaro" on copy. The PDF stores the space anyway
+       — pdfjs sees it — but it is not worth depending on each viewer's judgement
+       right on the name field.
+     On screen the tracking stays; on print it is cancelled, and at these sizes
+     it does not show. */
   body,
   .cv__name,
   .role__title,
@@ -251,11 +250,12 @@
   }
 }
 
-/* Solo lo usa la landing: en `/cv` el `<h1>` del Header ya abre la página.
-   Vive acá y no en home.css porque es parte del bloque `.cv`. */
-.cv__seccion-titulo {
+/* Only the landing uses it: on `/cv` the Header's `<h1>` already opens the
+   page. It lives here and not in home.css because it is part of the `.cv`
+   block. */
+.cv__section-title {
   font-size: 1.5rem;
   font-weight: 800;
   letter-spacing: -0.025em;
-  margin: 0 0 calc(var(--espacio) * 2);
+  margin: 0 0 calc(var(--space) * 2);
 }

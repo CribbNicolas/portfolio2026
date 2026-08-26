@@ -44,10 +44,10 @@ const jsonLd = buildPersonJsonLd(publicView, new URL(Astro.site!));
   <script type="application/ld+json" slot="head" set:html={JSON.stringify(jsonLd)} />
 
   {/*
-    `/cv` existe para que `build-pdf.ts` la imprima, no para que la visiten: el
-    lector llega al CV por el ancla `#cv` de la landing. Indexarla partiría en
-    dos la única visita, y el que cayera acá no vería ni el mapa ni los
-    proyectos. `scripts/single-landing.check.ts` verifica esto.
+    `/cv` exists so `build-pdf.ts` can print it, not to be visited: the reader
+    reaches the CV through the landing's `#cv` anchor. Indexing it would split
+    the single visit in two, and whoever landed here would see neither the map
+    nor the projects. `scripts/single-landing.check.ts` verifies this.
   */}
   <meta name="robots" content="noindex, follow" slot="head" />
   <main class="cv">
@@ -71,7 +71,7 @@ const jsonLd = buildPersonJsonLd(publicView, new URL(Astro.site!));
           <p class="entry__title">{e.degree}{e.field && <> — {e.field}</>}</p>
           <p class="entry__meta">
             {e.institution}
-            {/* Sin `start` no hay rango: formatDateRange(end, end) imprimiría
+            {/* Without `start` there is no range: formatDateRange(end, end) would print
                 "02/2022 — 02/2022", que se lee como un error de carga. */}
             {e.end && <> · {e.start ? formatDateRange(e.start, e.end) : formatYearMonth(e.end)}</>}
             {e.status === "partial" && <> · Cursado parcial</>}

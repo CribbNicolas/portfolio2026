@@ -127,7 +127,7 @@ export function createInteraction({
       // click in waiting, so a shaky hand does not cancel the click.
       if (!state.dragging && travelled > DRAG_THRESHOLD) {
         state.dragging = true;
-        container.classList.add("lab__mapa--dragging");
+        container.classList.add("lab__map--dragging");
         // Capturing the pointer keeps the drag working even when the cursor
         // leaves the map. Released on pointer up.
         try { container.setPointerCapture(e.pointerId); } catch { /* not critical */ }
@@ -152,7 +152,7 @@ export function createInteraction({
 
     if (state.dragging) {
       state.dragging = false;
-      container.classList.remove("lab__mapa--dragging");
+      container.classList.remove("lab__map--dragging");
       wake();
       return;
     }
@@ -167,14 +167,14 @@ export function createInteraction({
   const onCancel = () => {
     pointerId = null;
     state.dragging = false;
-    container.classList.remove("lab__mapa--dragging");
+    container.classList.remove("lab__map--dragging");
   };
 
   const onLeave = () => {
     pointerX = pointerY = -1e9;
     state.hover = null;
     hideTooltip();
-    container.classList.remove("lab__mapa--sobre-nodo");
+    container.classList.remove("lab__map--on-node");
     wake();
   };
 
@@ -236,7 +236,7 @@ export function createInteraction({
     }
     state.hover = id;
     // `cursor: pointer` is the only signal that the node is clickable.
-    container.classList.toggle("lab__mapa--sobre-nodo", id !== null);
+    container.classList.toggle("lab__map--on-node", id !== null);
     if (id) showTooltip(id);
     else hideTooltip();
   }
@@ -290,7 +290,7 @@ export function createInteraction({
       for (const v of neighbours.get(next) ?? []) state.neighbourhood.add(v);
     }
 
-    container.classList.toggle("lab__mapa--enfocado", next !== null);
+    container.classList.toggle("lab__map--focused", next !== null);
     paintPanel(next);
     markList(next);
     wake();
@@ -326,7 +326,7 @@ export function createInteraction({
     // A skill's detail is its own name: repeating it says nothing.
     if (n.t !== n.n) {
       const body = document.createElement("p");
-      body.className = "lab__panel-texto";
+      body.className = "lab__panel-text";
       body.textContent = n.t;
       children.push(body);
     }
@@ -346,7 +346,7 @@ export function createInteraction({
   /** Focus from the map also marks the list, and the other way around. */
   function markList(id: string | null): void {
     for (const el of Array.from(document.querySelectorAll<HTMLElement>("[data-node]"))) {
-      el.classList.toggle("lab__item--enfocado", el.dataset.node === id);
+      el.classList.toggle("lab__item--focused", el.dataset.node === id);
     }
   }
 
@@ -374,7 +374,7 @@ export function createInteraction({
       container.removeEventListener("pointerleave", onLeave);
       container.removeEventListener("keydown", onKey);
       container.classList.remove(
-        "lab__mapa--dragging", "lab__mapa--sobre-nodo", "lab__mapa--enfocado",
+        "lab__map--dragging", "lab__map--on-node", "lab__map--focused",
       );
       hideTooltip();
       paintPanel(null);
@@ -400,10 +400,10 @@ const MAX_ACHIEVEMENTS = 2;
 
 function achievementGroup(achievements: LabNode[]): HTMLElement {
   const wrapper = document.createElement("div");
-  wrapper.className = "lab__panel-grupo";
+  wrapper.className = "lab__panel-group";
 
   const heading = document.createElement("p");
-  heading.className = "lab__panel-subtitulo";
+  heading.className = "lab__panel-subtitle";
   heading.textContent = achievements.length === 1 ? "Logro" : `Logros (${achievements.length})`;
   wrapper.append(heading);
 
@@ -429,7 +429,7 @@ function achievementGroup(achievements: LabNode[]): HTMLElement {
 
 function chipGroup(nodes: LabNode[]): HTMLElement {
   const wrapper = document.createElement("div");
-  wrapper.className = "lab__panel-grupo";
+  wrapper.className = "lab__panel-group";
 
   const list = document.createElement("ul");
   list.className = "lab__panel-list";

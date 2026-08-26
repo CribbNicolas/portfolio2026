@@ -277,7 +277,7 @@ export interface TechnicalDecision {
 export interface Project {
   id: string;
   name: string;
-  /** Client, or "proyecto propio". */
+  /** Client, or "project propio". */
   client?: string;
   /** The role you held when you did it, when applicable. */
   roleId?: string;

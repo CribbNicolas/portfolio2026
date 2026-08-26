@@ -16,13 +16,13 @@ import type { LabData, LabScene } from "./types";
 export function start(): void {
   // Before the graph's early return: the pill exists even if the map never
   // mounts, and it does not depend on the map's data.
-  const pill = document.querySelector<HTMLElement>("[data-pildora]");
+  const pill = document.querySelector<HTMLElement>("[data-pill]");
   if (pill) followScroll(pill);
 
   const dataEl = document.querySelector<HTMLScriptElement>("[data-lab-data]");
   const graphCanvas = document.querySelector<HTMLCanvasElement>("[data-lab-graph]");
   const fieldCanvas = document.querySelector<HTMLCanvasElement>("[data-lab-field]");
-  const list = document.querySelector<HTMLElement>(".lab__lista");
+  const list = document.querySelector<HTMLElement>(".lab__list");
   const tooltip = document.querySelector<HTMLElement>("[data-lab-tooltip]");
   if (!dataEl || !graphCanvas) return;
 
@@ -68,7 +68,7 @@ export function start(): void {
           const { mountField } = await import("./field");
           register(await mountField(fieldCanvas));
         } catch {
-          /* The flat `--fondo` background is already underneath. */
+          /* The flat `--bg` background is already underneath. */
         }
       });
     });
@@ -115,7 +115,7 @@ function wireList(list: HTMLElement | null, bus: ReturnType<typeof createHoverBu
  */
 function wireFocus(list: HTMLElement | null, focus: (id: string | null) => void): void {
   if (!list) return;
-  list.classList.add("lab__lista--interactiva");
+  list.classList.add("lab__list--interactive");
 
   const idOf = (t: EventTarget | null): string | null =>
     (t as HTMLElement | null)?.closest<HTMLElement>("[data-node]")?.dataset.node ?? null;

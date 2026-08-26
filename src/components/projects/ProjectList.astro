@@ -33,27 +33,27 @@ const STATUS: Partial<Record<Project["status"], string>> = {
 };
 ---
 
-<ul class="proyectos">
+<ul class="projects">
   {projects.map((p) => (
     <li
-      class="proyecto"
+      class="project"
       id={ITEM_ID(nodeId("project", p.id))}
       data-node={nodeId("project", p.id)}
     >
-      <h3 class="proyecto__nombre">
+      <h3 class="project__name">
         {p.name}
-        {STATUS[p.status] && <span class="proyecto__estado">{STATUS[p.status]}</span>}
+        {STATUS[p.status] && <span class="project__status">{STATUS[p.status]}</span>}
       </h3>
-      {p.client && <p class="proyecto__cliente">{p.client}</p>}
-      <p class="proyecto__solucion">{p.solution.short}</p>
-      <ul class="proyecto__stack">
+      {p.client && <p class="project__client">{p.client}</p>}
+      <p class="project__solution">{p.solution.short}</p>
+      <ul class="project__stack">
         {p.skillIds.map((id) => {
           const name = skillNameById.get(id);
           return name ? <li>{name}</li> : null;
         })}
       </ul>
       {p.links.length > 0 && (
-        <p class="proyecto__links">
+        <p class="project__links">
           {p.links.map((l, i) => (
             <>
               {i > 0 && " · "}

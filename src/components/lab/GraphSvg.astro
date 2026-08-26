@@ -23,12 +23,12 @@ const { map, totalNodes, totalEdges } = Astro.props;
   class="lab__svg"
   viewBox={map.viewBox}
   role="img"
-  aria-label={`Mapa de conocimiento: ${totalNodes} nodos y ${totalEdges} conexiones entre roles, proyectos, logros y tecnologías.`}
+  aria-label={`Mapa de conocimiento: ${totalNodes} nodos y ${totalEdges} conexiones entre roles, projects, logros y tecnologías.`}
 >
   {map.edges.map((a) => (
     <line
       x1={a.x1} y1={a.y1} x2={a.x2} y2={a.y2}
-      class={a.affinity ? "lab__arista lab__arista--afinidad" : "lab__arista"}
+      class={a.affinity ? "lab__edge lab__edge--affinity" : "lab__edge"}
       style={`stroke-width:${a.width};opacity:${a.opacity}`}
     />
   ))}
@@ -45,7 +45,7 @@ const { map, totalNodes, totalEdges } = Astro.props;
       <circle
         id={n.domId}
         cx={n.cx} cy={n.cy} r={n.r}
-        class={`lab__nodo lab__nodo--${n.kind}${n.withEvidence ? "" : " lab__nodo--hueco"}`}
+        class={`lab__node lab__node--${n.kind}${n.withEvidence ? "" : " lab__node--empty"}`}
         style={`opacity:${n.withEvidence ? n.opacity : (n.opacity * 0.75).toFixed(3)};stroke-width:${n.strokeWidth}`}
       ><title>{n.label}</title></circle>
     </>
@@ -56,7 +56,7 @@ const { map, totalNodes, totalEdges } = Astro.props;
       x={e.x}
       y={e.y}
       text-anchor="middle"
-      class={`lab__etiqueta lab__etiqueta--${e.kind}`}
+      class={`lab__label lab__label--${e.kind}`}
       style={`opacity:${e.opacity};font-size:${e.size}px`}
     >{e.text}</text>
   ))}

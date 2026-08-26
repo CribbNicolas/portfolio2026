@@ -483,7 +483,7 @@ export async function mountGraph({ canvas, data, bus, tooltip, panel, labels }: 
     alive = false;
     if (rafId) cancelAnimationFrame(rafId);
     // The SVG was never removed from the DOM: reverting is dropping a class.
-    container.classList.remove("lab__mapa--3d");
+    container.classList.remove("lab__map--3d");
     interaction.destroy();
     removeEventListener("scroll", onScroll);
     document.removeEventListener("visibilitychange", onVisibilityChange);
@@ -502,7 +502,7 @@ export async function mountGraph({ canvas, data, bus, tooltip, panel, labels }: 
 
   // Only here is the SVG hidden: the camera starts in the same pose the server
   // projection used, so there is no visual jump.
-  container.classList.add("lab__mapa--3d");
+  container.classList.add("lab__map--3d");
   wake();
 
   return { destroy: shutDown, focusNode: interaction.focusNode };

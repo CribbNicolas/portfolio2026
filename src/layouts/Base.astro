@@ -65,7 +65,7 @@ const socialImage = new URL("/og.jpg", Astro.site);
       and not one because the site has a dark mode: with a single value the bar
       ends up light over a dark page, or the other way around.
 
-      The values are the `fondo` token from `tokens.css` in each mode. This is
+      The values are the `--bg` token from `tokens.css` in each mode. This is
       the second — and last — copy of a color outside that file: no `var()`
       works here, because what reads this is the operating system and not the
       cascade.

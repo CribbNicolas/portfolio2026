@@ -32,8 +32,8 @@ export function buildHoverCss(graph: PositionedGraph): string {
     const node = `#${NODE_ID(n.id)}`;
     const item = `#${ITEM_ID(n.id)}`;
     rules.push(
-      `.lab:has(${item}:hover,${item}:focus-visible) ${node}{opacity:1;stroke:var(--acento);stroke-width:3}`,
-      `.lab:has(${node}:hover) ${item}{background:var(--acento-tenue);color:var(--acento)}`,
+      `.lab:has(${item}:hover,${item}:focus-visible) ${node}{opacity:1;stroke:var(--accent);stroke-width:3}`,
+      `.lab:has(${node}:hover) ${item}{background:var(--accent-faint);color:var(--accent)}`,
     );
   }
 

@@ -47,7 +47,7 @@ export const GET: APIRoute = async ({ site }) => {
       `### ${p.name}${p.client ? ` (${p.client})` : ""}`,
       p.problem.short,
       p.solution.short,
-      ...(p.slug ? [`Caso: ${base}/proyectos/${p.slug}`] : []),
+      ...(p.slug ? [`Caso: ${base}/projects/${p.slug}`] : []),
       "",
     ]),
   ];

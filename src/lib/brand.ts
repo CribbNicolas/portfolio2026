@@ -44,7 +44,7 @@ export const N_WEIGHT = 3.6;
  *
  * Colors are passed explicitly because this SVG ends up inside a page Chromium
  * prints without the site cascade. The header logo, by contrast, uses
- * `var(--acento)` and `var(--tinta)`: there are tokens there, and that is why
+ * `var(--accent)` and `var(--ink)`: there are tokens there, and that is why
  * dark mode comes for free.
  */
 export function brandSvg({

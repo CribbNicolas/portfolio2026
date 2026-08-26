@@ -103,9 +103,9 @@ export async function mountField(canvas: HTMLCanvasElement): Promise<LabScene | 
   };
 
   const uploadColors = () => {
-    gl.uniform3fv(u.cBackground, rgb("--fondo-elevado"));
+    gl.uniform3fv(u.cBackground, rgb("--bg-raised"));
     gl.uniform3fv(u.cLine, rgb("--line"));
-    gl.uniform3fv(u.cAccent, rgb("--acento"));
+    gl.uniform3fv(u.cAccent, rgb("--accent"));
   };
   uploadColors();
 
@@ -180,7 +180,7 @@ export async function mountField(canvas: HTMLCanvasElement): Promise<LabScene | 
     if (!alive) return;
     alive = false;
     if (rafId) cancelAnimationFrame(rafId);
-    canvas.classList.remove("lab__campo--activo");
+    canvas.classList.remove("lab__field--active");
     removeEventListener("pointermove", onMove);
     document.removeEventListener("visibilitychange", onVisibilityChange);
     canvas.removeEventListener("webglcontextlost", onContextLost);
@@ -193,7 +193,7 @@ export async function mountField(canvas: HTMLCanvasElement): Promise<LabScene | 
     gl.deleteShader(fs);
   }
 
-  canvas.classList.add("lab__campo--activo");
+  canvas.classList.add("lab__field--active");
   rafId = requestAnimationFrame(frame);
   return { destroy: shutDown };
 }
