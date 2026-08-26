@@ -13,7 +13,7 @@
  */
 
 import type { ContentView, SkillCategory } from "./content-schema";
-import { monthsBetween } from "./dates";
+import { monthsFromPeriods } from "./dates";
 
 // ---------------------------------------------------------------------------
 // TIPOS
@@ -217,19 +217,23 @@ export function buildKnowledgeGraph(view: ContentView): KnowledgeGraph {
 /**
  * Años de uso por skill. El `T` de la fórmula de tamaño.
  *
- * Dos fuentes, en este orden:
+ * Dos fuentes, UNIDAS y no en orden de prioridad:
  *
- * 1. `Skill.since`, si está declarado. Es el único dato que puede saber que
- *    empezaste a usar algo ANTES del primer logro que lo menciona.
- * 2. El span de la evidencia fechada: los roles de los logros que la citan, y
- *    los proyectos que la usan (por fecha PROPIA del proyecto, no la de su rol
+ * 1. `Skill.periods`, si está declarado. Es el único dato que puede saber que
+ *    empezaste a usar algo ANTES del primer logro que lo menciona, o que lo
+ *    dejaste y lo retomaste.
+ * 2. La evidencia fechada: los roles de los logros que la citan, y los
+ *    proyectos que la usan (por fecha PROPIA del proyecto, no la de su rol
  *    — `jwd-maderas` no tiene `roleId` y sin esto Next.js, Tailwind y Sanity
  *    darían 0 años teniendo 5 conexiones cada una).
  *
  * Sin ninguna de las dos, cero. No se estima nada (invariante 4): una skill sin
  * evidencia se dibuja chica, que es el mapa mostrando dónde falta contenido.
  *
- * Las duraciones salen de `dates.ts` y no de aritmética local: regla 1.
+ * Las duraciones salen de `dates.ts` y no de aritmética local: regla 1. El
+ * total es la SUMA de los períodos fusionados, no el span de punta a punta: un
+ * hueco de tres años no es experiencia, y dos trabajos en paralelo no son dos
+ * veces los mismos años.
  */
 export function aniosDeSkill(view: ContentView): Map<string, number> {
   const roles = new Map(view.experience.map((r) => [r.id, r]));
@@ -253,21 +257,10 @@ export function aniosDeSkill(view: ContentView): Map<string, number> {
 
   const salida = new Map<string, number>();
   for (const s of Object.values(view.skills).flat()) {
-    if (s.since) {
-      salida.set(s.id, monthsBetween(s.since, null) / 12);
-      continue;
-    }
-    const ps = periodos.get(s.id);
-    if (!ps || ps.length === 0) {
-      salida.set(s.id, 0);
-      continue;
-    }
-    // Un span, no la suma: usar React en dos trabajos a la vez no son dos veces
-    // los mismos años. La regla 2 del contrato dice lo mismo de los roles.
-    const inicio = ps.map((p) => p.start).sort()[0]!;
-    const abierto = ps.some((p) => p.end === null);
-    const fin = abierto ? null : ps.map((p) => p.end!).sort().at(-1)!;
-    salida.set(s.id, monthsBetween(inicio, fin) / 12);
+    // Los declarados entran a la misma bolsa que los derivados: unión, no
+    // reemplazo. Un período declarado incompleto no puede borrar evidencia real.
+    for (const p of s.periods ?? []) registrar(s.id, p.start, p.end ?? null);
+    salida.set(s.id, monthsFromPeriods(periodos.get(s.id) ?? []) / 12);
   }
   return salida;
 }

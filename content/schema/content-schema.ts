@@ -141,6 +141,12 @@ export type SkillCategory =
   | "tooling"
   | "practice"; // TDD, code review, mentoring, RFCs
 
+/** One stretch of use of a skill. No `end` means you still use it. */
+export interface SkillPeriod {
+  start: YearMonth;
+  end?: YearMonth;
+}
+
 export interface Skill {
   id: string;              // "react", "mapbox-gl"
   /** Nombre canónico, exactamente como lo escribe la industria. */
@@ -156,8 +162,16 @@ export interface Skill {
    * `core` = lo podés discutir en profundidad en una entrevista técnica.
    */
   level: "core" | "working" | "familiar";
-  /** Desde cuándo la usás en producción. Sirve para derivar "X años con React". */
-  since?: YearMonth;
+  /**
+   * When you used it in production. Feeds "X years with React".
+   *
+   * A LIST, because a technology gets dropped and picked back up, and the
+   * years are the sum of the merged periods (`monthsFromPeriods`): a three
+   * year gap is not experience. It is UNIONed with what the roles and projects
+   * citing the skill already imply — declaring here adds what no achievement
+   * records, it never overrides real evidence.
+   */
+  periods?: SkillPeriod[];
   /** Si es false, no aparece en ningún output. Para tecnologías que dejaste atrás. */
   active: boolean;
   visibility: Visibility;

@@ -25,7 +25,9 @@ content/
   schema/
     content-schema.ts   Los tipos + las interfaces del contrato (ContentSource, ContentView). La fuente de tipos.
     validation.ts       Zod (forma) + checkRules (coherencia). Reglas 1,2,3,6 + integridad referencial.
-    dates.ts            ÚNICA fuente de cálculo de duración/antigüedad. Regla 1.
+    dates.ts            ÚNICA fuente de cálculo de duración/antigüedad. Regla 1. `monthsFromPeriods`
+                        fusiona tramos y los SUMA: un hueco no es experiencia y dos trabajos en
+                        paralelo no son dos veces los mismos años. Lo usa `Skill.periods`.
     resolve-view.ts     ÚNICA fuente de lógica de visibility. resolveView(dataset, surface). Reglas 7,8. Compartida por todo backend.
   data/
     content.es.json     El dataset real. Fase 0. Sin dataset EN (getDataset("en") tira error a propósito).
@@ -264,7 +266,11 @@ teléfonos.
 
 ## Convenciones (deducidas del código, no de preferencias)
 
-- **Comentarios en español, explican el PORQUÉ, no el qué.** Banners de sección
+- **Este repo está EN MIGRACIÓN al inglés** (decidido el 2026-08-26). Lo viejo
+  sigue en español hasta el PR de migración (`docs/06` §1.4): no lo traduzcas de
+  a pedacitos ni mezcles la traducción con un cambio de comportamiento. Un
+  archivo mitad y mitad es eso, y es transitorio.
+- **Los comentarios explican el PORQUÉ, no el qué.** Banners de sección
   `// ---`. JSDoc `/** */` en tipos y funciones públicas; cuando un campo o
   función hace cumplir una regla, se nombra por número: `// Regla 8: ...`.
 - **Tipado:** `interface` para formas de datos, `type` para uniones y alias
