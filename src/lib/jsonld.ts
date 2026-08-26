@@ -27,7 +27,7 @@ export function buildPersonJsonLd(view: ContentView, site: URL): Record<string, 
     "@id": new URL("/#person", site).toString(),
     name: identity.fullName,
     alternateName: identity.preferredName,
-    // El buscable, no el de marca (CONTRATO §3).
+    // The searchable one, not the brand one (CONTRACT §3).
     jobTitle: identity.searchTitle,
     description: identity.summary.short,
     url: site.toString(),

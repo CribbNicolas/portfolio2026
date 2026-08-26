@@ -1,362 +1,339 @@
-# CLAUDE.md — instrucciones para sesiones futuras
+# CLAUDE.md — instructions for future sessions
 
-Instrucciones operativas para vos, no documentación para humanos. Los docs de
-fondo ya existen en `docs/`: acá se enlazan, no se repiten.
+Operating instructions for you, not documentation for humans. The background
+docs already exist in `docs/`: they are linked here, not repeated.
 
-## Qué es esto
+## What this is
 
-Capa de **contenido** de un portfolio + CV para un dev que busca trabajo y
-freelance en LatAm/español. Principio rector: **los datos son la fuente única de
-verdad; el CV, el portfolio y los bloques de LinkedIn son VISTAS derivadas.** El
-backend guarda hechos atómicos (`Achievement`, `Skill`, `Role`, `Metric`), nunca
-documentos. Existen la capa de contenido (schema + validación + dataset JSON +
-una implementación de `ContentSource`) y un frontend Astro estático que es
-**una sola página navegable**: `/` con hero, índice de anclas, mapa de
-conocimiento, proyectos y el CV completo. `/cv` sigue existiendo pero NO es un
-destino — es la fuente desde la que se imprime el PDF, con `noindex` y sin
-links entrantes. Los casos de estudio en formato largo, los servicios y el
-lado freelance quedan para el próximo slice. Por qué el schema es como es: `docs/CONTRATO.md` y `docs/01`–`04`.
-No los reescribas; leelos.
+The **content** layer of a portfolio + CV for a developer looking for work and
+freelance clients in LatAm/Spanish. Guiding principle: **the data is the single
+source of truth; the CV, the portfolio and the LinkedIn blocks are derived
+VIEWS.** The backend stores atomic facts (`Achievement`, `Skill`, `Role`,
+`Metric`), never documents. There is a content layer (schema + validation + JSON
+dataset + one `ContentSource` implementation) and a static Astro frontend that is
+**one navigable page**: `/` with hero, anchor index, knowledge map, projects and
+the full CV. `/cv` still exists but is NOT a destination — it is the source the
+PDF is printed from, with `noindex` and no incoming links. Long-form case
+studies, services and the freelance side wait for the next slice. Why the schema
+is the way it is: `docs/CONTRACT.md` and `docs/01`–`04`. Do not rewrite them;
+read them.
 
-## Mapa de archivos
+**Language.** The site content is in Spanish — it is a CV for a Spanish-speaking
+market. Everything else is in English: identifiers, comments, docs, commit
+messages. When you touch a user-visible string it stays Spanish; the code around
+it is English. The URL anchors (`#mapa`, `#proyectos`, `#cv`) are addresses, not
+code: they stay Spanish too.
+
+## File map
 
 ```
 content/
   schema/
-    content-schema.ts   Los tipos + las interfaces del contrato (ContentSource, ContentView). La fuente de tipos.
-    validation.ts       Zod (forma) + checkRules (coherencia). Reglas 1,2,3,6 + integridad referencial.
-    dates.ts            ÚNICA fuente de cálculo de duración/antigüedad. Regla 1. `monthsFromPeriods`
-                        fusiona tramos y los SUMA: un hueco no es experiencia y dos trabajos en
-                        paralelo no son dos veces los mismos años. Lo usa `Skill.periods`.
-    resolve-view.ts     ÚNICA fuente de lógica de visibility. resolveView(dataset, surface). Reglas 7,8. Compartida por todo backend.
+    content-schema.ts   The types + the contract interfaces (ContentSource, ContentView). The source of types.
+    validation.ts       Zod (shape) + checkRules (coherence). Rules 1,2,3,6 + referential integrity + Skill.periods.
+    dates.ts            THE source of duration arithmetic. Rule 1. `monthsFromPeriods` merges spans and SUMS them:
+                        a gap is not experience, and two parallel jobs are not twice the same years.
+    resolve-view.ts     THE source of visibility logic. resolveView(dataset, surface). Rules 7,8. Shared by every backend.
   data/
-    content.es.json     El dataset real. Fase 0. Sin dataset EN (getDataset("en") tira error a propósito).
+    content.es.json     The real dataset. Phase 0. No EN dataset (getDataset("en") throws on purpose).
   source/
-    json-source.ts      ContentSource sobre el JSON. Solo trae/cachea el dataset y delega en resolveView.
-    index.ts            ⚠️ La ÚNICA línea que cambia al migrar a Sanity. Todo el frontend importa de acá.
-    content-source.test.ts  Tests de reglas 7,8 + locale (lo que el schema NO valida).
-scripts/validate.ts     Entry point de `npm run validate`.
-.github/workflows/      content-validation.yml — typecheck + validate + test + build + pdf:local + test:pdf + los cuatro checks + audit:todos en cada push. Sube dist/cv.pdf como artifact. NO deployea: de eso se encarga Cloudflare Pages.
-                        smoke-deploy.yml — corre test:pdf contra el /cv.pdf PUBLICADO en cada deploy con éxito de Pages (previews de staging incluidas). Solo dispara si el archivo está en la rama por defecto.
-                        version-gate.yml — solo en PRs a develop: package.json.version tiene que subir.
-                        flujo-de-ramas.yml — solo en PRs a staging/main: verifica de qué rama vienen.
-                        A main solo entra staging; a staging solo entra develop. Los rulesets no
-                        pueden expresar esto: miran la rama destino, no el origen.
-functions/              Cloudflare Pages Functions. Lo ÚNICO del repo que corre en runtime.
-  cv.pdf.ts           GET /cv.pdf. Le pide a Browser Rendering que imprima nuestro propio /cv y cachea el resultado. Reemplaza al dist/cv.pdf estático.
-  _pdf.ts             Las piezas puras (cuerpo del pedido, clave de caché, cabeceras). El guion bajo lo saca del ruteo de Pages.
-  _pdf.test.ts        Custodia que el PDF servido pida las MISMAS opciones que el PDF testeado.
-docs/                   Ver docs/00-indice.md. El "por qué" de cada decisión de diseño vive acá.
-                        08-ramas-y-versionado.md — feature/* → develop → staging → main, y la regla del bump.
-                        LEELO antes de abrir un PR: el de develop falla si no subís la versión.
-                        07-deuda-tecnica.md — lo encontrado fuera de scope y no arreglado. Mirarlo ANTES de
-                        "arreglar de paso" algo: puede que ya esté anotado con su porqué.
-                        09-seo-y-metadata.md — qué emite el <head>, y sobre todo qué NO emite A PROPÓSITO y
-                        bajo qué condición reconsiderarlo. LEELO antes de "agregar la etiqueta que falta":
-                        og:site_name, hreflang, profile:*, webmanifest y favicon.ico están DECIDIDOS, no olvidados.
+    json-source.ts      ContentSource over the JSON. Only fetches/caches the dataset and delegates to resolveView.
+    index.ts            ⚠️ The ONE line that changes when migrating to Sanity. The whole frontend imports from here.
+    content-source.test.ts  Tests of rules 7,8 + locale (what the schema does NOT validate).
+scripts/validate.ts     Entry point of `pnpm run validate`.
+.github/workflows/      content-validation.yml — typecheck + validate + test + build + pdf:local + test:pdf + the four
+                        checks + audit:todos on every push. Uploads dist/cv.pdf as an artifact. Does NOT deploy:
+                        Cloudflare Pages handles that.
+                        smoke-deploy.yml — runs test:pdf against the PUBLISHED /cv.pdf on every successful Pages
+                        deploy (staging previews included). Only fires if the file is on the default branch.
+                        It is what sets SITE for served.check.ts.
+                        version-gate.yml — PRs into develop only: package.json.version has to rise.
+                        flujo-de-ramas.yml — PRs into staging/main only: checks which branch they come from.
+                        Only staging enters main; only develop enters staging. Rulesets cannot express this:
+                        they look at the target branch, not the source.
+functions/              Cloudflare Pages Functions. The ONLY thing in the repo that runs at runtime.
+  cv.pdf.ts           GET /cv.pdf. Asks Browser Rendering to print our own /cv and caches the result.
+  _pdf.ts             The pure pieces (request body, cache key, headers). The underscore keeps it out of Pages routing.
+  _pdf.test.ts        Guards that the served PDF asks for the SAME options as the tested PDF.
+docs/                   See docs/00-index.md. The "why" of every design decision lives there.
+                        08-branches-and-versioning.md — feature/* → develop → staging → main, and the bump rule.
+                        READ IT before opening a PR: the one into develop fails if you do not raise the version.
+                        07-technical-debt.md — what was found out of scope and not fixed. Look at it BEFORE
+                        "fixing something on the way": it may already be noted with its reason.
+                        09-seo-and-metadata.md — what the <head> emits, and above all what it deliberately does NOT
+                        and under what condition to reconsider. READ IT before "adding the missing tag":
+                        og:site_name, hreflang, profile:*, webmanifest and favicon.ico are DECIDED, not forgotten.
 src/
-  pages/cv.astro      El CV en HTML. ÚNICA fuente del layout; de acá sale el PDF.
-                      NO es un destino navegable: `noindex` y cero links entrantes.
-                      El lector llega al CV por el ancla `#cv` de la landing.
-  pages/index.astro   La landing: hero + índice + #mapa + #proyectos + #cv. ÚNICA página con JS.
-  pages/cv.json.ts    Endpoint public-api.
-  pages/build.json.ts El commit publicado (CF_PAGES_COMMIT_SHA). Un solo consumidor: el smoke,
-                      que espera con esto a que Cloudflare sirva el commit recién pusheado.
-  pages/404.astro     Sin esto Pages devuelve 200 con HTML para cualquier ruta: soft-404.
-  pages/llms.txt.ts   Endpoint markdown para agentes.
-  components/cv/      Componentes tontos: reciben props resueltas, no filtran nada.
-  components/proyectos/ListaProyectos.astro  Los proyectos. Cada tarjeta lleva el id que
-                      espera `buildHoverCss`: el hover cruzado con el mapa va SIN JS.
-  components/lab/GraphSvg.astro  El mapa en SVG. NO es placeholder: es el fallback real.
-                      El prefijo `lab` es el nombre del BLOQUE (el mapa), no de una ruta:
-                      `/lab` ya no existe. Renombrarlo rompería los greps de CI.
-  components/Logo.astro  La marca completa: el aro con la N adentro. La geometría NO vive
-                      acá, sale de lib/marca.ts. Usa var(--acento)/var(--tinta), así que el
-                      modo oscuro le sale de los tokens sin CSS propio.
-  lib/marca.ts        ÚNICA fuente de la geometría de la marca. La comparten el logo del
-                      header y la tarjeta social. public/favicon.svg NO puede importarla
-                      (es estático): og-output.check.ts verifica que no diverjan.
+  pages/cv.astro      The CV in HTML. THE source of the layout; the PDF comes from here.
+                      NOT a navigable destination: `noindex` and zero incoming links.
+                      The reader reaches the CV through the landing's `#cv` anchor.
+  pages/index.astro   The landing: hero + index + #mapa + #proyectos + #cv. The ONLY page with JS.
+  pages/cv.json.ts    public-api endpoint.
+  pages/build.json.ts The published commit (CF_PAGES_COMMIT_SHA). One consumer: the smoke, which uses it to wait
+                      for Cloudflare to serve the commit just pushed.
+  pages/404.astro     Without this, Pages returns 200 with HTML for any route: a soft 404.
+  pages/llms.txt.ts   Markdown endpoint for agents.
+  components/cv/      Dumb components: they receive resolved props, they filter nothing.
+  components/projects/ProjectList.astro  The projects. Each card carries the id `buildHoverCss` expects:
+                      the cross-hover with the map works with NO JS.
+  components/lab/GraphSvg.astro  The map in SVG. NOT a placeholder: it is the real fallback.
+                      The `lab` prefix is the name of the BLOCK (the map), not of a route: `/lab` no longer exists.
+  components/Logo.astro  The complete brand: the ring with the N inside. The geometry does NOT live here,
+                      it comes from lib/brand.ts. It uses var(--accent)/var(--ink), so dark mode falls out
+                      of the tokens with no CSS of its own.
+  lib/brand.ts        THE source of the brand geometry. Shared by the header logo and the social card.
+                      public/favicon.svg CANNOT import it (it is static): og-output.check.ts verifies they
+                      have not diverged.
   lib/jsonld.ts       ContentView → schema.org Person.
-  lib/graph-svg.ts    PositionedGraph → lista de dibujo. Niebla, orden de pintado, etiquetas.
-  lib/lab-hover-css.ts  Grafo → reglas :has(). El hover cruzado funciona SIN JS.
-  scripts/analitica.ts  Clarity. SOLO lo llama index.astro; nunca Base.astro (/cv en cero JS).
-                      El beacon de Cloudflare Web Analytics va en index.astro, tambien a mano:
-                      habilitarlo desde el dashboard de Pages lo inyecta en TODO el sitio y
-                      no-client-js.check.ts no lo veria (mira dist/, no lo servido).
-                      Sin PUBLIC_CLARITY_ID el import se va por tree-shaking y no pesa nada.
-  scripts/lab/        Lo ÚNICO que se bundlea para el browser. Ver §Frontend del mapa.
-  scripts/lab/pildora.ts  Retraso de la barra flotante al scrollear. Adorno: detrás de
-                      `prefers-reduced-motion` y el rAF se apaga solo al frenar.
-                      Lee `scrollY` DENTRO del frame, no en el listener.
-  scripts/lab/interaccion.ts  Arrastre, foco de vecindario, tooltip. No importa three:
-                      el renderer le pasa una función `proyectar`. Cambiar de
-                      renderer no toca este archivo.
-  styles/cv.css       Una columna. Prohibido flex/grid/table (rompe el parseo).
-  styles/proyectos.css  La lista de proyectos. Jerarquía tipográfica, sin tarjetas con sombra.
-  styles/tokens.css   `--ancho` es el ancho de TODAS las secciones. Un solo valor, a propósito.
-  styles/lab.css      El mapa. Los dos canvas son pointer-events:none. Eso es lo que hace
-                      cierta la promesa de "no captura el mouse".
+  lib/graph-svg.ts    PositionedGraph → draw list. Fog, paint order, labels.
+  lib/lab-hover-css.ts  Graph → `:has()` rules. The cross-hover works with NO JS.
+  scripts/analytics.ts  Clarity. ONLY index.astro calls it; never Base.astro (/cv at zero JS).
+                      The Cloudflare Web Analytics beacon goes in index.astro too, also by hand: enabling it
+                      from the Pages dashboard injects it into the WHOLE site and no-client-js.check.ts would
+                      not see it (it looks at dist/, not at what is served).
+                      Without PUBLIC_CLARITY_ID the import is tree-shaken and costs nothing.
+  scripts/lab/        The ONLY thing bundled for the browser. See §Map frontend.
+  scripts/lab/pill.ts  Lag of the floating bar while scrolling. Ornament: behind `prefers-reduced-motion`,
+                      and the rAF switches itself off when it settles. Reads `scrollY` INSIDE the frame,
+                      not in the listener.
+  scripts/lab/interaction.ts  Drag, neighbourhood focus, tooltip. Does not import three: the renderer hands it
+                      a `project` function. Changing renderer does not touch this file.
+  styles/cv.css       One column. No flex/grid/table allowed (it breaks parsing).
+  styles/projects.css  The project list. Typographic hierarchy, no cards with shadows.
+  styles/tokens.css   `--width` is the width of EVERY section. One value, on purpose.
+  styles/lab.css      The map. Both canvases are pointer-events:none. That is what makes the
+                      "it does not capture the mouse" promise true.
 content/schema/
-  format-metric.ts    Regla 4. El "~" de los estimados vive acá y solo acá.
-  format.ts           Duraciones, rangos MM/AAAA, títulos de rol. Reglas 1 y 2.
-  knowledge-graph.ts  ContentView → grafo. Incluye la afinidad skill↔skill derivada.
-  graph-layout.ts     Fuerzas en 3D + proyección. Determinista, corre SOLO en build.
+  format-metric.ts    Rule 4. The "~" of estimates lives here and only here.
+  format.ts           Durations, MM/AAAA ranges, role titles. Rules 1 and 2. Its output strings stay in Spanish.
+  knowledge-graph.ts  ContentView → graph. Includes the derived skill↔skill affinity.
+  graph-layout.ts     3D forces + projection. Deterministic, runs ONLY at build time.
 scripts/
-  og-template.ts      El HTML de la tarjeta social. PURO: recibe textos y binarios ya
-                      resueltos. No es una página de src/pages/ a propósito — se buildearía
-                      y los tres checks que recorren dist/ tendrían que aprender a ignorarla.
-  og-datos.ts         Lo que comparten el generador y su check: los textos derivados del
-                      dataset y la huella. Aparte porque build-og.ts es entry point.
-  build-og.ts         Escribe public/og.jpg + og.lock.json. `og:local`, fuera del build.
-  og-output.check.ts  Medidas, techo de peso de WhatsApp, que la imagen no haya quedado
-                      vieja, y que el favicon siga dibujando el aro de lib/marca.ts.
-  pdf-options.ts      ÚNICA definición de las opciones de impresión. La comparten render-pdf.ts
-                      (Playwright, el gate) y functions/cv.pdf.ts (producción). Si vivieran
-                      separadas, el PDF testeado y el PDF servido divergirían en silencio.
-  render-pdf.ts       renderPdf({ url }). Recibe URL, no componente. YA NO genera el entregable:
-                      produce el dist/cv.pdf contra el que corre el gate pre-deploy.
-  build-pdf.ts        Sirve dist/ e imprime /cv → dist/cv.pdf. Fuera de `build`: es `pdf:local`.
-  pdf-output.check.ts Verifica el PDF. Con PDF_SOURCE=<url> corre las MISMAS assertions contra
-                      el PDF publicado. No es *.test.ts a propósito.
-  no-client-js.check.ts  Política de JS por página en todo dist/. Blinda /cv.
-  bundle-budget.check.ts Presupuesto de la home: three fuera del camino crítico.
-  single-landing.check.ts La landing es la única puerta: /cv sin links ni indexar, y la
-                      sección CV de la landing sincronizada con el PDF. Además: existe 404.html.
-  servido.check.ts    Lo ÚNICO que verifica la respuesta SERVIDA y no dist/. Corre desde el
-                      smoke. Ataja lo que pasa después del build: inyecciones en el borde.
-  audit-todos.ts      Reporte NO bloqueante de TODOs publicados.
-  version.ts          Comparación de versiones. Puro, sin I/O. Acepta SOLO x.y.z.
-  version.test.ts     Tests de lo anterior. Corre en `pnpm test`.
-  version-bump.check.ts  Gate del bump. Lee git, por eso no es *.test.ts.
-  workflows.check.ts  Los .yml de CI parsean. Existe porque un CR incrustado dejó
-                      smoke-deploy.yml inválido tres commits sin que se notara.
+  og-template.ts      The HTML of the social card. PURE: it receives already resolved texts and binaries.
+                      Deliberately not a page in src/pages/ — it would be built and the three checks that walk
+                      dist/ would have to learn to ignore it.
+  og-data.ts          What the generator and its check share: the texts derived from the dataset and the
+                      fingerprint. Separate because build-og.ts is an entry point.
+  build-og.ts         Writes public/og.jpg + og.lock.json. `og:local`, outside the build.
+  og-output.check.ts  Dimensions, WhatsApp's weight ceiling, that the image has not gone stale, and that the
+                      favicon still draws the ring from lib/brand.ts.
+  pdf-options.ts      THE definition of the print options. Shared by render-pdf.ts (Playwright, the gate) and
+                      functions/cv.pdf.ts (production). Living apart, the tested PDF and the served PDF would
+                      diverge silently.
+  render-pdf.ts       renderPdf({ url }). Takes a URL, not a component. It NO LONGER produces the deliverable:
+                      it produces the dist/cv.pdf the pre-deploy gate runs against.
+  build-pdf.ts        Serves dist/ and prints /cv → dist/cv.pdf. Outside `build`: it is `pdf:local`.
+  pdf-output.check.ts Verifies the PDF. With PDF_SOURCE=<url> it runs the SAME assertions against the published
+                      PDF. Deliberately not a *.test.ts.
+  no-client-js.check.ts  Per-page JS policy over all of dist/. Shields /cv.
+  bundle-budget.check.ts The home's budget: three off the critical path.
+  single-landing.check.ts The landing is the only door: /cv without links or indexing, and the landing's CV
+                      section in sync with the PDF. Plus: 404.html exists.
+  served.check.ts     The ONLY thing verifying the SERVED response and not dist/. Runs from the smoke. Catches
+                      what happens after the build: injections at the edge.
+  audit-todos.ts      Non-blocking report of published TODOs.
+  version.ts          Version comparison. Pure, no I/O. Accepts ONLY x.y.z.
+  version.test.ts     Tests of the above. Runs in `pnpm test`.
+  version-bump.check.ts  The bump gate. Reads git, which is why it is not a *.test.ts.
+  workflows.check.ts  The CI .yml files parse. It exists because an embedded CR left smoke-deploy.yml invalid
+                      for three commits without anyone noticing.
 ```
 
-**No toques sin pensarlo:**
-- `content/source/index.ts` — es la costura de migración. Cambiar el import cambia el backend de todo el proyecto.
-- `content/schema/resolve-view.ts` — cualquier `.filter` de visibility que aparezca en otro lado es un bug. Toda esa lógica va acá.
-- `content/data/content.es.json` — no inventes datos para llenarlo (ver invariante 4).
+**Do not touch without thinking:**
+- `content/source/index.ts` — it is the migration seam. Changing the import
+  changes the backend of the whole project.
+- `content/schema/resolve-view.ts` — any visibility `.filter` appearing anywhere
+  else is a bug. All that logic goes here.
+- `content/data/content.es.json` — do not invent data to fill it (see invariant 4).
 
-## Comandos
+## Commands
 
-**El gestor de paquetes es pnpm** (`packageManager: pnpm@11.1.3`). No uses `npm`:
-`pnpm-workspace.yaml` declara qué paquetes pueden correr scripts de instalación
-(`allowBuilds`), y ese es el motivo de fondo del cambio — con npm cualquiera de
-los 450 paquetes del árbol ejecuta código arbitrario al instalar.
+**The package manager is pnpm** (`packageManager: pnpm@11.1.3`). Do not use
+`npm`: `pnpm-workspace.yaml` declares which packages may run install scripts
+(`allowBuilds`), and that is the real reason for the switch — with npm any of the
+450 packages in the tree executes arbitrary code on install.
 
 ```bash
 pnpm run typecheck   # astro sync && tsc --noEmit && astro check
-pnpm run validate    # tsx scripts/validate.ts — Zod + reglas duras
-pnpm test            # tsx --test — reglas 7,8, locale y el grafo
+pnpm run validate    # tsx scripts/validate.ts — Zod + hard rules
+pnpm test            # tsx --test — rules 7,8, locale and the graph
 pnpm run dev         # astro dev
-pnpm run build       # SOLO astro build. Sin Chromium: por eso corre en Cloudflare Pages
-pnpm run pdf:local   # imprime dist/cv.pdf con Playwright. Gate pre-deploy, no el entregable
-pnpm run og:local    # escribe public/og.jpg (la tarjeta social) + og.lock.json. Se COMMITEA
-pnpm run test:pdf    # verifica el PDF (necesita pdf:local previo, o PDF_SOURCE=<url>)
-pnpm run test:js     # política de JS por página sobre todo dist/ (necesita build)
-pnpm run test:bundle # presupuesto de bytes del mapa de la home (necesita build)
-pnpm run test:landing # /cv aislada + sección CV sincronizada con el PDF (necesita build)
-pnpm run test:og     # la tarjeta social no quedó vieja + el favicon parsea (necesita build)
-pnpm run test:servido # verifica el sitio PUBLICADO. Necesita SITIO=https://…  (no dist/)
-pnpm run test:version # el PR sube package.json.version. Necesita: git fetch origin develop
-pnpm run test:workflows # los .yml de CI parsean y declaran jobs. Corre PRIMERO en CI
-pnpm run audit:todos # lista TODOs publicados. No bloquea
+pnpm run build       # ONLY astro build. No Chromium: that is why it runs on Cloudflare Pages
+pnpm run pdf:local   # prints dist/cv.pdf with Playwright. Pre-deploy gate, not the deliverable
+pnpm run og:local    # writes public/og.jpg (the social card) + og.lock.json. It gets COMMITTED
+pnpm run test:pdf    # verifies the PDF (needs a prior pdf:local, or PDF_SOURCE=<url>)
+pnpm run test:js     # per-page JS policy over all of dist/ (needs a build)
+pnpm run test:bundle # byte budget of the home's map (needs a build)
+pnpm run test:landing # /cv isolated + CV section in sync with the PDF (needs a build)
+pnpm run test:og     # the social card has not gone stale + the favicon parses (needs a build)
+pnpm run test:served # verifies the PUBLISHED site. Needs SITE=https://…  (not dist/)
+pnpm run test:version # the PR raises package.json.version. Needs: git fetch origin develop
+pnpm run test:workflows # the CI .yml files parse and declare jobs. Runs FIRST in CI
+pnpm run audit:todos # lists published TODOs. Not blocking
 pnpm run audit:deps  # pnpm audit --audit-level high
 ```
 
-**Corré la secuencia completa antes de dar cualquier cosa por hecha:**
+**Run the full sequence before calling anything done:**
 `pnpm run test:workflows && pnpm run typecheck && pnpm run validate && pnpm test && pnpm run build && pnpm run pdf:local && pnpm run test:pdf && pnpm run test:js && pnpm run test:bundle && pnpm run test:landing && pnpm run test:og && pnpm run audit:todos`.
-Si `validate` falla, el mensaje dice qué regla se violó y cómo arreglarla; leelo,
-no lo saltees. Todo eso corre en CI en cada push
-(`.github/workflows/content-validation.yml`; repo ya en GitHub, privado) —
-`audit:todos` incluido, pero como último step y sin bloquear: es un reporte, no
-un gate.
+If `validate` fails, the message says which rule was violated and how to fix it;
+read it, do not skip it. All of that runs in CI on every push
+(`.github/workflows/content-validation.yml`) — `audit:todos` included, but as the
+last step and without blocking: it is a report, not a gate.
 
-## Invariantes (no negociables)
+**If you change `og-template.ts`, `src/lib/brand.ts`, the photo or the dataset,
+run `pnpm run og:local` and commit the artifacts.** The fingerprint in
+`og.lock.json` covers all four, and `test:og` fails otherwise. That is the gate
+working, not a false positive.
 
-1. **El frontend NUNCA filtra por `visibility` ni calcula duraciones.** Todo eso
-   vive en `resolveView` (`getView` lo llama). Un `.filter(v => v.priority...)` o
-   un cálculo de meses en un componente está mal.
-2. **Todo importa desde `content/source/index.ts`, nunca desde `json-source`.**
-   Esa es la línea que cambia al migrar a Sanity.
-3. **Ninguna duración ni antigüedad se escribe a mano.** Se deriva de
-   `careerStart`/`start`/`end` vía `dates.ts`. La regla 1 del validador lo caza.
-4. **Nunca inventar métricas, números, fechas ni logros para llenar el dataset.**
-   Falta un dato → va como `TODO` explícito en el `Prose`. Un número inventado se
-   cae en la entrevista y es peor que no tener número.
-5. **`Metric.confidence` distingue `measured` de `estimated`; los estimados se
-   renderizan con "~" o "aprox.".** No romper esa distinción (regla 4).
-6. **`Prose.short` y `Prose.long` NO son truncado.** Son dos registros de
-   escritura distintos: uno telegráfico y denso en keywords, otro que explica. Si
-   aparece un `truncate()` / `.slice()` que genera `short` desde `long`, se rompió
-   la intención. Escribir los dos a mano es intencional.
-7. **Las reglas de `docs/CONTRATO.md` son tests de CI, no sugerencias.** Si algo
-   nuevo las viola, se arregla el dato, no la regla.
-8. **El copy sigue las reglas de voz de `docs/02-branding.md`,** incluida la lista
-   de palabras prohibidas (`apasionado`, `proactivo`, `escalable` sin escala,
-   `buenas prácticas` sin decir cuáles, etc.). Test: "¿otro con mi mismo stack
-   pudo escribir esta frase idéntica?" Si sí, la frase no hace nada.
+## Invariants (non-negotiable)
 
-## Dónde se hace cumplir cada regla dura
+1. **The frontend NEVER filters by `visibility` and never computes durations.**
+   All of that lives in `resolveView` (`getView` calls it). A
+   `.filter(v => v.priority...)` or a month calculation in a component is wrong.
+2. **Everything imports from `content/source/index.ts`, never from
+   `json-source`.** That is the line that changes when migrating to Sanity.
+3. **No duration or seniority is ever written by hand.** It is derived from
+   `careerStart`/`start`/`end` via `dates.ts`. Rule 1 of the validator catches it.
+4. **Never invent metrics, numbers, dates or achievements to fill the dataset.**
+   A missing datum goes in as an explicit `TODO` in the `Prose`. An invented
+   number collapses in the interview and is worse than having no number.
+5. **`Metric.confidence` distinguishes `measured` from `estimated`; estimates
+   render with "~" or "aprox."** Do not break that distinction (rule 4).
+6. **`Prose.short` and `Prose.long` are NOT truncation.** They are two different
+   registers of writing: one telegraphic and dense in keywords, the other
+   explaining. If a `truncate()` / `.slice()` appears that generates `short` from
+   `long`, the intent has been broken. Writing both by hand is intentional.
+7. **The rules in `docs/CONTRACT.md` are CI tests, not suggestions.** If
+   something new violates them, the data gets fixed, not the rule.
+8. **The copy follows the voice rules of `docs/02-branding.md`,** including the
+   list of banned words (`apasionado`, `proactivo`, `escalable` with no scale,
+   `buenas prácticas` without saying which). Test: "could someone else with my
+   stack have written this exact sentence?" If yes, the sentence does nothing.
 
-Las 8 reglas de `docs/CONTRATO.md` NO se validan todas en el mismo lugar. Antes de
-asumir que `validate` cubre algo, mirá esta tabla:
+## Where each hard rule is enforced
 
-| Regla | Qué | Dónde se hace cumplir |
+The 8 rules of `docs/CONTRACT.md` are NOT all validated in the same place. Before
+assuming `validate` covers something, look at this table:
+
+| Rule | What | Where it is enforced |
 |---|---|---|
-| 1 | Ninguna duración a mano | `validation.ts` → `checkRules` + `collectProse` (recorre TODO `Prose`, short y long). **CI** |
-| 2 | No dos full-time solapados sin `concurrent` | `validation.ts` → `checkRules` (`overlaps`). **CI** |
-| 3 | Skill `core` necesita evidencia | `validation.ts` → `checkRules`. **CI** |
-| 4 | `estimated` se renderiza con "~" | `content/schema/format-metric.ts` → `formatMetric`. Único lugar. **`npm test`** (corre en CI) |
-| 5 | Todo `Media` con `alt` | `validation.ts` → Zod (`media.alt.min(1)`). **CI** |
-| 6 | `approved: false` no se renderiza | Doble: `resolveView` filtra por `t.approved`; `checkRules` además avisa si hay no-aprobado sin exclusión. **CI + runtime** |
-| 7 | `cv-short` corta por `priority` | `resolve-view.ts` (`PRIORITY_CUTOFF`, `MAX_ACHIEVEMENTS_PER_ROLE`). **`npm test`** (corre en CI), no `validate`. |
-| 8 | `streetAddress`/`phone` solo en superficies listadas | `resolve-view.ts` (filtrado de `identity`). **`npm test`** (corre en CI), no `validate`. |
-| — | Integridad referencial (`roleId`/`projectId`/`skillId`) | `checkRules` (rule 0). **CI** |
+| 1 | No hand-written duration | `validation.ts` → `checkRules` + `collectProse` (walks ALL `Prose`, short and long). **CI** |
+| 2 | No two overlapping full-time roles without `concurrent` | `validation.ts` → `checkRules` (`overlaps`). **CI** |
+| 3 | A `core` skill needs evidence | `validation.ts` → `checkRules`. **CI** |
+| 4 | `estimated` renders with "~" | `content/schema/format-metric.ts` → `formatMetric`. The only place. **`pnpm test`** (runs in CI) |
+| 5 | Every `Media` with `alt` | `validation.ts` → Zod (`media.alt.min(1)`). **CI** |
+| 6 | `approved: false` is not rendered | Both: `resolveView` filters by `t.approved`; `checkRules` also warns about an unapproved one with no exclusion. **CI + runtime** |
+| 7 | `cv-short` cuts by `priority` | `resolve-view.ts` (`PRIORITY_CUTOFF`, `MAX_ACHIEVEMENTS_PER_ROLE`). **`pnpm test`**, not `validate`. |
+| 8 | `streetAddress`/`phone` only on listed surfaces | `resolve-view.ts` (identity filtering). **`pnpm test`**, not `validate`. |
+| — | Referential integrity (`roleId`/`projectId`/`skillId`) | `checkRules` (rule 0). **CI** |
+| — | `Skill.periods` coherence (`end` after `start`, no overlap) | `checkRules` (rule 0). **CI** |
 
-## Frontend del mapa (lo único con JavaScript)
+## Map frontend (the only thing with JavaScript)
 
-**La home es la ÚNICA página que envía JS.** `/cv` sigue en cero y eso NO es
-negociable: el PDF se renderiza desde ahí esperando `networkidle`, así que un
-script que se cuele cambia el PDF en silencio. **Desde el 2026-08-25 eso pasó de
-romper tu build a romper producción:** el PDF lo imprime `functions/cv.pdf.ts`
-sobre la página PUBLICADA, no sobre tu `dist/`.
-`PAGINAS_CON_JS` en `no-client-js.check.ts` es la lista blanca —agregar una
-página es una decisión explícita en un diff, no un accidente.
+**The home is the ONLY page shipping JS.** `/cv` stays at zero and that is NOT
+negotiable: the PDF is rendered from there waiting on `networkidle`, so a script
+slipping in changes the PDF silently. **Since 2026-08-25 that went from breaking
+your build to breaking production:** the PDF is printed by `functions/cv.pdf.ts`
+over the PUBLISHED page, not over your `dist/`. `PAGES_WITH_JS` in
+`no-client-js.check.ts` is the allowlist — adding a page is an explicit decision
+in a diff, not an accident.
 
-Reglas, todas verificadas en CI por `bundle-budget.check.ts` y
+Rules, all verified in CI by `bundle-budget.check.ts` and
 `no-client-js.check.ts`:
 
-1. **Nada bajo `src/scripts/` importa de `@content`.** `json-source.ts` importa
-   estáticamente zod y el dataset entero: un solo import los manda al browser.
-   Los tipos cruzan solo por `src/scripts/lab/types.ts`, que no importa nada en
-   runtime. Precedente y comentario: `src/lib/jsonld.ts:12-15`.
-2. **`three` tiene UN solo importador —`grafo-3d.ts`— y se carga con
-   `import()` dinámico.** Alcanza un import estático en cualquier módulo para
-   que Rollup meta three (127 KB gzip) en el bundle inicial sin que nadie se
-   entere. El check busca `WebGLRenderer` en los chunks críticos.
-3. **Prohibido `three/examples/jsm/*` y `three/addons`.** `OrbitControls`
-   registra `wheel` con `preventDefault`: eso es scroll hijacking, que el spec
-   §3.4 prohíbe. Se descarta por comportamiento, no por peso.
-4. **Los canvas son `pointer-events: none` siempre. Quien escucha es el
-   CONTENEDOR** (`.lab__mapa`, que además es `tabindex=0`). Esa separación es lo
-   que permite clickear nodos sin que el mapa se quede con los eventos que no le
-   tocan. El hit-test es por proyección a NDC, no con `Raycaster`: la proyección
-   hay que calcularla igual para ubicar las etiquetas.
-5. **Ningún listener de `wheel` ni `touchmove`** (hay un test que lo verifica
-   sobre los chunks emitidos). El scroll lo reparte el browser vía
-   `touch-action: pan-y`: vertical scrollea, horizontal rota. Esa es la
-   diferencia con el scroll hijacking — arbitra el browser, no nosotros. Los
-   ÚNICOS `preventDefault` de `src/scripts/` están en teclado (flechas sobre el
-   mapa ya enfocado, Espacio sobre un ítem de la lista), nunca sobre puntero.
-6. **Cero hex en JS.** Los colores salen de `getComputedStyle` sobre los tokens,
-   así el modo oscuro funciona sin JS de tema.
-7. **El SVG nunca se saca del DOM.** El 3D se superpone y el SVG pasa a
-   `opacity: 0`. Volver —contexto WebGL perdido, frames fuera de presupuesto—
-   es quitar una clase.
+1. **Nothing under `src/scripts/` imports from `@content`.** `json-source.ts`
+   statically imports zod and the whole dataset: one import sends them to the
+   browser. Types cross only through `src/scripts/lab/types.ts`, which imports
+   nothing at runtime. Precedent and comment: `src/lib/jsonld.ts`.
+2. **`three` has ONE importer — `graph-3d.ts` — and it is loaded with a dynamic
+   `import()`.** One static import in any module is enough for Rollup to put
+   three (127 KB gzip) in the initial bundle with nobody noticing. The check
+   looks for `WebGLRenderer` in the critical chunks.
+3. **`three/examples/jsm/*` and `three/addons` are forbidden.** `OrbitControls`
+   registers `wheel` with `preventDefault`: that is scroll hijacking, which spec
+   §3.4 forbids. It is rejected on behaviour, not on weight.
+4. **The canvases are always `pointer-events: none`. What listens is the
+   CONTAINER** (`.lab__map`, which is also `tabindex=0`). That separation is what
+   allows clicking nodes without the map keeping the events that are not its own.
+   The hit test is by projection to NDC, not with `Raycaster`: the projection has
+   to be computed anyway to place the labels.
+5. **No `wheel` and no `touchmove` listener** (a test verifies this over the
+   emitted chunks). Scrolling is arbitrated by the browser via
+   `touch-action: pan-y`: vertical scrolls, horizontal rotates. That is the
+   difference from scroll hijacking — the browser arbitrates, not us. The ONLY
+   `preventDefault` calls in `src/scripts/` are on the keyboard (arrows over an
+   already focused map, Space over a list item), never on the pointer.
+6. **Zero hex in JS.** Colors come from `getComputedStyle` over the tokens, so
+   dark mode works with no theme JS.
+7. **The SVG is never removed from the DOM.** The 3D is layered on top and the
+   SVG goes to `opacity: 0`. Reverting — lost WebGL context, frames over budget —
+   is dropping a class.
 
-**Si el dispositivo aguanta se decide en cuatro escalones** (`capacidad.ts`), y
-solo el tercero mide: `prefers-reduced-motion`/`saveData`/`effectiveType`/
-`deviceMemory`/WebGL2 antes de bajar un byte; el contexto al montar; **la mediana
-de los primeros 30 frames contra un techo de 20 ms**; y degradación en vivo
-(primero `dpr → 1`, después apagar). El tercero es el que importa: en iOS no
-existen `saveData`, `effectiveType` ni `deviceMemory` —son APIs de Chromium—,
-así que apoyarse en el escalón 1 es decidir a ciegas en la mitad de los
-teléfonos.
+**Whether the device can take it is decided in four steps** (`capability.ts`),
+and only the third one measures: `prefers-reduced-motion`/`saveData`/
+`effectiveType`/`deviceMemory`/WebGL2 before downloading a byte; the context on
+mount; **the median of the first 30 frames against a 20 ms ceiling**; and live
+degradation (first `dpr → 1`, then off). The third is the one that matters: on
+iOS `saveData`, `effectiveType` and `deviceMemory` do not exist — they are
+Chromium APIs — so leaning on step 1 is deciding blind on half the phones.
 
-## Convenciones (deducidas del código, no de preferencias)
+## Conventions (deduced from the code, not from preferences)
 
-- **Este repo está EN MIGRACIÓN al inglés** (decidido el 2026-08-26). Lo viejo
-  sigue en español hasta el PR de migración (`docs/06` §1.4): no lo traduzcas de
-  a pedacitos ni mezcles la traducción con un cambio de comportamiento. Un
-  archivo mitad y mitad es eso, y es transitorio.
-- **Los comentarios explican el PORQUÉ, no el qué.** Banners de sección
-  `// ---`. JSDoc `/** */` en tipos y funciones públicas; cuando un campo o
-  función hace cumplir una regla, se nombra por número: `// Regla 8: ...`.
-- **Tipado:** `interface` para formas de datos, `type` para uniones y alias
-  (`Surface`, `SkillCategory`). Fechas SIEMPRE `YearMonth` = `` `${number}-${number}` ``,
-  string `"YYYY-MM"`, nunca `Date` en los datos. Todo tipo se exporta desde
-  `content-schema.ts`.
-- **Zod espeja las interfaces 1:1:** un `const` lowercase por cada `interface`
-  (`role` ↔ `Role`), mismos campos, mismo orden, y **todos con `.strict()`** — una
-  clave no declarada tira error en vez de descartarse en silencio. Si agregás un
-  campo a una interface, agregalo al schema Zod en el mismo commit (si no, el dato
-  con ese campo revienta en `validate`/`test`, que es la idea).
-- **Naming:** `id` en kebab/lowercase (`"mapbox-gl"`), `camelCase` funciones,
-  `PascalCase` tipos, `UPPER_SNAKE` consts de configuración (`PRIORITY_CUTOFF`).
-- **Funciones puras en `schema/`; I/O solo en implementaciones de `source/`.**
-  `resolveView` y `checkRules` no tienen side effects.
-- **ESM** (`"type": "module"`), imports sin extensión, `import type` para tipos.
-- **Datos faltantes van como `TODO — ...` dentro del `Prose`**, no como campo
-  vacío ni número inventado. `Prose.short` está topeado en **180 caracteres** (Zod
-  lo valida): si el texto no entra, no es para `short`, va en `long`.
+- **Comments explain the WHY, not the what.** Section banners `// ---`. JSDoc
+  `/** */` on public types and functions; when a field or function enforces a
+  rule, it is named by number: `// Rule 8: ...`.
+- **Typing:** `interface` for data shapes, `type` for unions and aliases
+  (`Surface`, `SkillCategory`). Dates are ALWAYS `YearMonth` =
+  `` `${number}-${number}` ``, the string `"YYYY-MM"`, never `Date` in the data.
+  Every type is exported from `content-schema.ts`.
+- **Zod mirrors the interfaces 1:1:** one lowercase `const` per `interface`
+  (`role` ↔ `Role`), same fields, same order, and **all with `.strict()`** — an
+  undeclared key throws instead of being dropped silently. If you add a field to
+  an interface, add it to the Zod schema in the same commit (otherwise data
+  carrying that field blows up in `validate`/`test`, which is the point).
+- **Naming:** `id` in kebab/lowercase (`"mapbox-gl"`), `camelCase` functions,
+  `PascalCase` types, `UPPER_SNAKE` config constants (`PRIORITY_CUTOFF`).
+- **Pure functions in `schema/`; I/O only in `source/` implementations.**
+  `resolveView` and `checkRules` have no side effects.
+- **ESM** (`"type": "module"`), imports without extensions, `import type` for
+  types.
+- **Missing data goes in as `TODO — ...` inside the `Prose`**, not as an empty
+  field and not as an invented number. `Prose.short` is capped at **180
+  characters** (Zod validates it): if the text does not fit, it is not for
+  `short`, it goes in `long`.
 
-## Pendiente / qué NO hacer todavía
+## Pending / what NOT to do yet
 
-**Arrancá por `docs/06-proxima-sesion.md`:** es el plan de trabajo en tres
-fases, con cómo proceder en cada tarea y qué verificar. La regla que ordena todo:
-**lo que toca cómo se CREAN los datos espera al editor de la fase 2**; arreglarlo
-antes es garantizar que se retoque después.
+**Start with `docs/06-next-session.md`:** it is the three-phase work plan, with
+how to proceed on each task and what to verify. The rule that orders everything:
+**whatever touches how the data is CREATED waits for the phase 2 editor**; fixing
+it earlier guarantees it gets redone.
 
-Antes de "arreglar de paso" algo, mirá `docs/07-deuda-tecnica.md`: puede que ya
-esté anotado con su porqué y con la fase que le toca. Estado completo en
-`docs/00-indice.md`. Resumen operativo:
+Before "fixing something on the way", look at `docs/07-technical-debt.md`: it may
+already be noted with its reason and with the phase it belongs to. Full status in
+`docs/00-index.md`. Operational summary:
 
-- **Frontend:** existe (Astro estático, ver `src/` en el mapa de archivos):
-  `/cv` sobre `cv-ats` y la home sobre `portfolio`. El CV diseñado (CV-A) y los
-  casos de estudio quedan para después. `components/cv/` son tontos: reciben
-  props resueltas, no filtran nada (invariante 1).
-- **Generadores de salida** (CV PDF, `/cv` HTML, JSON-LD `Person`, `/llms.txt`,
-  `/cv.json`): existen. La regla 4 vive en un único `formatMetric()`
-  (`content/schema/format-metric.ts`). Detalle de qué emite cada uno:
-  `docs/CONTRATO.md` §2 y `docs/04`.
-- **Métricas:** el hueco más importante. Ningún `Achievement` tiene `metric`.
-  NO las inventes — candidatos y qué medir en `docs/03-cv.md` §5. Rango honesto
-  con `confidence: "estimated"` sirve; número inventado no.
-- **Datos a confirmar:** Hogarth (`employmentType`, `start` 2023-07), nivel de
-  inglés, `careerStart`. Fuente única: `docs/00-indice.md`.
-- **`services` y `testimonials` vacíos a propósito** — están en el schema para no
-  migrar después. No los llenes con placeholders.
-- **Dataset EN:** no cargar ni traducir (decisión fechada en `docs/00-indice.md`).
-- **Backend: NO por ahora.** Evaluado el 2026-08-25 (`docs/06` §5). Keystatic
-  descartado —exige adaptador SSR más React y Markdoc—; Sanity viable pero
-  pospuesto, porque con los datos afuera de git el contenido deja de pasar por
-  los gates. En su lugar va `pnpm run editor`, un editor local. Adoptar Sanity
-  más adelante sigue costando lo mismo: `sanity-source.ts` y una línea en
-  `index.ts`.
-- **Techos que están al límite:** el PDF va 2 de 2 páginas y el chunk 3D al 87%.
-  Agregar contenido al CV implica sacar otro. Tabla completa en el `README`.
-
-## Preguntas abiertas / estado
-
-Observaciones de las sesiones de arranque, con su resolución. Registradas acá
-para que la próxima sesión no las redescubra desde cero:
-
-1. **`getDataset("en")` fallaba en silencio** (devolvía ES). **RESUELTO:** ahora
-   tira `Error` explícito para locales sin dataset (`json-source.ts`, `DATASETS`).
-2. **No todas las reglas se validan en el mismo lugar.** **RESUELTO como
-   documentación:** ver la tabla "Dónde se hace cumplir cada regla dura". La
-   regla 4 tuvo dueño más tarde: `formatMetric()` en `content/schema/format-metric.ts`.
-3. **La regla 1 escaneaba solo campos hardcodeados.** **RESUELTO:** `collectProse`
-   recorre todo `Prose` del dataset (short + long: identity, roles, achievements,
-   projects, services). Cierra la clase de agujero, no casos sueltos.
-4. **No había CI ni el repo estaba en git.** **RESUELTO:** `git init`, repo privado
-   `CribbNicolas/portfolio2026`, y workflow `content-validation.yml` corriendo verde
-   en cada push. Extendido después a build + test:pdf + audit:todos cuando
-   existieron los generadores. El estado activo vive en §Comandos.
-5. **`monthsBetween` estaba duplicado.** **RESUELTO:** extraído a `dates.ts`,
-   importado por `validation.ts` y `resolve-view.ts`.
-6. **Los schemas Zod no eran `.strict()`:** una clave presente en el JSON pero
-   ausente del schema se descartaba en silencio. **RESUELTO:** `.strict()` en todos
-   los objetos + test que verifica que una clave desconocida tira error.
-
-Además, resuelto en esta sesión: la lógica de visibility vivía dentro de
-`json-source.ts` (dentro de la implementación, no de la capa compartida) —
-contradecía la promesa de "migración = una línea". **Extraída a
-`resolve-view.ts`.** Las implementaciones de `ContentSource` quedan reducidas a
-traer el dataset.
-
-**Regla 4, resuelta:** `formatMetric()` en `content/schema/format-metric.ts` es
-el único lugar que decide el "~" de un `Metric` `estimated`. El test que antes
-estaba en `todo` (`content-source.test.ts`) ya corre en verde — `npm test` no
-tiene ningún `todo` en la salida.
+- **Frontend:** it exists (static Astro, see `src/` in the file map): `/cv` over
+  `cv-ats` and the home over `portfolio`. The designed CV (CV-A) and the case
+  studies wait. `components/cv/` are dumb: they receive resolved props and filter
+  nothing (invariant 1).
+- **Output generators** (CV PDF, `/cv` HTML, JSON-LD `Person`, `/llms.txt`,
+  `/cv.json`): they exist. Rule 4 lives in a single `formatMetric()`. Detail of
+  what each one emits: `docs/CONTRACT.md` §2 and `docs/04`.
+- **Metrics:** the most important gap. No `Achievement` has a `metric`. Do NOT
+  invent them — candidates and what to measure in `docs/03-cv.md`. An honest
+  range with `confidence: "estimated"` works; an invented number does not.
+- **Data to confirm:** Hogarth (`employmentType`, `start` 2023-07), English
+  level, `careerStart`. Single source: `docs/00-index.md`.
+- **`services` and `testimonials` are empty on purpose** — they are in the schema
+  so there is nothing to migrate later. Do not fill them with placeholders.
+- **EN dataset:** do not load or translate it (decision dated in
+  `docs/00-index.md`).
+- **Backend: NOT for now.** Evaluated 2026-08-25 (`docs/06`). Keystatic
+  discarded — it demands an SSR adapter plus React and Markdoc; Sanity viable but
+  postponed, because with the data outside git the content stops passing through
+  the gates. In its place goes `pnpm run editor`, a local editor. Adopting Sanity
+  later still costs the same: `sanity-source.ts` and one line in `index.ts`.
+- **Ceilings at the limit:** the PDF is at 2 of 2 pages and the 3D chunk at 87%.
+  Adding content to the CV means removing something else. Full table in the
+  `README`.

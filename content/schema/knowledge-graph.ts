@@ -1,7 +1,7 @@
 /**
  * ContentView → KnowledgeGraph.
  *
- * This is the view that delivers on the promise of CONTRATO §3: `Achievement`s
+ * This is the view that delivers on the promise of CONTRACT §3: `Achievement`s
  * live loose rather than nested inside `Role`, "so you can query them by skill,
  * by dimension, or by project". The CV flattens that graph into a list; here it
  * is shown for what it is.

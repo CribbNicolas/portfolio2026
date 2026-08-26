@@ -268,7 +268,7 @@ export const datasetSchema = z.object({
 }).strict();
 
 // ---------------------------------------------------------------------------
-// 2. Hard rules (the ones in CONTRATO.md)
+// 2. Hard rules (the ones in CONTRACT.md)
 // ---------------------------------------------------------------------------
 
 export interface RuleViolation {
