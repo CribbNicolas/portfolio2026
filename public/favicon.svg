@@ -1,34 +1,44 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" role="img" aria-label="Mapa de conocimiento">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32" role="img" aria-label="Nicolás Cribb">
   <!--
-    El mapa de conocimiento, reducido a lo que sobrevive a 16 px: un núcleo y
-    dos satélites unidos por aristas. No son iniciales a propósito — la
-    identidad del sitio es el grafo, no el nombre, y dos letras a este tamaño se
-    leen como una mancha.
+    El aro abierto: la mitad chica de la marca. La C del apellido, dibujada como
+    un aro grueso con la abertura a la derecha.
 
-    Los colores son los tokens `--acento` y `--tinta` de `tokens.css`, escritos
-    a mano porque un favicon no hereda el CSS de la página. Si alguna vez cambia
-    la paleta, este archivo hay que tocarlo también: es la única copia de esos
-    valores fuera de `tokens.css`, y está acá por necesidad, no por descuido.
+    Es SOLO el aro, sin la N, y eso es deliberado. El logo completo lleva la N
+    adentro (`src/components/Logo.astro`), pero a 16 px una letra se convierte
+    en una mancha y una silueta no. El ícono chico se identifica por forma; las
+    letras aparecen recién cuando hay lugar para leerlas.
+
+    Todo es geometría, nunca un `<text>`: un SVG que se carga como imagen —que
+    es exactamente lo que es un favicon— no puede traer una webfont. Manrope no
+    cargaría y la letra saldría en la fuente del sistema, distinta en cada
+    máquina.
+
+    Los colores son el token de acento de `tokens.css`, escritos a mano porque
+    un favicon no hereda el CSS de la página. Si cambia la paleta, este archivo
+    hay que tocarlo también: es la única copia de esos valores fuera de
+    `tokens.css`, y está acá por necesidad, no por descuido. El logo del header
+    NO los repite, usa `var()`.
+
+    OJO: acá NO se pueden nombrar los custom properties con sus dos guiones de
+    adelante. XML prohíbe esa secuencia dentro de un comentario, y un SVG que se
+    carga como imagen se parsea en XML estricto. El error no se ve por ningún
+    lado: no hay consola, no hay 404, el archivo se sirve con 200. Simplemente
+    no aparece el ícono. Eso fue exactamente lo que pasó entre el 2026-08-25 y
+    el arreglo.
+
+    `width`/`height` además del `viewBox` porque Safari no siempre le da tamaño
+    intrínseco a un SVG que solo trae `viewBox`.
 
     El `<style>` con `prefers-color-scheme` lo respetan Chrome, Firefox y Safari
     en el favicon; el que no lo soporte se queda con el modo claro, que sobre la
     barra de pestañas se ve bien igual.
   -->
   <style>
-    .nucleo { fill: #b0472a; }
-    .satelite { fill: #17181c; }
-    .arista { stroke: #17181c; stroke-width: 1.6; stroke-linecap: round; opacity: 0.55; }
+    .aro { fill: #b0472a; }
     @media (prefers-color-scheme: dark) {
-      .nucleo { fill: #e2825f; }
-      .satelite { fill: #f0eeea; }
-      .arista { stroke: #f0eeea; }
+      .aro { fill: #e2825f; }
     }
   </style>
 
-  <line class="arista" x1="16" y1="16" x2="26" y2="7" />
-  <line class="arista" x1="16" y1="16" x2="7" y2="24" />
-
-  <circle class="satelite" cx="26" cy="7" r="3.2" />
-  <circle class="satelite" cx="7" cy="24" r="2.6" />
-  <circle class="nucleo" cx="16" cy="16" r="7" />
+  <path class="aro" d="M28.1 24.16A14.6 14.6 0 1 1 28.1 7.84L21.31 12.42A6.4 6.4 0 1 0 21.31 19.58Z" />
 </svg>

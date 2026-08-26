@@ -120,6 +120,14 @@
   -webkit-backdrop-filter: blur(14px) saturate(1.4);
 }
 
+/* La marca, a la izquierda del índice. `flex: none` porque es lo último que se
+   puede encoger: el mail se recorta y el contacto entero se cae antes que el
+   logo, que es lo que identifica la barra cuando ya no queda nada más. */
+.pildora__logo {
+  flex: none;
+  margin-left: calc(var(--espacio) * 0.5);
+}
+
 .pildora__nav,
 .pildora__contacto {
   display: flex;
