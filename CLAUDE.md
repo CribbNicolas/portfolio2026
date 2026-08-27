@@ -63,7 +63,7 @@ docs/                   See docs/00-index.md. The "why" of every design decision
                         09-seo-and-metadata.md — what the <head> emits, and above all what it deliberately does NOT
                         and under what condition to reconsider. READ IT before "adding the missing tag":
                         og:site_name, hreflang, profile:*, webmanifest and favicon.ico are DECIDED, not forgotten.
-editor/                 pnpm run editor. NOTHING here reaches dist/, which is why no check needs an exception.
+editor/                 The local content editor; its entry point, `pnpm run editor`, arrives in a later PR. NOTHING here reaches dist/, which is why no check needs an exception.
   descriptors.ts      The zod-free field tree. The seam: the browser never sees zod.
   schema-adapter.ts   THE ONLY file that reads zod's `_def`. Its tests are the gate for a zod bump.
   serialize.ts        THE canonical written form of content.es.json. Key order comes from the schema; what prints
