@@ -11,7 +11,7 @@ This file exists so they do not get lost. Each entry says what it is, **how to
 check it** — so the next session does not have to take my word for it — and what
 fixing it would cost.
 
-**15 of 18 entries are closed.** The open ones keep their original numbers: a
+**15 of 22 entries are closed.** The open ones keep their original numbers: a
 renumbered list breaks every reference from a commit message or another doc.
 
 What does **not** go here: product and data pending items, which live in
@@ -111,3 +111,98 @@ surfaces', and that is where the real work is.
 
 Ten minutes with `pnpm run dev` and `pnpm run pdf:local`. It is the only entry on
 this list that nobody but the author can close.
+
+---
+
+## 19. The zod adapter's `_def` shape is typed as an open bag
+
+**Severity: low. Found in the final review of the editor handoff PR (`0.15.0`),
+deferred on purpose.**
+
+`editor/schema-adapter.ts` is the only file allowed to read zod's internal
+`_def`, and it models that value as `interface ZodDef { typeName: string;
+[key: string]: unknown }`. The index signature means a typo'd property name —
+`def.innterType` — compiles silently and returns `undefined` instead of failing
+where it is written.
+
+**How to check it.** Rename any `_def` access in the file to a name zod does not
+have and run `pnpm run typecheck`: it passes. `pnpm test` is what catches it.
+
+**Why it was not fixed.** The type is wrapping an API that is deliberately
+untyped, and the 22 tests in `schema-adapter.test.ts` cover every branch that
+exists — including six that assert against the real `datasetSchema`. The net
+holds; it just is not the type system.
+
+**Fix.** A discriminated union of per-`typeName` shapes, so a wrong property is a
+compile error and not a test failure. Worth doing when zod 4 forces the file open
+anyway.
+
+---
+
+## 20. `datasetDescriptor` is an unchecked cast
+
+**Severity: very low. Same review as §19.**
+
+`editor/schema-adapter.ts` ends with `describe(datasetSchema) as
+ObjectDescriptor`. `describe` returns the whole `Descriptor` union, so nothing
+statically guarantees the top-level result is an object.
+
+**How to check it.** Read the last lines of the file: the `as` is right there.
+
+**Why it was not fixed.** `datasetSchema` is a hardcoded `z.object(...).strict()`
+at the call site, so the cast cannot diverge from reality without someone
+rewriting the schema's top level — and several tests read `datasetDescriptor` at
+import time, so a wrong shape fails immediately.
+
+**Fix.** A `describeObject()` helper that narrows and throws otherwise, removing
+the cast. Ten lines.
+
+---
+
+## 21. One entry of the serializer's inline table is unreachable
+
+**Severity: very low. Same review as §19.**
+
+`editor/serialize.ts` lists `periods` in `INLINE_ELEMENT_ARRAYS`, but the entry
+never fires: `periods` only exists on `Skill`, every `Skill` is an element of the
+`skills` array, and that array is itself inline — so a skill is printed whole by
+`inline()`, which consults no table.
+
+**How to check it.** Put a `throw` inside the `INLINE_ELEMENT_ARRAYS.has(key)`
+branch for `periods` and run `pnpm run test:format`: it passes.
+
+**Why it was not fixed.** It is correct-but-dormant, not wrong. Removing it would
+have to be undone the day `periods` — or any field like it — is used outside
+`Skill`, and the cost of keeping it is one line in a table that is meant to be
+read as a decision.
+
+**Fix.** Delete the entry, or leave a comment saying it is currently unreachable.
+Decide it when the schema next moves.
+
+---
+
+## 22. The serializer's tests cover the dataset we have, not the schema we allow
+
+**Severity: low. Same review as §19.**
+
+`content.es.json` has no `Achievement.metric`, no non-empty `media`, no
+certifications, no services and no testimonials. All five are legal in the
+schema, and `serialize.test.ts` therefore exercises none of them — the
+`certifications` and `media` entries of the inline table are asserted by no
+committed test.
+
+**How to check it.** `grep -c '"metric"' content/data/content.es.json` → 0. The
+same holds for the other four collections.
+
+**Why it was not fixed.** It was verified, just not committed: a throwaway probe
+built a synthetic dataset carrying all five shapes, confirmed it passes
+`validateDataset`, and confirmed it round-trips and is idempotent through
+`serializeDataset`, with `media` and `certifications` rendering as one inline
+object per line and `metric`, the service description and the testimonial
+rendering expanded. So the paths are known to work; what is missing is a test
+that keeps them working.
+
+**Fix.** Move that probe into `editor/serialize.test.ts` as a fixture. It is the
+natural moment to do it when the metrics gap in
+[06](./06-next-session.md) §4 is filled, because the dataset will then carry the
+shapes for real.
