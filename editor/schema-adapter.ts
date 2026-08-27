@@ -15,9 +15,11 @@
 
 import type { ZodTypeAny } from "zod";
 
+import { datasetSchema } from "../content/schema/validation";
 import type {
   Descriptor,
   DescriptorFlags,
+  ObjectDescriptor,
   ObjectField,
   StringDescriptor,
 } from "./descriptors";
@@ -139,3 +141,14 @@ function read(schema: ZodTypeAny, flags: DescriptorFlags, path: string): Descrip
 export function describe(schema: ZodTypeAny): Descriptor {
   return read(schema, { optional: false, nullable: false }, "$");
 }
+
+// ---------------------------------------------------------------------------
+// The dataset's own tree
+// ---------------------------------------------------------------------------
+
+/**
+ * The dataset schema as a tree. Computed once at import: the schema is static,
+ * and everything downstream (the serializer's key order, `GET /api/schema`)
+ * reads the same instance.
+ */
+export const datasetDescriptor = describe(datasetSchema) as ObjectDescriptor;

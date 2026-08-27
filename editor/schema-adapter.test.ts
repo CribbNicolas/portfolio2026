@@ -13,9 +13,10 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { z } from "zod";
 
-import { describe, UnsupportedSchemaError } from "./schema-adapter";
+import { datasetDescriptor, describe, UnsupportedSchemaError } from "./schema-adapter";
 import type {
   ArrayDescriptor,
+  Descriptor,
   EnumDescriptor,
   ObjectDescriptor,
   StringDescriptor,
@@ -135,4 +136,76 @@ test("an unsupported type names itself and its path, so a zod bump is readable",
     assert.match(err.message, /when/);
     return true;
   });
+});
+
+// ---------------------------------------------------------------------------
+// The real schema. Task 1 proved the branches; this proves they cover the
+// dataset we actually have.
+// ---------------------------------------------------------------------------
+
+const fieldOf = (object: ObjectDescriptor, key: string): Descriptor => {
+  const found = object.fields.find((f) => f.key === key);
+  assert.ok(found, `the descriptor has no field "${key}"`);
+  return found.descriptor;
+};
+
+test("the dataset describes as an object, and its top-level order is the schema's", () => {
+  assert.equal(datasetDescriptor.kind, "object");
+  assert.deepEqual(
+    datasetDescriptor.fields.map((f) => f.key),
+    [
+      "schemaVersion",
+      "locale",
+      "updatedAt",
+      "identity",
+      "skills",
+      "roles",
+      "achievements",
+      "projects",
+      "education",
+      "certifications",
+      "languages",
+      "services",
+      "testimonials",
+    ],
+  );
+});
+
+test("Prose.short still carries its 180-character ceiling", () => {
+  const achievements = fieldOf(datasetDescriptor, "achievements") as ArrayDescriptor;
+  const text = fieldOf(achievements.element as ObjectDescriptor, "text") as ObjectDescriptor;
+  const short = fieldOf(text, "short") as StringDescriptor;
+  assert.equal(short.maxLength, 180);
+  assert.equal(short.optional, false);
+
+  const long = fieldOf(text, "long") as StringDescriptor;
+  assert.equal(long.optional, true);
+});
+
+test("visibility.priority arrives as the five literals, not as an opaque union", () => {
+  const roles = fieldOf(datasetDescriptor, "roles") as ArrayDescriptor;
+  const visibility = fieldOf(roles.element as ObjectDescriptor, "visibility") as ObjectDescriptor;
+  const priority = fieldOf(visibility, "priority") as EnumDescriptor;
+  assert.deepEqual(priority.values, [1, 2, 3, 4, 5]);
+});
+
+test("Role.end is nullable and not optional: an open role is null, not missing", () => {
+  const roles = fieldOf(datasetDescriptor, "roles") as ArrayDescriptor;
+  const end = fieldOf(roles.element as ObjectDescriptor, "end") as StringDescriptor;
+  assert.equal(end.nullable, true);
+  assert.equal(end.optional, false);
+  assert.equal(end.pattern, "^\\d{4}-(0[1-9]|1[0-2])$");
+});
+
+test("the contact email keeps its format, which is what makes it a typed widget", () => {
+  const identity = fieldOf(datasetDescriptor, "identity") as ObjectDescriptor;
+  const contact = fieldOf(identity, "contact") as ObjectDescriptor;
+  assert.equal((fieldOf(contact, "email") as StringDescriptor).format, "email");
+});
+
+test("skillIds is an array of plain strings — the hints table is what turns it into a picker", () => {
+  const achievements = fieldOf(datasetDescriptor, "achievements") as ArrayDescriptor;
+  const skillIds = fieldOf(achievements.element as ObjectDescriptor, "skillIds") as ArrayDescriptor;
+  assert.equal(skillIds.kind, "array");
+  assert.equal(skillIds.element.kind, "string");
 });
