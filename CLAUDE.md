@@ -190,7 +190,7 @@ pnpm run audit:deps  # pnpm audit --audit-level high
 ```
 
 **Run the full sequence before calling anything done:**
-`pnpm run test:workflows && pnpm run typecheck && pnpm run validate && pnpm run test:format && pnpm test && pnpm run build && pnpm run pdf:local && pnpm run test:pdf && pnpm run test:js && pnpm run test:bundle && pnpm run test:landing && pnpm run test:endpoints && pnpm run test:og && pnpm run audit:todos`.
+`pnpm run test:workflows && pnpm run typecheck && pnpm run validate && pnpm test && pnpm run test:format && pnpm run build && pnpm run pdf:local && pnpm run test:pdf && pnpm run test:js && pnpm run test:bundle && pnpm run test:landing && pnpm run test:endpoints && pnpm run test:og && pnpm run audit:todos`.
 If `validate` fails, the message says which rule was violated and how to fix it;
 read it, do not skip it. All of that runs in CI on every push
 (`.github/workflows/content-validation.yml`) — `audit:todos` included, but as the
