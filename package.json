@@ -10,6 +10,7 @@
   },
   "scripts": {
     "dev": "astro dev",
+    "editor": "tsx scripts/editor.ts",
     "build": "astro build",
     "pdf:local": "tsx scripts/build-pdf.ts",
     "og:local": "tsx scripts/build-og.ts",
