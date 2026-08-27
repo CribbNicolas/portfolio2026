@@ -154,3 +154,51 @@ test("writing twice with the returned etag works: the snapshot is usable, not de
 
   assert.equal((await store.read()).etag, third.etag);
 });
+
+// ---------------------------------------------------------------------------
+// Concurrent writes on the same instance
+// ---------------------------------------------------------------------------
+
+test("two write() calls issued without awaiting the first: exactly one wins, the loser sees a stale etag", async () => {
+  const { store, file } = await freshStore();
+  const { data, etag } = await store.read();
+
+  const editedA = structuredClone(data) as ContentDataset;
+  editedA.identity.preferredName = "A";
+  const editedB = structuredClone(data) as ContentDataset;
+  editedB.identity.preferredName = "B";
+
+  // Neither call is awaited before the other starts: this is the race itself,
+  // not a simulation of it.
+  const [a, b] = await Promise.allSettled([
+    store.write(editedA, etag),
+    store.write(editedB, etag),
+  ]);
+
+  const fulfilled = [a, b].filter((r) => r.status === "fulfilled");
+  const rejected = [a, b].filter((r) => r.status === "rejected");
+  assert.equal(fulfilled.length, 1, "exactly one of the two overlapping writes should succeed");
+  assert.equal(rejected.length, 1, "the other should be refused, not silently discarded");
+  assert.ok(rejected[0].status === "rejected" && rejected[0].reason instanceof StaleEtagError);
+
+  const winner = fulfilled[0].status === "fulfilled" ? fulfilled[0].value : undefined;
+  assert.ok(winner);
+  assert.equal(winner.etag, etagOf(await readRaw(file)));
+});
+
+// ---------------------------------------------------------------------------
+// The cleanup path
+// ---------------------------------------------------------------------------
+
+test("a writeFile failure is cleaned up: no .tmp file survives it", async () => {
+  const dir = await mkdtemp(join(tmpdir(), "editor-store-nodir-"));
+  // The parent of this path is never created, so writeFile(tmp, ...) fails —
+  // this is what makes the catch branch in write() actually run, rather than
+  // the etag check refusing the write before any tmp file is attempted.
+  const file = join(dir, "missing-subdir", "content.es.json");
+  const store = new DatasetStore(file);
+  const data = JSON.parse(canonical) as ContentDataset;
+
+  await assert.rejects(() => store.write(data, "irrelevant"));
+  assert.deepEqual(await readdir(dir), []);
+});

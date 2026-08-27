@@ -11,11 +11,13 @@
  * The etag exists because this file is still edited by hand and by git. A save
  * carrying a stale etag means the file moved underneath the editor — a
  * checkout, a merge, another window — and overwriting it silently would throw
- * away whatever that was.
+ * away whatever that was. Two `write()` calls on the SAME store instance are a
+ * different hazard — races within this process, not against git — and are
+ * closed by a per-instance queue rather than by the etag: see `writeQueue`.
  */
 
 import assert from "node:assert/strict";
-import { createHash } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import { readFile, rename, rm, writeFile } from "node:fs/promises";
 
 import type { ContentDataset } from "../content/schema/content-schema";
@@ -66,6 +68,21 @@ export class SerializationError extends Error {
 export class DatasetStore {
   constructor(private readonly file: string = DATASET_FILE) {}
 
+  /**
+   * Tail of this instance's write queue. `write()` re-reads the current etag
+   * and only then renames — a classic check-then-act — so two overlapping
+   * `write()` calls on the same store could both pass the check before either
+   * renames, and the second rename would silently discard the first caller's
+   * edit. Chaining every call onto this promise makes that window atomic
+   * WITHIN THIS PROCESS: the next call's check cannot start until the
+   * previous call's rename has already landed.
+   *
+   * It buys nothing against an external writer — a git checkout, a hand edit,
+   * another process — because there is no promise chain to join there. That
+   * case is, and has to remain, the etag comparison's job, not the queue's.
+   */
+  private writeQueue: Promise<void> = Promise.resolve();
+
   /** Raw text plus its etag. No validation: used for the pre-write etag check. */
   private async readRaw(): Promise<{ raw: string; etag: string }> {
     const raw = (await readFile(this.file, "utf8")).replace(/\r\n/g, "\n");
@@ -81,6 +98,20 @@ export class DatasetStore {
   }
 
   async write(input: unknown, expectedEtag: string): Promise<DatasetSnapshot> {
+    // Queue this call behind whatever is already in flight on this instance.
+    const turn = this.writeQueue.then(() => this.writeExclusive(input, expectedEtag));
+    // The queue advances regardless of this call's outcome — a rejected write
+    // must not jam every write after it — while `turn` still carries this
+    // call's own result (or error) back to its caller.
+    this.writeQueue = turn.then(
+      () => undefined,
+      () => undefined,
+    );
+    return turn;
+  }
+
+  /** The actual write, run with exclusive access to `file` within this process (see `writeQueue`). */
+  private async writeExclusive(input: unknown, expectedEtag: string): Promise<DatasetSnapshot> {
     const report = inspectDataset(input);
     if (!report.ok) throw new InvalidDatasetError(report);
 
@@ -92,14 +123,21 @@ export class DatasetStore {
       throw new SerializationError(err);
     }
 
-    const { etag: currentEtag } = await this.readRaw();
-    if (currentEtag !== expectedEtag) throw new StaleEtagError(currentEtag);
-
-    // Same directory, so the rename is atomic: a reader sees the old file or
-    // the new one, never a half-written one.
-    const tmp = `${this.file}.tmp-${process.pid}`;
+    // Unique per CALL, not per process: a pid-based name is shared by every
+    // write() in flight on this process, so two overlapping writes would
+    // target the same tmp path and the loser's rename would fail with an
+    // unrelated ENOENT instead of the StaleEtagError it should surface.
+    const tmp = `${this.file}.tmp-${randomUUID()}`;
     try {
+      // Written before the etag is (re-)checked, so the slow part of the
+      // write — putting the bytes on disk — happens outside the
+      // check-then-act window. What is left between the check and the
+      // rename is just the rename itself.
       await writeFile(tmp, serialized, "utf8");
+      const { etag: currentEtag } = await this.readRaw();
+      if (currentEtag !== expectedEtag) throw new StaleEtagError(currentEtag);
+      // Same directory, so the rename is atomic: a reader sees the old file
+      // or the new one, never a half-written one.
       await rename(tmp, this.file);
     } catch (err) {
       await rm(tmp, { force: true });
