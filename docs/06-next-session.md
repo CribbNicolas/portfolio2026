@@ -105,6 +105,27 @@ guarantees that in three months the editor and the schema disagree.
 internal API. It belongs in one module with tests of its own, so a zod bump fails
 there and not silently across the whole editor.
 
+**And the range already drifted.** Measured 2026-08-27: `package.json` declares
+`zod: ^3.23.8` and what is installed is **3.25.76** — two minors of internal
+churn that arrived without anyone deciding. `_def` is not covered by semver, so
+`^3` is a wider door than it looks.
+
+Decide this before writing the introspection, not after:
+
+- **Pin the exact version** while the editor exists, and treat a bump as its own
+  PR with the introspection tests as the gate. Blunt, and it makes the cost
+  visible instead of surprising.
+- **Or keep the range** and put every `_def` access behind one adapter module
+  with tests that assert the shape it expects — a field's type, whether it is
+  optional, an enum's values. Then a bump fails in one file with a message that
+  says what changed.
+
+The second is preferable and is what §"How to proceed" already implies. Either
+way it is a decision, not a default.
+
+Zod 4 changed introspection substantially. That migration will hurt whenever it
+comes, and the adapter is what keeps it to one file.
+
 ### How to proceed
 
 - **Always write through `validate`.** The editor must not be able to save a
@@ -224,6 +245,9 @@ English, which is worse than written English.
 ---
 
 ## 6. State at close
+
+Verified on `develop` at `5663f5b`, from a `pnpm install --frozen-lockfile`, on
+2026-08-27. Not from memory — the numbers below are that run.
 
 ```
 typecheck       0 errors, 0 hints   validate        Dataset valid
