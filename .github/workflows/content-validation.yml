@@ -40,6 +40,12 @@ jobs:
       - run: pnpm run validate
       - run: pnpm test
 
+      # The dataset's written form. It is committed, it is edited by hand, and
+      # a merge can resolve a conflict into something the serializer would never
+      # emit — after which the next editor save produces a diff full of
+      # reformatting nobody asked for.
+      - run: pnpm run test:format
+
       # The PRODUCTION PDF no longer comes from here: `functions/cv.pdf.ts`
       # generates it on demand with Browser Rendering, which is why
       # `pnpm run build` runs on Cloudflare with no Chromium. Chromium is still
