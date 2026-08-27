@@ -87,7 +87,8 @@ change with a reformat, which is half the reason the data is still in git.
 gate that keeps it canonical.** Not a width heuristic — an explicit set of
 rules, so a new alias never reformats a row it does not belong to:
 
-1. Two-space indent, LF, trailing newline.
+1. Two-space indent, trailing newline, and `\n` as the line separator the
+   serializer emits.
 2. Key order is the schema's order (the adapter already produces it).
 3. A blank line before every top-level key except the first three
    (`schemaVersion`, `locale`, `updatedAt` stay as a header block).
@@ -102,6 +103,14 @@ before `testimonials`. That normalization is its own commit.
 `scripts/data-format.check.ts` fails if the committed JSON is not in canonical
 form, so a hand edit stays canonical too and the gate does not depend on the
 editor being the only writer.
+
+**Line endings are compared normalized, and that is not a detail.** The repo has
+no `.gitattributes` and `core.autocrlf` is `true`, so `content.es.json` sits as
+CRLF in a Windows working copy and as LF in the Linux checkout CI runs on. A
+byte comparison would fail locally and pass in CI — the worst shape a gate can
+have. The serializer emits `\n`; the check and the store both collapse `\r\n` to
+`\n` before comparing. Git still normalizes to LF on commit, so writing `\n`
+produces no diff noise either.
 
 Rejected: `jsonc-parser` for surgical edits. It preserves arbitrary hand
 formatting with no normalization, at the cost of a dependency in a repo that
@@ -248,7 +257,7 @@ that reads and writes does: it is where a datum gets lost."*
 | `serialize.test.ts` | Round trip (`parse(serialize(x))` ≡ `x`), idempotence (`serialize(serialize(x))` ≡ `serialize(x)`), and that the normalized real dataset differs from today's only by the expected blank line. |
 | `store.test.ts` | Rejects an invalid dataset without touching the file, writes atomically, returns 409 on a stale etag, and leaves no half-written file when serialization fails. |
 | `hints.test.ts` | Every path in the table exists in the adapter's tree. |
-| `scripts/data-format.check.ts` | The committed JSON is canonical. Runs in `content-validation.yml`. |
+| `scripts/data-format.check.ts` | The committed JSON is canonical, compared with line endings normalized so the verdict is the same on Windows and in CI. Runs in `content-validation.yml`. |
 
 New scripts: `pnpm run editor` and `pnpm run test:format`.
 
