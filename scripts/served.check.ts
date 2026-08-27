@@ -31,10 +31,10 @@ if (!SITE) {
 
 /** One read per route: every extra test would be another request. */
 const cache = new Map<string, Promise<Response>>();
-const get = (path: string): Promise<Response> => {
+const get = async (path: string): Promise<Response> => {
   const url = `${SITE}${path}`;
   if (!cache.has(url)) cache.set(url, fetch(url));
-  return cache.get(url)!.then((r) => r.clone());
+  return (await cache.get(url)!).clone();
 };
 
 /**

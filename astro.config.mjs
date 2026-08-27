@@ -1,10 +1,10 @@
 import { defineConfig } from "astro/config";
 import sitemap from "@astrojs/sitemap";
 
-// `site` tiene que ser absoluta: el JSON-LD y el canonical la necesitan, y los
-// crawlers no resuelven rutas relativas. El TLD .invalid está reservado por RFC
-// 2606, así que si alguien deployea sin definir SITE_URL, rompe visiblemente en
-// vez de publicar una URL equivocada que parece buena.
+// `site` has to be absolute: the JSON-LD and the canonical need it, and crawlers
+// do not resolve relative paths. The .invalid TLD is reserved by RFC 2606, so if
+// somebody deploys without setting SITE_URL it breaks visibly instead of
+// publishing a wrong URL that looks fine.
 const SITE = process.env.SITE_URL ?? "https://portfolio.invalid";
 
 export default defineConfig({
@@ -13,12 +13,12 @@ export default defineConfig({
   build: { format: "directory" },
   integrations: [
     sitemap({
-      // `/cv` va con noindex y sin links entrantes: existe para que Browser
-      // Rendering imprima el PDF, no para que la visiten. Listarla en el
-      // sitemap sería invitar al crawler a la única página que le pedimos que
-      // ignore — y las dos señales en contra confunden más que la ausencia de
-      // una. `landing-unica.check.ts` custodia el resto de ese invariante.
-      filter: (pagina) => !pagina.includes("/cv/"),
+      // `/cv` carries noindex and has no incoming links: it exists so Browser
+      // Rendering can print the PDF, not to be visited. Listing it in the
+      // sitemap would invite the crawler to the one page we ask it to ignore —
+      // and two contradictory signals confuse more than the absence of one.
+      // `single-landing.check.ts` guards the rest of that invariant.
+      filter: (page) => !page.includes("/cv/"),
     }),
   ],
 });
