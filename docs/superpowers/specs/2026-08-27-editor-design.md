@@ -92,13 +92,27 @@ rules, so a new alias never reformats a row it does not belong to:
 2. Key order is the schema's order (the adapter already produces it).
 3. A blank line before every top-level key except the first three
    (`schemaVersion`, `locale`, `updatedAt` stay as a header block).
-4. Arrays of scalars inline: `["TS"]`.
-5. Compact collections come from an explicit table — `skills`, `languages` and
-   `certifications` print one inline object per line, as today; everything else
-   is expanded.
+4. Arrays of scalars inline — `["TS"]` — when the inline form fits in 100
+   columns counting the indent; otherwise one element per line. Measured over
+   the 44 scalar arrays in the dataset: the widest is `identity.titleAliases`
+   at 110 columns (expanded today) and the next is 76 (inline today). The
+   threshold sits in a 34-column gap, so it is not tuned to a knife edge.
+5. What prints inline comes from two explicit tables, not from a width:
+   `visibility` is an inline object wherever it appears, and the arrays
+   `skills`, `languages`, `certifications`, `links`, `media` and `periods`
+   print one inline object per line. Everything else is expanded.
 
-Applied to the current dataset this produces a **one-line diff**: a blank line
-before `testimonials`. That normalization is its own commit.
+   A width rule cannot express this: a `skills` element is ~190 columns inline
+   and must stay inline, a `Prose` object is ~170 and must stay expanded. They
+   overlap, so no threshold separates them — which is why the table is the
+   mechanism and not a fallback for it.
+
+Applied to the current dataset this is expected to produce a **one-line diff**:
+a blank line before `testimonials`. Key order was checked against the schema
+across every object in the dataset and already matches, so rule 2 moves nothing.
+That normalization is its own commit, and if the diff turns out larger than the
+expected line, the rules get reconciled with the file before it is committed —
+the normalization is not allowed to smuggle in a reformat.
 
 `scripts/data-format.check.ts` fails if the committed JSON is not in canonical
 form, so a hand edit stays canonical too and the gate does not depend on the
@@ -184,6 +198,7 @@ editor/
   store.test.ts
   server.ts             node:http, ~120 lines. Precedent: scripts/build-pdf.ts.
   public/               index.html + app.js + editor.css. No bundler, ES modules.
+scripts/format-data.ts         Writes content.es.json in canonical form. The fix path the gate points at.
 scripts/data-format.check.ts   Gate: content.es.json is in canonical form.
 ```
 
