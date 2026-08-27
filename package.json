@@ -16,6 +16,7 @@
     "preview": "astro preview",
     "typecheck": "astro sync && tsc --noEmit && astro check",
     "validate": "tsx scripts/validate.ts",
+    "format:data": "tsx scripts/format-data.ts",
     "test": "tsx --test",
     "test:pdf": "tsx --test scripts/pdf-output.check.ts",
     "test:og": "tsx --test scripts/og-output.check.ts",
