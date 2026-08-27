@@ -1,41 +1,41 @@
 /**
- * Grafo → reglas CSS de resaltado cruzado.
+ * Graph → CSS rules for cross-highlighting.
  *
- * El puente lista↔mapa funciona SIN JavaScript. Ese es el punto: el spec §3.3
- * exige que si una propuesta necesita JS, degrade a algo usable sin él — y acá
- * la interacción completa, no una versión pobre, vive en CSS.
+ * The list↔map bridge works WITHOUT JavaScript. That is the point: spec §3.3
+ * requires a proposal needing JS to degrade into something usable without it —
+ * and here the full interaction, not a poorer version, lives in CSS.
  *
- * Se generan desde el grafo en vez de escribirse a mano porque así no pueden
- * desincronizarse de los ids que emite el `<svg>`.
+ * These are generated from the graph rather than written by hand so they cannot
+ * drift out of sync with the ids the `<svg>` emits.
  *
- * Import relativo y NO por el alias `@content`: este módulo lo cargan tanto
- * Vite (que resuelve el alias) como `tsx` corriendo el test suelto (que puede
- * no resolverlo). Mismo motivo que `src/lib/jsonld.ts`.
+ * Relative import and NOT the `@content` alias: this module is loaded both by
+ * Vite (which resolves the alias) and by `tsx` running the test on its own
+ * (which may not). Same reason as `src/lib/jsonld.ts`.
  */
 
 import type { PositionedGraph } from "../../content/source/index";
 
-/** Prefijos de id. Los usa el `<svg>`, la lista del DOM y estas reglas. */
-export const ID_NODO = (id: string): string => `n-${id.replace(":", "-")}`;
-export const ID_ITEM = (id: string): string => `i-${id.replace(":", "-")}`;
+/** Id prefixes. Used by the `<svg>`, by the DOM list, and by these rules. */
+export const NODE_ID = (id: string): string => `n-${id.replace(":", "-")}`;
+export const ITEM_ID = (id: string): string => `i-${id.replace(":", "-")}`;
 
 /**
- * Dos reglas por nodo: hover en la lista enciende el nodo, hover en el nodo
- * enciende el item. `:focus-visible` va en la primera para que el puente
- * funcione con teclado y no solo con mouse — reusa el anillo de foco que ya
- * define `tokens.css`, no lo redefine.
+ * Two rules per node: hovering the list lights the node, hovering the node
+ * lights the item. `:focus-visible` goes on the first one so the bridge works
+ * with a keyboard and not only with a mouse — it reuses the focus ring
+ * `tokens.css` already defines rather than redefining it.
  */
 export function buildHoverCss(graph: PositionedGraph): string {
-  const reglas: string[] = [];
+  const rules: string[] = [];
 
   for (const n of graph.nodes) {
-    const nodo = `#${ID_NODO(n.id)}`;
-    const item = `#${ID_ITEM(n.id)}`;
-    reglas.push(
-      `.lab:has(${item}:hover,${item}:focus-visible) ${nodo}{opacity:1;stroke:var(--acento);stroke-width:3}`,
-      `.lab:has(${nodo}:hover) ${item}{background:var(--acento-tenue);color:var(--acento)}`,
+    const node = `#${NODE_ID(n.id)}`;
+    const item = `#${ITEM_ID(n.id)}`;
+    rules.push(
+      `.lab:has(${item}:hover,${item}:focus-visible) ${node}{opacity:1;stroke:var(--accent);stroke-width:3}`,
+      `.lab:has(${node}:hover) ${item}{background:var(--accent-faint);color:var(--accent)}`,
     );
   }
 
-  return reglas.join("\n");
+  return rules.join("\n");
 }

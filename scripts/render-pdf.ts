@@ -1,23 +1,24 @@
 /**
- * La costura del PDF, por Playwright.
+ * The PDF seam, via Playwright.
  *
- * Recibe una URL, no un componente. En producción el PDF NO sale de acá: sale
- * de `functions/cv.pdf.ts`, que le pide el mismo render a Browser Rendering.
- * Este archivo queda como la herramienta de verificación —es lo que produce el
- * `dist/cv.pdf` contra el que corre `pnpm run test:pdf` antes de deployar— y
- * como la forma de mirar el PDF en local sin depender de la red de nadie.
+ * It takes a URL, not a component. In production the PDF does NOT come from
+ * here: it comes from `functions/cv.pdf.ts`, which asks Browser Rendering for
+ * the same render. This file remains the verification tool — it is what
+ * produces the `dist/cv.pdf` that `pnpm run test:pdf` runs against before
+ * deploying — and the way to look at the PDF locally without depending on
+ * anybody's network.
  *
- * Las opciones de impresión NO viven acá: viven en `scripts/pdf-options.ts`,
- * compartidas con la Function. Ver el porqué en ese archivo.
+ * The print options do NOT live here: they live in `scripts/pdf-options.ts`,
+ * shared with the Function. See that file for why.
  */
 
 import { writeFile } from "node:fs/promises";
 import { chromium } from "playwright";
-import { OPCIONES_PDF } from "./pdf-options";
+import { PDF_OPTIONS } from "./pdf-options";
 
 export interface RenderPdfOptions {
   url: string;
-  /** Si se pasa, además de devolver el Buffer lo escribe en disco. */
+  /** When given, the Buffer is also written to disk. */
   out?: string;
 }
 
@@ -27,11 +28,11 @@ export async function renderPdf({ url, out }: RenderPdfOptions): Promise<Buffer>
     const page = await browser.newPage();
     await page.goto(url, { waitUntil: "networkidle" });
 
-    // Sin esto, Chromium puede imprimir con la fuente de fallback y el PDF
-    // sale distinto en cada máquina.
+    // Without this, Chromium can print with the fallback font and the PDF comes
+    // out different on every machine.
     await page.evaluate(() => document.fonts.ready);
 
-    const buffer = await page.pdf({ ...OPCIONES_PDF });
+    const buffer = await page.pdf({ ...PDF_OPTIONS });
 
     if (out) await writeFile(out, buffer);
     return buffer;

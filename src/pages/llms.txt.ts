@@ -1,9 +1,10 @@
 /**
- * Resumen en markdown para agentes (docs/04 §3).
+ * A markdown summary for agents (docs/04 §3).
  *
- * Cada vez más reclutadores pegan la URL en un LLM y preguntan si el candidato
- * sirve. Esto es lo que ese modelo lee. Se genera del dataset: escribirlo a
- * mano garantiza que en tres meses diga otra cosa que el CV.
+ * More and more recruiters paste the URL into an LLM and ask whether the
+ * candidate is a fit. This is what that model reads. It is generated from the
+ * dataset: writing it by hand guarantees that in three months it says something
+ * different from the CV.
  */
 
 import type { APIRoute } from "astro";
@@ -46,7 +47,7 @@ export const GET: APIRoute = async ({ site }) => {
       `### ${p.name}${p.client ? ` (${p.client})` : ""}`,
       p.problem.short,
       p.solution.short,
-      ...(p.slug ? [`Caso: ${base}/proyectos/${p.slug}`] : []),
+      ...(p.slug ? [`Caso: ${base}/projects/${p.slug}`] : []),
       "",
     ]),
   ];

@@ -1,73 +1,74 @@
 /**
- * Lo ÚNICO de /lab que viaja en el camino crítico.
+ * The ONLY part of the map that travels on the critical path.
  *
- * Sin dependencias y sin importar three ni los módulos de render de forma
- * estática: los dos `import()` son dinámicos, así que Rollup los emite como
- * chunks aparte. Si algún día alguien agrega un import estático a `grafo-3d`,
- * three entra al bundle inicial sin que nadie se entere — por eso hay un check
- * de CI que busca `WebGLRenderer` en los chunks críticos.
+ * No dependencies, and it imports neither three nor the render modules
+ * statically: both `import()` calls are dynamic, so Rollup emits them as
+ * separate chunks. If someone ever adds a static import of `graph-3d`, three
+ * enters the initial bundle with nobody noticing — which is why a CI check
+ * looks for `WebGLRenderer` in the critical chunks.
  */
 
-import { puedeIntentar } from "./capacidad";
-import { seguirScroll } from "./pildora";
-import { crearBusHover } from "./hover-bus";
-import type { LabDatos, Escena } from "./types";
+import { mayAttempt } from "./capability";
+import { followScroll } from "./pill";
+import { createHoverBus } from "./hover-bus";
+import type { LabData, LabScene } from "./types";
 
-export function iniciar(): void {
-  // Antes del early return del grafo: la píldora existe aunque el mapa no
-  // llegue a montarse, y no depende de sus datos.
-  const pildora = document.querySelector<HTMLElement>("[data-pildora]");
-  if (pildora) seguirScroll(pildora);
+export function start(): void {
+  // Before the graph's early return: the pill exists even if the map never
+  // mounts, and it does not depend on the map's data.
+  const pill = document.querySelector<HTMLElement>("[data-pill]");
+  if (pill) followScroll(pill);
 
-  const datosEl = document.querySelector<HTMLScriptElement>("[data-lab-datos]");
-  const canvasGrafo = document.querySelector<HTMLCanvasElement>("[data-lab-grafo]");
-  const canvasCampo = document.querySelector<HTMLCanvasElement>("[data-lab-campo]");
-  const lista = document.querySelector<HTMLElement>(".lab__lista");
+  const dataEl = document.querySelector<HTMLScriptElement>("[data-lab-data]");
+  const graphCanvas = document.querySelector<HTMLCanvasElement>("[data-lab-graph]");
+  const fieldCanvas = document.querySelector<HTMLCanvasElement>("[data-lab-field]");
+  const list = document.querySelector<HTMLElement>(".lab__list");
   const tooltip = document.querySelector<HTMLElement>("[data-lab-tooltip]");
-  if (!datosEl || !canvasGrafo) return;
+  if (!dataEl || !graphCanvas) return;
 
-  let datos: LabDatos;
+  let data: LabData;
   try {
-    datos = JSON.parse(datosEl.textContent ?? "");
+    data = JSON.parse(dataEl.textContent ?? "");
   } catch {
-    return; // Queda el SVG, que ya está pintado.
+    return; // The SVG stays, and it is already painted.
   }
 
-  const bus = crearBusHover();
-  cablearLista(lista, bus);
+  const bus = createHoverBus();
+  wireList(list, bus);
 
   const panel = document.querySelector<HTMLElement>("[data-lab-panel]");
 
-  if (!puedeIntentar()) return;
+  if (!mayAttempt()) return;
 
-  // `rootMargin` generoso: el chunk empieza a bajar un poco antes de que la
-  // sección entre en pantalla, así no se ve el salto de aparición.
-  observarUnaVez(canvasGrafo, "300px", () => {
-    ocioso(async () => {
+  // Generous `rootMargin`: the chunk starts downloading slightly before the
+  // section enters the viewport, so the pop-in is not visible.
+  observeOnce(graphCanvas, "300px", () => {
+    whenIdle(async () => {
       try {
-        const { montarGrafo } = await import("./grafo-3d");
-        // `Array.from` y no spread: el `lib` del tsconfig no trae `dom.iterable`.
-        const etiquetas = Array.from(document.querySelectorAll<HTMLElement>("[data-lab-etiqueta]"));
-        const escena = await montarGrafo({ canvas: canvasGrafo, datos, bus, tooltip, panel, etiquetas });
-        registrar(escena);
-        // Recién con el 3D montado la lista puede enfocar. Antes de eso el
-        // click en un ítem no tiene a dónde ir, y un botón que no hace nada es
-        // peor que un texto que no invita a clickearlo.
-        if (escena?.enfocar) cablearFoco(lista, escena.enfocar);
+        const { mountGraph } = await import("./graph-3d");
+        // `Array.from` and not spread: the tsconfig `lib` does not include
+        // `dom.iterable`.
+        const labels = Array.from(document.querySelectorAll<HTMLElement>("[data-lab-label]"));
+        const scene = await mountGraph({ canvas: graphCanvas, data, bus, tooltip, panel, labels });
+        register(scene);
+        // Only with the 3D mounted can the list focus. Before that, clicking an
+        // item has nowhere to go, and a button that does nothing is worse than
+        // text that does not invite a click.
+        if (scene?.focusNode) wireFocus(list, scene.focusNode);
       } catch {
-        /* Sin mensaje y sin spinner: el SVG ya es la respuesta correcta. */
+        /* No message and no spinner: the SVG is already the right answer. */
       }
     });
   });
 
-  if (canvasCampo) {
-    observarUnaVez(canvasCampo, "0px", () => {
-      ocioso(async () => {
+  if (fieldCanvas) {
+    observeOnce(fieldCanvas, "0px", () => {
+      whenIdle(async () => {
         try {
-          const { montarCampo } = await import("./campo");
-          registrar(await montarCampo(canvasCampo));
+          const { mountField } = await import("./field");
+          register(await mountField(fieldCanvas));
         } catch {
-          /* El fondo plano de `--fondo` ya está debajo. */
+          /* The flat `--bg` background is already underneath. */
         }
       });
     });
@@ -76,74 +77,74 @@ export function iniciar(): void {
 
 // ---------------------------------------------------------------------------
 
-const escenas: Escena[] = [];
+const scenes: LabScene[] = [];
 
-function registrar(e: Escena | null): void {
-  if (!e) return;
-  escenas.push(e);
-  // Una sola vez, no por escena: si la pestaña se descarta, se libera todo.
-  if (escenas.length === 1) {
+function register(s: LabScene | null): void {
+  if (!s) return;
+  scenes.push(s);
+  // Once, not per scene: if the tab is discarded, everything is released.
+  if (scenes.length === 1) {
     addEventListener("pagehide", () => {
-      for (const s of escenas) s.destruir();
-      escenas.length = 0;
+      for (const x of scenes) x.destroy();
+      scenes.length = 0;
     }, { once: true });
   }
 }
 
 /**
- * El lado DOM del puente. Delegación: 4 listeners sin importar cuántos nodos
- * haya. `focusin`/`focusout` es lo que lo hace funcionar con teclado.
+ * The DOM side of the bridge. Delegation: 4 listeners no matter how many nodes
+ * there are. `focusin`/`focusout` is what makes it work with a keyboard.
  */
-function cablearLista(lista: HTMLElement | null, bus: ReturnType<typeof crearBusHover>): void {
-  if (!lista) return;
-  const idDe = (t: EventTarget | null): string | null =>
+function wireList(list: HTMLElement | null, bus: ReturnType<typeof createHoverBus>): void {
+  if (!list) return;
+  const idOf = (t: EventTarget | null): string | null =>
     (t as HTMLElement | null)?.closest<HTMLElement>("[data-node]")?.dataset.node ?? null;
 
-  lista.addEventListener("pointerover", (e) => bus.activar(idDe(e.target), "dom"), { passive: true });
-  lista.addEventListener("pointerout", () => bus.activar(null, "dom"), { passive: true });
-  lista.addEventListener("focusin", (e) => bus.activar(idDe(e.target), "dom"));
-  lista.addEventListener("focusout", () => bus.activar(null, "dom"));
+  list.addEventListener("pointerover", (e) => bus.activate(idOf(e.target), "dom"), { passive: true });
+  list.addEventListener("pointerout", () => bus.activate(null, "dom"), { passive: true });
+  list.addEventListener("focusin", (e) => bus.activate(idOf(e.target), "dom"));
+  list.addEventListener("focusout", () => bus.activate(null, "dom"));
 }
 
 /**
- * Click y teclado en la lista enfocan el nodo en el mapa.
+ * Click and keyboard on the list focus the node in the map.
  *
- * Delegación otra vez: 2 listeners. Los ítems ya son `tabindex=0` para el hover
- * con teclado, así que Enter y Espacio tienen que hacer lo mismo que el click —
- * si no, el mapa queda accesible solo con mouse.
+ * Delegation again: 2 listeners. The items are already `tabindex=0` for
+ * keyboard hover, so Enter and Space have to do the same thing as a click —
+ * otherwise the map is reachable with a mouse only.
  */
-function cablearFoco(lista: HTMLElement | null, enfocar: (id: string | null) => void): void {
-  if (!lista) return;
-  lista.classList.add("lab__lista--interactiva");
+function wireFocus(list: HTMLElement | null, focus: (id: string | null) => void): void {
+  if (!list) return;
+  list.classList.add("lab__list--interactive");
 
-  const idDe = (t: EventTarget | null): string | null =>
+  const idOf = (t: EventTarget | null): string | null =>
     (t as HTMLElement | null)?.closest<HTMLElement>("[data-node]")?.dataset.node ?? null;
 
-  lista.addEventListener("click", (e) => {
-    const id = idDe(e.target);
-    if (id) enfocar(id);
+  list.addEventListener("click", (e) => {
+    const id = idOf(e.target);
+    if (id) focus(id);
   });
 
-  lista.addEventListener("keydown", (e) => {
+  list.addEventListener("keydown", (e) => {
     if (e.key !== "Enter" && e.key !== " ") return;
-    const id = idDe(e.target);
+    const id = idOf(e.target);
     if (!id) return;
-    e.preventDefault(); // Espacio scrollea la página; acá ya eligieron el ítem.
-    enfocar(id);
+    e.preventDefault(); // Space scrolls the page; here they already picked the item.
+    focus(id);
   });
 }
 
-function observarUnaVez(el: Element, rootMargin: string, fn: () => void): void {
-  const io = new IntersectionObserver((entradas) => {
-    if (!entradas.some((x) => x.isIntersecting)) return;
+function observeOnce(el: Element, rootMargin: string, fn: () => void): void {
+  const io = new IntersectionObserver((entries) => {
+    if (!entries.some((x) => x.isIntersecting)) return;
     io.disconnect();
     fn();
   }, { rootMargin });
   io.observe(el);
 }
 
-/** `requestIdleCallback` no existe en Safari. El fallback no es opcional. */
-function ocioso(fn: () => void): void {
+/** `requestIdleCallback` does not exist in Safari. The fallback is not optional. */
+function whenIdle(fn: () => void): void {
   if (typeof requestIdleCallback === "function") requestIdleCallback(fn, { timeout: 1200 });
   else setTimeout(fn, 1);
 }

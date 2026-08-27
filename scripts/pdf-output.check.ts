@@ -1,228 +1,231 @@
 /**
- * Verificación del PDF generado. Esto es lo que convierte "el CV pasa el ATS"
- * de intención en test (invariante 7).
+ * Verification of the generated PDF. This is what turns "the CV passes the ATS"
+ * from an intention into a test (invariant 7).
  *
- * El nombre NO termina en `.test.ts` a propósito: `pnpm test` descubre todos los
- * `*.test.ts` y correría este antes de que exista el PDF. Se corre aparte, con
- * `pnpm run test:pdf`, y contra dos fuentes distintas según `PDF_SOURCE` — ver
- * abajo.
+ * The name does NOT end in `.test.ts` on purpose: `pnpm test` discovers every
+ * `*.test.ts` and would run this one before the PDF exists. It runs separately,
+ * with `pnpm run test:pdf`, and against two different sources depending on
+ * `PDF_SOURCE` — see below.
  */
 
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
-// El build `legacy` es el único que corre en Node (el principal necesita APIs
-// del DOM que Node 20 no tiene). Ese subpath no expone types propios.
+// The `legacy` build is the only one that runs in Node (the main one needs DOM
+// APIs Node 20 does not have). That subpath exposes no types of its own.
 // @ts-ignore
 import { getDocument } from "pdfjs-dist/legacy/build/pdf.mjs";
 import { content, formatRoleTitle } from "../content/source/index";
 
 /**
- * De dónde salen los bytes que se verifican.
+ * Where the verified bytes come from.
  *
- * Por defecto `dist/cv.pdf`, el que produce `pnpm run pdf:local` con Playwright:
- * ese es el gate PRE-deploy y no depende de la red de nadie.
+ * By default `dist/cv.pdf`, the one `pnpm run pdf:local` produces with
+ * Playwright: that is the PRE-deploy gate and it depends on nobody's network.
  *
- * Con `PDF_SOURCE=https://…/cv.pdf` los MISMOS tests corren contra la URL
- * publicada. Eso es lo único que prueba que el PDF que sirve `functions/cv.pdf.ts`
- * pasa el ATS, y no solo el que produce tu máquina: son dos Chromium distintos
- * —Playwright local contra Browser Rendering— sobre el mismo layout, y la única
- * forma de saber que imprimen igual es medir los dos.
+ * With `PDF_SOURCE=https://…/cv.pdf` the SAME tests run against the published
+ * URL. That is the only thing proving the PDF `functions/cv.pdf.ts` serves
+ * passes the ATS, and not only the one your machine produces: they are two
+ * different Chromiums — local Playwright against Browser Rendering — over the
+ * same layout, and the only way to know they print alike is to measure both.
  */
-const FUENTE = process.env.PDF_SOURCE ?? "dist/cv.pdf";
+const SOURCE = process.env.PDF_SOURCE ?? "dist/cv.pdf";
 
-let crudo: Uint8Array | undefined;
+let rawBytes: Uint8Array | undefined;
 
 /**
- * Los bytes del PDF, leídos UNA sola vez.
+ * The PDF bytes, read ONCE.
  *
- * Cada test llamaba a `readFile` por su cuenta, que con un archivo local es
- * gratis; contra una URL serían nueve requests —y nueve renders si el caché de
- * borde no acierta—. Devuelve una copia porque pdf.js se queda con el
- * `Uint8Array` que recibe: reusar el mismo lo deja vacío en el segundo test.
+ * Each test used to call `readFile` on its own, which with a local file is
+ * free; against a URL it would be nine requests — and nine renders if the edge
+ * cache misses. It returns a copy because pdf.js keeps the `Uint8Array` it
+ * receives: reusing the same one leaves it empty on the second test.
  */
-async function cargar(): Promise<Uint8Array> {
-  if (!crudo) {
-    if (FUENTE.startsWith("http://") || FUENTE.startsWith("https://")) {
-      const res = await fetch(FUENTE);
-      // El 429 se distingue del resto a propósito: no dice "el PDF está roto",
-      // dice "esperá". Es la cuota de Browser Rendering, y confundir las dos
-      // cosas manda a depurar la Function cuando no hay nada que depurar.
+async function load(): Promise<Uint8Array> {
+  if (!rawBytes) {
+    if (SOURCE.startsWith("http://") || SOURCE.startsWith("https://")) {
+      const res = await fetch(SOURCE);
+      // The 429 is told apart from the rest on purpose: it does not say "the PDF
+      // is broken", it says "wait". It is the Browser Rendering quota, and
+      // confusing the two sends you debugging the Function when there is nothing
+      // to debug.
       assert.ok(
         res.status !== 429,
-        `${FUENTE} devolvió 429: es la cuota de Browser Rendering, no un fallo del PDF. ` +
-          "El plan gratuito da 3 browsers concurrentes y una instancia nueva cada 20 s. " +
-          "Esperá un minuto y repetí; si persiste, se agotaron los 10 min de browser del día.",
+        `${SOURCE} returned 429: that is the Browser Rendering quota, not a PDF failure. ` +
+          "The free plan gives 3 concurrent browsers and a new instance every 20 s. " +
+          "Wait a minute and retry; if it persists, the day's 10 browser minutes are used up.",
       );
-      assert.ok(res.ok, `${FUENTE} devolvió ${res.status} ${res.statusText}`);
-      // Un 200 con HTML es el síntoma de que la ruta no matcheó la Function y
-      // Pages devolvió el sitio. Sin este chequeo el fallo sale como
-      // "InvalidPDFException" y se busca en el lado equivocado.
-      const tipo = res.headers.get("content-type") ?? "";
+      assert.ok(res.ok, `${SOURCE} returned ${res.status} ${res.statusText}`);
+      // A 200 with HTML is the symptom of the route not matching the Function
+      // and Pages returning the site. Without this check the failure surfaces as
+      // "InvalidPDFException" and you look on the wrong side.
+      const type = res.headers.get("content-type") ?? "";
       assert.ok(
-        tipo.includes("application/pdf"),
-        `${FUENTE} devolvió content-type "${tipo}": esa ruta no está sirviendo un PDF`,
+        type.includes("application/pdf"),
+        `${SOURCE} returned content-type "${type}": that route is not serving a PDF`,
       );
-      crudo = new Uint8Array(await res.arrayBuffer());
+      rawBytes = new Uint8Array(await res.arrayBuffer());
     } else {
-      crudo = new Uint8Array(await readFile(FUENTE));
+      rawBytes = new Uint8Array(await readFile(SOURCE));
     }
   }
-  return crudo.slice();
+  return rawBytes.slice();
 }
 
-/** Texto del PDF en orden de extracción: exactamente lo que ve un parser. */
-async function extraer(): Promise<{ texto: string; paginas: number }> {
-  const doc = await getDocument({ data: await cargar() }).promise;
+/** The PDF text in extraction order: exactly what a parser sees. */
+async function extract(): Promise<{ text: string; pages: number }> {
+  const doc = await getDocument({ data: await load() }).promise;
 
-  let texto = "";
+  let text = "";
   for (let i = 1; i <= doc.numPages; i++) {
     const page = await doc.getPage(i);
-    const contenido = await page.getTextContent();
-    texto += contenido.items
-      // La versión instalada de pdfjs-dist sí trae tipos para este subpath
-      // (un `.d.mts` que reexporta desde el paquete principal), a diferencia
-      // de lo que asumía el brief: el item puede ser `TextItem` (con `str`) o
-      // `TextMarkedContent` (sin `str`), de ahí el chequeo con `in`.
+    const textContent = await page.getTextContent();
+    text += textContent.items
+      // The installed version of pdfjs-dist does carry types for this subpath (a
+      // `.d.mts` re-exporting from the main package), unlike what the brief
+      // assumed: the item can be a `TextItem` (with `str`) or a
+      // `TextMarkedContent` (without `str`), hence the `in` check.
       .map((item) => ("str" in item ? (item.str ?? "") : ""))
       .join(" ");
-    texto += "\n";
+    text += "\n";
   }
-  return { texto, paginas: doc.numPages };
+  return { text, pages: doc.numPages };
 }
 
-test("capa 1: el PDF tiene texto extraíble, no es una imagen", async () => {
-  const { texto } = await extraer();
+test("layer 1: the PDF has extractable text, it is not an image", async () => {
+  const { text } = await extract();
   assert.ok(
-    texto.trim().length > 500,
-    `el texto extraído tiene ${texto.trim().length} caracteres; un PDF exportado como imagen se descarta entero en la capa 1`,
+    text.trim().length > 500,
+    `the extracted text has ${text.trim().length} characters; a PDF exported as an image is discarded whole at layer 1`,
   );
 });
 
-test("capa 1: el parser encuentra nombre, título y todas las empresas", async () => {
-  const { texto } = await extraer();
+test("layer 1: the parser finds the name, the title and every company", async () => {
+  const { text } = await extract();
   const view = await content.getView("cv-ats", "es");
 
-  const normal = texto.replace(/\s+/g, " ");
-  assert.ok(normal.includes(view.identity.fullName), "falta el nombre completo");
-  assert.ok(normal.includes(view.identity.searchTitle), "falta el searchTitle");
+  const normal = text.replace(/\s+/g, " ");
+  assert.ok(normal.includes(view.identity.fullName), "the full name is missing");
+  assert.ok(normal.includes(view.identity.searchTitle), "the searchTitle is missing");
 
   for (const role of view.experience) {
     assert.ok(
       normal.includes(role.company),
-      `falta la empresa "${role.company}" en el texto extraído`,
+      `the company "${role.company}" is missing from the extracted text`,
     );
   }
 });
 
-test("capa 1: el orden de extracción es sano (nombre antes que el primer rol)", async () => {
-  const { texto } = await extraer();
+test("layer 1: the extraction order is sane (name before the first role)", async () => {
+  const { text } = await extract();
   const view = await content.getView("cv-ats", "es");
-  const normal = texto.replace(/\s+/g, " ");
+  const normal = text.replace(/\s+/g, " ");
 
-  const posNombre = normal.indexOf(view.identity.fullName);
-  const posPrimerRol = normal.indexOf(view.experience[0].company);
+  const namePos = normal.indexOf(view.identity.fullName);
+  const firstRolePos = normal.indexOf(view.experience[0].company);
   assert.ok(
-    posNombre >= 0 && posNombre < posPrimerRol,
-    "el nombre no aparece antes del primer rol: el orden de lectura está roto",
+    namePos >= 0 && namePos < firstRolePos,
+    "the name does not appear before the first role: the reading order is broken",
   );
 });
 
-test("el CV no excede 2 páginas", async () => {
-  const { paginas } = await extraer();
-  assert.ok(paginas <= 2, `el PDF tiene ${paginas} páginas; el máximo es 2 (docs/03 §2)`);
+test("the CV does not exceed 2 pages", async () => {
+  const { pages } = await extract();
+  assert.ok(pages <= 2, `the PDF has ${pages} pages; the maximum is 2 (docs/03 §2)`);
 });
 
-test("ningún TODO del dataset llegó al PDF", async () => {
-  const { texto } = await extraer();
+test("no dataset TODO reached the PDF", async () => {
+  const { text } = await extract();
   assert.ok(
-    !texto.includes("TODO"),
-    "hay un TODO en el PDF: o se completa el dato o se deja de renderizar ese campo",
+    !text.includes("TODO"),
+    "there is a TODO in the PDF: either the datum gets filled in or that field stops rendering",
   );
 });
 
-test("capa 1: los nombres de sección estándar se extraen enteros", async () => {
-  // Un parser mapea estos títulos a campos. Si el CSS los separa en glifos
-  // sueltos ("P E R F I L"), el PDF se ve bien y no lo lee nadie.
-  const { texto } = await extraer();
-  const normal = texto.replace(/\s+/g, " ");
+test("layer 1: the standard section names extract whole", async () => {
+  // A parser maps these headings to fields. If the CSS splits them into loose
+  // glyphs ("P E R F I L"), the PDF looks fine and nobody reads it.
+  const { text } = await extract();
+  const normal = text.replace(/\s+/g, " ");
 
-  for (const seccion of ["Perfil", "Habilidades", "Experiencia", "Educación", "Idiomas"]) {
+  // The headings stay in Spanish: they are CV content, and a parser maps them
+  // exactly as they are printed.
+  for (const section of ["Perfil", "Habilidades", "Experiencia", "Educación", "Idiomas"]) {
     assert.match(
       normal,
-      new RegExp(seccion, "i"),
-      `la sección "${seccion}" no aparece contigua en el texto extraído`,
+      new RegExp(section, "i"),
+      `the "${section}" section does not appear contiguous in the extracted text`,
     );
   }
 });
 
-test("capa 1: los títulos de rol y los bullets se extraen enteros", async () => {
-  // formatRoleTitle y text.short son el contenido que de verdad se lee. Si el
+test("layer 1: role titles and bullets extract whole", async () => {
+  // formatRoleTitle y text.short son el textContent que de verdad se lee. Si el
   // CSS los parte en glifos sueltos, el PDF se ve bien y no dice nada.
-  const { texto } = await extraer();
+  const { text } = await extract();
   const view = await content.getView("cv-ats", "es");
-  const normal = texto.replace(/\s+/g, " ");
+  const normal = text.replace(/\s+/g, " ");
 
   for (const role of view.experience) {
-    const titulo = formatRoleTitle(role);
+    const title = formatRoleTitle(role);
     assert.ok(
-      normal.includes(titulo),
-      `el título de rol "${titulo}" no aparece contiguo en el texto extraído`,
+      normal.includes(title),
+      `the role title "${title}" does not appear contiguous in the extracted text`,
     );
     for (const a of role.achievements) {
-      // Los primeros 40 caracteres alcanzan: si el bullet se partió, ya falla ahí.
-      const inicio = a.text.short.slice(0, 40);
+      // The first 40 characters are enough: if the bullet split, it fails there.
+      const start = a.text.short.slice(0, 40);
       assert.ok(
-        normal.includes(inicio),
-        `el bullet "${inicio}..." no aparece contiguo en el texto extraído`,
+        normal.includes(start),
+        `the bullet "${start}..." does not appear contiguous in the extracted text`,
       );
     }
   }
 });
 
-test("el PDF sale tagged y con outline, como se prometió", async () => {
-  // `tagged: true` y `outline: true` son opciones explícitas de renderPdf. Sin
-  // esto, si Chrome dejara de honrarlas nadie se enteraría.
-  const doc = await getDocument({ data: await cargar() }).promise;
+test("the PDF comes out tagged and with an outline, as promised", async () => {
+  // `tagged: true` and `outline: true` are explicit renderPdf options. Without
+  // this, if Chrome ever stopped honouring them nobody would find out.
+  const doc = await getDocument({ data: await load() }).promise;
 
   const markInfo = await doc.getMarkInfo();
-  assert.ok(markInfo?.Marked, "el PDF no está tagged: se pierde el orden de lectura explícito");
+  assert.ok(markInfo?.Marked, "the PDF is not tagged: the explicit reading order is lost");
 
   const outline = await doc.getOutline();
-  assert.ok(outline && outline.length > 0, "el PDF no tiene outline (marcadores por sección)");
+  assert.ok(outline && outline.length > 0, "the PDF has no outline (per-section bookmarks)");
 });
 
-test("capa 1: el email y los links se extraen enteros", async () => {
-  // Una URL partida por un salto de línea se extrae con un espacio adentro y
-  // deja de ser una URL. Es el campo que un ATS usa para encontrar el perfil.
-  const { texto } = await extraer();
+test("layer 1: the email and the links extract whole", async () => {
+  // A URL broken by a line break extracts with a space inside and stops being a
+  // URL. It is the field an ATS uses to find the profile.
+  const { text } = await extract();
   const view = await content.getView("cv-ats", "es");
-  const normal = texto.replace(/\s+/g, " ");
+  const normal = text.replace(/\s+/g, " ");
 
   assert.ok(
     normal.includes(view.identity.contact.email),
-    `el email no aparece contiguo en el texto extraído`,
+    `the email does not appear contiguous in the extracted text`,
   );
   for (const link of view.identity.links) {
     assert.ok(
       normal.includes(link.url),
-      `la URL de ${link.label} (${link.url}) no aparece contigua en el texto extraído`,
+      `the URL for ${link.label} (${link.url}) does not appear contiguous in the extracted text`,
     );
   }
 });
 
-test("regla 8: ni el teléfono ni la dirección salen en el PDF", async () => {
-  const { texto } = await extraer();
+test("rule 8: neither the phone nor the address appear in the PDF", async () => {
+  const { text } = await extract();
   const data = await content.getDataset("es");
-  const normal = texto.replace(/\s+/g, " ");
+  const normal = text.replace(/\s+/g, " ");
 
   if (data.identity.contact.phone) {
-    assert.ok(!normal.includes(data.identity.contact.phone), "el teléfono salió en el PDF");
+    assert.ok(!normal.includes(data.identity.contact.phone), "the phone number appeared in the PDF");
   }
   if (data.identity.location.streetAddress) {
     assert.ok(
       !normal.includes(data.identity.location.streetAddress),
-      "la dirección de calle salió en el PDF",
+      "the street address appeared in the PDF",
     );
   }
 });

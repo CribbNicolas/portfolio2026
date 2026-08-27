@@ -1,27 +1,27 @@
 /**
- * PositionedGraph → lista de dibujo para el `<svg>`.
+ * PositionedGraph → a draw list for the `<svg>`.
  *
- * Toda la matemática de presentación del mapa vive acá y no en el componente:
- * el componente recorre una lista y escribe atributos (invariante 1). Además
- * así se puede testear que la profundidad se lee, que es lo único que hace que
- * un grafo 3D dibujado en 2D no parezca plano.
+ * All the presentation maths of the map lives here and not in the component:
+ * the component walks a list and writes attributes (invariant 1). It also makes
+ * it testable that depth reads, which is the only thing keeping a 3D graph
+ * drawn in 2D from looking flat.
  *
- * Import relativo por el mismo motivo que `jsonld.ts` y `lab-hover-css.ts`.
+ * Relative import for the same reason as `jsonld.ts` and `lab-hover-css.ts`.
  */
 
 import type { PositionedGraph, GraphNodeKind } from "../../content/source/index";
 import { projectNode } from "../../content/schema/graph-layout";
-import { ID_NODO } from "./lab-hover-css";
+import { NODE_ID } from "./lab-hover-css";
 
-/** Radio base por tipo. El tamaño distingue el tipo; el color casi no (spec §4). */
-export const RADIO: Record<GraphNodeKind, number> = {
+/** Base radius per kind. Size distinguishes the kind; color barely does (spec §4). */
+export const RADIUS: Record<GraphNodeKind, number> = {
   role: 10,
   project: 8,
   skill: 5.6,
   achievement: 5.2,
 };
 
-export interface SvgNodo {
+export interface SvgNode {
   id: string;
   domId: string;
   kind: GraphNodeKind;
@@ -30,180 +30,183 @@ export interface SvgNodo {
   cx: number;
   cy: number;
   r: number;
-  /** Opacidad por profundidad. Es la niebla. */
-  opacidad: number;
-  /** Radio del disco de oclusión que tapa las aristas de atrás. */
-  rHalo: number;
-  conEvidencia: boolean;
-  grosorTrazo: number;
+  /** Opacity by depth. This is the fog. */
+  opacity: number;
+  /** Radius of the occlusion disc hiding the edges behind. */
+  haloRadius: number;
+  withEvidence: boolean;
+  strokeWidth: number;
 }
 
-export interface SvgArista {
+export interface SvgEdge {
   x1: number; y1: number; x2: number; y2: number;
-  ancho: number;
-  opacidad: number;
-  afinidad: boolean;
+  width: number;
+  opacity: number;
+  affinity: boolean;
 }
 
-export interface SvgEtiqueta {
+export interface SvgLabel {
   x: number;
   y: number;
-  texto: string;
+  text: string;
   kind: GraphNodeKind;
-  tamano: number;
-  opacidad: number;
+  size: number;
+  opacity: number;
 }
 
-export interface SvgMapa {
-  aristas: SvgArista[];
-  nodos: SvgNodo[];
-  /** Solo las que entran sin pisarse. Ver `ubicarEtiquetas`. */
-  etiquetas: SvgEtiqueta[];
-  /** `viewBox` calculado del contenido real, con margen. */
+export interface SvgMap {
+  edges: SvgEdge[];
+  nodes: SvgNode[];
+  /** Only the ones that fit without overlapping. See `placeLabels`. */
+  labels: SvgLabel[];
+  /** `viewBox` computed from the real content, with a margin. */
   viewBox: string;
 }
 
-/** Cuánto se desvanece lo más lejano. 0 sería invisible; 0.28 todavía se lee. */
-const NIEBLA_MIN = 0.28;
+/** How far the farthest fades. 0 would be invisible; 0.28 still reads. */
+const FOG_MIN = 0.28;
 
-export function buildSvgMapa(graph: PositionedGraph): SvgMapa {
-  const proyectado = new Map(
-    graph.nodes.map((n) => [n.id, { nodo: n, p: projectNode(n) }]),
+export function buildSvgMap(graph: PositionedGraph): SvgMap {
+  const projected = new Map(
+    graph.nodes.map((n) => [n.id, { node: n, p: projectNode(n) }]),
   );
 
-  const escalas = [...proyectado.values()].map((v) => v.p.escala);
-  const sMin = Math.min(...escalas);
-  const sMax = Math.max(...escalas);
-  const rango = sMax - sMin || 1;
-  const niebla = (s: number): number =>
-    redondear(NIEBLA_MIN + (1 - NIEBLA_MIN) * ((s - sMin) / rango));
+  const scales = [...projected.values()].map((v) => v.p.scale);
+  const sMin = Math.min(...scales);
+  const sMax = Math.max(...scales);
+  const range = sMax - sMin || 1;
+  const fog = (s: number): number =>
+    round3(FOG_MIN + (1 - FOG_MIN) * ((s - sMin) / range));
 
-  // El orden de pintado ES la profundidad: primero lo de atrás.
-  const aristas: SvgArista[] = graph.edges
+  // Paint order IS the depth: what is behind goes first.
+  const edges: SvgEdge[] = graph.edges
     .flatMap((e) => {
-      const A = proyectado.get(e.source);
-      const B = proyectado.get(e.target);
+      const A = projected.get(e.source);
+      const B = projected.get(e.target);
       if (!A || !B) return [];
-      const prof = (A.p.escala + B.p.escala) / 2;
-      const afinidad = e.kind === "afinidad";
+      const depth = (A.p.scale + B.p.scale) / 2;
+      const affinity = e.kind === "affinity";
       return [{
-        prof,
-        arista: {
+        depth,
+        edge: {
           x1: A.p.x, y1: A.p.y, x2: B.p.x, y2: B.p.y,
-          // Las de afinidad engordan con la evidencia que comparten: la más
-          // gruesa es la relación más probada, no la más linda.
-          ancho: redondear((afinidad ? 0.7 + e.weight * 0.42 : 1.15) * (0.6 + prof * 0.5)),
-          opacidad: redondear(niebla(prof) * (afinidad ? 0.62 : 0.85)),
-          afinidad,
+          // Affinity edges thicken with the evidence they share: the thickest
+          // is the most proven relationship, not the prettiest.
+          width: round3((affinity ? 0.7 + e.weight * 0.42 : 1.15) * (0.6 + depth * 0.5)),
+          opacity: round3(fog(depth) * (affinity ? 0.62 : 0.85)),
+          affinity,
         },
       }];
     })
-    .sort((a, b) => a.prof - b.prof)
-    .map((x) => x.arista);
+    .sort((a, b) => a.depth - b.depth)
+    .map((x) => x.edge);
 
-  const nodos: SvgNodo[] = [...proyectado.values()]
-    .sort((a, b) => a.p.escala - b.p.escala)
-    .map(({ nodo, p }) => {
-      // `escalaRadio` es 1 salvo en las skills, donde codifica años × conexiones.
-      const r = redondear(RADIO[nodo.kind] * nodo.escalaRadio * p.escala);
+  const nodes: SvgNode[] = [...projected.values()]
+    .sort((a, b) => a.p.scale - b.p.scale)
+    .map(({ node, p }) => {
+      // `radiusScale` is 1 except on skills, where it encodes years × connections.
+      const r = round3(RADIUS[node.kind] * node.radiusScale * p.scale);
       return {
-        id: nodo.id,
-        domId: ID_NODO(nodo.id),
-        kind: nodo.kind,
-        label: nodo.label,
-        detail: nodo.detail,
+        id: node.id,
+        domId: NODE_ID(node.id),
+        kind: node.kind,
+        label: node.label,
+        detail: node.detail,
         cx: p.x,
         cy: p.y,
         r,
-        opacidad: niebla(p.escala),
-        // Disco del color del fondo detrás del nodo: simula oclusión. Es lo que
-        // convierte una telaraña plana en un cuerpo con adelante y atrás.
-        rHalo: redondear(r + 2.6),
-        conEvidencia: !nodo.sinEvidencia,
-        // Proporcional al radio y no solo a la perspectiva: con un radio fijo
-        // el contorno de un nodo grande queda de hilo y el de uno chico, gordo.
-        grosorTrazo: redondear(1.7 * p.escala * Math.min(1.8, Math.sqrt(nodo.escalaRadio))),
+        opacity: fog(p.scale),
+        // A disc the color of the background behind the node: it fakes
+        // occlusion. That is what turns a flat cobweb into a body with a front
+        // and a back.
+        haloRadius: round3(r + 2.6),
+        withEvidence: !node.withoutEvidence,
+        // Proportional to the radius and not only to perspective: with a fixed
+        // radius the outline of a large node reads as a hair and a small one's
+        // as a slab.
+        strokeWidth: round3(1.7 * p.scale * Math.min(1.8, Math.sqrt(node.radiusScale))),
       };
     });
 
-  const etiquetas = ubicarEtiquetas(nodos);
+  const labels = placeLabels(nodes);
 
-  // El viewBox tiene que contemplar el ANCHO de las etiquetas, no solo los
-  // centros de los nodos: si no, la etiqueta de un nodo del borde se corta.
-  // Pasaba con "Independiente", que quedaba como "lependiente".
+  // The viewBox has to account for the WIDTH of the labels and not only the
+  // node centers: otherwise the label of a node at the rim gets clipped. That
+  // happened to "Independiente", which came out as "lependiente".
   const xs = [
-    ...nodos.flatMap((n) => [n.cx - n.r, n.cx + n.r]),
-    ...etiquetas.flatMap((e) => [e.x - anchoEtiqueta(e) / 2, e.x + anchoEtiqueta(e) / 2]),
+    ...nodes.flatMap((n) => [n.cx - n.r, n.cx + n.r]),
+    ...labels.flatMap((e) => [e.x - labelWidth(e) / 2, e.x + labelWidth(e) / 2]),
   ];
   const ys = [
-    ...nodos.flatMap((n) => [n.cy - n.r, n.cy + n.r]),
-    ...etiquetas.flatMap((e) => [e.y - e.tamano, e.y]),
+    ...nodes.flatMap((n) => [n.cy - n.r, n.cy + n.r]),
+    ...labels.flatMap((e) => [e.y - e.size, e.y]),
   ];
-  const margen = 16;
-  const minX = Math.min(...xs) - margen;
-  const minY = Math.min(...ys) - margen;
-  const w = Math.max(...xs) - Math.min(...xs) + margen * 2;
-  const h = Math.max(...ys) - Math.min(...ys) + margen * 2;
+  const margin = 16;
+  const minX = Math.min(...xs) - margin;
+  const minY = Math.min(...ys) - margin;
+  const w = Math.max(...xs) - Math.min(...xs) + margin * 2;
+  const h = Math.max(...ys) - Math.min(...ys) + margin * 2;
 
   return {
-    aristas,
-    nodos,
-    etiquetas,
+    edges,
+    nodes,
+    labels,
     viewBox: `${minX.toFixed(0)} ${minY.toFixed(0)} ${w.toFixed(0)} ${h.toFixed(0)}`,
   };
 }
 
 /**
- * Etiquetas sin superposición.
+ * Labels without overlap.
  *
- * Se etiquetan roles y proyectos, pero dibujarlos todos los pisa entre sí: en
- * este dataset "Plugins de WordPress con tooling moderno" tapaba "Mapas
- * interactivos de distritos". Estrategia glotona de adelante hacia atrás — lo
- * más cercano gana la etiqueta, que es lo que espera el ojo. La que no entra se
- * omite: el nombre sigue disponible en el `<title>` del nodo y en el tooltip.
+ * Roles and projects get labelled, but drawing them all makes them collide: in
+ * this dataset "Plugins de WordPress con tooling moderno" covered "Mapas
+ * interactivos de distritos". Greedy front-to-back strategy — the nearest wins
+ * the label, which is what the eye expects. The one that does not fit is
+ * dropped: the name is still available in the node's `<title>` and in the
+ * tooltip.
  */
-function ubicarEtiquetas(nodos: SvgNodo[]): SvgEtiqueta[] {
-  const candidatos = nodos
+function placeLabels(nodes: SvgNode[]): SvgLabel[] {
+  const candidates = nodes
     .filter((n) => n.kind === "role" || n.kind === "project")
-    // De más cerca a más lejos: `nodos` viene ordenado al revés (para pintar).
+    // Near to far: `nodes` arrives in reverse order (for painting).
     .slice()
     .reverse();
 
-  const puestas: Array<{ x1: number; y1: number; x2: number; y2: number }> = [];
-  const salida: SvgEtiqueta[] = [];
+  const placed: Array<{ x1: number; y1: number; x2: number; y2: number }> = [];
+  const out: SvgLabel[] = [];
 
-  for (const n of candidatos) {
-    // Se recupera la perspectiva del radio ya dibujado. Vale porque solo se
-    // etiquetan roles y proyectos, y ahí `escalaRadio` es exactamente 1.
-    const escala = n.r / RADIO[n.kind];
-    const tamano = redondear(14.5 * escala);
-    const y = redondear(n.cy - n.r - 7);
-    // Ancho aproximado: 0.52em por carácter es una estimación conservadora para
-    // Manrope. No hace falta medir de verdad — solo se decide si hay choque.
-    const ancho = n.label.length * tamano * 0.52;
-    // Se le suma aire alrededor: dos etiquetas que apenas no se tocan igual se
-    // leen mal. El aire es lo que las separa de verdad.
-    const aire = tamano * 0.6;
-    const caja = {
-      x1: n.cx - ancho / 2 - aire, x2: n.cx + ancho / 2 + aire,
-      y1: y - tamano - aire, y2: y + tamano * 0.3 + aire,
+  for (const n of candidates) {
+    // The perspective is recovered from the already drawn radius. That holds
+    // because only roles and projects get labelled, and there `radiusScale` is
+    // exactly 1.
+    const scale = n.r / RADIUS[n.kind];
+    const size = round3(14.5 * scale);
+    const y = round3(n.cy - n.r - 7);
+    // Approximate width: 0.52em per character is a conservative estimate for
+    // Manrope. No real measuring needed — this only decides whether they clash.
+    const width = n.label.length * size * 0.52;
+    // Some air is added around it: two labels that barely miss each other still
+    // read badly. The air is what actually separates them.
+    const air = size * 0.6;
+    const box = {
+      x1: n.cx - width / 2 - air, x2: n.cx + width / 2 + air,
+      y1: y - size - air, y2: y + size * 0.3 + air,
     };
 
-    const choca = puestas.some((p) =>
-      caja.x1 < p.x2 && caja.x2 > p.x1 && caja.y1 < p.y2 && caja.y2 > p.y1,
+    const clashes = placed.some((p) =>
+      box.x1 < p.x2 && box.x2 > p.x1 && box.y1 < p.y2 && box.y2 > p.y1,
     );
-    if (choca) continue;
+    if (clashes) continue;
 
-    puestas.push(caja);
-    salida.push({ x: n.cx, y, texto: n.label, kind: n.kind, tamano, opacidad: n.opacidad });
+    placed.push(box);
+    out.push({ x: n.cx, y, text: n.label, kind: n.kind, size, opacity: n.opacity });
   }
 
-  // Se devuelven de atrás hacia adelante para que el orden de pintado siga
-  // coincidiendo con la profundidad.
-  return salida.reverse();
+  // Returned back to front so paint order keeps matching depth.
+  return out.reverse();
 }
 
-/** Ancho aproximado en unidades del viewBox. Solo se usa para encuadrar. */
-const anchoEtiqueta = (e: SvgEtiqueta): number => e.texto.length * e.tamano * 0.52;
+/** Approximate width in viewBox units. Only used for framing. */
+const labelWidth = (e: SvgLabel): number => e.text.length * e.size * 0.52;
 
-const redondear = (n: number): number => Math.round(n * 1000) / 1000;
+const round3 = (n: number): number => Math.round(n * 1000) / 1000;

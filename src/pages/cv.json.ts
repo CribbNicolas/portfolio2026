@@ -1,8 +1,8 @@
 /**
- * El dataset resuelto, servido como JSON. Para agentes y para cualquiera que
- * quiera consumir estos datos sin scrapear HTML.
+ * The resolved dataset, served as JSON. For agents and for anyone wanting to
+ * consume this data without scraping HTML.
  *
- * Superficie `public-api`: `resolveView` ya sacó el teléfono y la dirección.
+ * `public-api` surface: `resolveView` already removed the phone and the address.
  */
 
 import type { APIRoute } from "astro";

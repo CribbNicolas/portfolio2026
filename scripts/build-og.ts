@@ -1,109 +1,110 @@
 /**
- * Genera `public/og.jpg`: la tarjeta que ven WhatsApp, LinkedIn, Twitter,
- * Facebook, Slack y Discord cuando alguien pega el link.
+ * Generates `public/og.jpg`: the card WhatsApp, LinkedIn, Twitter, Facebook,
+ * Slack and Discord show when someone pastes the link.
  *
- * `pnpm run og:local`. NO corre en el build ni en CI, y eso es la decisión de
- * fondo (docs/07 §18): rasterizar necesita Chromium y el builder de Cloudflare
- * no lo tiene —el mismo motivo por el que el PDF se fue del build—. Así que la
- * imagen se genera acá y se COMMITEA. Cero costo en runtime, cero dependencia
- * del builder, y ningún crawler esperando a que un servicio le imprima algo.
+ * `pnpm run og:local`. It does NOT run in the build or in CI, and that is the
+ * underlying decision (docs/07 §18): rasterizing needs Chromium and the
+ * Cloudflare builder does not have it — the same reason the PDF left the build.
+ * So the image is generated here and COMMITTED. Zero runtime cost, zero
+ * dependency on the builder, and no crawler waiting for a service to print
+ * something for it.
  *
- * El precio de commitearla es que puede quedar vieja en silencio: si cambia el
- * nombre, el rol o la foto, el JPEG sigue siendo el de antes. Por eso además
- * del JPEG se escribe `og.lock.json` con la huella de las entradas, y
- * `og-output.check.ts` falla en CI cuando una no coincide con la otra.
+ * The price of committing it is that it can go stale silently: if the name, the
+ * role or the photo changes, the JPEG stays the old one. That is why, alongside
+ * the JPEG, `og.lock.json` is written with the fingerprint of the inputs, and
+ * `og-output.check.ts` fails in CI when one does not match the other.
  *
- * Las etiquetas que apuntan a esta imagen viven en `src/layouts/Base.astro`.
+ * The tags pointing at this image live in `src/layouts/Base.astro`.
  */
 
 import { readFile, writeFile } from "node:fs/promises";
 import { chromium } from "playwright";
 
-import { marcaSvg } from "../src/lib/marca";
-import { FOTO, huella, ICONO, IMAGEN, LOCK, MARCA, PLANTILLA, textosOg } from "./og-datos";
-import { buildIconoHtml, buildOgHtml, ICONO_LADO, OG_ALTO, OG_ANCHO, OG_PESO_MAXIMO } from "./og-template";
+import { brandSvg } from "../src/lib/brand";
+import { PHOTO, fingerprint, ICON, IMAGE, LOCK, BRAND, TEMPLATE, ogTexts } from "./og-data";
+import { buildIconHtml, buildOgHtml, ICON_SIDE, OG_HEIGHT, OG_WIDTH, OG_MAX_BYTES } from "./og-template";
 
 /**
- * Calidad del JPEG. 84 deja la foto limpia y el archivo bien abajo del techo de
- * WhatsApp; subirlo a 92 lo duplica sin que se note en pantalla.
+ * JPEG quality. 84 keeps the photo clean and the file well under WhatsApp's
+ * ceiling; raising it to 92 doubles the size with no visible difference.
  */
-const CALIDAD = 84;
+const QUALITY = 84;
 
-/** Los pesos que la plantilla usa. Tienen que existir como archivo. */
-const PESOS = [400, 600, 800] as const;
+/** The weights the template uses. They have to exist as files. */
+const WEIGHTS = [400, 600, 800] as const;
 
-async function fuenteCss(): Promise<string> {
-  const caras = await Promise.all(
-    PESOS.map(async (peso) => {
-      const bin = await readFile(`node_modules/@fontsource/manrope/files/manrope-latin-${peso}-normal.woff2`);
-      // Embebida en `data:` y no por link: la plantilla se renderiza con
-      // `setContent`, sin servidor y sin red. Un `<link>` a Google Fonts haría
-      // que la tarjeta dependa de que haya internet al generarla.
-      return `@font-face{font-family:"Manrope";font-style:normal;font-weight:${peso};font-display:block;src:url(data:font/woff2;base64,${bin.toString("base64")}) format("woff2")}`;
+async function fontCss(): Promise<string> {
+  const faces = await Promise.all(
+    WEIGHTS.map(async (weight) => {
+      const bin = await readFile(`node_modules/@fontsource/manrope/files/manrope-latin-${weight}-normal.woff2`);
+      // Embedded as `data:` and not via a link: the template is rendered with
+      // `setContent`, with no server and no network. A `<link>` to Google Fonts
+      // would make the card depend on there being internet when generating it.
+      return `@font-face{font-family:"Manrope";font-style:normal;font-weight:${weight};font-display:block;src:url(data:font/woff2;base64,${bin.toString("base64")}) format("woff2")}`;
     }),
   );
-  return caras.join("\n");
+  return faces.join("\n");
 }
 
 async function main(): Promise<void> {
-  const [textos, foto, plantilla, marcaFuente] = await Promise.all([
-    textosOg(),
-    readFile(FOTO),
-    readFile(PLANTILLA),
-    readFile(MARCA),
+  const [texts, photo, template, brandSource] = await Promise.all([
+    ogTexts(),
+    readFile(PHOTO),
+    readFile(TEMPLATE),
+    readFile(BRAND),
   ]);
 
   const html = buildOgHtml({
-    ...(textos as { nombre: string; kicker: string; rol: string }),
-    fotoDataUri: `data:image/jpeg;base64,${foto.toString("base64")}`,
-    fuenteCss: await fuenteCss(),
-    marca: marcaSvg({ tam: 44, acento: "#b0472a", tinta: "#17181c" }),
+    ...(texts as { name: string; kicker: string; role: string }),
+    photoDataUri: `data:image/jpeg;base64,${photo.toString("base64")}`,
+    fontCss: await fontCss(),
+    brand: brandSvg({ size: 44, accent: "#b0472a", ink: "#17181c" }),
   });
 
   const browser = await chromium.launch();
   let jpeg: Buffer;
-  let icono: Buffer;
+  let icon: Buffer;
   try {
-    // Escala 1: el viewport ES el tamaño final, así que no hay reescalado que
-    // ablande los bordes del texto.
-    const page = await browser.newPage({ viewport: { width: OG_ANCHO, height: OG_ALTO } });
+    // Scale 1: the viewport IS the final size, so there is no rescaling to
+    // soften the edges of the text.
+    const page = await browser.newPage({ viewport: { width: OG_WIDTH, height: OG_HEIGHT } });
     await page.setContent(html, { waitUntil: "load" });
 
-    // Sin esto Chromium puede rasterizar con la fuente de fallback, y la
-    // tarjeta sale distinta en cada máquina.
+    // Without this Chromium can rasterize with the fallback font, and the card
+    // comes out different on every machine.
     await page.evaluate(() => document.fonts.ready);
 
-    jpeg = await page.screenshot({ type: "jpeg", quality: CALIDAD });
+    jpeg = await page.screenshot({ type: "jpeg", quality: QUALITY });
 
-    // El icono de iOS, en el mismo browser: levantar Chromium dos veces para
-    // dibujar 180x180 seria pagar dos arranques por un archivo de 2 KB.
-    // PNG y no JPEG: son cuatro colores planos, y el JPEG les mete artefactos
-    // justo en el borde del aro, que es todo lo que se ve a ese tamano.
-    const chico = await browser.newPage({ viewport: { width: ICONO_LADO, height: ICONO_LADO } });
-    await chico.setContent(buildIconoHtml(marcaSvg({ tam: 116, acento: "#b0472a", tinta: "#17181c" })));
-    icono = await chico.screenshot({ type: "png" });
+    // The iOS icon, in the same browser: launching Chromium twice to draw
+    // 180x180 would be paying two startups for a 2 KB file.
+    // PNG and not JPEG: it is four flat colors, and JPEG puts artifacts right
+    // on the edge of the ring, which is all you see at that size.
+    const small = await browser.newPage({ viewport: { width: ICON_SIDE, height: ICON_SIDE } });
+    await small.setContent(buildIconHtml(brandSvg({ size: 116, accent: "#b0472a", ink: "#17181c" })));
+    icon = await small.screenshot({ type: "png" });
   } finally {
     await browser.close();
   }
 
-  if (jpeg.byteLength > OG_PESO_MAXIMO) {
+  if (jpeg.byteLength > OG_MAX_BYTES) {
     throw new Error(
-      `og.jpg pesa ${(jpeg.byteLength / 1024).toFixed(0)} KB y el techo es ${OG_PESO_MAXIMO / 1024} KB.\n` +
-        `WhatsApp no muestra la previsualización si se pasa. Bajá CALIDAD en ${import.meta.filename ?? "scripts/build-og.ts"}.`,
+      `og.jpg weighs ${(jpeg.byteLength / 1024).toFixed(0)} KB and the ceiling is ${OG_MAX_BYTES / 1024} KB.\n` +
+        `WhatsApp does not show the preview when it goes over. Lower QUALITY in ${import.meta.filename ?? "scripts/build-og.ts"}.`,
     );
   }
 
-  await writeFile(IMAGEN, jpeg);
-  await writeFile(ICONO, icono);
+  await writeFile(IMAGE, jpeg);
+  await writeFile(ICON, icon);
   await writeFile(
     LOCK,
     JSON.stringify(
       {
-        _: "Generado por `pnpm run og:local`. NO editar a mano: og-output.check.ts lo compara con el dataset.",
-        huella: huella(textos, foto, plantilla, marcaFuente),
-        ancho: OG_ANCHO,
-        alto: OG_ALTO,
-        textos,
+        _: "Generated by `pnpm run og:local`. Do NOT edit by hand: og-output.check.ts compares it against the dataset.",
+        fingerprint: fingerprint(texts, photo, template, brandSource),
+        width: OG_WIDTH,
+        height: OG_HEIGHT,
+        texts,
       },
       null,
       2,
@@ -111,8 +112,8 @@ async function main(): Promise<void> {
   );
 
   console.log(
-    `og.jpg — ${(jpeg.byteLength / 1024).toFixed(0)} KB de ${OG_PESO_MAXIMO / 1024} KB · ` +
-      `apple-touch-icon.png — ${(icono.byteLength / 1024).toFixed(1)} KB`,
+    `og.jpg — ${(jpeg.byteLength / 1024).toFixed(0)} KB of ${OG_MAX_BYTES / 1024} KB · ` +
+      `apple-touch-icon.png — ${(icon.byteLength / 1024).toFixed(1)} KB`,
   );
 }
 
