@@ -105,7 +105,7 @@ const skillNameById = new Map(
   description={identity.summary.short}
   shareable
 >
-  <script type="application/ld+json" slot="head" set:html={JSON.stringify(jsonLd)} />
+  <script type="application/ld+json" is:inline slot="head" set:html={JSON.stringify(jsonLd)} />
   <style is:inline set:html={hoverCss} slot="head" />
 
   <div class="lab">
@@ -364,7 +364,7 @@ const skillNameById = new Map(
     />
   )}
 
-  <script type="application/json" data-lab-data set:html={graphData} />
+  <script type="application/json" is:inline data-lab-data set:html={graphData} />
   <script>
     // Analytics go FIRST, and that is not an oversight: `Clarity.init` only
     // injects a `<script async>` and its own try/catch swallows any error, so it

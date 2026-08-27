@@ -9,7 +9,10 @@ telling one story, and dilutes the review of what actually mattered.
 
 This file exists so they do not get lost. Each entry says what it is, **how to
 check it** — so the next session does not have to take my word for it — and what
-fixing it would cost. Ordered by impact, not by effort.
+fixing it would cost.
+
+**11 of 18 entries are closed.** The open ones keep their original numbers: a
+renumbered list breaks every reference from a commit message or another doc.
 
 What does **not** go here: product and data pending items, which live in
 [00-index](./00-index.md) and [06-next-session](./06-next-session.md). This is
@@ -24,126 +27,16 @@ Kept as a one-line record. The reasoning is in the commit that closed each one.
 | # | What it was | Closed by |
 |---|---|---|
 | 1 | Soft 404: a non-existent route returned `200 text/html`, so crawlers treated broken URLs as valid pages | `src/pages/404.astro` + the check in `single-landing.check.ts` |
+| 2 | Vite warned that a chunk exceeded 500 kB on every build. The warning described the intended design, and a warning that is always there is one nobody reads | `chunkSizeWarningLimit: 600` in `astro.config.mjs`, with the comment saying the real ceiling is `bundle-budget.check.ts` |
+| 3 | Three dead symbols in `graph-3d.ts`. `ORBIT` was the bad one: a configuration constant with a believable name that did nothing | Deleted, and the two genuinely ignored values marked as such |
+| 4 | Three `<script>` tags carrying the `astro(4000)` hint | Explicit `is:inline`. Typecheck went from 7 hints to 0 |
+| 5 | A merge into `main` left no CI run of its own, which reads as if the merge skipped validation | Accepted and closed. The check that counts comes from the `pull_request` event and always runs; the per-branch run adds nothing |
+| 12 | Three acceptance criteria lived in an old plan as commands to paste into a terminal | Two were already covered (`no-client-js.check.ts` is stricter than criterion 3's grep; `jsonld.test.ts` covers criterion 4). The third — invariant 1 — is now `scripts/invariants.test.ts` |
 | 14 | `smoke-deploy.yml` never ran: it listened for `deployment_status`, and Pages publishes a *check run*, not a GitHub Deployment. The gate went weeks without firing once | Rewritten around `check_run` + `/build.json` to wait for the published commit |
 | 15 | The checks read `dist/`, so anything injected after the build — Web Analytics enabled from the dashboard — was invisible | `served.check.ts`, the only one verifying the served response |
 | 16 | The smoke treated a 429 from Browser Rendering as a broken PDF. It is the quota, not a failure | The smoke warms the PDF tolerating the 429; `pdf-output.check.ts` tells the two apart in its message |
 | 17 | The `<head>` had seven tags: no Open Graph, no Twitter Card, favicon 404, sitemap 404 | `Base.astro` with opt-in `shareable`, `favicon.svg`, `robots.txt.ts`, `@astrojs/sitemap` |
 | 18 | No social image existed, so the card had nothing to show | `build-og.ts` + `og.lock.json` + `og-output.check.ts` |
-
----
-
-## 2. Vite warns that a chunk exceeds 500 kB
-
-**Severity: low, but the noise covers things.**
-
-```
-(!) Some chunks are larger than 500 kB after minification. Consider:
-- Use build.rollupOptions.output.manualChunks to improve chunking
-- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
-```
-
-Measured on the 2026-08-25 build:
-
-| Chunk | Raw | gzip |
-|---|---|---|
-| `graph-3d.<hash>.js` | 509 KB | **129 KB** |
-| everything else together | ~12 KB | ~6 KB |
-
-It is `three`, and **it is where it is supposed to be**. The map invariant
-(`CLAUDE.md` §Map frontend, rule 2) is that `three` has one importer and is
-loaded with a dynamic `import()`, off the critical path.
-`bundle-budget.check.ts` verifies it with a 4 KB ceiling for the critical
-chunks, and it passes. In other words: **the warning describes exactly the
-intended design, and Vite has no way of knowing that.**
-
-**Why it is debt anyway.** A warning that is always there is a warning nobody
-reads. The day a critical chunk goes past 500 kB, the line will look identical
-to today's and will go unnoticed.
-
-**Two possible fixes, and they are not equivalent:**
-
-- **Raise `build.chunkSizeWarningLimit`** above 509 KB in `astro.config.mjs`,
-  with a comment saying why and that the real ceiling is set by
-  `bundle-budget.check.ts`. Honest: it acknowledges that our own gate is stricter
-  and better informed than the generic one. One line.
-- **Split `three` into several chunks** with `manualChunks`. It sounds like an
-  improvement but does not change a byte of what the visitor downloads: the same
-  modules spread over more requests. It only makes sense if some day *part* of
-  `three` is loaded in one case and part in another.
-
-The first is recommended. Neither was done because touching `astro.config.mjs`
-in a deploy PR is exactly the kind of unrelated change worth not mixing in.
-
----
-
-## 3. Three dead symbols in `graph-3d.ts`
-
-**Severity: low.** Nothing breaks. They are `astro check` hints, not errors, so
-CI passes.
-
-```
-src/scripts/lab/graph-3d.ts  'ORBIT' is declared but its value is never read
-src/scripts/lab/graph-3d.ts  'neighbourhood' is declared but its value is never read
-src/scripts/lab/graph-3d.ts  'id' is declared but its value is never read
-```
-
-All three are leftovers from earlier iterations of the 3D map.
-
-**Why it is not only tidiness.** `ORBIT = 0.14` is a configuration constant with
-a name that sounds like it does something. Someone reading the file in six months
-will assume the map's orbit is tuned there, and it is not. A dead constant with a
-believable name misinforms more than the absence of a constant.
-
-**Fix.** Delete `ORBIT`; on the other two, prefix with `_` the parameters and
-destructured values deliberately ignored — the convention TypeScript understands
-— or remove them if they are ignored by oversight rather than on purpose. It
-requires reading the surrounding code to know which, which is why it was not
-touched in passing.
-
----
-
-## 4. Three `<script>` tags with the `astro(4000)` hint
-
-**Severity: cosmetic.**
-
-They are the `<script type="application/ld+json">` of the JSON-LD and the
-`type="application/json"` carrying the graph data. Astro warns that, having a
-`type` attribute, it does not process them and leaves them inline — which is
-exactly what is wanted: they are data, not code.
-
-**Fix.** Add an explicit `is:inline` to all three. It silences the hint by
-declaring the intent, without changing the output. Five characters per tag.
-
-Worth it for the same reason as entry 2: constant noise covers new signal. The
-seven hints of today are harmless, and that is why nobody will read the eighth.
-
----
-
-## 5. The merge into `main` left no CI run of its own
-
-**Severity: low. Noted because it is confusing, not because it is broken.**
-
-The merge of PR #4 produced `afdbfe2`. Runs for that SHA:
-
-```
-afdbfe2 | content-validation | staging | push | success
-```
-
-One, attributed to `staging` — the one triggered by the push that synced the
-branch to the same commit. The push to `main` from the merge produced no run of
-its own.
-
-**The tree is verified**: same SHA, same checks, green. But if someone filters
-the Actions history by `main`, they will not find it, and the easy and wrong
-conclusion is that the merge skipped validation.
-
-**Why it was not investigated.** It does not change the real mechanism: with
-`main` protected by the required `validate` check, the check that counts comes
-from the `pull_request` event, and that one always runs.
-
-If having a per-branch run ever matters, the suspicion to confirm is that GitHub
-does not re-fire `push` for a SHA that already has a run of the same workflow.
-Unverified.
 
 ---
 
@@ -287,22 +180,6 @@ same problem as entry 2, wearing a different face.
 
 **Fix.** The real fix is bumping Astro, which is a major. In the meantime,
 `pnpm.overrides` to force `sharp >= 0.35.0` and see whether the tree takes it.
-
----
-
-## 12. Three acceptance criteria live in a plan, not in CI
-
-**Severity: low.**
-
-The plan `docs/superpowers/plans/2026-08-13-cv-como-sistema.md` leaves three
-criteria as loose commands to paste into a terminal. An acceptance criterion that
-does not run on its own is an intention, which is exactly what
-`docs/CONTRACT.md` §1 says we do not do.
-
-One of the three, the one verifying the phone number did not reach `dist/`,
-became moot on 2026-08-25: the dataset no longer carries a phone number. The
-other two need reading, then a decision on whether they are worth a check or are
-already covered by another.
 
 ---
 

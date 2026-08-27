@@ -134,6 +134,8 @@ scripts/
   audit-todos.ts      Non-blocking report of published TODOs.
   version.ts          Version comparison. Pure, no I/O. Accepts ONLY x.y.z.
   version.test.ts     Tests of the above. Runs in `pnpm test`.
+  invariants.test.ts  Invariants 1 and 3 over the SOURCES of src/: nothing filters by visibility and
+                      nothing computes a duration by hand. A *.test.ts because it needs no build.
   version-bump.check.ts  The bump gate. Reads git, which is why it is not a *.test.ts.
   workflows.check.ts  The CI .yml files parse. It exists because an embedded CR left smoke-deploy.yml invalid
                       for three commits without anyone noticing.
@@ -227,6 +229,7 @@ assuming `validate` covers something, look at this table:
 | 8 | `streetAddress`/`phone` only on listed surfaces | `resolve-view.ts` (identity filtering). **`pnpm test`**, not `validate`. |
 | — | Referential integrity (`roleId`/`projectId`/`skillId`) | `checkRules` (rule 0). **CI** |
 | — | `Skill.periods` coherence (`end` after `start`, no overlap) | `checkRules` (rule 0). **CI** |
+| — | Invariants 1 and 3 in the frontend code | `scripts/invariants.test.ts`. **`pnpm test`** |
 
 ## Map frontend (the only thing with JavaScript)
 

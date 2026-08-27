@@ -33,9 +33,6 @@ import type { HoverBus } from "./hover-bus";
  * labels and a crisp outline, and here it competes with the fog.
  */
 const RADIUS: Record<string, number> = { role: 17, project: 14, skill: 10, achievement: 9 };
-/** How far the camera orbits with the cursor. ±8°: noticeable without nausea. */
-const ORBIT = 0.14;
-
 /** Opacity of everything OUTSIDE the focused neighbourhood. */
 const DIMMED = 0.12;
 
@@ -212,7 +209,10 @@ export async function mountGraph({ canvas, data, bus, tooltip, panel, labels }: 
 
   /** Color and alpha per endpoint. The alpha comes from the nodes' own fog. */
   const writeEdges = () => {
-    const { focus, neighbourhood } = interaction.state;
+    // Only `focus` is read here: an edge belongs to the focus when it TOUCHES
+    // the focused node, which is stricter than "both endpoints in the
+    // neighbourhood". The neighbourhood is what `writeInstances` uses.
+    const { focus } = interaction.state;
     const hasFocus = focus !== null;
     const arr = edgeColors.array as Float32Array;
 
@@ -381,7 +381,7 @@ export async function mountGraph({ canvas, data, bus, tooltip, panel, labels }: 
 
   // Canvas hover is published to the bus so the DOM list reflects it; the bus
   // deduplicates, so this does not create a loop with the reverse direction.
-  const releaseBus = bus.onChange((id, source) => {
+  const releaseBus = bus.onChange((_id, source) => {
     // Hover arriving FROM the list: highlight yes, focus no. Focusing is a
     // decision and requires a click.
     if (source === "dom") wake();
