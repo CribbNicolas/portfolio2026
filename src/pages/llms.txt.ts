@@ -8,7 +8,7 @@
  */
 
 import type { APIRoute } from "astro";
-import { content, formatDateRange, formatRoleTitle, formatSeniority } from "@content";
+import { content, formatDateRange, formatRoleTitle, formatSeniority, groupedSkills } from "@content";
 
 export const GET: APIRoute = async ({ site }) => {
   const view = await content.getView("public-api", "es");
@@ -30,9 +30,11 @@ export const GET: APIRoute = async ({ site }) => {
     `- Datos en JSON: ${base}/cv.json`,
     "",
     "## Stack",
-    ...Object.entries(view.skills)
-      .filter(([, list]) => list.length > 0)
-      .map(([cat, list]) => `- ${cat}: ${list.map((s) => s.name).join(", ")}`),
+    // Same grouping and same order as the CV: `groupedSkills` is the one
+    // definition. Walking `view.skills` here is what made this surface print
+    // `- language:` while the CV printed `Lenguajes:`.
+    ...groupedSkills(view.skills)
+      .map(({ label, skills }) => `- ${label}: ${skills.map((s) => s.name).join(", ")}`),
     "",
     "## Experiencia",
     ...view.experience.flatMap((role) => [

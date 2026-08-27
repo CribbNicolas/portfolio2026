@@ -17,6 +17,18 @@ name: version-gate
 on:
   pull_request:
     branches: [develop]
+    # `edited` is not in the default list (opened, synchronize, reopened), and
+    # without it a stacked PR is stuck forever.
+    #
+    # When PR B is opened against branch A and A then merges, GitHub retargets B
+    # to `develop` — and that retarget fires `edited`. With the defaults this
+    # workflow never runs for B, so `bump` never reports, and `bump` is a
+    # REQUIRED check on `develop`: the PR sits BLOCKED waiting for something
+    # that will never arrive. It is fail-safe rather than a hole, but the only
+    # way out was closing and reopening the PR.
+    #
+    # Measured on PR #18, 2026-08-27.
+    types: [opened, synchronize, reopened, edited]
 
 jobs:
   bump:

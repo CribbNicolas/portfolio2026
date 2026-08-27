@@ -106,6 +106,8 @@ src/
 content/schema/
   format-metric.ts    Rule 4. The "~" of estimates lives here and only here.
   format.ts           Durations, MM/AAAA ranges, role titles. Rules 1 and 2. Its output strings stay in Spanish.
+  skill-groups.ts     THE order and labels of the skill groups. Shared by the CV and /llms.txt, which
+                      used to keep two lists and print two different taxonomies.
   knowledge-graph.ts  ContentView → graph. Includes the derived skill↔skill affinity.
   graph-layout.ts     3D forces + projection. Deterministic, runs ONLY at build time.
 scripts/
@@ -129,6 +131,8 @@ scripts/
   bundle-budget.check.ts The home's budget: three off the critical path.
   single-landing.check.ts The landing is the only door: /cv without links or indexing, and the landing's CV
                       section in sync with the PDF. Plus: 404.html exists.
+  endpoints.check.ts  /cv.json and /llms.txt, the two surfaces agents consume. That the JSON parses and
+                      carries the contract keys, and that the markdown has no empty fields.
   served.check.ts     The ONLY thing verifying the SERVED response and not dist/. Runs from the smoke. Catches
                       what happens after the build: injections at the edge.
   audit-todos.ts      Non-blocking report of published TODOs.
@@ -167,6 +171,7 @@ pnpm run test:pdf    # verifies the PDF (needs a prior pdf:local, or PDF_SOURCE=
 pnpm run test:js     # per-page JS policy over all of dist/ (needs a build)
 pnpm run test:bundle # byte budget of the home's map (needs a build)
 pnpm run test:landing # /cv isolated + CV section in sync with the PDF (needs a build)
+pnpm run test:endpoints # /cv.json parses and /llms.txt is whole (needs a build)
 pnpm run test:og     # the social card has not gone stale + the favicon parses (needs a build)
 pnpm run test:served # verifies the PUBLISHED site. Needs SITE=https://…  (not dist/)
 pnpm run test:version # the PR raises package.json.version. Needs: git fetch origin develop
@@ -176,7 +181,7 @@ pnpm run audit:deps  # pnpm audit --audit-level high
 ```
 
 **Run the full sequence before calling anything done:**
-`pnpm run test:workflows && pnpm run typecheck && pnpm run validate && pnpm test && pnpm run build && pnpm run pdf:local && pnpm run test:pdf && pnpm run test:js && pnpm run test:bundle && pnpm run test:landing && pnpm run test:og && pnpm run audit:todos`.
+`pnpm run test:workflows && pnpm run typecheck && pnpm run validate && pnpm test && pnpm run build && pnpm run pdf:local && pnpm run test:pdf && pnpm run test:js && pnpm run test:bundle && pnpm run test:landing && pnpm run test:endpoints && pnpm run test:og && pnpm run audit:todos`.
 If `validate` fails, the message says which rule was violated and how to fix it;
 read it, do not skip it. All of that runs in CI on every push
 (`.github/workflows/content-validation.yml`) — `audit:todos` included, but as the

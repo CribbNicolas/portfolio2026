@@ -181,6 +181,24 @@ It also classifies the jump and, if it is not a clean step — `0.1.0 → 0.3.0`
 but it is also the exact signature of a typo, and staying quiet would be worse
 than over-warning.
 
+### Stacked PRs, and the trap in them
+
+Two PRs where the second is branched off the first work fine — open B against A,
+and when A merges GitHub retargets B to `develop` on its own.
+
+What does not work on its own is the gate. **That retarget fires the
+`pull_request` event with action `edited`, which is not in GitHub's default
+list** (`opened`, `synchronize`, `reopened`). Without `edited` declared,
+`version-gate.yml` never runs for B — and `bump` is a required check, so the PR
+sits `BLOCKED` waiting for something that will never arrive. It looks like a
+hung check; it is a workflow that was never triggered.
+
+It is fail-safe — nothing merges unverified — but the only way out was closing
+and reopening the PR. `version-gate.yml` now declares
+`types: [opened, synchronize, reopened, edited]`, so a retarget re-runs it.
+
+Measured on PR #18, 2026-08-27.
+
 **Running it before opening the PR:**
 
 ```bash

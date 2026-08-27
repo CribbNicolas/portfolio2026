@@ -33,22 +33,27 @@ Social metadata ([`07`](./07-technical-debt.md) §17 and §18), the 404, robots,
 the sitemap, the favicon and `served.check.ts` are all closed. So is the English
 migration of the whole repo, decided and executed on 2026-08-26.
 
-The cosmetic entries (`§2`, `§3`, `§4`) and the two "read and decide" ones
-(`§5`, `§12`) are closed. Typecheck went from 7 hints to 0, and criterion 5 of
-the old plan — invariant 1 — became `scripts/invariants.test.ts` instead of a
-grep to paste into a terminal.
+**Phase 1 is closed.** Nine debt entries went with it — the cosmetic ones
+(`§2`, `§3`, `§4`), the two that only needed a decision (`§5`, `§12`), and the
+four that needed work (`§8`, `§9`, `§10`, `§11`).
 
-What is left is three entries, none of them blocking:
+Three of those are worth remembering, because each one was a gate that did not
+exist rather than a tidiness fix:
 
-| # | What to do | How to verify |
-|---|---|---|
-| §8 | `endpoints.check.ts`: that `/cv.json` parses and carries the contract's keys, and that `/llms.txt` has no empty fields and no split role titles | Add it to `content-validation.yml` with the other checks that read `dist/` |
-| §9 | Move `GRUPOS` from `SkillList.astro` to `content/schema/` and have `llms.txt.ts` import from there | The CV and `/llms.txt` say the same labels in the same order |
-| §10 | A test for embedded fonts in `pdf-output.check.ts` using the `pdfjs` API | It runs against both paths on its own, because that file already accepts `PDF_SOURCE` |
-| §11 | `pnpm.overrides` to force `sharp >= 0.35.0` and see whether the tree takes it | `pnpm run audit:deps` green, and the build still passes |
+- **Invariant 1 held only because nobody had broken it.** `CLAUDE.md` calls it
+  non-negotiable and nothing enforced it. Now `scripts/invariants.test.ts` does,
+  along with invariant 3.
+- **`/cv.json` and `/llms.txt` had no gate at all**, and they are the two
+  surfaces agents consume. Now `scripts/endpoints.check.ts`.
+- **Nothing verified the fonts were embedded in the PDF.** It would have looked
+  right on the author's machine and wrong on every other one, and the ten
+  existing tests could not see it — they all read the extracted text, which does
+  not change.
 
-**How to work the residue.** One branch per topic. Every PR raises the version
-(see [`08`](./08-branches-and-versioning.md)).
+What is left of phase 1 is one item, and it is not code:
+[`07`](./07-technical-debt.md) §13 — look at the cross-hover, the pill's inertia
+and the PDF in a real viewer. Ten minutes with `pnpm run dev` and
+`pnpm run pdf:local`. Nobody but the author can close it.
 
 **And one item nobody but the author can close** ([`07`](./07-technical-debt.md)
 §13): look at the cross-hover, the pill's inertia and the PDF in a real viewer.
@@ -221,16 +226,18 @@ English, which is worse than written English.
 ## 6. State at close
 
 ```
-typecheck       0 errors, 0 hints   validate      Dataset valid
-pnpm test      80 pass              test:pdf      10 pass
-test:workflows 13 pass              test:js       11 pass
-test:bundle    10 pass              test:landing   9 pass
-test:og        11 pass              test:served    3 pass (against production)
+typecheck       0 errors, 0 hints   validate        Dataset valid
+pnpm test      80 pass              test:pdf        11 pass
+test:workflows 13 pass              test:js         11 pass
+test:bundle    10 pass              test:landing     9 pass
+test:endpoints 10 pass              test:og         11 pass
+test:served     3 pass (production) audit:deps      green for the first time
 audit:todos     9 published TODOs (missing data, not failures)
 ```
 
 Consumption against the ceilings: see the table in the
 [`README`](../README.md#limits-and-ceilings).
 
-Technical debt: **18 entries, 11 resolved.** See
+Technical debt: **18 entries, 15 resolved.** The three open ones are §6 and §7,
+both phase 3, and §13, which is the author's. See
 [`07`](./07-technical-debt.md).

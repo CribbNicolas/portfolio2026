@@ -1,6 +1,6 @@
 # Makes the claims in the docs true: the hard rules are CI, not intentions.
 # Local equivalent (all of them have to pass):
-#   pnpm run test:workflows && pnpm run typecheck && pnpm run validate && pnpm test && pnpm run build && pnpm run pdf:local && pnpm run test:pdf && pnpm run test:js && pnpm run test:bundle && pnpm run test:landing && pnpm run test:og && pnpm run audit:todos
+#   pnpm run test:workflows && pnpm run typecheck && pnpm run validate && pnpm test && pnpm run build && pnpm run pdf:local && pnpm run test:pdf && pnpm run test:js && pnpm run test:bundle && pnpm run test:landing && pnpm run test:endpoints && pnpm run test:og && pnpm run audit:todos
 name: content-validation
 
 on:
@@ -84,6 +84,10 @@ jobs:
       # noindex, and its CV section in sync with the PDF. Without this, somebody
       # adds a "see full CV" link in three months and nobody finds out.
       - run: pnpm run test:landing
+      # The two surfaces agents consume, and the only two that had no gate
+      # until now: that `/cv.json` parses and carries the contract keys, and that
+      # `/llms.txt` has no empty fields and no split role titles.
+      - run: pnpm run test:endpoints
       # The social card. `public/og.jpg` is COMMITTED — rasterizing needs
       # Chromium and the Cloudflare builder does not have it — so it can go stale
       # silently: change the role in the dataset, the site says one thing and

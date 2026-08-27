@@ -11,7 +11,7 @@ This file exists so they do not get lost. Each entry says what it is, **how to
 check it** — so the next session does not have to take my word for it — and what
 fixing it would cost.
 
-**11 of 18 entries are closed.** The open ones keep their original numbers: a
+**15 of 18 entries are closed.** The open ones keep their original numbers: a
 renumbered list breaks every reference from a commit message or another doc.
 
 What does **not** go here: product and data pending items, which live in
@@ -31,6 +31,10 @@ Kept as a one-line record. The reasoning is in the commit that closed each one.
 | 3 | Three dead symbols in `graph-3d.ts`. `ORBIT` was the bad one: a configuration constant with a believable name that did nothing | Deleted, and the two genuinely ignored values marked as such |
 | 4 | Three `<script>` tags carrying the `astro(4000)` hint | Explicit `is:inline`. Typecheck went from 7 hints to 0 |
 | 5 | A merge into `main` left no CI run of its own, which reads as if the merge skipped validation | Accepted and closed. The check that counts comes from the `pull_request` event and always runs; the per-branch run adds nothing |
+| 8 | `/cv.json` and `/llms.txt`, the two surfaces agents consume, had no gate at all. A real `formatRoleTitle` bug had already got through into one of them | `scripts/endpoints.check.ts`, in `content-validation.yml` with the other checks that read `dist/` |
+| 9 | The skill grouping lived in two places and had diverged: the CV printed `Lenguajes:` in editorial order, `/llms.txt` printed `- language:` in insertion order | `content/schema/skill-groups.ts`, imported by both |
+| 10 | Nothing verified the fonts were embedded. The PDF would look right on a machine with Manrope installed and wrong on every other one | A test in `pdf-output.check.ts` reading the font descriptors, which runs against the published PDF too |
+| 11 | `pnpm audit` reported a high through `astro > sharp <0.35.0`, so `audit:deps` failed on every run | An `overrides` entry in `pnpm-workspace.yaml` — pnpm 11 no longer reads `pnpm.overrides` from package.json |
 | 12 | Three acceptance criteria lived in an old plan as commands to paste into a terminal | Two were already covered (`no-client-js.check.ts` is stricter than criterion 3's grep; `jsonld.test.ts` covers criterion 4). The third — invariant 1 — is now `scripts/invariants.test.ts` |
 | 14 | `smoke-deploy.yml` never ran: it listened for `deployment_status`, and Pages publishes a *check run*, not a GitHub Deployment. The gate went weeks without firing once | Rewritten around `check_run` + `/build.json` to wait for the published commit |
 | 15 | The checks read `dist/`, so anything injected after the build — Web Analytics enabled from the dashboard — was invisible | `served.check.ts`, the only one verifying the served response |
@@ -90,96 +94,6 @@ depends on, and doing that in the middle of a deploy change is asking for it.
 `Skill` to a shape without `visibility` or `publishPhoneOn`. It is a projection,
 not a filter: the output type would have to be different from the internal
 surfaces', and that is where the real work is.
-
----
-
-## 8. `/cv.json` and `/llms.txt` have not one test
-
-**Severity: medium.** They are the two surfaces agents consume, and the only two
-with no gate.
-
-`/cv` has ten tests over the PDF, the landing has three checks, the bundle has a
-budget. These two endpoints have nothing. A real `formatRoleTitle` bug already
-got through into `llms.txt` once (recorded in PR #1).
-
-**Checking it:**
-
-```bash
-ls src/pages/*.test.ts        # there are none
-grep -rl "cv.json" --include="*.check.ts" scripts/   # only single-landing, and in passing
-```
-
-**Fix.** An `endpoints.check.ts` that, over `dist/`, verifies `cv.json` parses,
-that it carries the keys the contract promises, and that `llms.txt` has no empty
-fields and no split role titles. It fits with the other checks that already read
-`dist/`.
-
----
-
-## 9. Skill grouping is duplicated, and has diverged
-
-**Severity: low.** Nothing breaks; the CV and the JSON say the same thing
-differently.
-
-Two places group skills by category, sharing nothing:
-
-| Where | How |
-|---|---|
-| `src/components/cv/SkillList.astro` | A `GRUPOS` array, Spanish labels and **editorial order** — what is searched for most in a job post comes first |
-| `src/pages/llms.txt.ts` | Raw `Object.entries(view.skills)`: English keys, insertion order |
-
-So the CV says `Lenguajes: ...` and `/llms.txt` says `- language: ...`, in a
-different order. An agent comparing the two surfaces sees two taxonomies.
-
-**Fix.** Move `GRUPOS` to `content/schema/` and have both import from there. It
-is the same pattern already applied with `formatMetric` (rule 4) and with
-`pdf-options.ts`: when two outputs have to say the same thing, the definition
-lives in one place.
-
----
-
-## 10. Nothing verifies the fonts are embedded in the PDF
-
-**Severity: low, with a long tail.**
-
-It was checked by hand once and they are embedded. But if they ever stopped
-being, the PDF would look fine on your machine — which has Manrope installed —
-and would come out in a fallback font on anyone else's. None of the ten PDF tests
-looks at this: they all verify the extracted TEXT, which does not change.
-
-**New risk since 2026-08-25:** the PDF is now printed by Browser Rendering,
-another Chromium on another machine. It is exactly the change that could break
-this with nothing warning.
-
-**Fix.** `pdfjs` exposes the fonts of each page; a test asserting they are all
-embedded fits in `pdf-output.check.ts`, and since that file already runs against
-the published PDF (`PDF_SOURCE`), it would cover both paths at once.
-
----
-
-## 11. `pnpm audit`: 5 transitive vulnerabilities, one high
-
-**Severity: low in practice, high on paper.**
-
-Measured 2026-08-25 — more than the 3 PR #1 recorded:
-
-```
-5 vulnerabilities found
-Severity: 2 low | 2 moderate | 1 high
-```
-
-The high one is `sharp <0.35.0`, through the `. > astro > sharp` chain.
-
-**Why the real exposure is small.** The output is static HTML: there is no
-server-side runtime an attacker can reach. `sharp` runs at build time, over
-images you put there.
-
-**Why it is debt anyway.** `pnpm run audit:deps` is one of the repo's commands,
-and today it always fails. A command that always fails stops being read — the
-same problem as entry 2, wearing a different face.
-
-**Fix.** The real fix is bumping Astro, which is a major. In the meantime,
-`pnpm.overrides` to force `sharp >= 0.35.0` and see whether the tree takes it.
 
 ---
 
