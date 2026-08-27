@@ -41,7 +41,7 @@ Verification — **all of these have to pass**:
 pnpm run test:workflows # the CI .yml files parse and declare jobs. Runs FIRST
 pnpm run typecheck      # astro sync + tsc --noEmit + astro check
 pnpm run validate       # Zod (shape) + hard rules (coherence)
-pnpm test               # rules the schema does not validate (visibility, locale, graph, version)
+pnpm test               # rules the schema does not validate (visibility, locale, graph, version, invariants)
 pnpm run test:pdf       # the PDF parses and passes the ATS. Needs pdf:local, or PDF_SOURCE=<url>
 pnpm run test:js        # no page other than the home ships JavaScript
 pnpm run test:bundle    # home: three off the critical path and within budget

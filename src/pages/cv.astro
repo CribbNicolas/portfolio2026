@@ -41,7 +41,7 @@ const jsonLd = buildPersonJsonLd(publicView, new URL(Astro.site!));
   title={`CV — ${identity.fullName}, ${identity.searchTitle}`}
   description={identity.summary.short}
 >
-  <script type="application/ld+json" slot="head" set:html={JSON.stringify(jsonLd)} />
+  <script type="application/ld+json" is:inline slot="head" set:html={JSON.stringify(jsonLd)} />
 
   {/*
     `/cv` exists so `build-pdf.ts` can print it, not to be visited: the reader
