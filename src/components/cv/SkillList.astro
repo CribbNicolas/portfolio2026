@@ -7,37 +7,23 @@
  *
  * The canonical `Skill.name` is printed and NEVER the `aliases`: repeating
  * variants of the same term LOWERS the score in semantic matchers (docs/01 §3).
- * The aliases
- * son dato para el generador por-aviso, no texto del CV.
+ * The aliases are data for the per-posting generator, not CV text.
+ *
+ * The grouping and its order come from `content/schema/skill-groups.ts`, shared
+ * with `/llms.txt`. They used to be two separate lists and they diverged.
  */
-import type { ContentView, SkillCategory } from "@content";
+import type { ContentView } from "@content";
+import { groupedSkills } from "@content";
 
 interface Props {
   skills: ContentView["skills"];
 }
 
 const { skills } = Astro.props;
-
-// Category order and labels. The order is editorial: what is searched for most
-// in a job post comes first. Empty categories are not printed.
-const GRUPOS: Array<[SkillCategory, string]> = [
-  ["language", "Lenguajes"],
-  ["frontend", "Frontend"],
-  ["backend", "Backend"],
-  ["data", "Datos"],
-  ["cms", "CMS"],
-  ["testing", "Testing"],
-  ["infra", "Infraestructura"],
-  ["tooling", "Herramientas"],
-  ["practice", "Prácticas"],
-];
-
-const grupos = GRUPOS
-  .map(([key, label]) => [label, skills[key]] as const)
-  .filter(([, list]) => list.length > 0);
+const groups = groupedSkills(skills);
 ---
 
-{grupos.map(([label, list]) => (
+{groups.map(({ label, skills: list }) => (
   <p class="skill-group">
     <span class="skill-group__label">{label}:</span>{" "}
     {list.map((s) => s.name).join(", ")}

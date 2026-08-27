@@ -18,6 +18,9 @@ export * from "../schema/content-schema";
 // `src/` imports EVERYTHING from one place and invariant 2 stays true.
 export * from "../schema/format";
 export * from "../schema/format-metric";
+// How the skills are grouped and ordered. Shared by the CV and `/llms.txt`,
+// which used to keep two lists that drifted apart.
+export * from "../schema/skill-groups";
 
 // The graph is another view derived from the same content, same as formatting.
 // It runs ONLY at build time (page frontmatter): none of this reaches the

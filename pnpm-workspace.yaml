@@ -10,3 +10,20 @@
 allowBuilds:
   esbuild: false
   sharp: false
+
+# Astro pulls `sharp` for its image pipeline, and the version it resolves is
+# below 0.35.0 — five inherited libvips CVEs, one of them high. The real
+# exposure is small (the output is static HTML; sharp runs at build time over
+# images we put there) but `pnpm run audit:deps` was failing on every run, and a
+# command that always fails stops being read.
+#
+# The proper fix is bumping Astro, which is a major. This forces the patched
+# version underneath in the meantime. If the build ever dies on an incompatible
+# sharp API, the way back is removing this line and the audit goes red again —
+# visibly, which is the point.
+#
+# It lives here and not in `package.json`: pnpm 11 no longer reads the `pnpm`
+# field there. It warns and ignores it, so the override would have been silently
+# dead.
+overrides:
+  sharp: ">=0.35.0"

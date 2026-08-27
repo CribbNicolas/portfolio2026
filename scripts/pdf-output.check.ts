@@ -214,6 +214,68 @@ test("layer 1: the email and the links extract whole", async () => {
   }
 });
 
+/**
+ * The fonts are embedded in the file, not resolved from the machine.
+ *
+ * None of the other ten tests can see this: they all verify the extracted TEXT,
+ * which is identical whether the glyphs come from Manrope or from a fallback.
+ * The PDF would look right on a machine with Manrope installed and wrong on
+ * every other one, and nothing would say so.
+ *
+ * The risk stopped being theoretical on 2026-08-25: production prints with
+ * Browser Rendering, another Chromium on another machine. This test runs against
+ * both paths, because the file already accepts `PDF_SOURCE`.
+ *
+ * It reads the PDF structure by hand rather than through pdf.js: in the legacy
+ * Node build the fonts are only populated into `commonObjs` while rendering to
+ * a canvas, which does not exist here. Measured — `getOperatorList()` leaves it
+ * empty. The precedent for parsing a binary by hand is `measureJpeg` in
+ * `og-output.check.ts`.
+ */
+test("the fonts travel inside the PDF, they are not borrowed from the machine", async () => {
+  const pdf = Buffer.from(await load()).toString("latin1");
+
+  const baseFonts = [...pdf.matchAll(/\/BaseFont\s*\/([#\w+-]+)/g)].map((m) => m[1]!);
+  assert.ok(baseFonts.length > 0, "the PDF declares no font at all");
+
+  // A subset prefix (`AAAAAA+`) is written by the producer when it embeds only
+  // the glyphs actually used. Its absence is the signature of a font referenced
+  // by name and resolved by the viewer.
+  const notSubset = baseFonts.filter((f) => !/^[A-Z]{6}\+/.test(f));
+  assert.deepEqual(
+    notSubset,
+    [],
+    `these fonts carry no subset prefix, so they are referenced and not embedded: ${notSubset.join(", ")}`,
+  );
+
+  // The failure mode this exists for: Manrope does not load, Chromium
+  // substitutes, and the PDF comes out in a system font. The substitute is
+  // always one of these.
+  const fallbacks = baseFonts.filter((f) =>
+    /(Helvetica|Arial|Times|Courier|Liberation|DejaVu|Nimbus)/i.test(f),
+  );
+  assert.deepEqual(
+    fallbacks,
+    [],
+    `a fallback font reached the PDF: ${fallbacks.join(", ")}. ` +
+      "It means Manrope did not load when it was printed — check that the render " +
+      "still waits for `document.fonts.ready`.",
+  );
+
+  // One embedded program per distinct font. `/FontFile2` is TrueType, which is
+  // what a .woff2 becomes once printed; `/FontFile3` would be CFF. Counting them
+  // against the distinct fonts is what catches "three declared, two embedded".
+  const distinct = new Set(baseFonts).size;
+  const programs = [...pdf.matchAll(/\/FontFile[23]?[\s/]/g)].length;
+  assert.equal(
+    programs,
+    distinct,
+    `${distinct} distinct fonts and ${programs} embedded programs. ` +
+      "Every font in the file needs its own /FontFile: the ones missing it render " +
+      "with whatever the viewer has.",
+  );
+});
+
 test("rule 8: neither the phone nor the address appear in the PDF", async () => {
   const { text } = await extract();
   const data = await content.getDataset("es");

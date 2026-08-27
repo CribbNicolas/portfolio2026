@@ -46,6 +46,7 @@ pnpm run test:pdf       # the PDF parses and passes the ATS. Needs pdf:local, or
 pnpm run test:js        # no page other than the home ships JavaScript
 pnpm run test:bundle    # home: three off the critical path and within budget
 pnpm run test:landing   # /cv isolated, CV section in sync with the PDF, real 404
+pnpm run test:endpoints # /cv.json parses, /llms.txt has no empty fields
 pnpm run test:og        # the social card has not gone stale against the dataset
 pnpm run test:version   # the PR raises package.json.version. Needs: git fetch origin develop
 pnpm run test:served    # verifies the PUBLISHED site. Needs SITE=https://…

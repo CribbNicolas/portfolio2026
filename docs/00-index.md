@@ -64,6 +64,7 @@ Dated, so we know what to revisit when the context changes.
 - [ ] **Project links** — all three have `links: []`. The section renders them only if they exist: it is editing the dataset, not touching code
 - [ ] **Metrics** — the most important gap. See [03-cv.md](./03-cv.md)
 - [ ] Confirm the Hogarth data and the real English level
+- [x] Phase 1 closed: 15 of the 18 debt entries, including the three gates that did not exist (invariants, endpoints, embedded fonts)
 - [ ] `pnpm run editor` — phase 2 of [06](./06-next-session.md)
 - [ ] LinkedIn text blocks
 - [ ] Portfolio case studies — the research of [04 §6](./04-portfolio.md) comes first
