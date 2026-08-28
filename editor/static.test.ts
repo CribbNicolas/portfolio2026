@@ -24,6 +24,10 @@ async function fixture(): Promise<{ root: string; parent: string }> {
   await writeFile(join(root, "editor.css"), "body { margin: 0 }", "utf8");
   await writeFile(join(root, "app.js"), "export const ready = true;", "utf8");
   await writeFile(join(parent, "secret.txt"), "not yours", "utf8");
+  // Not empty: a directory that has a servable file inside it is what proves
+  // the rejection below is about the directory itself, not the whole subtree.
+  await mkdir(join(root, "subdir"));
+  await writeFile(join(root, "subdir", "nested.js"), "export const nested = true;", "utf8");
   return { root, parent };
 }
 
@@ -71,7 +75,17 @@ test("an encoded `..` cannot either: the decode happens before the guard", async
   assert.equal(await resolveStatic(root, "/%2e%2e/secret.txt"), null);
 });
 
+test("a malformed escape is a 404, not a thrown URIError", async () => {
+  const { root } = await fixture();
+  assert.equal(await resolveStatic(root, "/%E0%A4%A"), null);
+});
+
 test("a directory is not a file", async () => {
   const { root } = await fixture();
+  // Without this second assertion, a guard that rejected every path with a
+  // slash in it would pass just as well: the file INSIDE the directory has
+  // to be servable for the first assertion to mean "directories are
+  // refused" rather than "subdirectories are refused".
   assert.equal(await resolveStatic(root, "/subdir"), null);
+  assert.ok(await resolveStatic(root, "/subdir/nested.js"));
 });
