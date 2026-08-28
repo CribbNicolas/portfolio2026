@@ -11,6 +11,7 @@ import assert from "node:assert/strict";
 import { mkdtemp, readFile, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { createConnection } from "node:net";
 import type { AddressInfo } from "node:net";
 
 import { DatasetStore } from "./store";
@@ -84,6 +85,43 @@ test("the page is not here yet, and the 404 says where it will be", async () => 
     const res = await fetch(`${base}/`);
     assert.equal(res.status, 404);
     assert.match(JSON.stringify(await res.json()), /PR 3/);
+  } finally {
+    await close();
+  }
+});
+
+test("a client that disconnects mid-body does not take the server down", async () => {
+  const { base, close } = await serve();
+  try {
+    const { port } = new URL(base);
+
+    // Open a raw connection so we can send a Content-Length the body never
+    // reaches: `fetch` has no way to abandon a request mid-stream the way a
+    // closed tab or a killed curl does.
+    await new Promise<void>((resolve) => {
+      const socket = createConnection({ host: "127.0.0.1", port: Number(port) }, () => {
+        const head =
+          "PUT /api/dataset HTTP/1.1\r\n" +
+          "Host: 127.0.0.1\r\n" +
+          "Content-Type: application/json\r\n" +
+          "Content-Length: 1000000\r\n" +
+          "\r\n" +
+          '{"data":';
+        // Destroy only once the bytes are actually handed to the kernel —
+        // destroying right after `.write()` can race the write and leave the
+        // server with nothing to have received at all.
+        socket.write(head, () => socket.destroy());
+      });
+      socket.on("close", () => resolve());
+      // A reset from the far end is exactly what this test is causing.
+      socket.on("error", () => {});
+    });
+
+    // The real assertion: the server is still alive and answering. If the
+    // process had died on the unhandled rejection, or the handler had wedged
+    // on the aborted read, this request would never come back.
+    const res = await fetch(`${base}/api/dataset`);
+    assert.equal(res.status, 200);
   } finally {
     await close();
   }

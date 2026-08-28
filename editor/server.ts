@@ -43,46 +43,64 @@ export function createEditorServer(store: DatasetStore): Server {
   return createServer((req, res) => {
     void (async () => {
       const send = (status: number, body: unknown): void => {
+        // A client that is already gone (tab closed, curl killed, network
+        // blip) can reach this after the response has started or ended —
+        // there is nobody left to write to, so end quietly instead of
+        // throwing into a dead socket.
+        if (res.headersSent || res.writableEnded) return;
         res.writeHead(status, { "content-type": "application/json; charset=utf-8" });
         res.end(JSON.stringify(body, null, 2));
       };
 
-      const path = (req.url ?? "/").split("?")[0];
-      const method = req.method ?? "GET";
+      try {
+        const path = (req.url ?? "/").split("?")[0];
+        const method = req.method ?? "GET";
 
-      if (!path.startsWith("/api/")) {
-        send(404, {
-          message: "The editor page arrives in PR 3. The API is under /api/.",
-        });
-        return;
-      }
-
-      let body: unknown;
-      if (method === "POST" || method === "PUT") {
-        let raw: string;
-        try {
-          raw = await readBody(req);
-        } catch (err) {
-          if (err instanceof BodyTooLargeError) {
-            send(413, { message: `Body over ${MAX_BODY_BYTES} bytes.` });
-            return;
-          }
-          throw err;
-        }
-        try {
-          body = JSON.parse(raw);
-        } catch {
-          send(400, { message: "The body is not valid JSON." });
+        if (!path.startsWith("/api/")) {
+          send(404, {
+            message: "The editor page arrives in PR 3. The API is under /api/.",
+          });
           return;
         }
-      }
 
-      try {
-        const answer = await handleApi({ method, path, body }, store);
-        send(answer.status, answer.body);
+        let body: unknown;
+        if (method === "POST" || method === "PUT") {
+          let raw: string;
+          try {
+            raw = await readBody(req);
+          } catch (err) {
+            if (err instanceof BodyTooLargeError) {
+              send(413, { message: `Body over ${MAX_BODY_BYTES} bytes.` });
+              return;
+            }
+            throw err;
+          }
+          try {
+            body = JSON.parse(raw);
+          } catch {
+            send(400, { message: "The body is not valid JSON." });
+            return;
+          }
+        }
+
+        try {
+          const answer = await handleApi({ method, path, body }, store);
+          send(answer.status, answer.body);
+        } catch (err) {
+          // Nothing was written: `store.write` refuses before it touches the file.
+          // Surfacing the message beats a hung request with no explanation.
+          send(500, { message: err instanceof Error ? err.message : String(err) });
+        }
       } catch (err) {
-        // Nothing was written: `store.write` refuses before it touches the file.
-        // Surfacing the message beats a hung request with no explanation.
+        // Not a bug in our own handling: this is what a client disconnecting
+        // mid-request looks like. `readBody`'s `for await` rethrows when the
+        // socket dies underneath it, and with no catch around the whole
+        // handler that rejection would escape the `void` IIFE unhandled —
+        // Node terminates the process on an unhandled rejection since v15,
+        // and this is the ONE process that holds write access to the
+        // dataset. `send` above already no-ops once the socket is gone, so
+        // this is purely about making sure the promise this IIFE returns
+        // always settles instead of rejecting into the void.
         send(500, { message: err instanceof Error ? err.message : String(err) });
       }
     })();
