@@ -32,6 +32,9 @@ test("GET /api/schema hands over the descriptor tree", async () => {
   const body = res.body as { schema: { kind: string; fields: Array<{ key: string }> } };
   assert.equal(body.schema.kind, "object");
   assert.equal(body.schema.fields[0].key, "schemaVersion");
+
+  const withHints = res.body as { hints: Record<string, { widget: string }> };
+  assert.equal(withHints.hints["achievements[].skillIds"].widget, "reference-list");
 });
 
 test("GET /api/dataset hands over the data and its etag", async () => {
