@@ -45,7 +45,11 @@ page.on("console", (message) => {
 });
 
 await page.goto(base);
-await page.waitForSelector("#status:not(:empty)");
+// Waited on something only the APP can produce. `#status` ships with
+// `loading…` already in it, so `#status:not(:empty)` was satisfied by the
+// static HTML alone — every assertion below would have raced `app.js`'s first
+// fetch, and a page that never loaded would still have passed the load test.
+await page.waitForSelector(".nav__group");
 
 test("the page loads with no console errors", () => {
   // A module that fails to parse, a wrong content-type, a typo in a selector:
@@ -54,7 +58,7 @@ test("the page loads with no console errors", () => {
 });
 
 test("the sidebar is built from the dataset, not hard-coded", async () => {
-  const skills = await page.locator(".nav__group", { hasText: "skills" }).first();
+  const skills = page.locator(".nav__group", { hasText: "skills" }).first();
   assert.match(await skills.innerText(), /typescript/);
 });
 
@@ -82,6 +86,76 @@ test("the saved file is still canonical, so the format gate stays green", async 
   const { serializeDataset } = await import("../editor/serialize");
   const onDisk = (await readFile(file, "utf8")).replace(/\r\n/g, "\n");
   assert.equal(onDisk, serializeDataset(JSON.parse(onDisk)));
+});
+
+/**
+ * The one defect this smoke must never miss again.
+ *
+ * The renderer draws an ABSENT optional as an editable control, so these two
+ * paths are reachable by design. Before the fix in `state.js` the listener threw
+ * before `scheduleValidate()` ran: the typed text stayed on screen, Save kept
+ * the enabled state the last good validation left it, and the save wrote the
+ * dataset WITHOUT the edit while reporting "saved".
+ *
+ * What is asserted is the body of `POST /api/validate` — the dataset the page
+ * actually holds — and not the DOM: the control showed the typed text either
+ * way, which is precisely how the loss stayed invisible.
+ */
+
+/** The next `POST /api/validate` body: the dataset as the page holds it. */
+const nextValidatedDataset = () =>
+  page
+    .waitForRequest((req) => req.url().endsWith("/api/validate") && req.method() === "POST")
+    .then((req) => JSON.parse(req.postData() ?? "{}"));
+
+test("typing through an absent optional object reaches the dataset", async () => {
+  await page.getByRole("button", { name: "achievements" }).first().click();
+  await page.locator(".nav__group", { hasText: "achievements" }).locator(".nav__item").first().click();
+  // `metric` is absent on every achievement in the dataset — CLAUDE.md calls
+  // the missing metrics the most important gap, and loading them is the reason
+  // this editor exists.
+  const label = page.locator('.field[data-path$="metric.label"] .control').first();
+  await label.waitFor();
+
+  const posted = nextValidatedDataset();
+  await label.fill("tiempo de build");
+  const dataset = await posted;
+
+  const carrying = dataset.achievements.filter(
+    (a: { metric?: { label?: string } }) => a.metric?.label === "tiempo de build",
+  );
+  assert.equal(carrying.length, 1, "the typed metric never reached the dataset the page holds");
+  assert.deepEqual(problems, []);
+});
+
+test('"add" on an absent optional array creates the array instead of throwing', async () => {
+  await page.getByRole("button", { name: "skills" }).first().click();
+  await page.locator(".nav__group", { hasText: "skills" }).locator(".nav__item").first().click();
+  // `periods` is optional and absent on every skill today, and the spec
+  // advertises adding to it by name.
+  const periods = page.locator("fieldset.group").filter({ hasText: /^periods \(\d+\)/ });
+  await periods.waitFor();
+
+  const posted = nextValidatedDataset();
+  await periods.getByRole("button", { name: "add" }).click();
+  const dataset = await posted;
+
+  assert.equal(
+    dataset.skills[0].periods?.length,
+    1,
+    "the added period never reached the dataset the page holds",
+  );
+  // The row is bound to a real path, not to the `?? []` the renderer invented.
+  await page.waitForSelector('.field[data-path^="skills.0.periods.0."]');
+  assert.deepEqual(problems, []);
+});
+
+test("no page error was raised by any of the interactions above", () => {
+  // The first assertion of `problems` runs before a single click. Everything
+  // this smoke actually exercises — navigating, typing, adding, saving —
+  // happens after it, and an exception from any of it was collected here and
+  // never read. This is the read.
+  assert.deepEqual(problems, []);
 });
 
 test.after(async () => {

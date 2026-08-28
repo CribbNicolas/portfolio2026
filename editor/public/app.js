@@ -213,12 +213,27 @@ function scheduleValidate() {
 
 async function validate() {
   const seq = ++validateSeq;
-  const res = await fetch("/api/validate", {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify(state.all()),
-  });
-  const report = await res.json();
+  let report;
+  try {
+    const res = await fetch("/api/validate", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(state.all()),
+    });
+    report = await res.json();
+  } catch {
+    // The request never made it there and back, or what came back was not
+    // JSON: no verdict either way. This runs on every keystroke, so an
+    // unhandled rejection here is one per keystroke while the status bar still
+    // reads "ready to save".
+    if (seq !== validateSeq) return;
+    // Save stays available on purpose. The server validates every PUT and
+    // refuses what is wrong with the full report, so it — not this — is the
+    // authority; disabling here would leave no way to find out either.
+    saveEl.disabled = false;
+    say("could not check the dataset — Save will get the verdict from the server");
+    return;
+  }
   // Drop a response that is no longer the latest request: the button's state
   // has to reflect the text as it is now, not as it was two keystrokes ago.
   if (seq !== validateSeq) return;

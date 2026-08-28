@@ -63,7 +63,7 @@ docs/                   See docs/00-index.md. The "why" of every design decision
                         09-seo-and-metadata.md — what the <head> emits, and above all what it deliberately does NOT
                         and under what condition to reconsider. READ IT before "adding the missing tag":
                         og:site_name, hreflang, profile:*, webmanifest and favicon.ico are DECIDED, not forgotten.
-editor/                 The local content editor; `pnpm run editor` runs it, the page arrives in PR 3. NOTHING here reaches dist/, which is why no check needs an exception.
+editor/                 The local content editor; `pnpm run editor` serves the page and its API over content.es.json. NOTHING here reaches dist/, which is why no check needs an exception.
   descriptors.ts      The zod-free field tree. The seam: the browser never sees zod.
   schema-adapter.ts   THE ONLY file that reads zod's `_def`. Its tests are the gate for a zod bump.
   serialize.ts        THE canonical written form of content.es.json. Key order comes from the schema; what prints
@@ -184,7 +184,7 @@ pnpm run typecheck   # astro sync && tsc --noEmit && astro check
 pnpm run validate    # tsx scripts/validate.ts — Zod + hard rules
 pnpm test            # tsx --test — rules 7,8, locale and the graph
 pnpm run dev         # astro dev
-pnpm run editor      # local dataset editor on 127.0.0.1:4322. API only until PR 3
+pnpm run editor      # local dataset editor on 127.0.0.1:4322. Page + API; test:editor is its only gate
 pnpm run build       # ONLY astro build. No Chromium: that is why it runs on Cloudflare Pages
 pnpm run pdf:local   # prints dist/cv.pdf with Playwright. Pre-deploy gate, not the deliverable
 pnpm run og:local    # writes public/og.jpg (the social card) + og.lock.json. It gets COMMITTED

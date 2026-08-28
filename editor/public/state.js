@@ -29,11 +29,36 @@ export function pathToDescriptorPath(path) {
 export function createState(dataset) {
   let data = dataset;
 
-  const parentOf = (path) => {
+  /**
+   * Walk to the parent of `path`.
+   *
+   * `create` brings the missing links into being on the way. It exists because
+   * the renderer deliberately draws an ABSENT optional as an editable control —
+   * `render.js` renders it from `value ?? {}` / `value ?? []`, so every field
+   * exists and every "add" button works — which means a write is the first
+   * moment the container has to be real. Without this the listener threw before
+   * `scheduleValidate()` ever ran: the typed text stayed on screen, Save kept
+   * the `disabled = false` the last good validation left it, and pressing it
+   * saved a dataset that had never received the edit and reported "saved".
+   *
+   * Object or array is not a guess: the next step decides. A numeric step can
+   * only be an index, so whatever holds it is an array.
+   *
+   * Reads never create. `get` on a path that does not exist answers `undefined`
+   * — asking a question must not change the answer — and only a write brings a
+   * container into being.
+   */
+  const parentOf = (path, { create = false } = {}) => {
     const steps = path.split(".");
     const last = steps.pop();
     let node = data;
-    for (const step of steps) node = node[step];
+    for (let i = 0; i < steps.length; i++) {
+      const step = steps[i];
+      if (create && (node[step] === undefined || node[step] === null)) {
+        node[step] = /^\d+$/.test(steps[i + 1] ?? last) ? [] : {};
+      }
+      node = node?.[step];
+    }
     return { node, last };
   };
 
@@ -46,11 +71,18 @@ export function createState(dataset) {
     },
 
     set(path, value) {
-      const { node, last } = parentOf(path);
       // `undefined` deletes rather than storing a hole: the schema is strict,
       // and a key present with an undefined value is not the same as absent.
-      if (value === undefined) delete node[last];
-      else node[last] = value;
+      // A delete never creates: there is nothing to remove from a container
+      // that is not there, and vivifying one would leave behind an empty
+      // object the schema then refuses to save.
+      if (value === undefined) {
+        const { node, last } = parentOf(path);
+        if (node !== undefined && node !== null) delete node[last];
+        return;
+      }
+      const { node, last } = parentOf(path, { create: true });
+      node[last] = value;
     },
 
     collection(name) {
@@ -58,8 +90,13 @@ export function createState(dataset) {
     },
 
     addTo(path, value) {
-      const list = this.get(path);
-      list.push(value);
+      const { node, last } = parentOf(path, { create: true });
+      // The array being added to can itself be the absent optional — today
+      // `skills[].periods` is absent on every skill in the dataset, and its
+      // "add" button is drawn anyway — so the last step gets the same
+      // treatment as the links above it.
+      if (!Array.isArray(node[last])) node[last] = [];
+      node[last].push(value);
     },
 
     removeAt(path, index) {
