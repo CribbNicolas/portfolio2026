@@ -60,7 +60,7 @@ test("the sidebar is built from the dataset, not hard-coded", async () => {
 
 test("a field renders from its descriptor, and a hint turns roleId into a picker", async () => {
   await page.getByRole("button", { name: "achievements" }).first().click();
-  await page.locator(".nav__item").first().click();
+  await page.locator(".nav__group", { hasText: "achievements" }).locator(".nav__item").first().click();
   await page.waitForSelector('.field[data-path$="roleId"] select');
 
   const options = await page.locator('.field[data-path$="roleId"] select option').allInnerTexts();
