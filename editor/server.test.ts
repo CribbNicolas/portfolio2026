@@ -79,13 +79,22 @@ test("a body that is not JSON is 400, not a crash", async () => {
   }
 });
 
+test("/ serves the page", async () => {
+  const { base, close } = await serve();
+  try {
+    const res = await fetch(`${base}/`);
+    assert.equal(res.status, 200);
+    assert.match(res.headers.get("content-type") ?? "", /text\/html/);
+    assert.match(await res.text(), /<title>/);
+  } finally {
+    await close();
+  }
+});
+
 test("a path with no file behind it is a 404", async () => {
   const { base, close } = await serve();
   try {
-    // `editor/public/` arrives in the next task; until then every path is a
-    // miss, and a miss must be a clean 404 rather than a crash.
     assert.equal((await fetch(`${base}/nope.js`)).status, 404);
-    assert.equal((await fetch(`${base}/`)).status, 404);
   } finally {
     await close();
   }
