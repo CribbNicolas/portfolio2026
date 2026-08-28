@@ -27,6 +27,11 @@ let state;
 let etag;
 let selection = { collection: "identity", index: null };
 let validateTimer;
+// Bumped at the start of every `validate()` call. A response only gets to
+// draw itself if it is still the most recent request when it lands — without
+// this, a slow earlier response can overwrite a faster later one, including
+// `saveEl.disabled`, and the button would reflect stale text.
+let validateSeq = 0;
 
 const say = (text) => { statusEl.textContent = text; };
 
@@ -63,9 +68,18 @@ async function load() {
 // Navigation
 // ---------------------------------------------------------------------------
 
-/** A short, recognisable label for a row in the sidebar. */
+/**
+ * A short, recognisable label for a row in the sidebar.
+ *
+ * `||`, not `??`: a freshly added row gets `id: ""` from `blankFor` (a
+ * required string's blank is `""`, not absent), and a blank id is the normal
+ * state of a row the author has not named yet. `??` only skips `null`/
+ * `undefined`, so it would render that row's label as empty and leave it
+ * unfindable in the list; falling through on any falsy id/code/name keeps
+ * the index visible until there is something better to show.
+ */
 function labelFor(item, index) {
-  return item?.id ?? item?.code ?? item?.name ?? String(index);
+  return item?.id || item?.code || item?.name || String(index);
 }
 
 function renderNav() {
@@ -155,8 +169,13 @@ function renderDetail() {
     add.className = "button";
     add.textContent = `add ${selection.collection}`;
     add.addEventListener("click", () => {
+      // Captured before the push: `items` is a live reference to the same
+      // array `state.addTo` mutates, so reading `.length` after the push
+      // would already be the post-push length — one past the new item — and
+      // the detail pane would render `items[undefined]` with nothing bound.
+      const index = items.length;
       state.addTo(selection.collection, blankFor(field.descriptor.element));
-      selection = { collection: selection.collection, index: items.length };
+      selection = { collection: selection.collection, index };
       renderNav();
       renderDetail();
       scheduleValidate();
@@ -193,12 +212,17 @@ function scheduleValidate() {
 }
 
 async function validate() {
+  const seq = ++validateSeq;
   const res = await fetch("/api/validate", {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify(state.all()),
   });
-  showReport(await res.json());
+  const report = await res.json();
+  // Drop a response that is no longer the latest request: the button's state
+  // has to reflect the text as it is now, not as it was two keystrokes ago.
+  if (seq !== validateSeq) return;
+  showReport(report);
 }
 
 function showReport(report) {
@@ -248,12 +272,24 @@ saveEl.addEventListener("click", async () => {
   saveEl.disabled = true;
   say("saving…");
 
-  const res = await fetch("/api/dataset", {
-    method: "PUT",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify({ data: state.all(), etag }),
-  });
-  const body = await res.json();
+  let res;
+  let body;
+  try {
+    res = await fetch("/api/dataset", {
+      method: "PUT",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ data: state.all(), etag }),
+    });
+    body = await res.json();
+  } catch {
+    // The request never made it there and back — a dropped connection or the
+    // editor process going away, not a verdict on the data. The last
+    // validation said the data was fine, so re-enable Save instead of
+    // leaving the button stuck on a request that will never resolve.
+    saveEl.disabled = false;
+    say("could not reach the editor — check it is still running, then try again");
+    return;
+  }
 
   if (res.ok) {
     etag = body.etag;
@@ -270,4 +306,8 @@ saveEl.addEventListener("click", async () => {
   say(body.message ?? "the server refused the save");
 });
 
-load();
+// A rejection here (server unreachable at page load) must not leave the page
+// stuck on "loading…" forever with both panes empty and no explanation.
+load().catch((err) => {
+  say(`could not load the editor: ${err instanceof Error ? err.message : String(err)}`);
+});
