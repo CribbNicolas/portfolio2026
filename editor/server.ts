@@ -9,15 +9,15 @@
  * It does not call `listen`: `scripts/editor.ts` binds the port. That split is
  * what lets the test bind port 0 instead of fighting over 4322.
  *
- * Static files are not served yet — `editor/public/` arrives with the page in
- * PR 3, and serving a directory that does not exist would be scaffolding no
- * test could hold down.
+ * Anything outside `/api/` falls through to `resolveStatic` — the traversal
+ * guard and the content-type table live there, not here.
  */
 
 import { createServer } from "node:http";
 import type { IncomingMessage, Server } from "node:http";
 
 import { handleApi } from "./api";
+import { PUBLIC_DIR, resolveStatic } from "./static";
 import type { DatasetStore } from "./store";
 
 /** The editor's port. 4322 sits next to Astro's 4321 on purpose. */
@@ -57,9 +57,14 @@ export function createEditorServer(store: DatasetStore): Server {
         const method = req.method ?? "GET";
 
         if (!path.startsWith("/api/")) {
-          send(404, {
-            message: "The editor page arrives in PR 3. The API is under /api/.",
-          });
+          const hit = await resolveStatic(PUBLIC_DIR, req.url ?? "/");
+          if (!hit) {
+            send(404, { message: `No file for ${path}.` });
+            return;
+          }
+          if (res.headersSent || res.writableEnded || res.destroyed) return;
+          res.writeHead(200, { "content-type": hit.contentType });
+          res.end(hit.body);
           return;
         }
 
