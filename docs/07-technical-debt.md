@@ -11,7 +11,7 @@ This file exists so they do not get lost. Each entry says what it is, **how to
 check it** — so the next session does not have to take my word for it — and what
 fixing it would cost.
 
-**15 of 26 entries are closed.** The open ones keep their original numbers: a
+**15 of 28 entries are closed.** The open ones keep their original numbers: a
 renumbered list breaks every reference from a commit message or another doc.
 
 What does **not** go here: product and data pending items, which live in
@@ -305,3 +305,50 @@ adds, not for what exists now.
 event, rather than letting Node's default handling decide. PR 3 adds a static
 file handler, which is exactly the kind of code that forgets a try/catch — do
 this before or alongside it.
+
+---
+
+## 27. The write queue's key is a resolved path, and Windows does not case-fold it
+
+**Severity: very low. Found in the re-review of the editor's `0.16.0` fix wave.**
+
+`editor/store.ts` serializes concurrent writes through a module-level
+`Map<string, Promise<void>>` keyed by `resolve(this.file)`. That makes two
+`DatasetStore` instances over the same file share one queue — which is the
+point, and what the comments now truthfully claim. But `resolve()` does not
+case-fold on Windows, so two instances built from paths differing only in case
+(`C:\...` against `c:\...`) land in different entries and quietly get the
+pre-`5f1cdb7` race back: both check the same etag, both pass, the second rename
+discards the first, and both callers see success.
+
+**How to check it.** Construct two stores over the same file, one path
+upper-cased in its drive letter, and issue overlapping writes. Both fulfil.
+
+**Why it was not fixed.** Every construction site in the repo passes either the
+default `DATASET_FILE` constant or a path from `mkdtemp`, so no caller can
+currently produce the mismatch. Normalizing case would be wrong on
+case-sensitive filesystems, so the fix is a real decision rather than a
+one-liner.
+
+**Fix.** Key by `realpath` where the file exists, or normalize case only on
+`win32`. Worth doing if the editor ever takes a path from user input.
+
+---
+
+## 28. The write queue's Map never evicts
+
+**Severity: negligible. Same re-review as §27.**
+
+`writeQueues` in `editor/store.ts` holds one entry per resolved path for the
+lifetime of the process, with no eviction.
+
+**How to check it.** Read the module scope of `editor/store.ts`: nothing ever
+calls `delete`.
+
+**Why it was not fixed.** In practice the process writes one path, so the Map
+holds one entry. Eviction would need to know when a queue is idle, which is
+more machinery than the leak it prevents.
+
+**Fix.** Delete the entry when a write settles and the tail is still the one it
+installed. Only worth it if something ever drives many paths through one
+process.
