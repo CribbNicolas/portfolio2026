@@ -11,7 +11,7 @@ This file exists so they do not get lost. Each entry says what it is, **how to
 check it** — so the next session does not have to take my word for it — and what
 fixing it would cost.
 
-**15 of 34 entries are closed.** The open ones keep their original numbers: a
+**15 of 36 entries are closed.** The open ones keep their original numbers: a
 renumbered list breaks every reference from a commit message or another doc.
 
 What does **not** go here: product and data pending items, which live in
@@ -506,3 +506,59 @@ defect fix; adding coverage to it would blur what the diff says.
 
 **Fix.** The `textarea` test, with `reference` in the filter and `string` as the
 expected kind. Four lines in `hints.test.ts`.
+
+---
+
+## 35. Clearing a field of an absent optional object leaves an empty container behind
+
+**Severity: medium. Same class as the missing delete affordances.**
+
+The renderer clears an optional field by setting it to `undefined`, which deletes
+the key from the object — so typing into `achievements[].metric.label` (where
+`metric` is absent) creates `metric: { label: "…" }`. But clearing that field
+again leaves `metric: {}` on the dataset: an empty object with no fields. That
+object is `.strict()` with two required fields (`label` and `confidence`), so
+the save is blocked with a validation error on the field. The reader's way out
+is to fill both fields or reload — there is no control that removes `metric`
+itself.
+
+Strictly better than the silent edit loss this replaced, and the same class as
+entries §29 and §30 about the page's missing delete affordances.
+
+**How to check it.** Type "build" into an absent `metric.label`, then select and
+delete the text: the field clears, but the dataset still carries `metric: {}` in
+the next validation request, which will fail.
+
+**Why it was not fixed.** It is a design question before code: does an optional
+object group need an affordance to clear itself as a whole? The answer affects
+entry §29 as well — whether to add `remove` buttons to top-level rows. Both were
+deferred to PR 4's design pass.
+
+**Fix.** A "clear this object" control on an optional object group, or have `set`
+prune a container as soon as it becomes empty (all fields `undefined`). The
+second is simpler but less explicit.
+
+---
+
+## 36. `load()` does not handle a failed fetch or a bad schema response
+
+**Severity: medium. Same review as §29.**
+
+`editor/public/app.js`'s `load()` has no `try` around its `Promise.all` of the
+two fetches and never checks `schemaRes.ok` — it only handles `!datasetRes.ok`.
+A dead server at page load leaves the page on "loading…" indefinitely, with an
+unhandled rejection in the console. The save handler and `validate()` both got
+this treatment in earlier rounds; this is the remaining partial instance.
+
+**How to check it.** Start the editor, open the Network tab in DevTools, turn off
+the server's power, and reload. The page hangs on "loading…" and the console
+shows an unhandled rejection.
+
+**Why it was not fixed.** The earlier passes of error handling went to the save
+handler and the `validate()` endpoint because they had live failures in testing.
+This path was reachable only by forcibly stopping the server mid-load, which is
+an edge case that did not block the branch.
+
+**Fix.** The same catch that `validate()` and the save handler have: catch the
+rejection and render it to the user as an error. Plus an `ok` check on the
+schema response before calling `.json()`. About four lines total.

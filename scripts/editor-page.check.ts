@@ -100,6 +100,10 @@ test("the saved file is still canonical, so the format gate stays green", async 
  * What is asserted is the body of `POST /api/validate` — the dataset the page
  * actually holds — and not the DOM: the control showed the typed text either
  * way, which is precisely how the loss stayed invisible.
+ *
+ * The two tests below must follow "an edit reaches the file through save" because
+ * typing a bare `metric.label` creates an invalid `metric: { label: "…" }` that
+ * fails validation (it is `.strict()` and requires `confidence`), which blocks Save.
  */
 
 /** The next `POST /api/validate` body: the dataset as the page holds it. */
