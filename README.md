@@ -33,6 +33,8 @@ pnpm install
 pnpm run dev          # astro dev
 pnpm run build        # ONLY astro build. No Chromium: that is why it runs on Cloudflare
 pnpm run pdf:local    # prints dist/cv.pdf with Playwright. Local gate, not the deliverable
+pnpm run editor       # local editor API on 127.0.0.1:4322. Its page arrives in PR 3; until then, curl
+pnpm run format:data  # rewrites content.es.json in canonical form via DatasetStore
 ```
 
 Verification — **all of these have to pass**:

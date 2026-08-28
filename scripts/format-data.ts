@@ -33,7 +33,12 @@ try {
     }
     process.exit(1);
   }
-  throw err;
+  // Hand-broken JSON (a stray comma, a missing brace) is a plausible reason to
+  // reach for this script in the first place, and `store.read()` throws a bare
+  // `SyntaxError` for it — not an `InvalidDatasetError`, since the file never
+  // got far enough to be validated. A message beats a stack trace here too.
+  console.error(err instanceof Error ? err.message : err);
+  process.exit(1);
 }
 
 const after = (await readFile(DATASET_FILE, "utf8")).replace(/\r\n/g, "\n");

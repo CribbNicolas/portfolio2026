@@ -11,7 +11,7 @@ This file exists so they do not get lost. Each entry says what it is, **how to
 check it** — so the next session does not have to take my word for it — and what
 fixing it would cost.
 
-**15 of 22 entries are closed.** The open ones keep their original numbers: a
+**15 of 26 entries are closed.** The open ones keep their original numbers: a
 renumbered list breaks every reference from a commit message or another doc.
 
 What does **not** go here: product and data pending items, which live in
@@ -206,3 +206,102 @@ that keeps them working.
 natural moment to do it when the metrics gap in
 [06](./06-next-session.md) §4 is filled, because the dataset will then carry the
 shapes for real.
+
+---
+
+## 23. `SerializationError` has no test
+
+**Severity: low. Found in the final review of `feature/editor-server` (`0.16.0`).**
+
+`DatasetStore.writeExclusive` parses its own serializer's output back and
+refuses the save if it does not deep-equal the input — the round-trip guard the
+whole file's opening comment leans on. Nothing exercises that path: every test
+that reaches `write()` does so with real data, and the real serializer round-trips
+it, so `SerializationError` is thrown by no committed test.
+
+**How to check it.** `grep SerializationError editor/store.test.ts` → no matches.
+
+**Why it was not fixed.** Provoking it honestly needs a serializer that lies —
+either a modified `editor/serialize.ts` for the duration of one test, or
+dependency injection added to `DatasetStore` purely so a test can hand it a
+broken one. Neither is a small change to make in passing.
+
+**Fix.** Inject the serializer (or a narrower "round-trip check" function) as an
+optional constructor parameter, defaulting to the real one, and have one test
+pass a fake that returns text which does not parse back. A few lines on the
+class, one test.
+
+---
+
+## 24. A GET of a dataset that is already invalid on disk returns a bare 500
+
+**Severity: medium. Found in the same review as §23.**
+
+`editor/api.ts`'s `GET /api/dataset` branch calls `store.read()` uncaught, so
+when `store.read()` throws `InvalidDatasetError` — the dataset on disk fails
+`inspectDataset` — the error escapes `handleApi` and the server's outer catch
+turns it into a bare `{ message }` 500. `PUT` catches the same error and answers
+422 with `{ zodIssues, violations }`; `GET` drops that report on the floor.
+
+**How to check it.** Write an invalid `content.es.json` to a temp file, point a
+`DatasetStore` at it, and call `handleApi({ method: "GET", path: "/api/dataset"
+}, store)`: the promise rejects instead of resolving to a report.
+
+**Why it was not fixed.** `pnpm run validate` still answers the "what is wrong"
+question today, so nothing is actually lost — but PR 3's story is opening the
+editor after a bad merge, and that story is exactly this response: today it is a
+500 with no report to render.
+
+**Fix.** The same two-arm `catch` `PUT` already has, wrapped around the `GET`
+branch's `store.read()`. About four lines.
+
+---
+
+## 25. `handleApi` cannot be tested against a fake store
+
+**Severity: low. Found in the same review as §23.**
+
+`handleApi`'s `store` parameter is typed as `DatasetStore`, the concrete class —
+not an interface. `DatasetStore` has private members (`file`, `readRaw`,
+`writeExclusive`), and TypeScript compares classes carrying private members
+nominally, not structurally: a plain object implementing `read`/`write` with the
+right signatures still fails to typecheck as a `DatasetStore`. The file's own
+opening comment says routing is tested "without binding a port", which is true,
+but not yet "against any store that throws whatever it likes" — every existing
+`api.test.ts` case goes through a real `DatasetStore` over a temp file.
+
+**How to check it.** Try passing `{ read: async () => {...}, write: async () =>
+{...} }` where `handleApi` expects its second argument: `tsc` refuses it.
+
+**Why it was not fixed.** No test currently needs it — the temp-file
+`DatasetStore` is fast enough that nothing has reached for a fake yet.
+
+**Fix.** Type the parameter as a structural interface (`{ read(): ...; write():
+... }`) exported from `store.ts` or `api.ts`. Natural moment: when PR 3 next
+touches this file and a test wants a store that throws on demand.
+
+---
+
+## 26. The editor entry point installs no process-level safety net
+
+**Severity: medium. Found in the same review as §23.**
+
+`scripts/editor.ts` handles `EADDRINUSE` on the server's own `error` event, but
+nothing in the process listens for `unhandledRejection` or `uncaughtException`.
+Commit `5784467` established the stakes: this is the one process holding write
+access to the dataset, and an unhandled rejection kills a Node process outright
+since v15. `editor/server.ts`'s outer `try/catch` closes that gap for the request
+handler today, but it closes it per-handler — every route, present and future,
+has to remember to funnel its errors through `send` — rather than structurally,
+at the one place that would catch whatever a future handler forgets.
+
+**How to check it.** `grep -n "unhandledRejection\|uncaughtException" scripts/editor.ts` → no matches.
+
+**Why it was not fixed.** Today's only handler (`handleApi`) is already covered
+by `server.ts`'s catch, so there is no live gap yet — this is a net for what PR 3
+adds, not for what exists now.
+
+**Fix.** A few lines in `scripts/editor.ts`: log and exit non-zero on either
+event, rather than letting Node's default handling decide. PR 3 adds a static
+file handler, which is exactly the kind of code that forgets a try/catch — do
+this before or alongside it.

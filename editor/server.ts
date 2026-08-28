@@ -47,7 +47,7 @@ export function createEditorServer(store: DatasetStore): Server {
         // blip) can reach this after the response has started or ended —
         // there is nobody left to write to, so end quietly instead of
         // throwing into a dead socket.
-        if (res.headersSent || res.writableEnded) return;
+        if (res.headersSent || res.writableEnded || res.destroyed) return;
         res.writeHead(status, { "content-type": "application/json; charset=utf-8" });
         res.end(JSON.stringify(body, null, 2));
       };

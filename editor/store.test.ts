@@ -186,6 +186,36 @@ test("two write() calls issued without awaiting the first: exactly one wins, the
   assert.equal(winner.etag, etagOf(await readRaw(file)));
 });
 
+test("two DatasetStore instances over the SAME file: exactly one wins, the loser sees a stale etag", async () => {
+  // Two separate instances, not one store reused — this is what a per-instance
+  // queue cannot see coming: each store only knows about writes issued
+  // through itself, so with a per-instance queue both of these would pass
+  // their etag check and the second rename would silently discard the first.
+  const { store: storeA, file } = await freshStore();
+  const storeB = new DatasetStore(file);
+  const { data, etag } = await storeA.read();
+
+  const editedA = structuredClone(data) as ContentDataset;
+  editedA.identity.preferredName = "A";
+  const editedB = structuredClone(data) as ContentDataset;
+  editedB.identity.preferredName = "B";
+
+  const [a, b] = await Promise.allSettled([
+    storeA.write(editedA, etag),
+    storeB.write(editedB, etag),
+  ]);
+
+  const fulfilled = [a, b].filter((r) => r.status === "fulfilled");
+  const rejected = [a, b].filter((r) => r.status === "rejected");
+  assert.equal(fulfilled.length, 1, "exactly one of the two overlapping writes should succeed");
+  assert.equal(rejected.length, 1, "the other should be refused, not silently discarded");
+  assert.ok(rejected[0].status === "rejected" && rejected[0].reason instanceof StaleEtagError);
+
+  const winner = fulfilled[0].status === "fulfilled" ? fulfilled[0].value : undefined;
+  assert.ok(winner);
+  assert.equal(winner.etag, etagOf(await readRaw(file)));
+});
+
 // ---------------------------------------------------------------------------
 // The cleanup path
 // ---------------------------------------------------------------------------

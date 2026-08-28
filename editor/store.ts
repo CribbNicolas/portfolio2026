@@ -11,14 +11,15 @@
  * The etag exists because this file is still edited by hand and by git. A save
  * carrying a stale etag means the file moved underneath the editor — a
  * checkout, a merge, another window — and overwriting it silently would throw
- * away whatever that was. Two `write()` calls on the SAME store instance are a
+ * away whatever that was. Two `write()` calls on the SAME resolved path are a
  * different hazard — races within this process, not against git — and are
- * closed by a per-instance queue rather than by the etag: see `writeQueue`.
+ * closed by a per-path queue rather than by the etag: see `writeQueues`.
  */
 
 import assert from "node:assert/strict";
 import { createHash, randomUUID } from "node:crypto";
 import { readFile, rename, rm, writeFile } from "node:fs/promises";
+import { resolve } from "node:path";
 
 import type { ContentDataset } from "../content/schema/content-schema";
 import { serializeDataset } from "./serialize";
@@ -26,6 +27,18 @@ import type { ValidationReport } from "./inspect";
 import { inspectDataset } from "./inspect";
 
 export const DATASET_FILE = "content/data/content.es.json";
+
+/**
+ * One queue per resolved file path, not per `DatasetStore` instance. Keying by
+ * instance would leave two stores constructed over the same file each running
+ * its own check-then-act window against the same disk file — exactly the
+ * silent-loss race the queue exists to close, and `new DatasetStore()`
+ * defaults to the relative `DATASET_FILE`, so a second instance over the same
+ * path is one accidental construction away, not a contrived scenario. Keying
+ * by the RESOLVED path means two different relative spellings of the same
+ * file still collide on the same entry.
+ */
+const writeQueues = new Map<string, Promise<void>>();
 
 /**
  * Line endings are normalized first, so the same content gives the same etag on
@@ -68,21 +81,6 @@ export class SerializationError extends Error {
 export class DatasetStore {
   constructor(private readonly file: string = DATASET_FILE) {}
 
-  /**
-   * Tail of this instance's write queue. `write()` re-reads the current etag
-   * and only then renames — a classic check-then-act — so two overlapping
-   * `write()` calls on the same store could both pass the check before either
-   * renames, and the second rename would silently discard the first caller's
-   * edit. Chaining every call onto this promise makes that window atomic
-   * WITHIN THIS PROCESS: the next call's check cannot start until the
-   * previous call's rename has already landed.
-   *
-   * It buys nothing against an external writer — a git checkout, a hand edit,
-   * another process — because there is no promise chain to join there. That
-   * case is, and has to remain, the etag comparison's job, not the queue's.
-   */
-  private writeQueue: Promise<void> = Promise.resolve();
-
   /** Raw text plus its etag. No validation: used for the pre-write etag check. */
   private async readRaw(): Promise<{ raw: string; etag: string }> {
     const raw = (await readFile(this.file, "utf8")).replace(/\r\n/g, "\n");
@@ -97,20 +95,46 @@ export class DatasetStore {
     return { data: parsed as ContentDataset, etag };
   }
 
+  /**
+   * `write()` re-reads the current etag and only then renames — a classic
+   * check-then-act — so two overlapping `write()` calls on the same resolved
+   * path could both pass the check before either renames, and the second
+   * rename would silently discard the first caller's edit. Chaining every
+   * call onto `writeQueues`, keyed by path rather than by instance, makes
+   * that window atomic WITHIN THIS PROCESS: the next call's check on that
+   * path cannot start until the previous call's rename has already landed,
+   * no matter which `DatasetStore` instance issued either call.
+   *
+   * It buys nothing against an external writer — a git checkout, a hand edit,
+   * another process — because there is no promise chain to join there. That
+   * case is, and has to remain, the etag comparison's job, not the queue's.
+   */
   async write(input: unknown, expectedEtag: string): Promise<DatasetSnapshot> {
-    // Queue this call behind whatever is already in flight on this instance.
-    const turn = this.writeQueue.then(() => this.writeExclusive(input, expectedEtag));
+    const key = resolve(this.file);
+    const queued = writeQueues.get(key) ?? Promise.resolve();
+    // Queue this call behind whatever is already in flight on this path.
+    const turn = queued.then(() => this.writeExclusive(input, expectedEtag));
     // The queue advances regardless of this call's outcome — a rejected write
     // must not jam every write after it — while `turn` still carries this
-    // call's own result (or error) back to its caller.
-    this.writeQueue = turn.then(
-      () => undefined,
-      () => undefined,
+    // call's own result (or error) back to its caller. Installed
+    // synchronously, in the same tick as the `get` above: `write()` has not
+    // yet reached an `await`, so no other call to this path can interleave
+    // between reading the old tail and installing the new one.
+    writeQueues.set(
+      key,
+      turn.then(
+        () => undefined,
+        () => undefined,
+      ),
     );
     return turn;
   }
 
-  /** The actual write, run with exclusive access to `file` within this process (see `writeQueue`). */
+  /**
+   * The actual write, run with exclusive access to `file` within this
+   * process, across every `DatasetStore` instance that resolves to the same
+   * path (see `writeQueues`).
+   */
   private async writeExclusive(input: unknown, expectedEtag: string): Promise<DatasetSnapshot> {
     const report = inspectDataset(input);
     if (!report.ok) throw new InvalidDatasetError(report);
