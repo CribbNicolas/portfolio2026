@@ -1,6 +1,6 @@
 # Makes the claims in the docs true: the hard rules are CI, not intentions.
 # Local equivalent (all of them have to pass):
-#   pnpm run test:workflows && pnpm run typecheck && pnpm run validate && pnpm test && pnpm run test:format && pnpm run build && pnpm run pdf:local && pnpm run test:pdf && pnpm run test:js && pnpm run test:bundle && pnpm run test:landing && pnpm run test:endpoints && pnpm run test:og && pnpm run audit:todos
+#   pnpm run test:workflows && pnpm run typecheck && pnpm run validate && pnpm test && pnpm run test:format && pnpm run test:editor && pnpm run build && pnpm run pdf:local && pnpm run test:pdf && pnpm run test:js && pnpm run test:bundle && pnpm run test:landing && pnpm run test:endpoints && pnpm run test:og && pnpm run audit:todos
 name: content-validation
 
 on:
@@ -70,6 +70,12 @@ jobs:
       - name: Install Chromium
         timeout-minutes: 5
         run: pnpm exec playwright install chromium
+
+      # The editor's page. It is the only code in the repo the typecheck never
+      # sees (`editor/public` is excluded: browser modules, no build step), so
+      # this one end-to-end pass is what holds it. It edits a COPY of the
+      # dataset in a temp directory.
+      - run: pnpm run test:editor
 
       - run: pnpm run build
       # `build` is only `astro build`. The PDF is generated separately, and that

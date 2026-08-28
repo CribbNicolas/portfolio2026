@@ -51,7 +51,12 @@ guarantees that in three months the editor and the schema disagree.
   against.
 - Loading the missing data (metrics, English level, project links). That is the
   work the editor exists to make bearable, and it happens after it is built.
-- UI tests. The layer that reads and writes gets tests; the rendering does not.
+- A UI test suite. The layer that reads and writes gets tests; the rendering
+  does not. **Refined in PR 3:** `editor/public/` is excluded from the
+  typecheck — browser modules with no build step — so it is the one place in
+  this repo neither the compiler nor a unit test looks. One end-to-end smoke
+  (`scripts/editor-page.check.ts`) closes that hole: it loads the real page in
+  Chromium, edits a field, saves, and checks the file. One pass, not a suite.
 
 ---
 
@@ -196,8 +201,10 @@ editor/
   descriptors.ts        The field-tree types. Zero zod imports.
   schema-adapter.ts     zod `_def` → Descriptor tree. THE ONLY file touching `_def`.
   schema-adapter.test.ts
-  hints.ts              path → widget table. Overrides, not a replacement.
-  hints.test.ts         Every hint path exists in the tree the adapter emits.
+  hints.ts              Per-path widget overrides, with a test that every path still exists.
+  hints.test.ts
+  static.ts             Serving editor/public, with the traversal guard.
+  static.test.ts
   serialize.ts          The canonical serializer.
   serialize.test.ts
   inspect.ts            unknown → a structured verdict. Pure.
@@ -208,8 +215,9 @@ editor/
   api.test.ts
   server.ts             createEditorServer(store). Does not listen.
   server.test.ts
-  public/               index.html + app.js + editor.css. No bundler, ES modules.
+  public/               index.html + editor.css + app.js + render.js + state.js. No bundler.
 scripts/editor.ts              Entry point of `pnpm run editor`. Binds 127.0.0.1:4322.
+scripts/editor-page.check.ts   The page end to end in Chromium.
 scripts/format-data.ts         Writes content.es.json in canonical form. The fix path the gate points at.
 scripts/data-format.check.ts   Gate: content.es.json is in canonical form.
 ```

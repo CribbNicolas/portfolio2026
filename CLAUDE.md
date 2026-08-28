@@ -74,6 +74,11 @@ editor/                 The local content editor; `pnpm run editor` runs it, the
                       checks the etag, renames a temp file into place.
   api.ts              The routes, as a pure function. No node:http, so every route is tested without a socket.
   server.ts           createEditorServer(store). Does NOT listen: scripts/editor.ts binds the port.
+  hints.ts            Per-path widget overrides. Full paths, NOT field names: a convention would change a widget
+                      silently on a rename. hints.test.ts fails when a path stops existing.
+  static.ts           Serves editor/public. The traversal guard checks where a path LANDS, not what it looks like.
+  public/             The page. Plain ES modules, no build step, and the ONLY code here the typecheck never sees —
+                      which is why scripts/editor-page.check.ts exists.
 src/
   pages/cv.astro      The CV in HTML. THE source of the layout; the PDF comes from here.
                       NOT a navigable destination: `noindex` and zero incoming links.
@@ -146,6 +151,7 @@ scripts/
                       carries the contract keys, and that the markdown has no empty fields.
   format-data.ts      Writes content.es.json in canonical form. The fix path the gate points at. `format:data`.
   editor.ts           Entry point of `pnpm run editor`. Loopback only: this process writes to the dataset.
+  editor-page.check.ts  The page in a real browser: loads, renders from the schema, saves. Needs Chromium.
   data-format.check.ts  THE canonical written form of the dataset is committed as such. Not a *.test.ts: it reads a committed artifact.
   served.check.ts     The ONLY thing verifying the SERVED response and not dist/. Runs from the smoke. Catches
                       what happens after the build: injections at the edge.
@@ -188,6 +194,7 @@ pnpm run test:bundle # byte budget of the home's map (needs a build)
 pnpm run test:landing # /cv isolated + CV section in sync with the PDF (needs a build)
 pnpm run test:endpoints # /cv.json parses and /llms.txt is whole (needs a build)
 pnpm run test:format # the committed dataset is in canonical form (no build needed)
+pnpm run test:editor # the editor page end to end in Chromium (needs no build)
 pnpm run format:data # rewrites content.es.json in canonical form. The fix for the above
 pnpm run test:og     # the social card has not gone stale + the favicon parses (needs a build)
 pnpm run test:served # verifies the PUBLISHED site. Needs SITE=https://…  (not dist/)
@@ -198,7 +205,7 @@ pnpm run audit:deps  # pnpm audit --audit-level high
 ```
 
 **Run the full sequence before calling anything done:**
-`pnpm run test:workflows && pnpm run typecheck && pnpm run validate && pnpm test && pnpm run test:format && pnpm run build && pnpm run pdf:local && pnpm run test:pdf && pnpm run test:js && pnpm run test:bundle && pnpm run test:landing && pnpm run test:endpoints && pnpm run test:og && pnpm run audit:todos`.
+`pnpm run test:workflows && pnpm run typecheck && pnpm run validate && pnpm test && pnpm run test:format && pnpm run test:editor && pnpm run build && pnpm run pdf:local && pnpm run test:pdf && pnpm run test:js && pnpm run test:bundle && pnpm run test:landing && pnpm run test:endpoints && pnpm run test:og && pnpm run audit:todos`.
 If `validate` fails, the message says which rule was violated and how to fix it;
 read it, do not skip it. All of that runs in CI on every push
 (`.github/workflows/content-validation.yml`) — `audit:todos` included, but as the
