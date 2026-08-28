@@ -68,6 +68,12 @@ editor/                 The local content editor; its entry point, `pnpm run edi
   schema-adapter.ts   THE ONLY file that reads zod's `_def`. Its tests are the gate for a zod bump.
   serialize.ts        THE canonical written form of content.es.json. Key order comes from the schema; what prints
                       inline comes from two explicit tables, NOT from a line width.
+  inspect.ts          unknown → { ok, zodIssues, violations }. Calls datasetSchema.safeParse and checkRules:
+                      it decides nothing itself.
+  store.ts            THE only thing that touches the dataset file. Validates, round-trips its own output,
+                      checks the etag, renames a temp file into place.
+  api.ts               The routes, as a pure function. No node:http, so every route is tested without a socket.
+  server.ts            createEditorServer(store). Does NOT listen: scripts/editor.ts binds the port.
 src/
   pages/cv.astro      The CV in HTML. THE source of the layout; the PDF comes from here.
                       NOT a navigable destination: `noindex` and zero incoming links.
@@ -139,6 +145,7 @@ scripts/
   endpoints.check.ts  /cv.json and /llms.txt, the two surfaces agents consume. That the JSON parses and
                       carries the contract keys, and that the markdown has no empty fields.
   format-data.ts      Writes content.es.json in canonical form. The fix path the gate points at. `format:data`.
+  editor.ts           Entry point of `pnpm run editor`. Loopback only: this process writes to the dataset.
   data-format.check.ts  THE canonical written form of the dataset is committed as such. Not a *.test.ts: it reads a committed artifact.
   served.check.ts     The ONLY thing verifying the SERVED response and not dist/. Runs from the smoke. Catches
                       what happens after the build: injections at the edge.
@@ -171,6 +178,7 @@ pnpm run typecheck   # astro sync && tsc --noEmit && astro check
 pnpm run validate    # tsx scripts/validate.ts — Zod + hard rules
 pnpm test            # tsx --test — rules 7,8, locale and the graph
 pnpm run dev         # astro dev
+pnpm run editor      # local dataset editor on 127.0.0.1:4322. API only until PR 3
 pnpm run build       # ONLY astro build. No Chromium: that is why it runs on Cloudflare Pages
 pnpm run pdf:local   # prints dist/cv.pdf with Playwright. Pre-deploy gate, not the deliverable
 pnpm run og:local    # writes public/og.jpg (the social card) + og.lock.json. It gets COMMITTED

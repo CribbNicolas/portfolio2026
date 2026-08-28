@@ -146,6 +146,12 @@ becomes a round trip and half-edited state lives on the server. Rejected: an
 interactive CLI — bad at exactly what this is for (multi-line prose, seeing a
 role with its achievements, navigating 22 skills).
 
+**Refined during PR 2.** The routing was split out of the server into `api.ts`,
+and binding the port moved to `scripts/editor.ts`. Routing is a pure function
+from a request to a response, so it belongs on the tested side of the line this
+spec draws — a socket in the way of those tests buys nothing — and this repo
+already keeps its entry points in `scripts/`.
+
 ### 3.4 Saving: a hard block, with live validation
 
 `checkRules` does not distinguish warnings: everything is a violation.
@@ -194,10 +200,16 @@ editor/
   hints.test.ts         Every hint path exists in the tree the adapter emits.
   serialize.ts          The canonical serializer.
   serialize.test.ts
-  store.ts              Read/write: parse → validate → serialize → atomic write.
+  inspect.ts            unknown → a structured verdict. Pure.
+  inspect.test.ts
+  store.ts              Read/write: validate → serialize → round trip → etag → atomic write.
   store.test.ts
-  server.ts             node:http, ~120 lines. Precedent: scripts/build-pdf.ts.
+  api.ts                The routes, as a pure function over a store. No node:http.
+  api.test.ts
+  server.ts             createEditorServer(store). Does not listen.
+  server.test.ts
   public/               index.html + app.js + editor.css. No bundler, ES modules.
+scripts/editor.ts              Entry point of `pnpm run editor`. Binds 127.0.0.1:4322.
 scripts/format-data.ts         Writes content.es.json in canonical form. The fix path the gate points at.
 scripts/data-format.check.ts   Gate: content.es.json is in canonical form.
 ```
