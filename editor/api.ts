@@ -12,6 +12,7 @@
  */
 
 import { datasetDescriptor } from "./schema-adapter";
+import { HINTS } from "./hints";
 import { inspectDataset } from "./inspect";
 // DatasetStore is only ever a parameter type here — the routing never
 // constructs one, which is what keeps it testable against any store.
@@ -45,7 +46,7 @@ export async function handleApi(request: ApiRequest, store: DatasetStore): Promi
 
   if (path === "/api/schema") {
     if (method !== "GET") return json(405, { message: "GET only." });
-    return json(200, { schema: datasetDescriptor });
+    return json(200, { schema: datasetDescriptor, hints: HINTS });
   }
 
   if (path === "/api/validate") {

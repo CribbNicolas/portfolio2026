@@ -79,12 +79,22 @@ test("a body that is not JSON is 400, not a crash", async () => {
   }
 });
 
-test("the page is not here yet, and the 404 says where it will be", async () => {
+test("/ serves the page", async () => {
   const { base, close } = await serve();
   try {
     const res = await fetch(`${base}/`);
-    assert.equal(res.status, 404);
-    assert.match(JSON.stringify(await res.json()), /PR 3/);
+    assert.equal(res.status, 200);
+    assert.match(res.headers.get("content-type") ?? "", /text\/html/);
+    assert.match(await res.text(), /<title>/);
+  } finally {
+    await close();
+  }
+});
+
+test("a path with no file behind it is a 404", async () => {
+  const { base, close } = await serve();
+  try {
+    assert.equal((await fetch(`${base}/nope.js`)).status, 404);
   } finally {
     await close();
   }
