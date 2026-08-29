@@ -62,6 +62,40 @@ export function createState(dataset) {
     return { node, last };
   };
 
+  /**
+   * After a write, walk up and drop any nested object that is now hollow.
+   * Hollow means `{}` or only empty strings: `metric.label` is required on
+   * Metric, so the input writes `""` rather than `undefined` when the author
+   * deletes the text, and `{ label: "" }` is as unsavable as `{}`.
+   *
+   * Stops at the top level — an emptied `identity` stays put rather than
+   * disappearing — and at array elements, so a hole is never punched in a
+   * list by `delete array[i]`. Empty arrays stay: they are a value, not a
+   * missing optional object.
+   */
+  const isHollow = (value) => {
+    if (value === undefined || value === null || value === "") return true;
+    if (Array.isArray(value) || typeof value !== "object") return false;
+    const keys = Object.keys(value);
+    return keys.length === 0 || keys.every((key) => isHollow(value[key]));
+  };
+
+  const pruneEmptyAncestors = (path) => {
+    const ancestor = path.split(".");
+    ancestor.pop();
+    while (ancestor.length > 1) {
+      const lastStep = ancestor[ancestor.length - 1];
+      if (/^\d+$/.test(lastStep)) break;
+      const ancestorPath = ancestor.join(".");
+      const { node, last } = parentOf(ancestorPath);
+      const value = node?.[last];
+      if (value === undefined || value === null || Array.isArray(value)) break;
+      if (typeof value !== "object" || !isHollow(value)) break;
+      delete node[last];
+      ancestor.pop();
+    }
+  };
+
   return {
     all: () => data,
 
@@ -79,10 +113,12 @@ export function createState(dataset) {
       if (value === undefined) {
         const { node, last } = parentOf(path);
         if (node !== undefined && node !== null) delete node[last];
+        pruneEmptyAncestors(path);
         return;
       }
       const { node, last } = parentOf(path, { create: true });
       node[last] = value;
+      pruneEmptyAncestors(path);
     },
 
     collection(name) {
