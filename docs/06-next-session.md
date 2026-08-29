@@ -18,7 +18,7 @@ Three phases. **The order matters and is not arbitrary.**
 | Phase | What | Why here |
 |---|---|---|
 | **1** | Social metadata + the technical debt that does not touch data creation | What moves the needle most per hour. Sharing the link used to give a bare URL. **Done** |
-| **2** | `pnpm run editor` | It needs the schema to be still. Touched earlier, it gets done twice |
+| **2** | `pnpm run editor` | It needs the schema to be still. Touched earlier, it gets done twice. **Done** |
 | **3** | The debt that does touch data creation, and whatever is left | Resolved with the editor in sight, not before |
 
 **The rule separating phase 1 from phase 3:** anything to do with **how the CV
@@ -61,7 +61,13 @@ Ten minutes with `pnpm run dev` and `pnpm run pdf:local`.
 
 ---
 
-## 2. Phase 2 — `pnpm run editor`
+## 2. Phase 2 — done
+
+`pnpm run editor` landed in 0.17.0 (the page) and 0.18.0 (the six medium gaps
+from the page review: GET 422, 409 latch, load errors, header scalars,
+`updatedAt`, remove with a ref check, prune of hollow optional objects). The
+shape below is what was built, kept so the next session does not reopen the
+decisions.
 
 A local dataset editor, so `content.es.json` stops being edited by hand. Decided
 2026-08-25 after evaluating Sanity and Keystatic (§4).
@@ -262,6 +268,6 @@ audit:todos     9 published TODOs (missing data, not failures)
 Consumption against the ceilings: see the table in the
 [`README`](../README.md#limits-and-ceilings).
 
-Technical debt: **18 entries, 15 resolved.** The three open ones are §6 and §7,
-both phase 3, and §13, which is the author's. See
-[`07`](./07-technical-debt.md).
+Technical debt: **36 entries, 21 resolved.** Phase 3 still holds §6 and §7.
+§13 is the author's. The rest of the open list is low or negligible editor
+internals. See [`07`](./07-technical-debt.md).
