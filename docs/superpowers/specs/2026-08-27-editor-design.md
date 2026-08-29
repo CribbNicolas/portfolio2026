@@ -310,7 +310,7 @@ New scripts: `pnpm run editor` and `pnpm run test:format`.
 
 ## 6. Delivery
 
-Three PRs into `develop`, each green and each with its own version bump
+Four PRs into `develop`, each green and each with its own version bump
 ([`08`](../../08-branches-and-versioning.md)).
 
 | PR | What | Why it can stand alone |
@@ -318,6 +318,7 @@ Three PRs into `develop`, each green and each with its own version bump
 | 1 | `descriptors` + `schema-adapter` + `serialize` + the JSON normalization + `data-format.check.ts` + CI | The serializer and the adapter are worth having even if the phase stops here |
 | 2 | `store` + `server` + the API + read/write tests | Editable with `curl`, with no page |
 | 3 | `public/` + hints + polish | The form itself |
+| 4 | The six medium gaps from the page review: GET 422, 409 latch, load errors, header, remove, prune, `updatedAt` | The editor is usable for the data work without falling back to the JSON |
 
 The normalization lands in PR 1 as its own commit, so the reformat never shares
 a diff with new code.

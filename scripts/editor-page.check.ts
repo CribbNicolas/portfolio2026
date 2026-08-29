@@ -37,11 +37,17 @@ const base = `http://127.0.0.1:${port}`;
 
 const browser = await chromium.launch();
 const page = await browser.newPage();
+page.on("dialog", (dialog) => dialog.accept());
 
 const problems: string[] = [];
 page.on("pageerror", (err) => problems.push(String(err)));
 page.on("console", (message) => {
-  if (message.type() === "error") problems.push(message.text());
+  if (message.type() !== "error") return;
+  const text = message.text();
+  // Chromium logs failed fetches as console errors. A 409 is the app's
+  // stale-etag path and is asserted by name; it is not a page error.
+  if (text.includes("409")) return;
+  problems.push(text);
 });
 
 await page.goto(base);
@@ -62,6 +68,13 @@ test("the sidebar is built from the dataset, not hard-coded", async () => {
   assert.match(await skills.innerText(), /typescript/);
 });
 
+test("top-level scalars are reachable from the header nav", async () => {
+  await page.getByRole("button", { name: "header" }).click();
+  await page.waitForSelector('.field[data-path="schemaVersion"]');
+  await page.waitForSelector('.field[data-path="locale"]');
+  await page.waitForSelector('.field[data-path="updatedAt"]');
+});
+
 test("a field renders from its descriptor, and a hint turns roleId into a picker", async () => {
   await page.getByRole("button", { name: "achievements" }).first().click();
   await page.locator(".nav__group", { hasText: "achievements" }).locator(".nav__item").first().click();
@@ -80,6 +93,11 @@ test("an edit reaches the file through save", async () => {
 
   const onDisk = await readFile(file, "utf8");
   assert.match(onDisk, /Texto editado por el smoke\./);
+  assert.notEqual(
+    JSON.parse(onDisk).updatedAt,
+    JSON.parse(canonical).updatedAt,
+    "a real edit has to stamp updatedAt, otherwise the field keeps lying",
+  );
 });
 
 test("the saved file is still canonical, so the format gate stays green", async () => {
@@ -129,6 +147,77 @@ test("typing through an absent optional object reaches the dataset", async () =>
     (a: { metric?: { label?: string } }) => a.metric?.label === "tiempo de build",
   );
   assert.equal(carrying.length, 1, "the typed metric never reached the dataset the page holds");
+  assert.deepEqual(problems, []);
+});
+
+test("clearing a typed-in optional object drops it from the dataset", async () => {
+  const label = page.locator('.field[data-path$="metric.label"] .control').first();
+  const posted = nextValidatedDataset();
+  await label.fill("");
+  const dataset = await posted;
+  assert.equal(
+    dataset.achievements.filter((a: { metric?: unknown }) => a.metric).length,
+    0,
+    "empty metric was left on the dataset",
+  );
+  assert.deepEqual(problems, []);
+});
+
+test("an unreferenced collection item can be removed", async () => {
+  const original = JSON.parse(canonical).skills.length;
+  await page.getByRole("button", { name: "skills" }).first().click();
+  await page.getByRole("button", { name: "add skills" }).click();
+  await page.getByRole("button", { name: "remove this item" }).waitFor();
+
+  const posted = nextValidatedDataset();
+  await page.getByRole("button", { name: "remove this item" }).click();
+  const dataset = await posted;
+  assert.equal(dataset.skills.length, original);
+  assert.deepEqual(problems, []);
+});
+
+test("removing a referenced skill is refused and listed", async () => {
+  await page.getByRole("button", { name: "skills" }).first().click();
+  await page
+    .locator(".nav__group", { hasText: "skills" })
+    .locator(".nav__item")
+    .filter({ hasText: "typescript" })
+    .click();
+  await page.getByRole("button", { name: "remove this item" }).click();
+
+  const panel = page.locator("#problems");
+  assert.equal(await panel.isHidden(), false);
+  const text = await panel.innerText();
+  assert.match(text, /typescript/);
+  assert.match(text, /skillIds/);
+  assert.match(
+    await page.locator(".nav__group", { hasText: "skills" }).innerText(),
+    /typescript/,
+  );
+});
+
+test("a 409 latches Save, and a keystroke does not re-enable it", async () => {
+  const onDisk = JSON.parse(await readFile(file, "utf8"));
+  onDisk.identity.preferredName = "changed-on-disk";
+  const { serializeDataset } = await import("../editor/serialize");
+  await writeFile(file, serializeDataset(onDisk), "utf8");
+
+  await page.getByRole("button", { name: "identity" }).click();
+  const name = page.locator('.field[data-path="identity.preferredName"] .control');
+  await name.waitFor();
+  await name.fill("Nico-stale");
+  await page.waitForFunction(() => !(document.getElementById("save") as HTMLButtonElement).disabled);
+  await page.getByRole("button", { name: "Save" }).click();
+  await page.waitForFunction(() =>
+    document.getElementById("status")?.textContent?.includes("reload"),
+  );
+  assert.equal(await page.locator("#save").isDisabled(), true);
+
+  const posted = nextValidatedDataset();
+  await name.fill("Nico-stale-2");
+  await posted;
+  assert.equal(await page.locator("#save").isDisabled(), true);
+  assert.match(await page.locator("#status").innerText(), /reload/);
   assert.deepEqual(problems, []);
 });
 

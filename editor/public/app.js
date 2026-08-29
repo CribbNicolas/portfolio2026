@@ -13,7 +13,7 @@
  */
 
 import { blankFor, createState } from "./state.js";
-import { renderObject } from "./render.js";
+import { renderField, renderObject } from "./render.js";
 
 const statusEl = document.getElementById("status");
 const saveEl = document.getElementById("save");
@@ -25,6 +25,8 @@ let schema;
 let hints;
 let state;
 let etag;
+/** Last successfully loaded or saved dataset, used to stamp `updatedAt`. */
+let loaded;
 let selection = { collection: "identity", index: null };
 let validateTimer;
 // Bumped at the start of every `validate()` call. A response only gets to
@@ -32,31 +34,71 @@ let validateTimer;
 // this, a slow earlier response can overwrite a faster later one, including
 // `saveEl.disabled`, and the button would reflect stale text.
 let validateSeq = 0;
+/**
+ * A 409 means the file moved underneath us. Nothing but a reload (which
+ * re-runs `load()`) may re-enable Save: the next keystroke's validate
+ * report does not know the etag is stale, and pressing Save would buy
+ * another guaranteed 409.
+ */
+let stale = false;
+
+const HEADER = "header";
 
 const say = (text) => { statusEl.textContent = text; };
+
+const allowSave = (enabled) => {
+  saveEl.disabled = stale || !enabled;
+};
 
 // ---------------------------------------------------------------------------
 // Loading
 // ---------------------------------------------------------------------------
 
 async function load() {
-  const [schemaRes, datasetRes] = await Promise.all([
-    fetch("/api/schema"),
-    fetch("/api/dataset"),
-  ]);
+  let schemaRes;
+  let datasetRes;
+  try {
+    [schemaRes, datasetRes] = await Promise.all([
+      fetch("/api/schema"),
+      fetch("/api/dataset"),
+    ]);
+  } catch (err) {
+    say(`could not load the editor: ${err instanceof Error ? err.message : String(err)}`);
+    return;
+  }
+
+  if (!schemaRes.ok) {
+    say("the schema could not be read");
+    return;
+  }
+
+  try {
+    ({ schema, hints } = await schemaRes.json());
+  } catch {
+    say("the schema could not be read");
+    return;
+  }
 
   if (!datasetRes.ok) {
-    // The dataset on disk is already invalid — the store refuses to open it.
-    // Say so plainly; `pnpm run validate` gives the detail.
     const body = await datasetRes.json().catch(() => ({}));
+    // 422 carries the same report PUT already returns. Draw it so a bad
+    // merge is diagnosable from the page, not only from `pnpm run validate`.
+    if (Array.isArray(body.zodIssues) || Array.isArray(body.violations)) {
+      showReport({
+        ok: false,
+        zodIssues: body.zodIssues ?? [],
+        violations: body.violations ?? [],
+      });
+    }
     say(body.message ?? "the dataset could not be read");
     return;
   }
 
-  ({ schema, hints } = await schemaRes.json());
   const snapshot = await datasetRes.json();
+  stale = false;
   etag = snapshot.etag;
   state = createState(snapshot.data);
+  loaded = structuredClone(snapshot.data);
 
   renderNav();
   renderDetail();
@@ -82,8 +124,21 @@ function labelFor(item, index) {
   return item?.id || item?.code || item?.name || String(index);
 }
 
+function scalarFields() {
+  return schema.fields.filter(
+    (field) => field.descriptor.kind !== "object" && field.descriptor.kind !== "array",
+  );
+}
+
 function renderNav() {
   navEl.replaceChildren();
+
+  if (scalarFields().length > 0) {
+    const group = document.createElement("div");
+    group.className = "nav__group";
+    group.append(navButton("header", null, HEADER));
+    navEl.append(group);
+  }
 
   for (const field of schema.fields) {
     if (field.descriptor.kind === "object") {
@@ -149,10 +204,18 @@ const context = () => ({
 });
 
 function renderDetail() {
+  detailEl.replaceChildren();
+
+  if (selection.collection === HEADER) {
+    detailEl.append(header("header"));
+    for (const field of scalarFields()) {
+      detailEl.append(renderField(field.descriptor, field.key, state.get(field.key), context()));
+    }
+    return;
+  }
+
   const field = schema.fields.find((f) => f.key === selection.collection);
   if (!field) return;
-
-  detailEl.replaceChildren();
 
   if (field.descriptor.kind === "object") {
     detailEl.append(header(selection.collection));
@@ -185,7 +248,12 @@ function renderDetail() {
   }
 
   const item = items[selection.index];
-  detailEl.append(header(`${selection.collection}: ${labelFor(item, selection.index)}`));
+  const remove = document.createElement("button");
+  remove.type = "button";
+  remove.className = "button button--quiet";
+  remove.textContent = "remove this item";
+  remove.addEventListener("click", removeSelected);
+  detailEl.append(header(`${selection.collection}: ${labelFor(item, selection.index)}`, remove));
   detailEl.append(
     renderObject(
       field.descriptor.element,
@@ -196,10 +264,83 @@ function renderDetail() {
   );
 }
 
-function header(text) {
+function header(text, extra) {
+  const bar = document.createElement("div");
+  bar.className = "detail__header";
   const node = document.createElement("h1");
   node.textContent = text;
-  return node;
+  bar.append(node);
+  if (extra) bar.append(extra);
+  return bar;
+}
+
+/**
+ * Paths in the dataset that point at `id` via a reference hint whose source
+ * is `collection`. Used to refuse a top-level delete that would only fail
+ * later as a 422 from referential integrity.
+ */
+function incomingRefs(collection, id) {
+  if (!id) return [];
+  const hits = [];
+  for (const [schemaPath, hint] of Object.entries(hints)) {
+    if (hint.source !== collection) continue;
+    walkHint(state.all(), schemaPath.split("."), "", (valuePath, value) => {
+      if (hint.widget === "reference-list" && Array.isArray(value) && value.includes(id)) {
+        hits.push(valuePath);
+      } else if (hint.widget === "reference" && value === id) {
+        hits.push(valuePath);
+      }
+    });
+  }
+  return hits;
+}
+
+function walkHint(data, parts, prefix, visit) {
+  if (parts.length === 0) {
+    visit(prefix, data);
+    return;
+  }
+  const [head, ...tail] = parts;
+  if (head.endsWith("[]")) {
+    const key = head.slice(0, -2);
+    const list = data?.[key];
+    if (!Array.isArray(list)) return;
+    list.forEach((item, index) => {
+      const next = prefix ? `${prefix}.${key}.${index}` : `${key}.${index}`;
+      walkHint(item, tail, next, visit);
+    });
+    return;
+  }
+  const next = prefix ? `${prefix}.${head}` : head;
+  walkHint(data?.[head], tail, next, visit);
+}
+
+function removeSelected() {
+  const item = state.collection(selection.collection)[selection.index];
+  const id = item?.id;
+  const refs = incomingRefs(selection.collection, id);
+  if (refs.length > 0) {
+    problemsEl.hidden = false;
+    problemsEl.replaceChildren();
+    problemsEl.append(
+      document.createTextNode(`cannot remove "${id}": ${refs.length} reference(s)`),
+    );
+    const list = document.createElement("ul");
+    for (const path of refs) {
+      const row = document.createElement("li");
+      row.textContent = path;
+      list.append(row);
+    }
+    problemsEl.append(list);
+    say(`cannot remove "${id}" while something still points at it`);
+    return;
+  }
+  if (!confirm(`Remove ${selection.collection}: ${labelFor(item, selection.index)}?`)) return;
+  state.removeAt(selection.collection, selection.index);
+  selection = { collection: selection.collection, index: null };
+  renderNav();
+  renderDetail();
+  scheduleValidate();
 }
 
 // ---------------------------------------------------------------------------
@@ -230,7 +371,8 @@ async function validate() {
     // Save stays available on purpose. The server validates every PUT and
     // refuses what is wrong with the full report, so it — not this — is the
     // authority; disabling here would leave no way to find out either.
-    saveEl.disabled = false;
+    if (stale) return;
+    allowSave(true);
     say("could not check the dataset — Save will get the verdict from the server");
     return;
   }
@@ -275,7 +417,11 @@ function showReport(report) {
     problemsEl.append(list);
   }
 
-  saveEl.disabled = !report.ok;
+  allowSave(report.ok);
+  if (stale) {
+    say("the file changed on disk — reload before saving");
+    return;
+  }
   say(report.ok ? "ready to save" : "cannot save while there are problems");
 }
 
@@ -283,9 +429,19 @@ function showReport(report) {
 // Saving
 // ---------------------------------------------------------------------------
 
+function sameExceptUpdatedAt(a, b) {
+  const strip = ({ updatedAt: _drop, ...rest }) => rest;
+  return JSON.stringify(strip(a)) === JSON.stringify(strip(b));
+}
+
 saveEl.addEventListener("click", async () => {
   saveEl.disabled = true;
   say("saving…");
+
+  if (!loaded || !sameExceptUpdatedAt(state.all(), loaded)) {
+    state.set("updatedAt", new Date().toISOString());
+    if (selection.collection === HEADER) renderDetail();
+  }
 
   let res;
   let body;
@@ -301,18 +457,21 @@ saveEl.addEventListener("click", async () => {
     // editor process going away, not a verdict on the data. The last
     // validation said the data was fine, so re-enable Save instead of
     // leaving the button stuck on a request that will never resolve.
-    saveEl.disabled = false;
+    allowSave(true);
     say("could not reach the editor — check it is still running, then try again");
     return;
   }
 
   if (res.ok) {
     etag = body.etag;
+    loaded = structuredClone(state.all());
     say("saved");
     return;
   }
 
   if (res.status === 409) {
+    stale = true;
+    saveEl.disabled = true;
     say("the file changed on disk — reload before saving");
     return;
   }

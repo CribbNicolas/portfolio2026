@@ -46,6 +46,19 @@ test("GET /api/dataset hands over the data and its etag", async () => {
   assert.ok(body.etag.length > 0);
 });
 
+test("GET of a dataset that is already invalid on disk is 422 with the report, not a thrown 500", async () => {
+  const dir = await mkdtemp(join(tmpdir(), "editor-api-"));
+  const file = join(dir, "content.es.json");
+  await writeFile(file, "{}\n", "utf8");
+  const store = new DatasetStore(file);
+
+  const res = await handleApi({ method: "GET", path: "/api/dataset" }, store);
+  assert.equal(res.status, 422);
+  const body = res.body as { zodIssues: Array<{ path: string }>; violations: unknown[] };
+  assert.ok(body.zodIssues.length > 0, "the report that PUT already returns has to travel with GET too");
+  assert.ok(Array.isArray(body.violations));
+});
+
 test("POST /api/validate answers 200 with a clean report for a good dataset", async () => {
   const { store } = await freshStore();
   const { data } = (await store.read());

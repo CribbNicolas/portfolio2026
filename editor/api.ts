@@ -32,6 +32,14 @@ export interface ApiResponse {
 
 const json = (status: number, body: unknown): ApiResponse => ({ status, body });
 
+/** The report the form renders. GET and PUT have to return the same shape. */
+function refused(err: unknown): ApiResponse | null {
+  if (err instanceof InvalidDatasetError) {
+    return json(422, { zodIssues: err.report.zodIssues, violations: err.report.violations });
+  }
+  return null;
+}
+
 /** `{ data, etag }`, or null when the client sent something else. */
 function readEnvelope(body: unknown): { data: unknown; etag: string } | null {
   if (typeof body !== "object" || body === null) return null;
@@ -55,7 +63,17 @@ export async function handleApi(request: ApiRequest, store: DatasetStore): Promi
   }
 
   if (path === "/api/dataset") {
-    if (method === "GET") return json(200, await store.read());
+    if (method === "GET") {
+      try {
+        return json(200, await store.read());
+      } catch (err) {
+        // Opening the editor after a bad merge has to show what is wrong,
+        // not a bare 500 whose message is the exception's constructor name.
+        const response = refused(err);
+        if (response) return response;
+        throw err;
+      }
+    }
 
     if (method === "PUT") {
       const envelope = readEnvelope(request.body);
@@ -65,9 +83,8 @@ export async function handleApi(request: ApiRequest, store: DatasetStore): Promi
       try {
         return json(200, await store.write(envelope.data, envelope.etag));
       } catch (err) {
-        if (err instanceof InvalidDatasetError) {
-          return json(422, { zodIssues: err.report.zodIssues, violations: err.report.violations });
-        }
+        const response = refused(err);
+        if (response) return response;
         if (err instanceof StaleEtagError) {
           return json(409, { message: err.message, etag: err.currentEtag });
         }

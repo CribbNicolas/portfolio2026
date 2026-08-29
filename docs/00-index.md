@@ -65,7 +65,7 @@ Dated, so we know what to revisit when the context changes.
 - [ ] **Metrics** — the most important gap. See [03-cv.md](./03-cv.md)
 - [ ] Confirm the Hogarth data and the real English level
 - [x] Phase 1 closed: 15 of the 18 debt entries, including the three gates that did not exist (invariants, endpoints, embedded fonts)
-- [ ] `pnpm run editor` — phase 2 of [06](./06-next-session.md)
+- [x] `pnpm run editor` — phase 2 of [06](./06-next-session.md), including the PR 4 affordances (remove, header, prune, 409 latch)
 - [ ] LinkedIn text blocks
 - [ ] Portfolio case studies — the research of [04 §6](./04-portfolio.md) comes first
 - [ ] Freelance role achievements (2020-04 → 2022-06): today it has one, and its `skillIds` are `["javascript"]`. Those 2.2 years contribute no connection to any other technology, which is why WordPress — declared `core` — comes out small on the map
