@@ -146,6 +146,12 @@ becomes a round trip and half-edited state lives on the server. Rejected: an
 interactive CLI — bad at exactly what this is for (multi-line prose, seeing a
 role with its achievements, navigating 22 skills).
 
+**Refined during PR 2.** The routing was split out of the server into `api.ts`,
+and binding the port moved to `scripts/editor.ts`. Routing is a pure function
+from a request to a response, so it belongs on the tested side of the line this
+spec draws — a socket in the way of those tests buys nothing — and this repo
+already keeps its entry points in `scripts/`.
+
 ### 3.4 Saving: a hard block, with live validation
 
 `checkRules` does not distinguish warnings: everything is a violation.
@@ -194,10 +200,16 @@ editor/
   hints.test.ts         Every hint path exists in the tree the adapter emits.
   serialize.ts          The canonical serializer.
   serialize.test.ts
-  store.ts              Read/write: parse → validate → serialize → atomic write.
+  inspect.ts            unknown → a structured verdict. Pure.
+  inspect.test.ts
+  store.ts              Read/write: validate → serialize → round trip → etag → atomic write.
   store.test.ts
-  server.ts             node:http, ~120 lines. Precedent: scripts/build-pdf.ts.
+  api.ts                The routes, as a pure function over a store. No node:http.
+  api.test.ts
+  server.ts             createEditorServer(store). Does not listen.
+  server.test.ts
   public/               index.html + app.js + editor.css. No bundler, ES modules.
+scripts/editor.ts              Entry point of `pnpm run editor`. Binds 127.0.0.1:4322.
 scripts/format-data.ts         Writes content.es.json in canonical form. The fix path the gate points at.
 scripts/data-format.check.ts   Gate: content.es.json is in canonical form.
 ```
@@ -240,13 +252,23 @@ an incidental behaviour.
 body → datasetSchema.parse   → fails: 422 { zodIssues }
      → checkRules            → fails: 422 { violations }
      → serialize()           → parse(output) must deep-equal the input, else 500 (nothing is written)
+     → write tmp             → the slow part (bytes to disk) happens BEFORE the check
      → etag still matches?   → no: 409 (the file changed underneath: a git checkout, a hand edit)
-     → write tmp + rename    → atomic, same directory
+     → rename                → atomic, same directory
 ```
 
-`store.ts` reimplements no rule: it calls `validateDataset` from
-`content/schema/validation.ts`. A rule error in the editor and in CI are
-literally the same message.
+Writing the tmp file before the etag recheck, not after, is deliberate: the
+only step that touches the target file — the rename — sits strictly after the
+check, which shrinks the check-then-act window to the rename alone instead of
+spanning the whole write. It is also what makes the cleanup path reachable at
+all: with the write after the check, a `writeFile` failure could only happen
+past the point where refusing still matters.
+
+`store.ts` reimplements no rule: it calls `inspectDataset` from
+`editor/inspect.ts`, which composes `datasetSchema.safeParse` and `checkRules`
+— the same two things `validateDataset` composes, for the same reason
+(`editor/inspect.ts` says why at the top). A rule error in the editor and in CI
+are literally the same message.
 
 The round-trip assertion before writing is what makes the serializer safe to
 own: a formatting bug loses no data, it refuses to save.
@@ -270,7 +292,7 @@ that reads and writes does: it is where a datum gets lost."*
 |---|---|
 | `schema-adapter.test.ts` | The shape it expects from `_def`: field type, optionality, enum values, array element, unions of literals collapsed to `enum`, `.strict()` respected. **This file is the gate for a zod bump.** |
 | `serialize.test.ts` | Round trip (`parse(serialize(x))` ≡ `x`), idempotence (`serialize(serialize(x))` ≡ `serialize(x)`), and that the normalized real dataset differs from today's only by the expected blank line. |
-| `store.test.ts` | Rejects an invalid dataset without touching the file, writes atomically, returns 409 on a stale etag, and leaves no half-written file when serialization fails. |
+| `store.test.ts` | Rejects an invalid dataset without touching the file, writes atomically, returns 409 on a stale etag, and leaves no `.tmp` file behind when `writeFile` fails. |
 | `hints.test.ts` | Every path in the table exists in the adapter's tree. |
 | `scripts/data-format.check.ts` | The committed JSON is canonical, compared with line endings normalized so the verdict is the same on Windows and in CI. Runs in `content-validation.yml`. |
 

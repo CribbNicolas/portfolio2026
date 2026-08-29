@@ -1,6 +1,6 @@
 {
   "name": "portfolio2026-content",
-  "version": "0.15.0",
+  "version": "0.16.0",
   "private": true,
   "type": "module",
   "packageManager": "pnpm@11.1.3",
@@ -10,6 +10,7 @@
   },
   "scripts": {
     "dev": "astro dev",
+    "editor": "tsx scripts/editor.ts",
     "build": "astro build",
     "pdf:local": "tsx scripts/build-pdf.ts",
     "og:local": "tsx scripts/build-og.ts",

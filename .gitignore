@@ -12,3 +12,6 @@ dist/
 *.log
 .DS_Store
 _smoke.ts
+# editor/store.ts's tmp-then-rename write, orphaned if the process dies
+# between the two: it lands next to the tracked dataset it is standing in for.
+content/data/*.tmp-*

@@ -5,36 +5,45 @@
  * file has drifted, and this is what puts it back. Deliberately not a
  * `*.test.ts` — it writes.
  *
- * It validates before writing. Formatting a dataset that does not pass the
- * rules would produce a tidy file that CI rejects anyway, and the error you
- * want is the rule one.
+ * The writing itself belongs to `DatasetStore`, which validates before it
+ * serializes, parses its own output back before it saves, and renames a
+ * temporary file into place rather than truncating the real one. Keeping a
+ * second copy of that here would mean the careful version and the casual
+ * version both existed, and the casual one is the one that can leave a
+ * half-written source of truth.
  */
 
-import { readFile, writeFile } from "node:fs/promises";
+import { readFile } from "node:fs/promises";
 
-import type { ContentDataset } from "../content/schema/content-schema";
-import { validateDataset } from "../content/schema/validation";
-import { serializeDataset } from "../editor/serialize";
+import { DATASET_FILE, DatasetStore, InvalidDatasetError } from "../editor/store";
 
-const FILE = "content/data/content.es.json";
+const store = new DatasetStore();
+const before = (await readFile(DATASET_FILE, "utf8")).replace(/\r\n/g, "\n");
 
-const raw = (await readFile(FILE, "utf8")).replace(/\r\n/g, "\n");
-
-// A rule violation here is data to fix, not a crash: print the rule message
+// A rule violation here is data to fix, not a crash: print the rule messages
 // alone, the same way `validate.ts` does, instead of a raw stack trace.
-let data: ContentDataset;
 try {
-  data = validateDataset(JSON.parse(raw));
+  const { data, etag } = await store.read();
+  await store.write(data, etag);
 } catch (err) {
+  if (err instanceof InvalidDatasetError) {
+    for (const issue of err.report.zodIssues) console.error(`  ${issue.path}: ${issue.message}`);
+    for (const violation of err.report.violations) {
+      console.error(`  [rule ${violation.rule}] ${violation.message}`);
+    }
+    process.exit(1);
+  }
+  // Hand-broken JSON (a stray comma, a missing brace) is a plausible reason to
+  // reach for this script in the first place, and `store.read()` throws a bare
+  // `SyntaxError` for it — not an `InvalidDatasetError`, since the file never
+  // got far enough to be validated. A message beats a stack trace here too.
   console.error(err instanceof Error ? err.message : err);
   process.exit(1);
 }
 
-const out = serializeDataset(data);
-
-if (out === raw) {
-  console.log(`${FILE} is already canonical.`);
-} else {
-  await writeFile(FILE, out, "utf8");
-  console.log(`${FILE} rewritten in canonical form.`);
-}
+const after = (await readFile(DATASET_FILE, "utf8")).replace(/\r\n/g, "\n");
+console.log(
+  after === before
+    ? `${DATASET_FILE} was already canonical.`
+    : `${DATASET_FILE} rewritten in canonical form.`,
+);
