@@ -20,6 +20,8 @@ import assert from "node:assert/strict";
 import { accessSync, constants } from "node:fs";
 import { readdir, readFile } from "node:fs/promises";
 import { join, relative, sep } from "node:path";
+import { pdfFilename } from "../content/source/index";
+import dataset from "../content/data/content.es.json";
 
 const DIST = "dist";
 const landing = await readFile(join(DIST, "index.html"), "utf8");
@@ -139,12 +141,12 @@ test("`/cv` is not indexed", () => {
   );
 });
 
-test("the CV button downloads /cv.pdf under the ATS filename", () => {
+test("the CV button downloads /cv.pdf under the current filename", () => {
   const html = markup(landing);
   assert.ok(html.includes('href="/cv.pdf"'), "the landing lost the /cv.pdf button");
   assert.ok(
-    html.includes('download="Nicolas-Cribb-Barbaro-Full-Stack-Developer.pdf"'),
-    "the download attribute is what names the file (docs/03 §2). Without it the click opens /cv.pdf in the tab.",
+    html.includes(`download="${pdfFilename("es", dataset.updatedAt)}"`),
+    "the download attribute is what names the file. Without it the click opens /cv.pdf in the tab.",
   );
 });
 

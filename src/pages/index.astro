@@ -16,7 +16,7 @@
  * travels to the browser: the client receives already resolved coordinates.
  */
 import Base from "../layouts/Base.astro";
-import { content, formatSeniority, formatDateRange, formatYearMonth, buildKnowledgeGraph, layoutGraph } from "@content";
+import { content, formatSeniority, formatDateRange, formatYearMonth, buildKnowledgeGraph, layoutGraph, pdfFilename } from "@content";
 import { buildPersonJsonLd } from "../lib/jsonld";
 import { buildSvgMap } from "../lib/graph-svg";
 import { buildHoverCss, ITEM_ID } from "../lib/lab-hover-css";
@@ -38,6 +38,7 @@ import "../styles/projects.css";
 import "../styles/lab.css";
 
 const view = await content.getView("portfolio", "es");
+const dataset = await content.getDataset("es");
 // Rule 7: `cv-ats` cuts by priority (cutoff 3) and caps at 5 achievements per
 // role; `portfolio` cuts nothing. The section below has to show EXACTLY what
 // gets printed, because the download button promises "the CV".
@@ -164,7 +165,7 @@ const skillNameById = new Map(
       <a
         class="download"
         href="/cv.pdf"
-        download="Nicolas-Cribb-Barbaro-Full-Stack-Developer.pdf"
+        download={pdfFilename("es", dataset.updatedAt)}
       >
         <span class="download__arrow" aria-hidden="true">↓</span>
         <span class="pill__long">Descargar CV</span>

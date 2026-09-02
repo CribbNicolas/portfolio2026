@@ -9,6 +9,12 @@
  */
 
 import { PDF_OPTIONS, LOAD_WAIT } from "../scripts/pdf-options";
+// A relative import, not `@content`: a Cloudflare Worker build does not
+// resolve that alias, only `astro build` does. `pdf-filename.ts` has no
+// dependency on the rest of the content layer, so importing it directly costs
+// nothing.
+import dataset from "../content/data/content.es.json";
+import { pdfFilename } from "../content/schema/pdf-filename";
 
 /**
  * The page that gets printed. It is the SAME one `scripts/build-pdf.ts` prints
@@ -16,8 +22,15 @@ import { PDF_OPTIONS, LOAD_WAIT } from "../scripts/pdf-options";
  */
 export const SOURCE_PATH = "/cv";
 
-/** The name it is saved under when `PDF_FILENAME` is not configured. */
-export const DEFAULT_FILENAME = "cv.pdf";
+/**
+ * The name it is saved under when `PDF_FILENAME` is not configured.
+ *
+ * The dataset is imported for ONE field. An environment variable was the
+ * alternative and it drifts the day somebody edits content and forgets the
+ * Cloudflare dashboard — the name would then claim a date the PDF does not
+ * have.
+ */
+export const DEFAULT_FILENAME = pdfFilename("es", dataset.updatedAt);
 
 /**
  * One hour. The dataset changes per deploy, not per minute, and every miss eats

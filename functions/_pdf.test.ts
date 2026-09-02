@@ -78,9 +78,12 @@ test("the cache key drops the fragment", () => {
 });
 
 test("the headers declare PDF, filename and TTL", () => {
-  const h = pdfHeaders("CV-Example.pdf");
+  const h = pdfHeaders(DEFAULT_FILENAME);
+  assert.match(
+    h.get("content-disposition") ?? "",
+    /^attachment; filename="Cribb_Nicolas_CV_\d{4}-\d{2}-\d{2}\.pdf"$/,
+  );
   assert.equal(h.get("content-type"), "application/pdf");
-  assert.equal(h.get("content-disposition"), 'attachment; filename="CV-Example.pdf"');
   assert.equal(h.get("cache-control"), `public, max-age=${CACHE_SECONDS}`);
   assert.equal(h.get("x-content-type-options"), "nosniff");
 });

@@ -27,3 +27,7 @@ export * from "../schema/skill-groups";
 // browser.
 export * from "../schema/knowledge-graph";
 export * from "../schema/graph-layout";
+
+// The PDF's file name is text derived from the data, same as a duration.
+// `functions/` imports it directly: a Worker has no `@content` alias.
+export * from "../schema/pdf-filename";
