@@ -26,7 +26,16 @@ import { serializeDataset } from "./serialize";
 import type { ValidationReport } from "./inspect";
 import { inspectDataset } from "./inspect";
 
+/** The dataset the editor writes. Authoring happens in Spanish; see `DATASET_FILES`. */
 export const DATASET_FILE = "content/data/content.es.json";
+
+/**
+ * Every committed dataset. The editor only ever writes the first one — the
+ * English file is a translation, not a second place to author — but the
+ * canonical-form gate and `format:data` cover both, because a file nobody
+ * formats drifts the moment somebody edits it by hand.
+ */
+export const DATASET_FILES = [DATASET_FILE, "content/data/content.en.json"];
 
 /**
  * One queue per resolved file path, not per `DatasetStore` instance. Keying by

@@ -9,6 +9,7 @@
 
 import { test } from "node:test";
 import assert from "node:assert/strict";
+import type { Locale } from "../schema/content-schema";
 import { content } from "./index";
 import { resolveView } from "../schema/resolve-view";
 import { validateDataset } from "../schema/validation";
@@ -100,9 +101,21 @@ test("strict: an unknown key in the dataset throws instead of being dropped", ()
   assert.throws(() => validateDataset(withGarbage), /Unrecognized key|campoInventado/i);
 });
 
+test("the English dataset loads and resolves for every surface", async () => {
+  const data = await content.getDataset("en");
+  assert.equal(data.locale, "en");
+  for (const surface of ["cv-ats", "portfolio", "public-api"] as const) {
+    const view = await content.getView(surface, "en");
+    assert.ok(view.experience.length > 0, `${surface} came out empty in English`);
+  }
+});
+
 test("a locale with no dataset throws instead of silently returning another", async () => {
+  // `es` and `en` both load now, so the loud failure is only reachable through
+  // a locale the type does not admit. The cast is the point: it stands in for
+  // the third language somebody adds to `Locale` without adding a dataset.
   await assert.rejects(
-    () => content.getView("cv", "en"),
+    () => content.getView("cv", "pt" as Locale),
     /Unsupported locale/,
   );
 });
