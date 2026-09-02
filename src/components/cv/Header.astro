@@ -6,22 +6,25 @@
  * Contact goes out as plain text with written labels ("Email:"), not with icons:
  * an icon does not extract and the datum is orphaned.
  */
-import type { ContentView } from "@content";
+import type { ContentView, Locale } from "@content";
+import { MESSAGES } from "@content";
 
 interface Props {
   identity: ContentView["identity"];
+  locale: Locale;
 }
 
-const { identity } = Astro.props;
+const { identity, locale } = Astro.props;
 const { city, region, country } = identity.location;
+const m = MESSAGES[locale];
 ---
 
 <header>
   <h1 class="cv__name">{identity.fullName}</h1>
   <p class="cv__title">{identity.searchTitle}</p>
   <p class="cv__contact">
-    {city}, {region}, {country} · Email: <a href={`mailto:${identity.contact.email}`}>{identity.contact.email}</a>
-    {identity.contact.phone && <> · Tel: {identity.contact.phone}</>}
+    {city}, {region}, {country} · {m.emailLabel}: <a href={`mailto:${identity.contact.email}`}>{identity.contact.email}</a>
+    {identity.contact.phone && <> · {m.phoneLabel}: {identity.contact.phone}</>}
   </p>
   <p class="cv__contact">
     {identity.links.map((link, i) => (

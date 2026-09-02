@@ -167,7 +167,7 @@ test("layer 1: role titles and bullets extract whole", async () => {
   const normal = text.replace(/\s+/g, " ");
 
   for (const role of view.experience) {
-    const title = formatRoleTitle(role);
+    const title = formatRoleTitle(role, "es");
     assert.ok(
       normal.includes(title),
       `the role title "${title}" does not appear contiguous in the extracted text`,

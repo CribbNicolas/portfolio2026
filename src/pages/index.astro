@@ -16,7 +16,7 @@
  * travels to the browser: the client receives already resolved coordinates.
  */
 import Base from "../layouts/Base.astro";
-import { content, formatSeniority, formatDateRange, formatYearMonth, buildKnowledgeGraph, layoutGraph, pdfFilename } from "@content";
+import { content, formatSeniority, formatDateRange, formatYearMonth, buildKnowledgeGraph, layoutGraph, pdfFilename, MESSAGES } from "@content";
 import { buildPersonJsonLd } from "../lib/jsonld";
 import { buildSvgMap } from "../lib/graph-svg";
 import { buildHoverCss, ITEM_ID } from "../lib/lab-hover-css";
@@ -37,13 +37,15 @@ import "../styles/cv.css";
 import "../styles/projects.css";
 import "../styles/lab.css";
 
-const view = await content.getView("portfolio", "es");
-const dataset = await content.getDataset("es");
+const locale = "es";
+const view = await content.getView("portfolio", locale);
+const dataset = await content.getDataset(locale);
 // Rule 7: `cv-ats` cuts by priority (cutoff 3) and caps at 5 achievements per
 // role; `portfolio` cuts nothing. The section below has to show EXACTLY what
 // gets printed, because the download button promises "the CV".
-const viewCv = await content.getView("cv-ats", "es");
+const viewCv = await content.getView("cv-ats", locale);
 const { identity } = view;
+const m = MESSAGES[locale];
 const jsonLd = buildPersonJsonLd(view, new URL(Astro.site!));
 
 /**
@@ -178,7 +180,7 @@ const skillNameById = new Map(
         <p class="home__kicker">{identity.brandTitle}</p>
         <h1 class="home__name">{identity.fullName}</h1>
         <p class="home__role">
-          {identity.searchTitle} · {formatSeniority(view.yearsOfExperience)} · {identity.location.city}, {identity.location.country}
+          {identity.searchTitle} · {formatSeniority(view.yearsOfExperience, locale)} · {identity.location.city}, {identity.location.country}
         </p>
         <p class="home__tagline">{identity.tagline.short}</p>
       </section>
@@ -282,37 +284,37 @@ const skillNameById = new Map(
       <section id="cv" class="cv">
         <h2 class="cv__section-title">Currículum</h2>
 
-        <Section title="Perfil">
+        <Section title={m.sectionProfile}>
           <p class="profile">{viewCv.identity.summary.short}</p>
         </Section>
 
-        <Section title="Habilidades técnicas">
-          <SkillList skills={viewCv.skills} />
+        <Section title={m.sectionSkills}>
+          <SkillList skills={viewCv.skills} locale={locale} />
         </Section>
 
-        <Section title="Experiencia">
-          {viewCv.experience.map((role) => <RoleBlock role={role} />)}
+        <Section title={m.sectionExperience}>
+          {viewCv.experience.map((role) => <RoleBlock role={role} locale={locale} />)}
         </Section>
 
-        <Section title="Educación">
+        <Section title={m.sectionEducation}>
           {viewCv.education.map((e) => (
             <div class="entry">
               <p class="entry__title">{e.degree}{e.field && <> — {e.field}</>}</p>
               <p class="entry__meta">
                 {e.institution}
-                {e.end && <> · {e.start ? formatDateRange(e.start, e.end) : formatYearMonth(e.end)}</>}
-                {e.status === "partial" && <> · Cursado parcial</>}
-                {e.status === "in-progress" && <> · En curso</>}
+                {e.end && <> · {e.start ? formatDateRange(e.start, e.end, locale) : formatYearMonth(e.end, locale)}</>}
+                {e.status === "partial" && <> · {m.studyPartial}</>}
+                {e.status === "in-progress" && <> · {m.studyInProgress}</>}
               </p>
             </div>
           ))}
         </Section>
 
-        <Section title="Idiomas">
+        <Section title={m.sectionLanguages}>
           {viewCv.languages.map((l) => (
             <p class="skill-group">
               <span class="skill-group__label">{l.name}:</span>{" "}
-              {l.level === "native" ? "Nativo" : l.level}
+              {l.level === "native" ? m.levelNative : l.level}
             </p>
           ))}
         </Section>

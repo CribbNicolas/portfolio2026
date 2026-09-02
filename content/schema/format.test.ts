@@ -63,19 +63,19 @@ test("a metric with no numbers returns null, not an empty string", () => {
 });
 
 test("formatYearMonth uses MM/AAAA (docs/03 §2)", () => {
-  assert.equal(formatYearMonth("2023-07"), "07/2023");
+  assert.equal(formatYearMonth("2023-07", "es"), "07/2023");
 });
 
 test("formatDateRange: a null end is Actualidad, not an invented date", () => {
-  assert.equal(formatDateRange("2024-09", null), "09/2024 — Actualidad");
-  assert.equal(formatDateRange("2022-06", "2024-09"), "06/2022 — 09/2024");
+  assert.equal(formatDateRange("2024-09", null, "es"), "09/2024 — Actualidad");
+  assert.equal(formatDateRange("2022-06", "2024-09", "es"), "06/2022 — 09/2024");
 });
 
 test("formatDuration: years and months spelled out, singular included", () => {
-  assert.equal(formatDuration(23), "1 año 11 meses");
-  assert.equal(formatDuration(12), "1 año");
-  assert.equal(formatDuration(5), "5 meses");
-  assert.equal(formatDuration(1), "1 mes");
+  assert.equal(formatDuration(23, "es"), "1 año 11 meses");
+  assert.equal(formatDuration(12, "es"), "1 año");
+  assert.equal(formatDuration(5, "es"), "5 meses");
+  assert.equal(formatDuration(1, "es"), "1 mes");
 });
 
 test("rule 2: a concurrent role declares it in the title", () => {
@@ -91,7 +91,7 @@ test("rule 2: a concurrent role declares it in the title", () => {
     context: { short: "x" },
     visibility: { priority: 2 },
   } as Role;
-  assert.equal(formatRoleTitle(role), "Frontend Developer (en paralelo)");
+  assert.equal(formatRoleTitle(role, "es"), "Frontend Developer (en paralelo)");
 });
 
 test("formatRoleTitle prefers displayTitle when present", () => {
@@ -107,9 +107,27 @@ test("formatRoleTitle prefers displayTitle when present", () => {
     context: { short: "x" },
     visibility: { priority: 1 },
   } as Role;
-  assert.equal(formatRoleTitle(role), "Desarrollador Full Stack");
+  assert.equal(formatRoleTitle(role, "es"), "Desarrollador Full Stack");
 });
 
 test("formatSeniority does not write the number by hand", () => {
-  assert.equal(formatSeniority(6), "6+ años");
+  assert.equal(formatSeniority(6, "es"), "6+ años");
+});
+
+test("formatDuration speaks the locale it is asked for", () => {
+  assert.equal(formatDuration(23, "es"), "1 año 11 meses");
+  assert.equal(formatDuration(23, "en"), "1 year 11 months");
+  assert.equal(formatDuration(1, "en"), "1 month");
+  assert.equal(formatDuration(12, "en"), "1 year");
+});
+
+test("an open range says it is open, in both languages", () => {
+  assert.equal(formatDateRange("2024-01", null, "es"), "01/2024 — Actualidad");
+  assert.equal(formatDateRange("2024-01", null, "en"), "01/2024 — Present");
+});
+
+test("rule 2: a concurrent role declares it in both languages", () => {
+  const role = { title: "Dev", concurrent: true } as Parameters<typeof formatRoleTitle>[0];
+  assert.equal(formatRoleTitle(role, "es"), "Dev (en paralelo)");
+  assert.equal(formatRoleTitle(role, "en"), "Dev (concurrent)");
 });

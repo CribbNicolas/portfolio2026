@@ -19,7 +19,7 @@ import Header from "../components/cv/Header.astro";
 import Section from "../components/cv/Section.astro";
 import RoleBlock from "../components/cv/RoleBlock.astro";
 import SkillList from "../components/cv/SkillList.astro";
-import { content, formatDateRange, formatYearMonth } from "@content";
+import { content, formatDateRange, formatYearMonth, MESSAGES } from "@content";
 import { buildPersonJsonLd } from "../lib/jsonld";
 
 import "@fontsource/manrope/400.css";
@@ -28,8 +28,10 @@ import "@fontsource/manrope/800.css";
 import "../styles/tokens.css";
 import "../styles/cv.css";
 
-const view = await content.getView("cv-ats", "es");
+const locale = "es";
+const view = await content.getView("cv-ats", locale);
 const { identity } = view;
+const m = MESSAGES[locale];
 
 // The JSON-LD comes from `public-api`, not from `cv-ats`: two different
 // surfaces loaded on the same page.
@@ -51,21 +53,21 @@ const jsonLd = buildPersonJsonLd(publicView, new URL(Astro.site!));
   */}
   <meta name="robots" content="noindex, follow" slot="head" />
   <main class="cv">
-    <Header identity={identity} />
+    <Header identity={identity} locale={locale} />
 
-    <Section title="Perfil">
+    <Section title={m.sectionProfile}>
       <p class="profile">{identity.summary.short}</p>
     </Section>
 
-    <Section title="Habilidades técnicas">
-      <SkillList skills={view.skills} />
+    <Section title={m.sectionSkills}>
+      <SkillList skills={view.skills} locale={locale} />
     </Section>
 
-    <Section title="Experiencia">
-      {view.experience.map((role) => <RoleBlock role={role} />)}
+    <Section title={m.sectionExperience}>
+      {view.experience.map((role) => <RoleBlock role={role} locale={locale} />)}
     </Section>
 
-    <Section title="Educación">
+    <Section title={m.sectionEducation}>
       {view.education.map((e) => (
         <div class="entry">
           <p class="entry__title">{e.degree}{e.field && <> — {e.field}</>}</p>
@@ -73,19 +75,19 @@ const jsonLd = buildPersonJsonLd(publicView, new URL(Astro.site!));
             {e.institution}
             {/* Without `start` there is no range: formatDateRange(end, end) would print
                 "02/2022 — 02/2022", que se lee como un error de carga. */}
-            {e.end && <> · {e.start ? formatDateRange(e.start, e.end) : formatYearMonth(e.end)}</>}
-            {e.status === "partial" && <> · Cursado parcial</>}
-            {e.status === "in-progress" && <> · En curso</>}
+            {e.end && <> · {e.start ? formatDateRange(e.start, e.end, locale) : formatYearMonth(e.end, locale)}</>}
+            {e.status === "partial" && <> · {m.studyPartial}</>}
+            {e.status === "in-progress" && <> · {m.studyInProgress}</>}
           </p>
         </div>
       ))}
     </Section>
 
-    <Section title="Idiomas">
+    <Section title={m.sectionLanguages}>
       {view.languages.map((l) => (
         <p class="skill-group">
           <span class="skill-group__label">{l.name}:</span>{" "}
-          {l.level === "native" ? "Nativo" : l.level}
+          {l.level === "native" ? m.levelNative : l.level}
         </p>
       ))}
     </Section>

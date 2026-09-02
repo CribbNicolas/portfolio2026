@@ -11,14 +11,15 @@ import type { APIRoute } from "astro";
 import { content, formatDateRange, formatRoleTitle, formatSeniority, groupedSkills } from "@content";
 
 export const GET: APIRoute = async ({ site }) => {
-  const view = await content.getView("public-api", "es");
+  const locale = "es";
+  const view = await content.getView("public-api", locale);
   const { identity } = view;
   const base = site?.toString().replace(/\/$/, "") ?? "";
 
   const lineas = [
     `# ${identity.fullName}`,
     "",
-    `${identity.searchTitle} (${identity.brandTitle}) · ${formatSeniority(view.yearsOfExperience)} · ${identity.location.city}, ${identity.location.country} · ${identity.location.timezone}`,
+    `${identity.searchTitle} (${identity.brandTitle}) · ${formatSeniority(view.yearsOfExperience, locale)} · ${identity.location.city}, ${identity.location.country} · ${identity.location.timezone}`,
     "",
     identity.summary.short,
     "",
@@ -33,13 +34,13 @@ export const GET: APIRoute = async ({ site }) => {
     // Same grouping and same order as the CV: `groupedSkills` is the one
     // definition. Walking `view.skills` here is what made this surface print
     // `- language:` while the CV printed `Lenguajes:`.
-    ...groupedSkills(view.skills)
+    ...groupedSkills(view.skills, locale)
       .map(({ label, skills }) => `- ${label}: ${skills.map((s) => s.name).join(", ")}`),
     "",
     "## Experiencia",
     ...view.experience.flatMap((role) => [
-      `### ${formatRoleTitle(role)} · ${role.clientDescription ? `${role.company} — ${role.clientDescription}` : role.company}`,
-      `${formatDateRange(role.start, role.end)} · ${role.employmentType} · ${role.workMode}`,
+      `### ${formatRoleTitle(role, locale)} · ${role.clientDescription ? `${role.company} — ${role.clientDescription}` : role.company}`,
+      `${formatDateRange(role.start, role.end, locale)} · ${role.employmentType} · ${role.workMode}`,
       role.context.short,
       ...role.achievements.map((a) => `- ${a.text.short}`),
       "",

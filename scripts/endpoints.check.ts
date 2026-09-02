@@ -112,7 +112,7 @@ test("/llms.txt prints role titles whole", async () => {
   // the "(en paralelo)" of rule 2, and building the heading by hand loses it.
   const view = await content.getView("public-api", "es");
   for (const role of view.experience) {
-    const title = formatRoleTitle(role);
+    const title = formatRoleTitle(role, "es");
     assert.ok(
       llms.includes(title),
       `the role title "${title}" does not appear whole in /llms.txt`,
@@ -125,7 +125,7 @@ test("/llms.txt groups the skills the same way the CV does", async () => {
   // printed `Lenguajes:` in editorial order and this one `- language:` in
   // insertion order, so an agent comparing them saw two taxonomies (§9).
   const view = await content.getView("public-api", "es");
-  for (const { label, skills } of groupedSkills(view.skills)) {
+  for (const { label, skills } of groupedSkills(view.skills, "es")) {
     assert.ok(
       llms.includes(`- ${label}: `),
       `/llms.txt does not print the "${label}" group`,

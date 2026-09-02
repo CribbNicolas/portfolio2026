@@ -33,7 +33,7 @@ export async function ogTexts(): Promise<Record<string, string>> {
     // The same line the landing hero builds. Seniority is DERIVED (invariant
     // 3): `formatSeniority` over the years the view already computed, never a
     // number written here.
-    role: `${identity.searchTitle} · ${formatSeniority(view.yearsOfExperience)} · ${identity.location.city}, ${identity.location.country}`,
+    role: `${identity.searchTitle} · ${formatSeniority(view.yearsOfExperience, "es")} · ${identity.location.city}, ${identity.location.country}`,
   };
 }
 
