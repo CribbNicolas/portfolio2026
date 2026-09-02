@@ -37,7 +37,22 @@ test("rule 4: an estimated before/after marks BOTH ends", () => {
     after: "12 s",
     confidence: "estimated",
   });
-  assert.equal(out, "~90 s → ~12 s");
+  assert.equal(out, "de ~90 s a ~12 s");
+});
+
+test("what formatMetric emits stays inside the loaded font subset", () => {
+  // The pages load Manrope's `latin` subset only. A glyph outside it — `→` was
+  // the one that got through — makes Chromium substitute a system font for that
+  // character, and the PDF stops being fully embedded. Caught in CI on Linux;
+  // on Windows the substitute has another name and the check stayed quiet.
+  const out = formatMetric({
+    label: "tiempo de indexado",
+    before: "3-5 s",
+    after: "500 ms",
+    confidence: "estimated",
+  })!;
+  const outside = [...out].filter((c) => c.codePointAt(0)! > 0xff);
+  assert.deepEqual(outside, [], `outside the latin subset: ${outside.join(" ")}`);
 });
 
 test("a metric with no numbers returns null, not an empty string", () => {

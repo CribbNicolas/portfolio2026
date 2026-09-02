@@ -248,18 +248,22 @@ test("the fonts travel inside the PDF, they are not borrowed from the machine", 
     `these fonts carry no subset prefix, so they are referenced and not embedded: ${notSubset.join(", ")}`,
   );
 
-  // The failure mode this exists for: Manrope does not load, Chromium
-  // substitutes, and the PDF comes out in a system font. The substitute is
-  // always one of these.
-  const fallbacks = baseFonts.filter((f) =>
-    /(Helvetica|Arial|Times|Courier|Liberation|DejaVu|Nimbus)/i.test(f),
-  );
+  // The failure mode this exists for: Manrope does not load — or one glyph is
+  // outside the subset that IS loaded — Chromium substitutes, and part of the
+  // PDF comes out in a system font.
+  //
+  // An allowlist and not a list of known substitutes: the substitute depends on
+  // the machine. `→` was printed as DejaVuSans on the Linux runner and as
+  // something else here, so a blacklist of Helvetica/DejaVu/Nimbus was red in CI
+  // and green locally — the worst possible split for a gate.
+  const foreign = baseFonts.filter((f) => !/Manrope/i.test(f));
   assert.deepEqual(
-    fallbacks,
+    foreign,
     [],
-    `a fallback font reached the PDF: ${fallbacks.join(", ")}. ` +
-      "It means Manrope did not load when it was printed — check that the render " +
-      "still waits for `document.fonts.ready`.",
+    `a font that is not Manrope reached the PDF: ${foreign.join(", ")}. ` +
+      "Either Manrope did not load (check that the render still waits for " +
+      "`document.fonts.ready`) or a character outside the `latin` subset was " +
+      "printed and Chromium substituted for that glyph alone.",
   );
 
   // One embedded program per distinct font. `/FontFile2` is TrueType, which is
