@@ -8,7 +8,8 @@
  * - `OrbitControls`: registers `wheel` and calls `preventDefault`. That is
  *   scroll hijacking, forbidden by spec §3.4. Rejected on behaviour.
  * - postprocessing / `EffectComposer`: full-screen render targets per frame. On
- *   a mid-range phone that is pure fill rate.
+ *   a mid-range phone that is pure fill rate. Roundness is Phong + fresnel on
+ *   the same draw call, not a bloom pass.
  * - `Raycaster`: the hit test is done by projecting to NDC, which has to be
  *   computed anyway to place the tooltip. Importing it would be paying twice.
  * - any `TextGeometry` / font atlas: the text lives in the SVG and in the DOM
@@ -18,15 +19,18 @@
 import {
   WebGLRenderer, Scene, PerspectiveCamera,
   BufferGeometry, Float32BufferAttribute, InstancedBufferAttribute,
-  InstancedMesh, CircleGeometry, MeshBasicMaterial,
+  InstancedMesh, SphereGeometry, MeshPhongMaterial,
   LineSegments, LineBasicMaterial,
-  Color, Matrix4, Vector3,
+  HemisphereLight, DirectionalLight,
+  ACESFilmicToneMapping,
+  Color, Matrix4, Vector3, Quaternion,
 } from "three";
 
 import { frameMeter } from "./capability";
 import { createInteraction } from "./interaction";
 import type { LabData, LabNode, LabScene } from "./types";
 import type { HoverBus } from "./hover-bus";
+import { isStickyMapLabel } from "../../lib/map-labels";
 
 /**
  * Base radii. Larger than the SVG's on purpose: in the SVG a node leans on
@@ -42,7 +46,7 @@ interface Options {
   bus: HoverBus;
   tooltip: HTMLElement | null;
   panel: HTMLElement | null;
-  /** Role and project labels, server-rendered. Positioned every frame. */
+  /** Role, project and sticky-skill labels, server-rendered. Positioned every frame. */
   labels: HTMLElement[];
 }
 
@@ -53,13 +57,18 @@ export async function mountGraph({ canvas, data, bus, tooltip, panel, labels }: 
     // worth skipping, and the frame meter verifies it anyway.
     const finePointer = matchMedia("(pointer: fine)").matches;
     renderer = new WebGLRenderer({ canvas, antialias: finePointer, alpha: true, powerPreference: "low-power" });
+    // Built-in, not a pass: it costs a colour transform, not a full-screen target.
+    renderer.toneMapping = ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.0;
   } catch {
     return null;
   }
 
   const container = canvas.parentElement ?? canvas;
   const scene = new Scene();
-  const camera = new PerspectiveCamera(42, 1, 1, 6000);
+  // Wider than 42: the camera sits closer for the same framing, so near and
+  // far nodes differ more in size. That is most of the "this is 3D" reading.
+  const camera = new PerspectiveCamera(52, 1, 1, 6000);
 
   // Colors come from the tokens: zero hex in JS, and dark mode comes for free
   // because `tokens.css` already resolves it by media query.
@@ -74,56 +83,133 @@ export async function mountGraph({ canvas, data, bus, tooltip, panel, labels }: 
   let colors = readColors();
 
   /**
+   * Illumination has to be bright in both themes: it is light, not a fill.
+   * The lighter of ink/background is white-ish in light mode and pale in dark.
+   */
+  const lampColor = () => {
+    const lum = (c: Color) => 0.2126 * c.r + 0.7152 * c.g + 0.0722 * c.b;
+    const base = lum(colors.background) > lum(colors.ink)
+      ? colors.background.clone().lerp(colors.ink, 0.08)
+      : colors.ink.clone().lerp(colors.background, 0.08);
+    return base.lerp(colors.accent, 0.1);
+  };
+
+  const hemi = new HemisphereLight();
+  const key = new DirectionalLight();
+  let uAccent: { value: Color } | null = null;
+
+  /**
    * Four kinds with ONE accent (spec §4). The kind is told apart by size and by
-   * value — how dark it is — not by hue: that way it survives in black and
-   * white, which is criterion 2 of §5. The accent stays reserved for the
-   * achievements, which are the evidence.
-   *
-   * Skills are lightened by mixing with the background instead of hard-coding a
-   * grey: the color still comes from the tokens and dark mode still works.
+   * value — how dark it is — not by a second hue. Achievements keep the accent
+   * pure (they are the evidence). Everyone else is ink mixed with a little
+   * terracotta, so the "grays" are of this palette and not a cool UI chrome.
+   * The same mixes live in `lab.css` for the SVG fallback.
    */
   const colorFor = (kind: string, degree: number): Color => {
-    if (degree === 0) return colors.soft.clone().lerp(colors.background, 0.45);
+    if (degree === 0) {
+      return colors.soft.clone().lerp(colors.accent, 0.1).lerp(colors.background, 0.42);
+    }
     if (kind === "achievement") return colors.accent;
-    if (kind === "role") return colors.ink;
-    if (kind === "project") return colors.soft;
-    return colors.soft.clone().lerp(colors.background, 0.25);
+    if (kind === "role") return colors.ink.clone().lerp(colors.accent, 0.1);
+    if (kind === "project") return colors.soft.clone().lerp(colors.accent, 0.32);
+    return colors.soft.clone().lerp(colors.accent, 0.2).lerp(colors.background, 0.12);
   };
 
   // --- Nodos: 1 draw call --------------------------------------------------
   const nodes = data.nodes;
-  // 20 segments: at 12 the polygon shows at these radii. 20 is where the flat
-  // edge stops being visible and it is still 740 triangles in total.
-  const nodeGeo = new CircleGeometry(1, 20);
+  // Spheres, not billboarded discs. Phong (a specular hit) + a fresnel rim on
+  // the same draw call is what makes them read round; Lambert was a sticker.
+  // EffectComposer is rejected above: this is cheap and keeps the hierarchy
+  // (size + accent) instead of blooming everything equally.
+  const nodeGeo = new SphereGeometry(1, 24, 18);
 
   /**
-   * Fog through ALPHA, not through color.
+   * Fog through ALPHA and occlusion, not through `Fog`.
    *
    * `Fog` blends the fragment toward a color, and with a transparent panel that
    * color does not exist: a distant node would end up a solid pale disc instead
-   * of letting the field show through. The right behaviour is fading to nothing.
+   * of letting the field show through. Alpha still recedes the back of the
+   * cloud; `depthWrite` is what stops two mid-opacity discs from blending into
+   * a muddy blob — the nearer sphere hides the farther one.
    *
-   * `MeshBasicMaterial` has no per-instance opacity, so an instanced attribute
-   * is injected into the shader. That is ~10 lines against writing a whole
-   * `ShaderMaterial` and losing everything three already solves.
+   * Per-instance opacity and a "lift" (focus / evidence) are injected into
+   * Phong rather than writing a ShaderMaterial and losing lights.
    */
   const alphas = new InstancedBufferAttribute(new Float32Array(nodes.length).fill(1), 1);
-  const nodeMat = new MeshBasicMaterial({ transparent: true, depthWrite: false });
+  const lifts = new InstancedBufferAttribute(new Float32Array(nodes.length).fill(0), 1);
+  const nodeMat = new MeshPhongMaterial({
+    transparent: true,
+    depthWrite: true,
+    shininess: 18,
+    specular: lampColor(),
+  });
   nodeMat.onBeforeCompile = (shader) => {
-    shader.vertexShader = `attribute float instanceAlpha;\nvarying float vAlpha;\n${shader.vertexShader}`
-      .replace("#include <begin_vertex>", "#include <begin_vertex>\n  vAlpha = instanceAlpha;");
-    shader.fragmentShader = `varying float vAlpha;\n${shader.fragmentShader}`
-      .replace("#include <color_fragment>", "#include <color_fragment>\n  diffuseColor.a *= vAlpha;");
+    shader.uniforms.uAccent = { value: colors.accent.clone() };
+    uAccent = shader.uniforms.uAccent as { value: Color };
+    shader.vertexShader = shader.vertexShader
+      .replace(
+        "#include <common>",
+        "#include <common>\nattribute float instanceAlpha;\nattribute float instanceLift;\nvarying float vAlpha;\nvarying float vLift;",
+      )
+      .replace(
+        "#include <begin_vertex>",
+        "#include <begin_vertex>\n  vAlpha = instanceAlpha;\n  vLift = instanceLift;",
+      );
+    shader.fragmentShader = shader.fragmentShader
+      .replace(
+        "#include <common>",
+        "#include <common>\nuniform vec3 uAccent;\nvarying float vAlpha;\nvarying float vLift;",
+      )
+      .replace(
+        "#include <color_fragment>",
+        "#include <color_fragment>\n  diffuseColor.a *= vAlpha;",
+      )
+      .replace(
+        "vec3 outgoingLight = reflectedLight.directDiffuse + reflectedLight.indirectDiffuse + reflectedLight.directSpecular + reflectedLight.indirectSpecular + totalEmissiveRadiance;",
+        `vec3 outgoingLight = reflectedLight.directDiffuse + reflectedLight.indirectDiffuse + reflectedLight.directSpecular + reflectedLight.indirectSpecular + totalEmissiveRadiance;
+  float ndv = clamp(dot(normalize(vNormal), normalize(vViewPosition)), 0.0, 1.0);
+  float fresnel = pow(1.0 - ndv, 2.6);
+  outgoingLight += uAccent * fresnel * (0.07 + vLift * 0.22);
+  outgoingLight += outgoingLight * vLift * 0.06;`,
+      );
+  };
+
+  const placeLights = () => {
+    const lamp = lampColor();
+    // Sky vs ground stays in WORLD space (up is up). The key is attached to
+    // the camera each frame: a world-fixed key made the highlight crawl
+    // around every sphere while the graph spun, which read as the light
+    // rotating with the map.
+    hemi.color.copy(lamp);
+    hemi.groundColor.copy(colors.background).lerp(colors.ink, 0.28);
+    hemi.intensity = 0.88;
+    key.color.copy(lamp);
+    key.intensity = 1.05;
+    nodeMat.specular.copy(lamp).lerp(colors.accent, 0.08);
+    if (uAccent) uAccent.value.copy(colors.accent);
+  };
+  placeLights();
+  scene.add(hemi, key);
+
+  const keyRight = new Vector3();
+  const keyUp = new Vector3();
+  const aimKey = () => {
+    // Slightly above-right of the view, not a dead headlamp.
+    keyRight.set(1, 0, 0).applyQuaternion(camera.quaternion);
+    keyUp.set(0, 1, 0).applyQuaternion(camera.quaternion);
+    key.position.copy(camera.position)
+      .addScaledVector(keyRight, dist * 0.16)
+      .addScaledVector(keyUp, dist * 0.2);
   };
 
   const mesh = new InstancedMesh(nodeGeo, nodeMat, nodes.length);
   mesh.geometry.setAttribute("instanceAlpha", alphas);
+  mesh.geometry.setAttribute("instanceLift", lifts);
   // Edges go below; nodes on top.
   mesh.renderOrder = 1;
   const m4 = new Matrix4();
+  const noRot = new Quaternion();
 
-  // Billboarding: the discs have to FACE the camera. Without this they are flat
-  // in space and, while orbiting, read as squashed ellipses rather than nodes.
   const instPos = new Vector3();
   const instScale = new Vector3();
   const order = nodes.map((_, i) => i);
@@ -158,21 +244,32 @@ export async function mountGraph({ canvas, data, bus, tooltip, panel, labels }: 
 
       // `n.r` comes from the build: 1 except on skills, where it encodes years
       // of use × connections. The per-kind radius stays a base, not an answer.
+      const depth = fade(distances[i]!);
       const base = (RADIUS[n.k] ?? 5) * n.r;
-      const r = base * (isFocus ? 2.1 : highlight ? 1.6 : 1);
+      // Far nodes shrink as well as fade: a large ghost sitting on a near
+      // sphere is what used to read as overlap, not as depth.
+      const r = base * (isFocus ? 2.1 : highlight ? 1.6 : 1) * (0.72 + 0.28 * depth);
       instPos.set(n.x, n.y, n.z);
       instScale.set(r, r, r);
-      m4.compose(instPos, camera.quaternion, instScale);
+      m4.compose(instPos, noRot, instScale);
       mesh.setMatrixAt(slot, m4);
 
-      mesh.setColorAt(slot, highlight ? colors.accent : colorFor(n.k, n.d));
-      // Distant things fade to transparent and let the field show. What is
-      // pointed at never fades: if you are looking at it, it has to be visible.
-      alphas.array[slot] = highlight ? 1 : fade(distances[i]!) * (dimmed ? DIMMED : 1);
+      const tint = (highlight ? colors.accent : colorFor(n.k, n.d)).clone();
+      if (!highlight) tint.lerp(colors.background, (1 - depth) * 0.38);
+      mesh.setColorAt(slot, tint);
+      // Front of the cloud stays nearly solid. The floor used to be 0.14, which
+      // made every layer a veil and they stacked into mud.
+      alphas.array[slot] = highlight ? 1 : Math.max(0.62, depth) * (dimmed ? DIMMED : 1);
+      // Lift is the cheap substitute for bloom: only the thing you pointed at,
+      // plus a whisper on achievements (the evidence) and roles (the crust).
+      lifts.array[slot] = dimmed
+        ? 0
+        : isFocus ? 1 : highlight ? 0.55 : n.k === "achievement" ? 0.3 : n.k === "role" ? 0.12 : 0;
     }
 
     mesh.instanceMatrix.needsUpdate = true;
     alphas.needsUpdate = true;
+    lifts.needsUpdate = true;
     if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
   };
 
@@ -202,7 +299,14 @@ export async function mountGraph({ canvas, data, bus, tooltip, panel, labels }: 
 
   const lines = new LineSegments(
     edgeGeo,
-    new LineBasicMaterial({ vertexColors: true, transparent: true, depthWrite: false }),
+    new LineBasicMaterial({
+      vertexColors: true,
+      transparent: true,
+      depthWrite: false,
+      // Nodes write depth: an edge that passes behind a sphere disappears
+      // instead of drawing on top of it. That is the other half of "this is 3D".
+      depthTest: true,
+    }),
   );
   lines.renderOrder = 0;
   scene.add(lines);
@@ -225,10 +329,10 @@ export async function mountGraph({ canvas, data, bus, tooltip, panel, labels }: 
       const ofFocus = hasFocus && (nodes[a]!.i === focus || nodes[b]!.i === focus);
       const dimmedEdge = hasFocus && !ofFocus;
 
-      const c = ofFocus ? colors.accent : affinity ? colors.accent : colors.line;
-      // Affinity edges are the derived ones: more present, but never above the
-      // structure declared in the dataset.
-      const base = ofFocus ? 0.95 : affinity ? 0.6 : 0.4;
+      // Idle edges pick up a dust of accent so they are not a cool gray
+      // against terracotta spheres. Full accent is still focus-only.
+      const c = ofFocus ? colors.accent : colors.line.clone().lerp(colors.accent, 0.28);
+      const base = ofFocus ? 0.95 : affinity ? 0.22 : 0.38;
 
       for (const [k, nodeIdx] of [[0, a], [1, b]] as const) {
         const o = e * 8 + k * 4;
@@ -243,23 +347,23 @@ export async function mountGraph({ canvas, data, bus, tooltip, panel, labels }: 
   // Framed on the ring, which is the real edge of the drawing. `layoutGraph`
   // normalizes the body to a fixed radius, so this number does not move as the
   // dataset grows.
-  const dist = data.radius / Math.tan((42 * Math.PI) / 360) * 0.92;
+  const dist = data.radius / Math.tan((52 * Math.PI) / 360) * 0.7;
   let width = 1, height = 1;
 
   /**
    * Depth fog, in alpha.
    *
-   * It is THE thing separating a graph with volume from a cloud of points:
-   * perspective alone is not enough to read what is behind. It goes on alpha and
-   * not on color because the panel is transparent — blending toward a color
-   * would leave solid pale discs covering the field.
+   * The front of the cloud has to stay solid or every layer is a veil. Fade
+   * only starts after the near third, and the floor is high enough that a far
+   * node recedes without turning into a ghost that paints over what is in front.
    */
-  const NEAR = dist - data.radius * 1.05;
-  const FAR = dist + data.radius * 1.35;
+  const NEAR = dist - data.radius * 0.35;
+  const FAR = dist + data.radius * 1.15;
 
   function fade(distance: number): number {
     const t = (distance - NEAR) / (FAR - NEAR);
-    return Math.max(0.14, Math.min(1, 1 - t));
+    const clamped = Math.max(0, Math.min(1, t));
+    return 1 - clamped * 0.4;
   }
 
   const resize = () => {
@@ -295,10 +399,23 @@ export async function mountGraph({ canvas, data, bus, tooltip, panel, labels }: 
     wake: () => wake(),
   });
 
-  // Slow autonomous spin while nobody touches anything. It is what hints the
-  // map is three-dimensional before the user discovers they can drag it.
+  // Slow autonomous spin. Pauses while the user drags, while inertia is still
+  // running, and while the detail panel is open. After a quiet stretch it
+  // starts again — otherwise the map dies the first time someone touches it.
   const DRIFT = 0.0009;
-  let interacted = false;
+  const IDLE_RESUME_MS = 4000;
+  let autoSpin = true;
+  let idleTimer = 0;
+
+  const armIdleSpin = () => {
+    if (idleTimer) clearTimeout(idleTimer);
+    idleTimer = window.setTimeout(() => {
+      idleTimer = 0;
+      if (!alive || interaction.state.focus || interaction.state.dragging) return;
+      autoSpin = true;
+      wake();
+    }, IDLE_RESUME_MS);
+  };
 
   const onScroll = () => wake();
   addEventListener("scroll", onScroll, { passive: true });
@@ -328,28 +445,26 @@ export async function mountGraph({ canvas, data, bus, tooltip, panel, labels }: 
 
   const vLabel = new Vector3();
   const placeLabels = () => {
-    // Overlap is resolved the same way as in the SVG: front to back, the nearest
-    // keeps the label. Without this "Plugins de WordPress con tooling moderno"
-    // covers "Dinkum Interactive". Since the loop sleeps once it converges, it
-    // does not flicker at rest.
+    // Sticky names (workplaces, and skills as big as a workplace) are placed
+    // first and never dropped for overlap. Projects still yield, or a long
+    // title covers Dinkum. The loop sleeps once it converges, so it does not
+    // flicker at rest.
+    const focused = interaction.state.focus !== null;
     const candidates = anchors
       .map(({ el, node }) => {
         vLabel.set(node.x, node.y, node.z);
         const distance = camera.position.distanceTo(vLabel);
         vLabel.project(camera);
+        const sticky = isStickyMapLabel({ kind: node.k, r: node.r });
         return {
-          el, node, distance,
+          el, node, distance, sticky,
           behind: vLabel.z > 1,
           sx: (vLabel.x * 0.5 + 0.5) * width,
           sy: (-vLabel.y * 0.5 + 0.5) * height,
         };
       })
-      // Roles win the label on a tie for space, even when a project is nearer:
-      // there are four of them and they organize how the map reads. Losing
-      // "Dinkum Interactive" because a project's long name passed in front of it
-      // is losing the most important thing first.
       .sort((a, b) =>
-        (a.node.k === "role" ? 0 : 1) - (b.node.k === "role" ? 0 : 1) ||
+        Number(b.sticky) - Number(a.sticky) ||
         a.distance - b.distance,
       );
 
@@ -359,22 +474,22 @@ export async function mountGraph({ canvas, data, bus, tooltip, panel, labels }: 
       // Behind the camera: `project` returns mirrored, meaningless coordinates.
       if (c.behind) { c.el.style.opacity = "0"; continue; }
 
-      const y = c.sy - RADIUS[c.node.k]! - 14;
+      const y = c.sy - RADIUS[c.node.k]! * c.node.r - 14;
       const w = widthOf.get(c.el) ?? 80;
-      // The box is taller than the text on purpose: two labels on nearly
-      // adjacent lines do not "collide" geometrically but read as one.
       const box = { x1: c.sx - w / 2 - 10, x2: c.sx + w / 2 + 10, y1: y - 22, y2: y + 16 };
 
-      if (placed.some((p) => box.x1 < p.x2 && box.x2 > p.x1 && box.y1 < p.y2 && box.y2 > p.y1)) {
+      if (!c.sticky && placed.some((p) => box.x1 < p.x2 && box.x2 > p.x1 && box.y1 < p.y2 && box.y2 > p.y1)) {
         c.el.style.opacity = "0";
         continue;
       }
       placed.push(box);
 
-      // Opacity follows the same fog as the scene, so the text does not float
-      // crisp over a node that is fading out.
-      const t = (c.distance - (dist - data.radius * 1.15)) / (data.radius * 2.65);
-      c.el.style.opacity = Math.max(0.2, Math.min(1, 1 - t)).toFixed(2);
+      const t = (c.distance - (dist - data.radius * 0.45)) / (data.radius * 2.2);
+      const fog = Math.max(0.12, Math.min(1, 1 - t));
+      // Sticky names stay readable: workplaces (and the skills that match them
+      // in size) do not vanish into the fog or when the panel is open.
+      const opacity = c.sticky ? Math.max(0.9, fog) : focused ? fog * 0.28 : fog;
+      c.el.style.opacity = opacity.toFixed(2);
       c.el.style.transform = `translate3d(${c.sx.toFixed(1)}px, ${y.toFixed(1)}px, 0) translateX(-50%)`;
     }
   };
@@ -403,12 +518,20 @@ export async function mountGraph({ canvas, data, bus, tooltip, panel, labels }: 
     const verdict = measure(now);
     if (verdict === false) { shutDown(); return; }
 
-    // Drag inertia, and slow drift until the user touches something.
     const withInertia = interaction.advance();
-    if (!interacted && !interaction.state.dragging) {
-      if (withInertia || interaction.state.focus || interaction.state.hover) interacted = true;
-      else interaction.state.camera.yaw += DRIFT;
+    const busy =
+      interaction.state.dragging ||
+      withInertia ||
+      interaction.state.focus !== null;
+
+    if (busy) {
+      autoSpin = false;
+      if (idleTimer) { clearTimeout(idleTimer); idleTimer = 0; }
+    } else if (!autoSpin && idleTimer === 0) {
+      armIdleSpin();
     }
+
+    if (autoSpin) interaction.state.camera.yaw += DRIFT;
 
     const rx = interaction.state.camera.pitch;
     const ry = interaction.state.camera.yaw;
@@ -425,6 +548,7 @@ export async function mountGraph({ canvas, data, bus, tooltip, panel, labels }: 
     // `pointermove` does not deliver the same delta every frame, that offset
     // changes size frame to frame: the labels shiver over the nodes.
     camera.updateMatrixWorld();
+    aimKey();
 
     // Hover is recomputed AFTER moving the camera: otherwise the hit test uses
     // the previous frame's projection and the node under the cursor lags by one
@@ -444,7 +568,7 @@ export async function mountGraph({ canvas, data, bus, tooltip, panel, labels }: 
 
     // The loop stops when nothing is moving any more. While measuring
     // (verdict === null) it never sleeps, or the measurement never finishes.
-    still = verdict !== null && !withInertia && !interaction.state.dragging && interacted;
+    still = verdict !== null && !autoSpin && !busy;
     if (!still) rafId = requestAnimationFrame(frame);
   };
 
@@ -471,6 +595,7 @@ export async function mountGraph({ canvas, data, bus, tooltip, panel, labels }: 
   const themeMq = matchMedia("(prefers-color-scheme: dark)");
   const onThemeChange = () => {
     colors = readColors();
+    placeLights();
     wake(); // the frame rewrites colors and alphas with the new palette
   };
   themeMq.addEventListener("change", onThemeChange);
@@ -482,6 +607,7 @@ export async function mountGraph({ canvas, data, bus, tooltip, panel, labels }: 
     if (!alive) return;
     alive = false;
     if (rafId) cancelAnimationFrame(rafId);
+    if (idleTimer) { clearTimeout(idleTimer); idleTimer = 0; }
     // The SVG was never removed from the DOM: reverting is dropping a class.
     container.classList.remove("lab__map--3d");
     interaction.destroy();

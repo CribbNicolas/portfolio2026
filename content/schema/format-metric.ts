@@ -21,11 +21,17 @@ const APPROX = "~";
  *
  * `before`/`after` wins over `delta` because showing the full movement is more
  * defensible in an interview than a percentage on its own.
+ *
+ * The movement is written "de X a Y" and NOT with an arrow: `→` (U+2192) is
+ * outside Manrope's `latin` subset, the only one the pages load. Chromium
+ * silently substitutes a system font for that one glyph, so the PDF stopped
+ * carrying only embedded fonts — which is exactly what `pdf-output.check.ts`
+ * refuses. Anything this file emits gets printed: it stays inside the subset.
  */
 export function formatMetric(m: Metric): string | null {
   const approx = m.confidence === "estimated" ? APPROX : "";
 
-  if (m.before && m.after) return `${approx}${m.before} → ${approx}${m.after}`;
+  if (m.before && m.after) return `de ${approx}${m.before} a ${approx}${m.after}`;
   if (m.delta) return `${approx}${m.delta}`;
   return null;
 }

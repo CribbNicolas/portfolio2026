@@ -79,7 +79,7 @@ export function createInteraction({
   }
 
   const state: InteractionState = {
-    camera: { yaw: 0.62, pitch: -0.42 },
+    camera: { yaw: 0.72, pitch: -0.52 },
     hover: null,
     focus: null,
     neighbourhood: new Set(),
@@ -103,6 +103,10 @@ export function createInteraction({
   const onDown = (e: PointerEvent) => {
     // Primary button only: the secondary one opens the context menu and is not ours.
     if (e.button !== 0) return;
+    // The canvas is `pointer-events: none`, so the drag hits the SVG underneath
+    // and the browser starts selecting labels. CSS `user-select: none` is the
+    // real fix; this clears a selection that already started.
+    getSelection()?.removeAllRanges();
     pointerId = e.pointerId;
     startX = prevX = e.clientX;
     startY = prevY = e.clientY;
@@ -248,10 +252,9 @@ export function createInteraction({
     const n = byId.get(id);
     if (!n) return;
 
-    // Roles and projects already carry their label drawn next to the node: a
-    // tooltip with the same text is noise. The tooltip exists for the nodes
-    // WITHOUT a label — skills and achievements, which are most of them.
-    const alreadyLabelled = (n.k === "role" || n.k === "project") && labelVisible(id);
+    // If the name is already drawn next to the node, a tooltip with the same
+    // text is noise. Skills without a sticky label still get the tooltip.
+    const alreadyLabelled = labelVisible(id);
     if (alreadyLabelled) { hideTooltip(); return; }
 
     tooltip.textContent = n.k === "achievement" ? n.t : n.n;

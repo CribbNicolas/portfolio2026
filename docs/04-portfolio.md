@@ -68,12 +68,12 @@ trade-off it was not a decision.
 | Project | What it demonstrates |
 |---|---|
 | **JWD Maderas** | A complete product for a real business, with a measurable outcome. Next.js + Sanity. |
-| **District maps** | Uncommon technical depth: geospatial data, Mapbox GL JS, solving rendering problems. |
+| **RPPL PL-spending map** | Uncommon technical depth: ~13.000 districts, Mapbox GL JS, FastIndex, rendering problems. |
 | **WordPress plugins with modern tooling** | Working in legacy environments without breaking them. In freelance this sells enormously. |
 
-All three are in the dataset with `featured: true` and their `slug`. The
-`problem` and `outcome` of two of them are missing, and so is all the visual
-material.
+All three are in the dataset with `featured: true` and their `slug`. The RPPL
+map has problem, outcome, decisions and a live link (2026-09-01). JWD and
+`wp-plugins` still miss outcome numbers, and all three miss visual material.
 
 **Private projects:** they can be shown without links. `links: []` and
 `clientDescription` instead of `client`. Worth it when the technical case is

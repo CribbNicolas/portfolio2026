@@ -66,15 +66,16 @@ export function cacheKey(requestedUrl: string): Request {
 }
 
 /**
- * `inline` and not `attachment`: whoever clicks wants to SEE the CV, and a
- * forced download in the middle of the landing is friction. The name still
- * travels, so anyone who saves it does not end up with a `download.pdf` in
- * their Downloads folder.
+ * `attachment` and not `inline`: the landing button is "Descargar CV".
+ * `inline` plus the HTML `download` attribute makes Chrome's download
+ * manager report the file as missing, and without `download` the click
+ * opens `/cv.pdf` in the tab — which looks like `/cv`. The name still
+ * travels, so the save is not a nameless `download.pdf`.
  */
 export function pdfHeaders(filename: string): Headers {
   return new Headers({
     "content-type": "application/pdf",
-    "content-disposition": `inline; filename="${filename}"`,
+    "content-disposition": `attachment; filename="${filename}"`,
     "cache-control": `public, max-age=${CACHE_SECONDS}`,
     // The CV is public and is consumed by agents and recruiting scrapers.
     "access-control-allow-origin": "*",

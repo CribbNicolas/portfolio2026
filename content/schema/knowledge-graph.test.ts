@@ -14,9 +14,31 @@ import {
 } from "./knowledge-graph";
 import { monthsBetween } from "./dates";
 import { layoutGraph, projectGraph } from "./graph-layout";
+import type { ContentView, Skill } from "./content-schema";
 
 const view = await content.getView("portfolio", "es");
 const graph = buildKnowledgeGraph(view);
+
+/** A skill with no periods and no citations. The live view may have none. */
+const GHOST: Skill = {
+  id: "ghost-uncited",
+  name: "Ghost",
+  category: "practice",
+  aliases: [],
+  level: "familiar",
+  active: true,
+  visibility: { priority: 5 },
+};
+
+function viewWithGhost(base: ContentView): ContentView {
+  return {
+    ...base,
+    skills: {
+      ...base.skills,
+      practice: [...(base.skills.practice ?? []), GHOST],
+    },
+  };
+}
 
 test("every node has a namespaced, unique id", () => {
   const ids = new Set<string>();
@@ -160,21 +182,32 @@ test("skillYears: the span crosses roles and reaches today when one is still ope
   assert.ok(Math.abs(years.get("javascript")! - monthsBetween("2020-04", null) / 12) < 0.01);
 });
 
-test("skillYears: a project without a `roleId` still contributes its own date", () => {
-  // `jwd-maderas` has no role. If the span only looked at roles, Next.js,
-  // Tailwind and Sanity would report 0 years while holding 5 connections each —
-  // and that would look like a bug.
-  const years = skillYears(view);
-  for (const id of ["nextjs", "tailwind", "sanity"]) {
+test("skillYears: a project without a `roleId` still contributes its own date", async () => {
+  // `jwd-maderas` has no role and is unpublished until it ships. The years
+  // still have to come from the project's own dates, not from a role. Inject
+  // it into a copy of the view so hiding it from the portfolio does not
+  // silently drop this path.
+  const dataset = await content.getDataset("es");
+  const jwd = dataset.projects.find((p) => p.id === "jwd-maderas");
+  assert.ok(jwd, "jwd-maderas stays in the dataset");
+  assert.equal(
+    view.projects.some((p) => p.id === "jwd-maderas"),
+    false,
+    "jwd-maderas is hidden from the portfolio until it ships",
+  );
+  const years = skillYears({ ...view, projects: [...view.projects, jwd] });
+  // `sanity` is `only: []` until jwd-maderas ships, so it is not in the
+  // portfolio view. Next.js and Tailwind stay: they have other evidence too,
+  // and jwd still has to contribute its own dates (no `roleId`).
+  for (const id of ["nextjs", "tailwind"]) {
     assert.ok(years.get(id)! > 0, `${id} came out at 0 years while holding dated evidence`);
   }
 });
 
 test("skillYears: with no dated evidence and no `periods`, zero", () => {
-  const years = skillYears(view);
-  const orphans = graph.nodes.filter((n) => n.kind === "skill" && n.degree === 0);
-  assert.ok(orphans.length > 0, "the dataset has no skills without evidence any more: revisit this test");
-  for (const n of orphans) {
+  const years = skillYears(viewWithGhost(view));
+  assert.equal(years.get(GHOST.id), 0, "an uncited skill with no periods invented years");
+  for (const n of graph.nodes.filter((n) => n.kind === "skill" && n.degree === 0)) {
     assert.equal(years.get(n.id.replace("skill:", ""))!, 0, `${n.id} invented years with no evidence`);
   }
 });
@@ -239,9 +272,9 @@ test("roles end up outside the skills", () => {
 });
 
 test("skills without evidence go to the core, not the rim", () => {
-  const { nodes } = layoutGraph(graph);
+  const { nodes } = layoutGraph(buildKnowledgeGraph(viewWithGhost(view)));
   const core = nodes.filter((n) => n.withoutEvidence);
-  assert.ok(core.length > 0, "the dataset has no orphans any more: revisit this test");
+  assert.ok(core.some((n) => n.id === `skill:${GHOST.id}`), "the injected orphan never landed");
   const body = nodes
     .filter((n) => !n.withoutEvidence)
     .map((n) => Math.hypot(n.x, n.y, n.z))

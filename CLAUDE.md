@@ -352,11 +352,12 @@ already be noted with its reason and with the phase it belongs to. Full status i
 - **Output generators** (CV PDF, `/cv` HTML, JSON-LD `Person`, `/llms.txt`,
   `/cv.json`): they exist. Rule 4 lives in a single `formatMetric()`. Detail of
   what each one emits: `docs/CONTRACT.md` §2 and `docs/04`.
-- **Metrics:** the most important gap. No `Achievement` has a `metric`. Do NOT
-  invent them — candidates and what to measure in `docs/03-cv.md`. An honest
+- **Metrics:** two loaded on the RPPL map (`dinkum-mapbox`, `dinkum-mapbox-index`).
+  The rest of the gap is still open — candidates in `docs/03-cv.md`. An honest
   range with `confidence: "estimated"` works; an invented number does not.
-- **Data to confirm:** Hogarth (`employmentType`, `start` 2023-07), English
-  level, `careerStart`. Single source: `docs/00-index.md`.
+- **Data confirmed 2026-08-31:** Hogarth `full-time` + `concurrent` (2023-07 →
+  2024-01), English **A2**. `careerStart` remains 2020-04. Single source:
+  `docs/00-index.md`.
 - **`services` and `testimonials` are empty on purpose** — they are in the schema
   so there is nothing to migrate later. Do not fill them with placeholders.
 - **EN dataset:** do not load or translate it (decision dated in

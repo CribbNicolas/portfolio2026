@@ -139,6 +139,15 @@ test("`/cv` is not indexed", () => {
   );
 });
 
+test("the CV button downloads /cv.pdf under the ATS filename", () => {
+  const html = markup(landing);
+  assert.ok(html.includes('href="/cv.pdf"'), "the landing lost the /cv.pdf button");
+  assert.ok(
+    html.includes('download="Nicolas-Cribb-Barbaro-Full-Stack-Developer.pdf"'),
+    "the download attribute is what names the file (docs/03 §2). Without it the click opens /cv.pdf in the tab.",
+  );
+});
+
 test("the landing has the three anchors of the index", () => {
   for (const id of ["mapa", "proyectos", "cv"]) {
     assert.match(landing, new RegExp(`id="${id}"`), `the #${id} section is missing`);

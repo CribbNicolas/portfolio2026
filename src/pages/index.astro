@@ -20,6 +20,7 @@ import { content, formatSeniority, formatDateRange, formatYearMonth, buildKnowle
 import { buildPersonJsonLd } from "../lib/jsonld";
 import { buildSvgMap } from "../lib/graph-svg";
 import { buildHoverCss, ITEM_ID } from "../lib/lab-hover-css";
+import { nodeHasMapLabel, isStickyMapLabel } from "../lib/map-labels";
 import Logo from "../components/Logo.astro";
 import GraphSvg from "../components/lab/GraphSvg.astro";
 import ProjectList from "../components/projects/ProjectList.astro";
@@ -219,9 +220,13 @@ const skillNameById = new Map(
           */}
           <div class="lab__labels" aria-hidden="true">
             {positioned.nodes
-              .filter((n) => n.kind === "role" || n.kind === "project")
+              .filter((n) => nodeHasMapLabel(n))
               .map((n) => (
-                <span class={`lab__label-3d lab__label-3d--${n.kind}`} data-lab-label data-node={n.id}>
+                <span
+                  class={`lab__label-3d lab__label-3d--${n.kind}${isStickyMapLabel(n) ? " lab__label-3d--sticky" : ""}`}
+                  data-lab-label
+                  data-node={n.id}
+                >
                   {n.label}
                 </span>
               ))}
@@ -258,11 +263,13 @@ const skillNameById = new Map(
               </li>
             ))}
           </ul>
+          {items.length - withEvidenceCount > 0 && (
           <p class="lab__note">
             Las {items.length - withEvidenceCount} tecnologías sin conexiones son reales: las uso,
             pero todavía no escribí el logro que lo demuestre. Van huecas y chicas, agrupadas
             en el núcleo. El mapa muestra el hueco en vez de taparlo.
           </p>
+          )}
         </div>
       </section>
 

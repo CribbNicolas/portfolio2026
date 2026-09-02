@@ -12,6 +12,7 @@
 import type { PositionedGraph, GraphNodeKind } from "../../content/source/index";
 import { projectNode } from "../../content/schema/graph-layout";
 import { NODE_ID } from "./lab-hover-css";
+import { isStickyMapLabel, nodeHasMapLabel } from "./map-labels";
 
 /** Base radius per kind. Size distinguishes the kind; color barely does (spec §4). */
 export const RADIUS: Record<GraphNodeKind, number> = {
@@ -25,6 +26,7 @@ export interface SvgNode {
   id: string;
   domId: string;
   kind: GraphNodeKind;
+  radiusScale: number;
   label: string;
   detail: string;
   cx: number;
@@ -92,8 +94,8 @@ export function buildSvgMap(graph: PositionedGraph): SvgMap {
           x1: A.p.x, y1: A.p.y, x2: B.p.x, y2: B.p.y,
           // Affinity edges thicken with the evidence they share: the thickest
           // is the most proven relationship, not the prettiest.
-          width: round3((affinity ? 0.7 + e.weight * 0.42 : 1.15) * (0.6 + depth * 0.5)),
-          opacity: round3(fog(depth) * (affinity ? 0.62 : 0.85)),
+          width: round3((affinity ? 0.55 + e.weight * 0.28 : 1.15) * (0.6 + depth * 0.5)),
+          opacity: round3(fog(depth) * (affinity ? 0.32 : 0.78)),
           affinity,
         },
       }];
@@ -110,6 +112,7 @@ export function buildSvgMap(graph: PositionedGraph): SvgMap {
         id: node.id,
         domId: NODE_ID(node.id),
         kind: node.kind,
+        radiusScale: node.radiusScale,
         label: node.label,
         detail: node.detail,
         cx: p.x,
@@ -156,37 +159,31 @@ export function buildSvgMap(graph: PositionedGraph): SvgMap {
 }
 
 /**
- * Labels without overlap.
+ * Labels without overlap — except the sticky ones.
  *
- * Roles and projects get labelled, but drawing them all makes them collide: in
- * this dataset "Plugins de WordPress con tooling moderno" covered "Mapas
- * interactivos de distritos". Greedy front-to-back strategy — the nearest wins
- * the label, which is what the eye expects. The one that does not fit is
- * dropped: the name is still available in the node's `<title>` and in the
- * tooltip.
+ * Roles (workplaces) and skills that have grown to that size always keep their
+ * name. Projects still yield: drawing them all made "Plugins de WordPress…"
+ * cover a map title. Greedy front-to-back for the rest; the dropped name is
+ * still in the node's `<title>` and in the tooltip.
  */
 function placeLabels(nodes: SvgNode[]): SvgLabel[] {
   const candidates = nodes
-    .filter((n) => n.kind === "role" || n.kind === "project")
-    // Near to far: `nodes` arrives in reverse order (for painting).
+    .filter((n) => nodeHasMapLabel(n))
     .slice()
-    .reverse();
+    .sort((a, b) =>
+      Number(isStickyMapLabel(b)) - Number(isStickyMapLabel(a)) ||
+      b.r - a.r,
+    );
 
   const placed: Array<{ x1: number; y1: number; x2: number; y2: number }> = [];
   const out: SvgLabel[] = [];
 
   for (const n of candidates) {
-    // The perspective is recovered from the already drawn radius. That holds
-    // because only roles and projects get labelled, and there `radiusScale` is
-    // exactly 1.
+    const sticky = isStickyMapLabel(n);
     const scale = n.r / RADIUS[n.kind];
-    const size = round3(14.5 * scale);
+    const size = round3(Math.min(15, 13.5 * scale));
     const y = round3(n.cy - n.r - 7);
-    // Approximate width: 0.52em per character is a conservative estimate for
-    // Manrope. No real measuring needed — this only decides whether they clash.
     const width = n.label.length * size * 0.52;
-    // Some air is added around it: two labels that barely miss each other still
-    // read badly. The air is what actually separates them.
     const air = size * 0.6;
     const box = {
       x1: n.cx - width / 2 - air, x2: n.cx + width / 2 + air,
@@ -196,13 +193,15 @@ function placeLabels(nodes: SvgNode[]): SvgLabel[] {
     const clashes = placed.some((p) =>
       box.x1 < p.x2 && box.x2 > p.x1 && box.y1 < p.y2 && box.y2 > p.y1,
     );
-    if (clashes) continue;
+    if (clashes && !sticky) continue;
 
     placed.push(box);
-    out.push({ x: n.cx, y, text: n.label, kind: n.kind, size, opacity: n.opacity });
+    out.push({
+      x: n.cx, y, text: n.label, kind: n.kind, size,
+      opacity: sticky ? Math.max(0.88, n.opacity) : n.opacity,
+    });
   }
 
-  // Returned back to front so paint order keeps matching depth.
   return out.reverse();
 }
 

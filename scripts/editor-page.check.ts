@@ -26,6 +26,20 @@ import { createEditorServer } from "../editor/server";
 
 const canonical = (await readFile("content/data/content.es.json", "utf8")).replace(/\r\n/g, "\n");
 
+/**
+ * The two optional-path tests below need a target that is genuinely ABSENT: the
+ * dataset already carries loaded metrics and skills with `periods`, and typing
+ * into one of those exercises "edit an existing object", not "create a missing
+ * one" — which is the defect they exist to catch. The target is read from the
+ * data, so loading the next metric does not quietly turn the test into a no-op.
+ */
+const DATA = JSON.parse(canonical) as {
+  achievements: Array<{ id: string; metric?: unknown }>;
+  skills: Array<{ id: string; periods?: unknown[] }>;
+};
+const NO_METRIC = DATA.achievements.findIndex((a) => !a.metric);
+const NO_PERIODS = DATA.skills.findIndex((s) => !s.periods);
+
 const dir = await mkdtemp(join(tmpdir(), "editor-page-"));
 const file = join(dir, "content.es.json");
 await writeFile(file, canonical, "utf8");
@@ -131,33 +145,38 @@ const nextValidatedDataset = () =>
     .then((req) => JSON.parse(req.postData() ?? "{}"));
 
 test("typing through an absent optional object reaches the dataset", async () => {
+  // Most achievements still have no `metric` — CLAUDE.md calls the missing
+  // metrics the open gap, and loading them is the reason this editor exists.
+  assert.notEqual(NO_METRIC, -1, "every achievement carries a metric now: pick another absent optional");
   await page.getByRole("button", { name: "achievements" }).first().click();
-  await page.locator(".nav__group", { hasText: "achievements" }).locator(".nav__item").first().click();
-  // `metric` is absent on every achievement in the dataset — CLAUDE.md calls
-  // the missing metrics the most important gap, and loading them is the reason
-  // this editor exists.
-  const label = page.locator('.field[data-path$="metric.label"] .control').first();
+  await page
+    .locator(".nav__group", { hasText: "achievements" })
+    .locator(".nav__item")
+    .filter({ hasText: new RegExp(`^${DATA.achievements[NO_METRIC]!.id}$`) })
+    .click();
+  const label = page.locator(`.field[data-path="achievements.${NO_METRIC}.metric.label"] .control`);
   await label.waitFor();
 
   const posted = nextValidatedDataset();
   await label.fill("tiempo de build");
   const dataset = await posted;
 
-  const carrying = dataset.achievements.filter(
-    (a: { metric?: { label?: string } }) => a.metric?.label === "tiempo de build",
+  assert.equal(
+    dataset.achievements[NO_METRIC].metric?.label,
+    "tiempo de build",
+    "the typed metric never reached the dataset the page holds",
   );
-  assert.equal(carrying.length, 1, "the typed metric never reached the dataset the page holds");
   assert.deepEqual(problems, []);
 });
 
 test("clearing a typed-in optional object drops it from the dataset", async () => {
-  const label = page.locator('.field[data-path$="metric.label"] .control').first();
+  const label = page.locator(`.field[data-path="achievements.${NO_METRIC}.metric.label"] .control`);
   const posted = nextValidatedDataset();
   await label.fill("");
   const dataset = await posted;
   assert.equal(
-    dataset.achievements.filter((a: { metric?: unknown }) => a.metric).length,
-    0,
+    dataset.achievements[NO_METRIC].metric,
+    undefined,
     "empty metric was left on the dataset",
   );
   assert.deepEqual(problems, []);
@@ -222,10 +241,16 @@ test("a 409 latches Save, and a keystroke does not re-enable it", async () => {
 });
 
 test('"add" on an absent optional array creates the array instead of throwing', async () => {
+  // `periods` is optional, and the spec advertises adding to it by name. The
+  // skill has to be one that has none: on a skill that already carries them,
+  // "add" appends and never exercises the absent-array path.
+  assert.notEqual(NO_PERIODS, -1, "every skill carries periods now: pick another absent optional");
   await page.getByRole("button", { name: "skills" }).first().click();
-  await page.locator(".nav__group", { hasText: "skills" }).locator(".nav__item").first().click();
-  // `periods` is optional and absent on every skill today, and the spec
-  // advertises adding to it by name.
+  await page
+    .locator(".nav__group", { hasText: "skills" })
+    .locator(".nav__item")
+    .filter({ hasText: new RegExp(`^${DATA.skills[NO_PERIODS]!.id}$`) })
+    .click();
   const periods = page.locator("fieldset.group").filter({ hasText: /^periods \(\d+\)/ });
   await periods.waitFor();
 
@@ -234,12 +259,12 @@ test('"add" on an absent optional array creates the array instead of throwing', 
   const dataset = await posted;
 
   assert.equal(
-    dataset.skills[0].periods?.length,
+    dataset.skills[NO_PERIODS].periods?.length,
     1,
     "the added period never reached the dataset the page holds",
   );
   // The row is bound to a real path, not to the `?? []` the renderer invented.
-  await page.waitForSelector('.field[data-path^="skills.0.periods.0."]');
+  await page.waitForSelector(`.field[data-path^="skills.${NO_PERIODS}.periods.0."]`);
   assert.deepEqual(problems, []);
 });
 

@@ -28,7 +28,7 @@ Dated, so we know what to revisit when the context changes.
 | 2026-08 | Positioning: **Product Engineer** (brand) / **Desarrollador Full Stack** (search) | The memorable identity and the searchable term are different things |
 | 2026-08 | AI is **a visible pillar, not the axis** | In LatAm freelance, "AI-powered" in the headline moves you toward the noise; the differentiator is shipping product |
 | 2026-08 | `careerStart = 2020-04` | Settles the three different seniority figures that were circulating |
-| 2026-08 | Hogarth: `contract` + `concurrent: true`, starting 2023-07 | As full-time it overlapped Adsmovil. **Still to be confirmed** |
+| 2026-08-31 | Hogarth: `full-time` + `concurrent: true`, 2023-07 → 2024-01 | Confirmed: overlapped Adsmovil (both full-time). Adsmovil 2022-06 → 2024-09, then Dinkum |
 | 2026-08 | Content as data, backend later (Phase 0 → JSON in the repo) | The data contract is what gives independence, not the backend |
 | 2026-08 | No English dataset for now | Translating a CV produces translated English, which is worse than written English |
 | 2026-08 | Frontend in **static Astro**, PDF printed from the same `/cv` page | One layout for HTML and PDF: they cannot drift apart |
@@ -61,14 +61,16 @@ Dated, so we know what to revisit when the context changes.
 - [x] Deploy on Cloudflare Pages, PDF on demand from a Function, post-deploy smoke
 - [x] Analytics: Cloudflare Web Analytics + Clarity, landing only
 - [x] Social metadata: Open Graph, Twitter Card, generated card, favicon, sitemap, robots
-- [ ] **Project links** — all three have `links: []`. The section renders them only if they exist: it is editing the dataset, not touching code
-- [ ] **Metrics** — the most important gap. See [03-cv.md](./03-cv.md)
-- [ ] Confirm the Hogarth data and the real English level
+- [x] **RPPL map** (`mapas-distritos`) — live link, problem/outcome, FastIndex
+      metric and ~13.000 districts. Loaded 2026-09-01. The other two projects
+      still have `links: []`
+- [ ] **Metrics** — two loaded on the RPPL map; the rest of the gap is in [03-cv.md](./03-cv.md)
+- [x] Hogarth `full-time` + `concurrent` (2023-07 → 2024-01) and English **A2**, confirmed 2026-08-31
 - [x] Phase 1 closed: 15 of the 18 debt entries, including the three gates that did not exist (invariants, endpoints, embedded fonts)
 - [x] `pnpm run editor` — phase 2 of [06](./06-next-session.md), including the PR 4 affordances (remove, header, prune, 409 latch)
 - [ ] LinkedIn text blocks
 - [ ] Portfolio case studies — the research of [04 §6](./04-portfolio.md) comes first
-- [ ] Freelance role achievements (2020-04 → 2022-06): today it has one, and its `skillIds` are `["javascript"]`. Those 2.2 years contribute no connection to any other technology, which is why WordPress — declared `core` — comes out small on the map
+- [x] Freelance 2020-04 → 2022-06 connected to WordPress, Docker, Vue, Quasar, SCSS (still one achievement; the stack is now on the map)
 
 ## A note on the sources
 
