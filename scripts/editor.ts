@@ -23,6 +23,5 @@ server.on("error", (err: NodeJS.ErrnoException) => {
 
 // Loopback only, and not by accident: this process writes to the dataset.
 server.listen(EDITOR_PORT, "127.0.0.1", () => {
-  console.log(`Editor API on http://127.0.0.1:${EDITOR_PORT}/api/dataset`);
-  console.log("The page arrives in PR 3. Until then: curl.");
+  console.log(`Editor on http://127.0.0.1:${EDITOR_PORT}/`);
 });

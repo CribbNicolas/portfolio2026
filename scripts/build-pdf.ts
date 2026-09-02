@@ -16,12 +16,14 @@
  */
 
 import { createServer } from "node:http";
-import { readFile } from "node:fs/promises";
+import { copyFile, readFile } from "node:fs/promises";
 import { extname, join, normalize } from "node:path";
 import { renderPdf } from "./render-pdf";
 
 const DIST = "dist";
 const OUT = join(DIST, "cv.pdf");
+/** So `astro dev` can serve `/cv.pdf` the same way it serves `/og.jpg`. */
+const OUT_DEV = join("public", "cv.pdf");
 
 const TYPES: Record<string, string> = {
   ".html": "text/html; charset=utf-8",
@@ -61,7 +63,8 @@ const { port } = server.address() as { port: number };
 
 try {
   await renderPdf({ url: `http://127.0.0.1:${port}/cv`, out: OUT });
-  console.log(`PDF written to ${OUT}`);
+  await copyFile(OUT, OUT_DEV);
+  console.log(`PDF written to ${OUT} and ${OUT_DEV}`);
 } finally {
   server.close();
 }
