@@ -407,19 +407,50 @@ export interface ContentSource {
   getProject(slug: string, locale: Locale): Promise<Project | null>;
 }
 
+/**
+ * An entity as it LEAVES `resolveView`.
+ *
+ * `visibility` is an authoring decision — which surfaces an item is for, and
+ * how highly you rank it. `resolveView` has already spent it by the time a view
+ * exists, and `/cv.json` publishes whatever the view holds. Removing it from
+ * the type makes invariant 1 a compile error instead of a convention: a
+ * component cannot filter by a field that is not there.
+ */
+export type Viewed<T> = Omit<T, "visibility">;
+
+/** A metric as it leaves the view: `source` is the author's note, not output. */
+export type ViewedMetric = Omit<Metric, "source">;
+
+/** An achievement in a view: no `visibility`, and its metric carries no `source`. */
+export type ViewedAchievement = Viewed<Achievement> & { metric?: ViewedMetric };
+
+/**
+ * A project in a view: no `visibility`, and none of its `metrics` carry
+ * `source` — a project holds a LIST of metrics, not one, so `Viewed<Project>`
+ * alone would still leak the field one level down.
+ */
+export type ViewedProject = Viewed<Project> & { metrics?: ViewedMetric[] };
+
+/** Identity in a view: rule 8 already decided the phone; the policy does not ship. */
+export type ViewedIdentity = Omit<Identity, "contact"> & {
+  contact: Omit<Identity["contact"], "publishPhoneOn">;
+};
+
 /** A dataset already resolved for one concrete surface. */
 export interface ContentView {
   surface: Surface;
-  identity: Identity;
+  identity: ViewedIdentity;
   /** Roles with their achievements already nested, filtered and ordered. */
-  experience: Array<Role & { achievements: Achievement[]; durationMonths: number }>;
-  projects: Project[];
-  skills: Record<SkillCategory, Skill[]>;
-  education: Education[];
-  certifications: Certification[];
+  experience: Array<
+    Viewed<Role> & { achievements: ViewedAchievement[]; durationMonths: number }
+  >;
+  projects: ViewedProject[];
+  skills: Record<SkillCategory, Viewed<Skill>[]>;
+  education: Viewed<Education>[];
+  certifications: Viewed<Certification>[];
   languages: LanguageSkill[];
-  services: Service[];
-  testimonials: Testimonial[];
+  services: Viewed<Service>[];
+  testimonials: Viewed<Testimonial>[];
   /** Derived from identity.careerStart. Never written by hand. */
   yearsOfExperience: number;
 }

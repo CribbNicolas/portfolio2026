@@ -15,7 +15,7 @@
  * the CV.
  */
 
-import type { Skill, SkillCategory } from "./content-schema";
+import type { SkillCategory } from "./content-schema";
 
 /**
  * The order is editorial, not alphabetical and not the schema's: what is
@@ -39,10 +39,14 @@ export const SKILL_GROUPS: ReadonlyArray<readonly [SkillCategory, string]> = [
  *
  * Both consumers call this instead of walking `view.skills` themselves: that
  * walk is exactly what drifted.
+ *
+ * Generic over the skill shape rather than fixed to `Skill`: the caller always
+ * passes `ContentView["skills"]`, whose entries are `Viewed<Skill>` (no
+ * `visibility`), and this function only groups — it never reads that field.
  */
-export function groupedSkills(
-  skills: Record<SkillCategory, Skill[]>,
-): Array<{ label: string; skills: Skill[] }> {
+export function groupedSkills<S>(
+  skills: Record<SkillCategory, S[]>,
+): Array<{ label: string; skills: S[] }> {
   return SKILL_GROUPS
     .map(([category, label]) => ({ label, skills: skills[category] ?? [] }))
     .filter((group) => group.skills.length > 0);

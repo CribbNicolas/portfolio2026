@@ -23,6 +23,10 @@ import type {
   Skill,
   SkillCategory,
   Surface,
+  Viewed,
+  ViewedAchievement,
+  ViewedIdentity,
+  ViewedProject,
   Visibility,
 } from "./content-schema";
 import { monthsBetween, yearsOfExperience } from "./dates";
@@ -53,8 +57,29 @@ function isVisible(v: Visibility, surface: Surface): boolean {
   return v.priority <= PRIORITY_CUTOFF[surface];
 }
 
-function groupSkills(skills: Skill[]): Record<SkillCategory, Skill[]> {
-  const empty: Record<SkillCategory, Skill[]> = {
+/**
+ * Drop a key without mutating the source. `delete` on a spread copy reads
+ * worse than this and tempts somebody into mutating `data`, which is shared
+ * across every call because the dataset is cached.
+ */
+function strip<T extends object, K extends keyof T>(o: T, ...keys: K[]): Omit<T, K> {
+  const out = { ...o };
+  for (const k of keys) delete out[k];
+  return out;
+}
+
+const viewAchievement = (a: Achievement): ViewedAchievement => ({
+  ...strip(a, "visibility"),
+  ...(a.metric ? { metric: strip(a.metric, "source") } : {}),
+});
+
+const viewProject = (p: Project): ViewedProject => ({
+  ...strip(p, "visibility"),
+  ...(p.metrics ? { metrics: p.metrics.map((m) => strip(m, "source")) } : {}),
+});
+
+function groupSkills(skills: Viewed<Skill>[]): Record<SkillCategory, Viewed<Skill>[]> {
+  const empty: Record<SkillCategory, Viewed<Skill>[]> = {
     language: [],
     frontend: [],
     backend: [],
@@ -95,25 +120,33 @@ export function resolveView(data: ContentDataset, surface: Surface): ContentView
         (a, b) => a.visibility.priority - b.visibility.priority,
       );
       return {
-        ...role,
-        achievements: maxPerRole === null ? all : all.slice(0, maxPerRole),
+        ...strip(role, "visibility"),
+        achievements: (maxPerRole === null ? all : all.slice(0, maxPerRole)).map(
+          viewAchievement,
+        ),
         durationMonths: monthsBetween(role.start, role.end),
       };
     });
 
   const projects = data.projects
     .filter((p: Project) => isVisible(p.visibility, surface))
-    .sort((a, b) => Number(b.featured) - Number(a.featured) || byRecency(a, b));
+    .sort((a, b) => Number(b.featured) - Number(a.featured) || byRecency(a, b))
+    .map(viewProject);
 
-  // Rule 8: sensitive contact data only leaves where it was authorised.
-  const identity = {
+  // Rule 8: sensitive contact data only leaves where it was authorised. The
+  // policy itself (`publishPhoneOn`) does not leave at all — it describes a
+  // decision, and the decision has already been applied one line above.
+  const identity: ViewedIdentity = {
     ...data.identity,
-    contact: {
-      ...data.identity.contact,
-      phone: data.identity.contact.publishPhoneOn.includes(surface)
-        ? data.identity.contact.phone
-        : undefined,
-    },
+    contact: strip(
+      {
+        ...data.identity.contact,
+        phone: data.identity.contact.publishPhoneOn.includes(surface)
+          ? data.identity.contact.phone
+          : undefined,
+      },
+      "publishPhoneOn",
+    ),
     location: {
       ...data.identity.location,
       streetAddress: undefined, // never leaves in a public output
@@ -126,15 +159,23 @@ export function resolveView(data: ContentDataset, surface: Surface): ContentView
     experience,
     projects,
     skills: groupSkills(
-      data.skills.filter((s) => s.active && isVisible(s.visibility, surface)),
+      data.skills
+        .filter((s) => s.active && isVisible(s.visibility, surface))
+        .map((s) => strip(s, "visibility")),
     ),
-    education: data.education.filter((e) => isVisible(e.visibility, surface)),
-    certifications: data.certifications.filter((c) => isVisible(c.visibility, surface)),
+    education: data.education
+      .filter((e) => isVisible(e.visibility, surface))
+      .map((e) => strip(e, "visibility")),
+    certifications: data.certifications
+      .filter((c) => isVisible(c.visibility, surface))
+      .map((c) => strip(c, "visibility")),
     languages: data.languages,
-    services: data.services.filter((s) => isVisible(s.visibility, surface)),
-    testimonials: data.testimonials.filter(
-      (t) => t.approved && isVisible(t.visibility, surface),
-    ),
+    services: data.services
+      .filter((s) => isVisible(s.visibility, surface))
+      .map((s) => strip(s, "visibility")),
+    testimonials: data.testimonials
+      .filter((t) => t.approved && isVisible(t.visibility, surface))
+      .map((t) => strip(t, "visibility")),
     yearsOfExperience: yearsOfExperience(data.identity.careerStart),
   };
 }

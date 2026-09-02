@@ -6,10 +6,10 @@
  * Contact goes out as plain text with written labels ("Email:"), not with icons:
  * an icon does not extract and the datum is orphaned.
  */
-import type { Identity } from "@content";
+import type { ContentView } from "@content";
 
 interface Props {
-  identity: Identity;
+  identity: ContentView["identity"];
 }
 
 const { identity } = Astro.props;

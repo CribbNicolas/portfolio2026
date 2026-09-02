@@ -14,12 +14,12 @@
  * cross-hover with the map works WITHOUT JavaScript, using rules that already
  * exist.
  */
-import type { Project } from "@content";
+import type { ContentView, Project } from "@content";
 import { nodeId } from "@content";
 import { ITEM_ID } from "../../lib/lab-hover-css";
 
 interface Props {
-  projects: Project[];
+  projects: ContentView["projects"];
   /** skillId → canonical name. The page builds it from the view. */
   skillNameById: Map<string, string>;
 }

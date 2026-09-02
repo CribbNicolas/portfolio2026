@@ -58,8 +58,14 @@ export function formatDuration(months: number): string {
  * Rule 2: two overlapping roles with no clarification are an automatic red flag,
  * both for the AI layer and for the human. If the datum says `concurrent`, the
  * title declares it.
+ *
+ * Typed on the three fields it reads, not on `Role` itself: callers pass a
+ * view's `Viewed<Role>`, which has no `visibility`, and this function has no
+ * business demanding a field it never looks at.
  */
-export function formatRoleTitle(role: Role): string {
+export function formatRoleTitle(
+  role: Pick<Role, "title" | "displayTitle" | "concurrent">,
+): string {
   const title = role.displayTitle ?? role.title;
   return role.concurrent ? `${title} (en paralelo)` : title;
 }

@@ -11,7 +11,7 @@ This file exists so they do not get lost. Each entry says what it is, **how to
 check it** — so the next session does not have to take my word for it — and what
 fixing it would cost.
 
-**22 of 37 entries are closed.** The open ones keep their original numbers: a
+**23 of 37 entries are closed.** The open ones keep their original numbers: a
 renumbered list breaks every reference from a commit message or another doc.
 
 What does **not** go here: product and data pending items, which live in
@@ -31,6 +31,7 @@ Kept as a one-line record. The reasoning is in the commit that closed each one.
 | 3 | Three dead symbols in `graph-3d.ts`. `ORBIT` was the bad one: a configuration constant with a believable name that did nothing | Deleted, and the two genuinely ignored values marked as such |
 | 4 | Three `<script>` tags carrying the `astro(4000)` hint | Explicit `is:inline`. Typecheck went from 7 hints to 0 |
 | 5 | A merge into `main` left no CI run of its own, which reads as if the merge skipped validation | Accepted and closed. The check that counts comes from the `pull_request` event and always runs; the per-branch run adds nothing |
+| 7 | `/cv.json` published `visibility`, `priority`, `publishPhoneOn` and `Metric.source` | `Viewed<T>` in the view types; `resolveView` projects every surface |
 | 8 | `/cv.json` and `/llms.txt`, the two surfaces agents consume, had no gate at all. A real `formatRoleTitle` bug had already got through into one of them | `scripts/endpoints.check.ts`, in `content-validation.yml` with the other checks that read `dist/` |
 | 9 | The skill grouping lived in two places and had diverged: the CV printed `Lenguajes:` in editorial order, `/llms.txt` printed `- language:` in insertion order | `content/schema/skill-groups.ts`, imported by both |
 | 10 | Nothing verified the fonts were embedded. The PDF would look right on a machine with Manrope installed and wrong on every other one | A test in `pdf-output.check.ts` reading the font descriptors, which runs against the published PDF too |
@@ -70,61 +71,6 @@ previews included — so the cycle is "push to `staging` and watch the smoke", n
 exposing the local `wrangler pages dev` on a public URL. That is infrastructure
 for a problem solved today by waiting a minute for a preview. It does not look
 worth it.
-
----
-
-## 7. The public API publishes internal fields
-
-**Severity: medium.** It is a contract with third parties, and the repo is now
-public.
-
-`/cv.json` serves the `public-api` surface, but `resolveView` only filters
-`phone` and `streetAddress`. Everything else passes through whole. Measured on
-`dist/cv.json`, 2026-09-02 build (2026-08-25 numbers in brackets):
-
-```
-"visibility"     48  [40]
-"priority"       48  [40]
-"publishPhoneOn"  1  [1]
-"source"          3  [0]
-```
-
-`visibility` and `priority` are **internal editorial decisions**: they say which
-achievement you consider first-tier and which third-tier, and on which surfaces
-you decided not to show something. A recruiter opening the JSON sees the ranking
-you made of your own work. `publishPhoneOn` also describes a privacy policy
-nobody outside cares about.
-
-**New on 2026-09-02, found while designing the English version:** `Metric.source`
-is published too. No page renders it — `formatMetric` uses `label`, `before`,
-`after` and `delta` — but `/cv.json` serializes the whole view, so it ships. It
-is the evidence note written for the author to reread before an interview, and
-one of the three currently in the dataset carries the API URL the number came
-from. `LanguageSkill.note` is in the same position and reads 0 only because no
-language carries one today.
-
-That is what makes this grow rather than sit still: **anything `/cv.json`
-publishes has to be translated.** Per the design in
-[`specs/2026-09-02-cv-en-pdf-design.md`](./superpowers/specs/2026-09-02-cv-en-pdf-design.md)
-the staleness lock follows what ships, not what is rendered, so leaving these
-fields on the public surface means writing and maintaining an English
-`Metric.source` for a note nobody reads in either language.
-
-**Why it was not fixed here.** Touching `resolveView` is touching the file rule 8
-depends on, and doing that in the middle of a deploy change is asking for it. The
-2026-09-02 finding was left alone for the same reason: it appeared while writing
-a design document, and a `resolveView` change does not belong in a docs commit.
-
-**Fix.** In `resolveView`, for the `public-api` surface, map `Achievement` and
-`Skill` to a shape without `visibility`, `publishPhoneOn` or `Metric.source`. It
-is a projection, not a filter: the output type would have to be different from
-the internal surfaces', and that is where the real work is.
-
-**How to check it.** `pnpm run build`, then count the keys in `dist/cv.json`. The
-four counts above are the whole test.
-
-**Do it before, not after, the English dataset exists** — otherwise the fields get
-translated once and deleted right afterwards.
 
 ---
 

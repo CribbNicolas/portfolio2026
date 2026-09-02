@@ -107,6 +107,29 @@ test("a locale with no dataset throws instead of silently returning another", as
   );
 });
 
+test("the view carries no authoring-only field", async () => {
+  // `/cv.json` serializes the whole view, so anything the view holds is
+  // published — rendered or not. `visibility` and `priority` are the editorial
+  // ranking of your own work; `publishPhoneOn` is a privacy policy; and
+  // `Metric.source` is the evidence note written for you to reread before an
+  // interview, one of which carries the API URL the number came from.
+  const view = await content.getView("public-api", "es");
+  const json = JSON.stringify(view);
+
+  for (const key of ['"visibility"', '"priority"', '"publishPhoneOn"', '"source"']) {
+    assert.equal(json.includes(key), false, `${key} still leaves in the view`);
+  }
+});
+
+test("every surface is projected, not just the public one", async () => {
+  // A projection applied only to `public-api` is one somebody forgets when a
+  // new surface appears. The rule is the view, not the surface.
+  for (const surface of ["cv", "cv-short", "cv-ats", "portfolio", "linkedin"] as const) {
+    const json = JSON.stringify(await content.getView(surface, "es"));
+    assert.equal(json.includes('"visibility"'), false, `${surface} leaks visibility`);
+  }
+});
+
 // Rule 4: an `estimated` Metric renders with "~" or "aprox.".
 // This test sat in `todo` until `formatMetric` existed. Full coverage lives in
 // `content/schema/format.test.ts`; the minimal case stays here because this
