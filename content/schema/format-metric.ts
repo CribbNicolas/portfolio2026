@@ -1,32 +1,37 @@
 /**
- * Regla 4 del contrato: una `Metric` con `confidence: "estimated"` NUNCA se
- * presenta como medición.
+ * Contract rule 4: a `Metric` with `confidence: "estimated"` is NEVER presented
+ * as a measurement.
  *
- * Este archivo es el único lugar del sistema donde una `Metric` se vuelve
- * texto. Si aparece un `${m.delta}` en un componente, la regla se bifurcó y
- * dejó de valer. Igual que `dates.ts` es el archivo de la regla 1, este es el
- * de la regla 4.
+ * This file is the only place in the system where a `Metric` becomes text. If a
+ * `${m.delta}` shows up in a component, the rule has forked and stopped
+ * holding. Just as `dates.ts` is the file of rule 1, this one is rule 4's.
  */
 
 import type { Metric } from "./content-schema";
 
-/** Marca de estimación. El contrato admite "~" o "aprox."; usamos "~" por espacio. */
-const APROX = "~";
+/** Estimation marker. The contract allows "~" or "aprox."; "~" wins on space. */
+const APPROX = "~";
 
 /**
- * `Metric` → texto listo para renderizar, o `null` si no hay ningún número.
+ * `Metric` → text ready to render, or `null` when there is no number at all.
  *
- * Devuelve `null` y no `""` a propósito: el llamador tiene que poder omitir el
- * fragmento completo. Un string vacío se cuela en un template y deja un guion
- * colgando en el CV.
+ * It returns `null` and not `""` on purpose: the caller has to be able to drop
+ * the whole fragment. An empty string slips into a template and leaves a dash
+ * dangling in the CV.
  *
- * `before`/`after` gana sobre `delta` porque mostrar el movimiento completo es
- * más defendible en entrevista que un porcentaje suelto.
+ * `before`/`after` wins over `delta` because showing the full movement is more
+ * defensible in an interview than a percentage on its own.
+ *
+ * The movement is written "de X a Y" and NOT with an arrow: `→` (U+2192) is
+ * outside Manrope's `latin` subset, the only one the pages load. Chromium
+ * silently substitutes a system font for that one glyph, so the PDF stopped
+ * carrying only embedded fonts — which is exactly what `pdf-output.check.ts`
+ * refuses. Anything this file emits gets printed: it stays inside the subset.
  */
 export function formatMetric(m: Metric): string | null {
-  const aprox = m.confidence === "estimated" ? APROX : "";
+  const approx = m.confidence === "estimated" ? APPROX : "";
 
-  if (m.before && m.after) return `${aprox}${m.before} → ${aprox}${m.after}`;
-  if (m.delta) return `${aprox}${m.delta}`;
+  if (m.before && m.after) return `de ${approx}${m.before} a ${approx}${m.after}`;
+  if (m.delta) return `${approx}${m.delta}`;
   return null;
 }

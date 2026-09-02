@@ -1,20 +1,20 @@
 ---
 /**
- * La página que Cloudflare Pages sirve cuando una ruta no existe.
+ * The page Cloudflare Pages serves when a route does not exist.
  *
- * Existe para arreglar un soft-404: sin un `dist/404.html`, Pages devolvía
- * `200 text/html` para cualquier ruta inventada (deuda técnica §1, medido el
- * 2026-08-25). Un crawler que pide una URL rota y recibe "todo bien, acá hay
- * una página" trata al sitio como de calidad baja. Astro emite esta página
- * como `dist/404.html` y Pages la sirve con el estado correcto sin más config.
+ * It exists to fix a soft 404: without a `dist/404.html`, Pages returned
+ * `200 text/html` for any made-up route (technical debt §1, measured on
+ * 2026-08-25). A crawler asking for a broken URL and receiving "all good, there
+ * is a page here" treats the site as low quality. Astro emits this page as
+ * `dist/404.html` and Pages serves it with the right status, no further config.
  *
- * Cero JavaScript, como todo salvo la home. Está fuera de `PAGINAS_CON_JS` en
- * `no-client-js.check.ts` y así tiene que quedarse.
+ * Zero JavaScript, like everything except the home. It sits outside
+ * `PAGES_WITH_JS` in `no-client-js.check.ts` and has to stay that way.
  *
- * NO linkea `/cv`, a propósito. Esa ruta existe solo para que Browser Rendering
- * imprima el PDF: tiene `noindex` y cero links entrantes, y el destino del
- * lector es el ancla `#cv` de la landing. Un "¿buscabas el CV?" acá rompería
- * esa promesa desde la única página que nadie revisa.
+ * It does NOT link to `/cv`, on purpose. That route exists only so Browser
+ * Rendering can print the PDF: it carries `noindex` and zero incoming links,
+ * and the reader's destination is the landing's `#cv` anchor. A "looking for
+ * the CV?" here would break that promise from the one page nobody reviews.
  */
 import Base from "../layouts/Base.astro";
 
@@ -24,10 +24,10 @@ import "@fontsource/manrope/800.css";
 import "../styles/tokens.css";
 
 /**
- * Los mismos destinos que el índice de la landing, con el ancla adelante: quien
- * cayó acá venía buscando algo, y estas son las tres cosas que hay.
+ * The same destinations as the landing's index, anchor included: whoever ended
+ * up here was looking for something, and these are the three things there are.
  */
-const DESTINOS = [
+const DESTINATIONS = [
   { href: "/#mapa", label: "El mapa de conocimiento" },
   { href: "/#proyectos", label: "Los proyectos" },
   { href: "/#cv", label: "El CV completo" },
@@ -39,116 +39,116 @@ const DESTINOS = [
   description="La dirección que pediste no corresponde a ninguna página de este sitio."
 >
   {/*
-    Redundante con el estado 404 que devuelve Pages, y puesto igual: si algún
-    día el hosting volviera a servir esto con un 200 —que es exactamente el bug
-    que esta página arregla—, el `noindex` evita que se indexe igual.
+    Redundant with the 404 status Pages returns, and included anyway: if the
+    hosting ever went back to serving this with a 200 — exactly the bug this
+    page fixes — the `noindex` keeps it from being indexed regardless.
   */}
   <meta name="robots" content="noindex, follow" slot="head" />
 
   <main class="error">
-    <p class="error__codigo">404</p>
-    <h1 class="error__titulo">Esta página no existe</h1>
-    <p class="error__texto">
+    <p class="error__code">404</p>
+    <h1 class="error__title">Esta página no existe</h1>
+    <p class="error__text">
       La dirección que pediste no corresponde a ninguna página del sitio. Puede
       que el link estuviera mal copiado, o que apuntara a algo que ya no está.
     </p>
 
-    <nav class="error__destinos" aria-label="Secciones del sitio">
+    <nav class="error__destinations" aria-label="Secciones del sitio">
       <ul>
-        {DESTINOS.map((d) => (
+        {DESTINATIONS.map((d) => (
           <li><a href={d.href}>{d.label}</a></li>
         ))}
       </ul>
     </nav>
 
-    <p class="error__volver"><a href="/">Volver al inicio</a></p>
+    <p class="error__back"><a href="/">Volver al inicio</a></p>
   </main>
 </Base>
 
 <style>
-  /* Una columna centrada, sin tarjeta ni sombra: la estética del sitio se hace
-     con tipografía y espaciado (mismo criterio que `cv.css`). */
+  /* One centered column, no card and no shadow: the site's aesthetic is made of
+     typography and spacing (same criterion as `cv.css`). */
   .error {
-    max-width: var(--ancho);
+    max-width: var(--width);
     margin: 0 auto;
-    padding: calc(var(--espacio) * 12) calc(var(--espacio) * 3);
+    padding: calc(var(--space) * 12) calc(var(--space) * 3);
   }
 
-  /* Grande y en acento, pero como dato y no como decoración: es lo primero que
-     le dice al lector qué pasó, antes de leer una palabra. */
-  .error__codigo {
+  /* Large and in the accent color, but as data and not as decoration: it is the
+     first thing telling the reader what happened, before they read a word. */
+  .error__code {
     margin: 0;
     font-size: 3.5rem;
     font-weight: 800;
     line-height: 1;
     letter-spacing: -0.04em;
-    color: var(--acento);
+    color: var(--accent);
     font-variant-numeric: tabular-nums;
   }
 
-  .error__titulo {
-    margin: calc(var(--espacio) * 1.5) 0 0;
+  .error__title {
+    margin: calc(var(--space) * 1.5) 0 0;
     font-size: 1.75rem;
     font-weight: 800;
     letter-spacing: -0.03em;
     line-height: 1.15;
   }
 
-  .error__texto {
-    margin: calc(var(--espacio) * 2) 0 0;
+  .error__text {
+    margin: calc(var(--space) * 2) 0 0;
     max-width: 34rem;
-    color: var(--tinta-suave);
+    color: var(--ink-soft);
     font-size: 1.0625rem;
   }
 
-  .error__destinos {
-    margin-top: calc(var(--espacio) * 5);
-    border-top: 1px solid var(--linea);
-    padding-top: calc(var(--espacio) * 3);
+  .error__destinations {
+    margin-top: calc(var(--space) * 5);
+    border-top: 1px solid var(--line);
+    padding-top: calc(var(--space) * 3);
   }
 
-  .error__destinos ul {
+  .error__destinations ul {
     margin: 0;
     padding: 0;
     list-style: none;
   }
 
-  .error__destinos li + li {
-    margin-top: calc(var(--espacio) * 1.5);
+  .error__destinations li + li {
+    margin-top: calc(var(--space) * 1.5);
   }
 
-  .error__destinos a {
+  .error__destinations a {
     font-size: 1.0625rem;
     font-weight: 700;
-    color: var(--tinta);
+    color: var(--ink);
     text-decoration: none;
   }
 
-  .error__destinos a:hover,
-  .error__volver a:hover {
-    color: var(--acento);
+  .error__destinations a:hover,
+  .error__back a:hover {
+    color: var(--accent);
   }
 
-  .error__volver {
-    margin: calc(var(--espacio) * 4) 0 0;
+  .error__back {
+    margin: calc(var(--space) * 4) 0 0;
   }
 
-  .error__volver a {
-    color: var(--tinta-suave);
+  .error__back a {
+    color: var(--ink-soft);
     font-weight: 600;
     font-size: 0.9375rem;
   }
 
   @media (min-width: 40rem) {
     .error {
-      padding: calc(var(--espacio) * 16) calc(var(--espacio) * 4);
+      padding: calc(var(--space) * 16) calc(var(--space) * 4);
     }
 
-    .error__codigo {
+    .error__code {
       font-size: 4.5rem;
     }
 
-    .error__titulo {
+    .error__title {
       font-size: 2.25rem;
     }
   }

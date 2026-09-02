@@ -1,31 +1,31 @@
 /**
- * `robots.txt` propio.
+ * Our own `robots.txt`.
  *
- * Es un endpoint y no un archivo en `public/` porque la línea `Sitemap:` tiene
- * que llevar la URL absoluta del sitio, y esa sale de `Astro.site` — o sea de
- * la variable `SITE_URL`. Un archivo estático la tendría escrita a mano y se
- * desincronizaría el día que cambie el dominio, que es justo el día en que uno
- * no se acuerda de este archivo.
+ * It is an endpoint and not a file in `public/` because the `Sitemap:` line has
+ * to carry the site's absolute URL, and that comes from `Astro.site` — i.e.
+ * from the `SITE_URL` variable. A static file would have it written by hand and
+ * would drift the day the domain changes, which is exactly the day nobody
+ * remembers this file.
  *
- * Hasta ahora Cloudflare servía uno gestionado que son SOLO comentarios: cero
- * `User-agent`, cero `Disallow`, cero `Sitemap`. No restringía nada, pero
- * tampoco anunciaba nada.
+ * Until now Cloudflare served a managed one that is ONLY comments: no
+ * `User-agent`, no `Disallow`, no `Sitemap`. It restricted nothing, but it
+ * announced nothing either.
  *
- * ⚠️ SIN VERIFICAR: que este le gane al gestionado de Cloudflare. Se comprueba
- * abriendo `/robots.txt` en la preview de `staging` y viendo si aparece esto o
- * el bloque de "content signals". Si gana el de Cloudflare, el sitemap hay que
- * anunciarlo por Search Console y anotar la limitación (docs/07 §17).
+ * ⚠️ UNVERIFIED: that this one beats Cloudflare's managed one. It is checked by
+ * opening `/robots.txt` on the `staging` preview and seeing whether this shows
+ * up or the "content signals" block does. If Cloudflare's wins, the sitemap has
+ * to be announced through Search Console and the limitation noted (docs/07 §17).
  */
 
 import type { APIRoute } from "astro";
 
 export const GET: APIRoute = ({ site }) => {
-  // `site` viene de `astro.config.mjs`, que revienta a propósito si falta
-  // SITE_URL. Igual se contempla: un robots.txt sin Sitemap sirve; uno que
-  // rompe el build, no.
+  // `site` comes from `astro.config.mjs`, which blows up on purpose when
+  // SITE_URL is missing. It is handled anyway: a robots.txt without a Sitemap is
+  // useful; one that breaks the build is not.
   const sitemap = site ? `Sitemap: ${new URL("sitemap-index.xml", site)}` : null;
 
-  const lineas = [
+  const lines = [
     "User-agent: *",
     "Allow: /",
     "",
@@ -46,7 +46,7 @@ export const GET: APIRoute = ({ site }) => {
     "",
   ];
 
-  return new Response(lineas.join("\n"), {
+  return new Response(lines.join("\n"), {
     headers: { "content-type": "text/plain; charset=utf-8" },
   });
 };

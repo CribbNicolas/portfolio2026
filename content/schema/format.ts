@@ -1,18 +1,22 @@
 /**
- * Texto derivado de datos. La otra mitad del contrato de salida.
+ * Text derived from data. The other half of the output contract.
  *
- * Regla 1: ninguna duración ni antigüedad se escribe a mano. Los componentes
- * reciben strings ya formateados; un `${meses} meses` dentro de un `.astro`
- * significa que esta capa se bifurcó.
+ * Rule 1: no duration or seniority is ever written by hand. Components receive
+ * already formatted strings; a `${months} meses` inside an `.astro` means this
+ * layer has forked.
  *
- * El formato de fecha es `MM/AAAA` porque lo pide `docs/03-cv.md` §2:
- * consistente, sin nombres de mes que cambien entre superficies.
+ * NOTE: the strings this module emits stay in Spanish. They are CV content, not
+ * code — the reader of the CV reads Spanish. Only the code around them is in
+ * English.
+ *
+ * The date format is `MM/AAAA` because `docs/03-cv.md` §2 asks for it:
+ * consistent, with no month names that shift between surfaces.
  */
 
 import type { Role, YearMonth } from "./content-schema";
 
 // ---------------------------------------------------------------------------
-// Fechas
+// Dates
 // ---------------------------------------------------------------------------
 
 /** "2023-07" → "07/2023". */
@@ -22,16 +26,17 @@ export function formatYearMonth(ym: YearMonth): string {
 }
 
 /**
- * Rango de un rol. `end === null` significa "sigue vigente", no "falta el dato":
- * por eso rinde "Actualidad" y no un vacío.
+ * Range of a role. `end === null` means "still current", not "the datum is
+ * missing": which is why it renders "Actualidad" and not a blank.
  */
 export function formatDateRange(start: YearMonth, end: YearMonth | null): string {
   return `${formatYearMonth(start)} — ${end ? formatYearMonth(end) : "Actualidad"}`;
 }
 
 /**
- * Meses → "1 año 11 meses". En palabras y no abreviado porque lo lee un humano
- * en 10 segundos y también un LLM que cruza fechas contra los rangos.
+ * Months → "1 año 11 meses". Spelled out rather than abbreviated because a
+ * human reads it in 10 seconds, and so does an LLM cross-checking dates against
+ * the ranges.
  */
 export function formatDuration(months: number): string {
   const years = Math.floor(months / 12);
@@ -50,9 +55,9 @@ export function formatDuration(months: number): string {
 // ---------------------------------------------------------------------------
 
 /**
- * Regla 2: dos roles solapados sin aclaración son una bandera roja automática,
- * tanto para la capa de IA como para el humano. Si el dato dice `concurrent`,
- * el título lo declara.
+ * Rule 2: two overlapping roles with no clarification are an automatic red flag,
+ * both for the AI layer and for the human. If the datum says `concurrent`, the
+ * title declares it.
  */
 export function formatRoleTitle(role: Role): string {
   const title = role.displayTitle ?? role.title;
@@ -60,8 +65,8 @@ export function formatRoleTitle(role: Role): string {
 }
 
 /**
- * Regla 1: el número viene de `ContentView.yearsOfExperience`, que a su vez sale
- * de `careerStart`. Esta función solo le pone las palabras alrededor.
+ * Rule 1: the number comes from `ContentView.yearsOfExperience`, which in turn
+ * comes from `careerStart`. This function only puts the words around it.
  */
 export function formatSeniority(years: number): string {
   return `${years}+ años`;

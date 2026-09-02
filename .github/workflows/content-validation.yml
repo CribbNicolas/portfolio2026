@@ -1,6 +1,6 @@
-# Hace ciertas las afirmaciones de los docs: las reglas duras son CI, no intenciones.
-# Equivalente local (todos tienen que pasar):
-#   pnpm run test:workflows && pnpm run typecheck && pnpm run validate && pnpm test && pnpm run build && pnpm run pdf:local && pnpm run test:pdf && pnpm run test:js && pnpm run test:bundle && pnpm run test:landing && pnpm run audit:todos
+# Makes the claims in the docs true: the hard rules are CI, not intentions.
+# Local equivalent (all of them have to pass):
+#   pnpm run test:workflows && pnpm run typecheck && pnpm run validate && pnpm test && pnpm run test:format && pnpm run test:editor && pnpm run build && pnpm run pdf:local && pnpm run test:pdf && pnpm run test:js && pnpm run test:bundle && pnpm run test:landing && pnpm run test:endpoints && pnpm run test:og && pnpm run audit:todos
 name: content-validation
 
 on:
@@ -10,90 +10,110 @@ on:
 jobs:
   validate:
     runs-on: ubuntu-latest
-    # El default de GitHub son 6 HORAS. Una corrida sana tarda ~1 minuto, así que
-    # cualquier cosa que pase de 15 está colgada, no lenta. Sin este techo, un
-    # apt-get que no responde quema un job entero antes de que alguien lo note.
+    # GitHub's default is 6 HOURS. A healthy run takes ~1 minute, so anything
+    # past 15 is hung, not slow. Without this ceiling, an apt-get that does not
+    # respond burns a whole job before anybody notices.
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
-      # pnpm ANTES de setup-node: `cache: pnpm` necesita que el binario ya exista
-      # para resolver el store. Al revés, el step de cache falla con "Unable to
-      # locate executable file: pnpm".
+      # pnpm BEFORE setup-node: `cache: pnpm` needs the binary to already exist
+      # to resolve the store. The other way around, the cache step fails with
+      # "Unable to locate executable file: pnpm".
       - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v4
         with:
-          # Astro 6 exige Node >=22.12. Con 20 el `astro sync` del typecheck se
-          # niega a arrancar y el pipeline muere en el primer step. Se usa 24
-          # porque es lo que corre la máquina de desarrollo: una CI que corre otro
-          # major que el dev deja de servir para cazar lo que el dev no ve.
+          # Astro 6 requires Node >=22.12. On 20 the typecheck's `astro sync`
+          # refuses to start and the pipeline dies at the first step. 24 is used
+          # because it is what the development machine runs: a CI on a different
+          # major than dev stops being useful for catching what dev cannot see.
           node-version: 24
           cache: pnpm
-      # --frozen-lockfile es el `npm ci` de pnpm: falla si el lockfile no coincide
-      # con package.json en vez de arreglarlo en silencio. En CI eso es lo que se
-      # quiere — un lockfile desactualizado tiene que romper el build, no pasar.
+      # --frozen-lockfile is pnpm's `npm ci`: it fails if the lockfile does not
+      # match package.json instead of fixing it silently. In CI that is what you
+      # want — an outdated lockfile has to break the build, not pass.
       - run: pnpm install --frozen-lockfile
-      # Primero de todo: si un workflow no parsea, GitHub lo marca fallido SIN
-      # JOBS y el gate que ese archivo define deja de correr sin avisar. Pasó.
+      # First of all: if a workflow does not parse, GitHub marks it failed WITH
+      # NO JOBS and the gate that file defines stops running without warning.
+      # It happened.
       - run: pnpm run test:workflows
       - run: pnpm run typecheck
       - run: pnpm run validate
       - run: pnpm test
 
-      # El PDF de PRODUCCIÓN ya no sale de acá: lo genera `functions/cv.pdf.ts`
-      # a demanda con Browser Rendering, y por eso `pnpm run build` corre en
-      # Cloudflare sin Chromium. Chromium sigue instalándose SOLO para el gate:
-      # `pdf:local` produce el PDF que `test:pdf` verifica antes de publicar
-      # nada. Que el PDF SERVIDO también pase está en `smoke-deploy.yml`.
+      # The dataset's written form. It is committed, it is edited by hand, and
+      # a merge can resolve a conflict into something the serializer would never
+      # emit — after which the next editor save produces a diff full of
+      # reformatting nobody asked for.
+      - run: pnpm run test:format
+
+      # The PRODUCTION PDF no longer comes from here: `functions/cv.pdf.ts`
+      # generates it on demand with Browser Rendering, which is why
+      # `pnpm run build` runs on Cloudflare with no Chromium. Chromium is still
+      # installed ONLY for the gate: `pdf:local` produces the PDF `test:pdf`
+      # verifies before anything is published. That the SERVED PDF also passes
+      # is in `smoke-deploy.yml`.
       #
-      # Va en un step propio para que un fallo de descarga del browser no se
-      # confunda con un fallo del CV.
-      - name: Cache de browsers de Playwright
+      # It gets its own step so a browser download failure is not confused with
+      # a CV failure.
+      - name: Cache Playwright browsers
         uses: actions/cache@v4
         with:
           path: ~/.cache/ms-playwright
           key: playwright-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
-      # Sin `--with-deps` a propósito: esa bandera corre `apt-get` en CADA
-      # corrida, incluso cuando el caché de browsers acierta y no hay nada que
-      # descargar. Una corrida se colgó 6 h ahí porque los mirrors de Ubuntu no
-      # respondían — mismo commit que había pasado en 1 min. La imagen de
-      # ubuntu-latest ya trae las librerías que Chromium necesita.
-      # Si algún día Chromium no arranca, el fallo sale en el step `pdf:local`
-      # de abajo y la vuelta atrás es agregar `--with-deps` de nuevo.
-      - name: Instalar Chromium
+      # No `--with-deps`, on purpose: that flag runs `apt-get` on EVERY run,
+      # even when the browser cache hits and there is nothing to download. One
+      # run hung for 6 h there because the Ubuntu mirrors were not responding —
+      # the same commit that had passed in 1 min. The ubuntu-latest image
+      # already ships the libraries Chromium needs.
+      # If Chromium ever fails to start, the failure surfaces in the `pdf:local`
+      # step below and the way back is adding `--with-deps` again.
+      - name: Install Chromium
         timeout-minutes: 5
         run: pnpm exec playwright install chromium
 
+      # The editor's page. It is the only code in the repo the typecheck never
+      # sees (`editor/public` is excluded: browser modules, no build step), so
+      # this one end-to-end pass is what holds it. It edits a COPY of the
+      # dataset in a temp directory.
+      - run: pnpm run test:editor
+
       - run: pnpm run build
-      # `build` es solo `astro build`. El PDF se genera aparte, y ese es
-      # exactamente el corte que permite que Cloudflare Pages corra el build.
+      # `build` is only `astro build`. The PDF is generated separately, and that
+      # is exactly the cut that lets Cloudflare Pages run the build.
       - run: pnpm run pdf:local
-      # Acá se verifica que el CV pasa la capa 1 del embudo: texto extraíble,
-      # orden de lectura sano, sin TODOs, sin teléfono, máximo 2 páginas.
+      # Here it is verified that the CV passes layer 1 of the funnel:
+      # extractable text, sane reading order, no TODOs, no phone number, at most
+      # 2 pages.
       - run: pnpm run test:pdf
 
-      # Política de JS por página sobre TODO dist/. Blinda /cv: el PDF sale de
-      # ahí y un script que se cuele cambiaría el render sin que nadie lo note.
+      # Per-page JS policy over ALL of dist/. It shields /cv: the PDF comes from
+      # there and a script slipping in would change the render unnoticed.
       - run: pnpm run test:js
-      # Presupuesto de bytes de /lab. El chunk de three tiene que quedar afuera
-      # del camino crítico, no solo "ser lazy" de palabra.
+      # Byte budget of the map. The three chunk has to stay off the critical
+      # path, not just "be lazy" in words.
       - run: pnpm run test:bundle
-      # La landing es la unica puerta: /cv sin links entrantes y con noindex, y
-      # su seccion CV sincronizada con el PDF. Sin esto, alguien agrega un link
-      # "ver CV completo" en tres meses y nadie se entera.
+      # The landing is the only door: /cv with no incoming links and with
+      # noindex, and its CV section in sync with the PDF. Without this, somebody
+      # adds a "see full CV" link in three months and nobody finds out.
       - run: pnpm run test:landing
-      # La tarjeta social. `public/og.jpg` está COMMITEADO —rasterizar necesita
-      # Chromium y el builder de Cloudflare no lo tiene—, así que puede quedar
-      # vieja en silencio: cambia el rol en el dataset, el sitio dice una cosa y
-      # lo que ve LinkedIn sigue diciendo la otra. Esto compara la huella de las
-      # entradas contra la del JPEG y falla si alguien se olvidó de `og:local`.
-      # NO regenera la imagen en CI: los bytes de un JPEG no son reproducibles
-      # entre versiones de Chromium, así que compararlos sería un test tornasol.
+      # The two surfaces agents consume, and the only two that had no gate
+      # until now: that `/cv.json` parses and carries the contract keys, and that
+      # `/llms.txt` has no empty fields and no split role titles.
+      - run: pnpm run test:endpoints
+      # The social card. `public/og.jpg` is COMMITTED — rasterizing needs
+      # Chromium and the Cloudflare builder does not have it — so it can go stale
+      # silently: change the role in the dataset, the site says one thing and
+      # what LinkedIn sees keeps saying the other. This compares the fingerprint
+      # of the inputs against the JPEG's and fails if somebody forgot
+      # `og:local`. It does NOT regenerate the image in CI: the bytes of a JPEG
+      # are not reproducible across Chromium versions, so comparing them would
+      # be a coin-flip test.
       - run: pnpm run test:og
 
-      # No bloquea: son datos pendientes conocidos. Queda en el log para verlos.
+      # Does not block: these are known pending data. It stays in the log.
       - run: pnpm run audit:todos
 
-      - name: Publicar el CV generado
+      - name: Publish the generated CV
         uses: actions/upload-artifact@v4
         with:
           name: cv-pdf

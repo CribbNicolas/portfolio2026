@@ -1,8 +1,9 @@
 /**
- * Punto de entrada del contenido.
+ * Content entry point.
  *
- * ESTA es la única línea que cambia cuando migres a Sanity o a backend propio.
- * Todo el frontend importa desde acá, nunca desde `json-source` directamente.
+ * THIS is the only line that changes when you migrate to Sanity or to your own
+ * backend. The whole frontend imports from here, never from `json-source`
+ * directly.
  */
 
 import { JsonContentSource } from "./json-source";
@@ -12,13 +13,17 @@ export const content: ContentSource = new JsonContentSource();
 
 export * from "../schema/content-schema";
 
-// El contrato de salida viaja con el contenido: quien consume datos también
-// necesita convertirlos en texto sin reimplementar las reglas 1, 2 y 4.
-// Así `src/` importa TODO de un solo lugar y el invariante 2 sigue siendo cierto.
+// The output contract travels with the content: whoever consumes data also
+// needs to turn it into text without reimplementing rules 1, 2 and 4. That way
+// `src/` imports EVERYTHING from one place and invariant 2 stays true.
 export * from "../schema/format";
 export * from "../schema/format-metric";
+// How the skills are grouped and ordered. Shared by the CV and `/llms.txt`,
+// which used to keep two lists that drifted apart.
+export * from "../schema/skill-groups";
 
-// El grafo es otra vista derivada del mismo contenido, igual que el formateo.
-// Corre SOLO en build (frontmatter de /lab): nada de esto viaja al browser.
+// The graph is another view derived from the same content, same as formatting.
+// It runs ONLY at build time (page frontmatter): none of this reaches the
+// browser.
 export * from "../schema/knowledge-graph";
 export * from "../schema/graph-layout";

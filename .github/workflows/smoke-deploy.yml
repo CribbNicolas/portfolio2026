@@ -1,34 +1,35 @@
-# Verifica el sitio PUBLICADO: que el PDF pase el ATS, y que `/cv` siga en cero
-# JavaScript en la respuesta real y no en el `dist/` que produjo el build.
+# Verifies the PUBLISHED site: that the PDF passes the ATS, and that `/cv` is
+# still at zero JavaScript in the real response and not in the `dist/` the build
+# produced.
 #
-# `content-validation.yml` verifica `dist/cv.pdf`, generado con Playwright en el
-# runner. El PDF que baja la gente lo imprime Browser Rendering desde
-# `functions/cv.pdf.ts`: otro Chromium, otra red, otro momento. Son las MISMAS
-# assertions sobre bytes distintos.
+# `content-validation.yml` verifies `dist/cv.pdf`, generated with Playwright on
+# the runner. The PDF people download is printed by Browser Rendering from
+# `functions/cv.pdf.ts`: another Chromium, another network, another moment. They
+# are the SAME assertions over different bytes.
 #
-# La primera version de este archivo escuchaba `deployment_status`, asumiendo
-# que Cloudflare Pages creaba GitHub Deployments. NO los crea: publica un *check
-# run* llamado "Cloudflare Pages". El evento nunca se disparo y este gate estuvo
-# semanas sin correr ni una sola vez, mientras la lista de Actions mostraba todo
-# en verde. Medido: 0 corridas del workflow, 0 deployments en la API del repo.
+# The first version of this file listened for `deployment_status`, assuming
+# Cloudflare Pages created GitHub Deployments. It does NOT: it publishes a *check
+# run* called "Cloudflare Pages". The event never fired and this gate went weeks
+# without running once, while the Actions list showed everything green. Measured:
+# 0 workflow runs, 0 deployments in the repo API.
 #
-# Ahora dispara con `push`, que si ocurre siempre. Lo que eso trae es que el
-# push y el deploy no son el mismo momento —Cloudflare tarda uno o dos minutos—,
-# asi que hay que esperar a que la URL sirva ESTE commit y no el anterior. Para
-# eso existe `/build.json`, que lleva `CF_PAGES_COMMIT_SHA`.
+# It now fires on `push`, which does always happen. What that brings is that the
+# push and the deploy are not the same moment — Cloudflare takes a minute or two
+# — so it has to wait for the URL to serve THIS commit and not the previous one.
+# That is what `/build.json` exists for, carrying `CF_PAGES_COMMIT_SHA`.
 #
-# Dormir un rato fijo en vez de preguntar seria la version fragil: verificaria
-# el deploy anterior cada vez que el build tardara de mas, y pasaria en verde.
+# Sleeping a fixed while instead of asking would be the fragile version: it would
+# verify the previous deploy every time the build ran long, and pass green.
 name: smoke-deploy
 
 on:
   push:
     branches: [main, staging]
-  # Para volver a correrlo sin pushear nada, cuando algo se rompio afuera.
+  # To re-run it without pushing anything, when something broke outside.
   workflow_dispatch:
 
 jobs:
-  publicado:
+  published:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -38,107 +39,107 @@ jobs:
         with:
           node-version: 24
           cache: pnpm
-      # Sin Chromium: aca no se genera ningun PDF, solo se lee uno.
+      # No Chromium: no PDF is generated here, one is only read.
       - run: pnpm install --frozen-lockfile
 
-      - name: Resolver la URL de esta rama
+      - name: Resolve this branch's URL
         run: |
-          # `main` es la Production branch; el resto usa el alias por rama que
-          # arma Pages, `<rama>.<proyecto>.pages.dev`.
+          # `main` is the Production branch; the rest use the per-branch alias
+          # Pages builds, `<branch>.<project>.pages.dev`.
           case "${{ github.ref_name }}" in
-            main)    sitio="https://cribbnicolas.pages.dev" ;;
-            staging) sitio="https://staging.cribbnicolas.pages.dev" ;;
+            main)    site="https://cribbnicolas.pages.dev" ;;
+            staging) site="https://staging.cribbnicolas.pages.dev" ;;
             *)
-              echo "::error::rama ${{ github.ref_name }} sin URL conocida. Revisa el filtro del workflow."
+              echo "::error::branch ${{ github.ref_name }} has no known URL. Check the workflow filter."
               exit 1
               ;;
           esac
-          echo "SITIO=$sitio" >> "$GITHUB_ENV"
-          echo "PDF_SOURCE=$sitio/cv.pdf" >> "$GITHUB_ENV"
-          echo "sitio: $sitio"
+          echo "SITE=$site" >> "$GITHUB_ENV"
+          echo "PDF_SOURCE=$site/cv.pdf" >> "$GITHUB_ENV"
+          echo "site: $site"
 
-      - name: Esperar a que Cloudflare publique este commit
+      - name: Wait for Cloudflare to publish this commit
         run: |
-          # Se pregunta por el commit y no por "responde 200": el deploy
-          # anterior ya responde 200 todo el tiempo, asi que eso no distingue
-          # nada.
-          esperado="${{ github.sha }}"
-          echo "esperando commit $esperado en $SITIO/build.json"
+          # It asks for the commit and not for "responds 200": the previous
+          # deploy already responds 200 all the time, so that distinguishes
+          # nothing.
+          expected="${{ github.sha }}"
+          echo "waiting for commit $expected at $SITE/build.json"
 
-          for intento in $(seq 1 30); do
-            # `?t=` para no comerse una respuesta cacheada justo cuando el valor
-            # acaba de cambiar.
-            cuerpo=$(curl -s --max-time 20 "$SITIO/build.json?t=$(date +%s)" || echo '{}')
-            publicado=$(printf '%s' "$cuerpo" | sed -n 's/.*"commit"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p')
-            echo "  intento $intento: publicado=${publicado:-<sin respuesta>}"
+          for attempt in $(seq 1 30); do
+            # `?t=` so it does not get a cached response right when the value has
+            # just changed.
+            body=$(curl -s --max-time 20 "$SITE/build.json?t=$(date +%s)" || echo '{}')
+            published=$(printf '%s' "$body" | sed -n 's/.*"commit"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p')
+            echo "  attempt $attempt: published=${published:-<no response>}"
 
-            if [ "$publicado" = "$esperado" ]; then
-              echo "publicado"
+            if [ "$published" = "$expected" ]; then
+              echo "published"
               exit 0
             fi
 
             sleep 20
           done
 
-          echo "::error::$SITIO nunca llego a servir $esperado. O el build de Pages fallo, o /build.json no existe en el deploy publicado."
+          echo "::error::$SITE never got to serve $expected. Either the Pages build failed, or /build.json does not exist in the published deploy."
           exit 1
 
-      - name: Calentar el PDF, tolerando el 429 de Browser Rendering
+      - name: Warm the PDF, tolerating Browser Rendering's 429
         run: |
-          # Un 429 significa "espera", no "el PDF esta roto". El plan gratuito
-          # da 3 browsers concurrentes y una instancia nueva cada 20 segundos, y
-          # la cadena staging -> main son DOS deploys seguidos por diseno: cada
-          # uno pide un render en frio con minutos de diferencia. Medido: la
-          # primera corrida de este workflow fallo exactamente asi, con el sitio
-          # sano —la verificacion manual pasaba 13/13 minutos despues—.
+          # A 429 means "wait", not "the PDF is broken". The free plan gives 3
+          # concurrent browsers and one new instance every 20 seconds, and the
+          # staging -> main chain is TWO deploys back to back by design: each one
+          # asks for a cold render minutes apart. Measured: the first run of this
+          # workflow failed exactly like that, with the site healthy — manual
+          # verification passed 13 minutes later.
           #
-          # Sin este paso, el gate se pone en rojo por cuota y entrena a
-          # ignorarlo, que es la peor forma de perder un gate.
+          # Without this step, the gate goes red on quota and trains you to
+          # ignore it, which is the worst way to lose a gate.
           #
-          # Ademas de tolerar el 429, deja el PDF en el cache de borde del colo
-          # que le toco al runner, asi que el test de abajo pega cache y no
-          # gasta OTRO render.
-          for intento in $(seq 1 6); do
-            codigo=$(curl -s -o /dev/null -w '%{http_code}' --max-time 90 "$PDF_SOURCE" || echo 000)
-            echo "  intento $intento: HTTP $codigo"
+          # Besides tolerating the 429, it leaves the PDF in the edge cache of
+          # the colo the runner landed on, so the test below hits the cache and
+          # does not spend ANOTHER render.
+          for attempt in $(seq 1 6); do
+            code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 90 "$PDF_SOURCE" || echo 000)
+            echo "  attempt $attempt: HTTP $code"
 
-            case "$codigo" in
-              200) echo "PDF listo y cacheado"; exit 0 ;;
+            case "$code" in
+              200) echo "PDF ready and cached"; exit 0 ;;
               429)
-                # Se respeta el Retry-After que propaga la Function si vino.
-                espera=$(curl -sI --max-time 30 "$PDF_SOURCE" | sed -n 's/^[Rr]etry-[Aa]fter:[[:space:]]*\([0-9]*\).*/\1/p')
-                espera=${espera:-30}
-                echo "  cuota de Browser Rendering; reintento en ${espera}s"
-                sleep "$espera"
+                # It honours the Retry-After the Function propagates, if it came.
+                wait=$(curl -sI --max-time 30 "$PDF_SOURCE" | sed -n 's/^[Rr]etry-[Aa]fter:[[:space:]]*\([0-9]*\).*/\1/p')
+                wait=${wait:-30}
+                echo "  Browser Rendering quota; retrying in ${wait}s"
+                sleep "$wait"
                 ;;
               *)
-                # 502, 503, 504 o red caida: puede ser transitorio, pero no es
-                # cuota. Se reintenta pocas veces y con menos paciencia.
-                echo "  respuesta inesperada; reintento en 15s"
+                # 502, 503, 504 or a dead network: it can be transient, but it is
+                # not quota. Retried fewer times and with less patience.
+                echo "  unexpected response; retrying in 15s"
                 sleep 15
                 ;;
             esac
           done
 
-          echo "::error::$PDF_SOURCE no llego a devolver 200 despues de 6 intentos. Si el ultimo fue 429, se agoto la cuota diaria de Browser Rendering; cualquier otro codigo es un fallo real de la Function."
+          echo "::error::$PDF_SOURCE did not return 200 after 6 attempts. If the last one was a 429, the daily Browser Rendering quota is used up; any other code is a real Function failure."
           exit 1
 
-      - name: El PDF servido pasa la capa 1 del embudo
+      - name: The served PDF passes layer 1 of the funnel
         run: pnpm run test:pdf
 
-      - name: El HEAD declara un PDF, no una pagina
+      - name: The HEAD declares a PDF, not a page
         run: |
-          # `-w '%{content_type}'` en vez de parsear la cabecera con grep: el
-          # header viene terminado en CR y sacarlo a mano fue lo que una vez
-          # rompio este archivo (un CR literal adentro del YAML).
-          tipo=$(curl -sI -o /dev/null -w '%{content_type}' --max-time 60 "$PDF_SOURCE")
-          echo "HEAD $PDF_SOURCE -> $tipo"
-          case "$tipo" in
+          # `-w '%{content_type}'` instead of parsing the header with grep: the
+          # header comes terminated with a CR, and stripping it by hand is what
+          # once broke this file (a literal CR inside the YAML).
+          type=$(curl -sI -o /dev/null -w '%{content_type}' --max-time 60 "$PDF_SOURCE")
+          echo "HEAD $PDF_SOURCE -> $type"
+          case "$type" in
             application/pdf*) exit 0 ;;
-            *) echo "::error::HEAD devuelve '$tipo' en vez de application/pdf: el handler de HEAD no matchea la Function" ; exit 1 ;;
+            *) echo "::error::HEAD returns '$type' instead of application/pdf: the HEAD handler does not match the Function" ; exit 1 ;;
           esac
 
-      # Lo unico que puede ver lo que pasa DESPUES del build: una inyeccion en
-      # el borde, una regla de transformacion, un _headers mal puesto.
-      - name: La respuesta servida respeta los invariantes
-        run: pnpm run test:servido
+      # The only thing that can see what happens AFTER the build: an edge
+      # injection, a transform rule, a misplaced _headers.
+      - name: The served response respects the invariants
+        run: pnpm run test:served

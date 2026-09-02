@@ -1,11 +1,11 @@
 /**
- * Validación del dataset.
+ * Dataset validation.
  *
- * Dos capas:
- *  1. Zod  → la forma. Que los campos existan y tengan el tipo correcto.
- *  2. Reglas duras → la coherencia. Lo que el tipo no puede expresar.
+ * Two layers:
+ *  1. Zod  → the shape. That fields exist and hold the right type.
+ *  2. Hard rules → the coherence. What a type cannot express.
  *
- * Correr `validateDataset()` en CI. Si falla, no deployea.
+ * Run `validateDataset()` in CI. If it fails, nothing deploys.
  */
 
 import { z } from "zod";
@@ -13,18 +13,18 @@ import type { ContentDataset, Prose } from "./content-schema";
 import { toMonths } from "./dates";
 
 // ---------------------------------------------------------------------------
-// 1. Forma (Zod)
+// 1. Shape (Zod)
 // ---------------------------------------------------------------------------
 //
-// Todos los objetos llevan `.strict()`: una clave presente en el JSON pero
-// ausente del schema Zod tira error, en vez de descartarse en silencio. Sin esto,
-// olvidarse de reflejar en Zod un campo nuevo de la interface pasa desapercibido
-// —justo el modo de falla que este proyecto combate—. Si agregás un campo a una
-// interface, agregalo también acá en el mismo commit.
+// Every object carries `.strict()`: a key present in the JSON but absent from
+// the Zod schema throws instead of being dropped silently. Without it,
+// forgetting to mirror a new interface field in Zod goes unnoticed — exactly
+// the failure mode this project fights. If you add a field to an interface, add
+// it here in the same commit.
 
 const yearMonth = z
   .string()
-  .regex(/^\d{4}-(0[1-9]|1[0-2])$/, "Formato esperado: YYYY-MM");
+  .regex(/^\d{4}-(0[1-9]|1[0-2])$/, "Expected format: YYYY-MM");
 
 const surface = z.enum([
   "cv",
@@ -48,7 +48,7 @@ const visibility = z.object({
 }).strict();
 
 const prose = z.object({
-  short: z.string().min(1).max(180, "El texto corto no puede pasar 180 caracteres"),
+  short: z.string().min(1).max(180, "The short text cannot exceed 180 characters"),
   long: z.string().optional(),
 }).strict();
 
@@ -66,10 +66,15 @@ const link = z.object({
   ]),
 }).strict();
 
+const skillPeriod = z.object({
+  start: yearMonth,
+  end: yearMonth.optional(),
+}).strict();
+
 const media = z.object({
   kind: z.enum(["image", "gif", "video"]),
   url: z.string(),
-  alt: z.string().min(1, "Regla 5: todo media necesita alt"),
+  alt: z.string().min(1, "Rule 5: every media needs an alt"),
   caption: z.string().optional(),
 }).strict();
 
@@ -122,7 +127,7 @@ const skill = z.object({
   ]),
   aliases: z.array(z.string()),
   level: z.enum(["core", "working", "familiar"]),
-  since: yearMonth.optional(),
+  periods: z.array(skillPeriod).optional(),
   active: z.boolean(),
   visibility,
 }).strict();
@@ -172,7 +177,7 @@ const technicalDecision = z.object({
   decision: z.string(),
   context: z.string(),
   rationale: z.string(),
-  tradeoff: z.string().min(1, "Si no hay trade-off, no era una decisión"),
+  tradeoff: z.string().min(1, "With no trade-off it was not a decision"),
   alternatives: z.array(z.string()).optional(),
 }).strict();
 
@@ -263,7 +268,7 @@ export const datasetSchema = z.object({
 }).strict();
 
 // ---------------------------------------------------------------------------
-// 2. Reglas duras (las del CONTRATO.md)
+// 2. Hard rules (the ones in CONTRACT.md)
 // ---------------------------------------------------------------------------
 
 export interface RuleViolation {
@@ -283,7 +288,7 @@ const overlaps = (
   return aStart < bEnd && bStart < aEnd;
 };
 
-/** Todo campo `Prose` del dataset como `[ruta, texto]`. short siempre, long si existe. */
+/** Every `Prose` field in the dataset as `[path, text]`. short always, long when present. */
 function collectProse(data: ContentDataset): Array<[string, string]> {
   const out: Array<[string, string]> = [];
   const add = (path: string, p?: Prose): void => {
@@ -308,7 +313,7 @@ export function checkRules(data: ContentDataset): RuleViolation[] {
   const violations: RuleViolation[] = [];
   const now = toMonths(new Date().toISOString().slice(0, 7));
 
-  // Regla 2: no dos full-time superpuestos sin `concurrent`
+  // Rule 2: no two overlapping full-time roles without `concurrent`
   const fullTime = data.roles.filter((r) => r.employmentType === "full-time");
   for (let i = 0; i < fullTime.length; i++) {
     for (let j = i + 1; j < fullTime.length; j++) {
@@ -317,13 +322,13 @@ export function checkRules(data: ContentDataset): RuleViolation[] {
       if (overlaps(a, b, now) && !a.concurrent && !b.concurrent) {
         violations.push({
           rule: 2,
-          message: `"${a.company}" y "${b.company}" se superponen como full-time. Marcá uno con concurrent: true o corregí el tipo de contrato.`,
+          message: `"${a.company}" y "${b.company}" overlap as full-time. Mark one with concurrent: true or fix the employment type.`,
         });
       }
     }
   }
 
-  // Regla 3: toda skill "core" necesita evidencia
+  // Rule 3: every "core" skill needs evidence
   const usedSkillIds = new Set<string>([
     ...data.achievements.flatMap((a) => a.skillIds),
     ...data.projects.flatMap((p) => p.skillIds),
@@ -332,48 +337,80 @@ export function checkRules(data: ContentDataset): RuleViolation[] {
     if (s.level === "core" && s.active && !usedSkillIds.has(s.id)) {
       violations.push({
         rule: 3,
-        message: `"${s.name}" está declarada como core pero ningún logro ni proyecto la referencia. O la bajás a working, o escribís dónde la usaste.`,
+        message: `"${s.name}" is declared core but no achievement or project references it. Either drop it to working, or write down where you used it.`,
       });
     }
   }
 
-  // Integridad referencial
+  // `Skill.periods` coherence. Not a numbered contract rule: it is shape
+  // coherence, the same kind as the referential integrity below. Zod checks a
+  // period has `start` and `end` in YYYY-MM; that `end` comes AFTER, and that
+  // two declared periods do not overlap, is not something a type can express.
+  // `monthsFromPeriods` merges the overlapping ones, so without this rule a
+  // duplicated period would be absorbed silently.
+  for (const s of data.skills) {
+    const periods = s.periods ?? [];
+    for (const p of periods) {
+      if (p.end && toMonths(p.end) <= toMonths(p.start)) {
+        violations.push({
+          rule: 0,
+          message: `Skill "${s.id}": the period ${p.start} → ${p.end} ends before it starts, or lasts zero months.`,
+        });
+      }
+    }
+    for (let i = 0; i < periods.length; i++) {
+      for (let j = i + 1; j < periods.length; j++) {
+        const a = { start: periods[i].start, end: periods[i].end ?? null };
+        const b = { start: periods[j].start, end: periods[j].end ?? null };
+        if (overlaps(a, b, now)) {
+          violations.push({
+            rule: 0,
+            message: `Skill "${s.id}": the periods ${a.start}→${a.end ?? "today"} and ${b.start}→${b.end ?? "today"} overlap. Merge them into one.`,
+          });
+        }
+      }
+    }
+  }
+
+  // Referential integrity
   const roleIds = new Set(data.roles.map((r) => r.id));
   const projectIds = new Set(data.projects.map((p) => p.id));
   const skillIds = new Set(data.skills.map((s) => s.id));
   for (const a of data.achievements) {
     if (!roleIds.has(a.roleId)) {
-      violations.push({ rule: 0, message: `Achievement "${a.id}" apunta a un roleId inexistente: ${a.roleId}` });
+      violations.push({ rule: 0, message: `Achievement "${a.id}" points at a roleId that does not exist: ${a.roleId}` });
     }
     if (a.projectId && !projectIds.has(a.projectId)) {
-      violations.push({ rule: 0, message: `Achievement "${a.id}" apunta a un projectId inexistente: ${a.projectId}` });
+      violations.push({ rule: 0, message: `Achievement "${a.id}" points at a projectId that does not exist: ${a.projectId}` });
     }
     for (const sid of a.skillIds) {
       if (!skillIds.has(sid)) {
-        violations.push({ rule: 0, message: `Achievement "${a.id}" referencia una skill inexistente: ${sid}` });
+        violations.push({ rule: 0, message: `Achievement "${a.id}" references a skill that does not exist: ${sid}` });
       }
     }
   }
 
-  // Regla 1: ninguna duración escrita a mano.
-  // Se recorre TODO campo Prose del dataset (short y long), no una lista a mano:
-  // así no quedan agujeros por campos nuevos que alguien olvide agregar.
+  // Rule 1: no hand-written duration.
+  // EVERY Prose field in the dataset is walked (short and long), not a
+  // hand-kept list: that way no hole is left by a new field someone forgets to
+  // add. The pattern keeps the Spanish words because the prose it scans is the
+  // CV content, which is written in Spanish.
   const durationPattern = /\b\d+\s*(años?|meses|years?|months?)\b/i;
   for (const [field, value] of collectProse(data)) {
     if (durationPattern.test(value)) {
       violations.push({
         rule: 1,
-        message: `${field} tiene una duración escrita a mano. Se deriva de careerStart / start / end.`,
+        message: `${field} has a hand-written duration. It is derived from careerStart / start / end.`,
       });
     }
   }
 
-  // Regla 6: testimonios sin aprobar no se publican
+  // Rule 6: unapproved testimonials are not published
   for (const t of data.testimonials) {
     if (!t.approved && !t.visibility.except?.length) {
       violations.push({
         rule: 6,
-        message: `Testimonio "${t.id}" no está aprobado y no tiene exclusiones. No lo publiques hasta tener el OK.`,
+        message: `Testimonio "${t.id}" is not approved and has no exclusions. Do not publish it until you have the OK.`,
       });
     }
   }
@@ -381,15 +418,15 @@ export function checkRules(data: ContentDataset): RuleViolation[] {
   return violations;
 }
 
-/** Punto de entrada único. Tirá esto en un test o en un script de CI. */
+/** The single entry point. Call this from a test or a CI script. */
 export function validateDataset(input: unknown): ContentDataset {
   const parsed = datasetSchema.parse(input) as ContentDataset;
   const violations = checkRules(parsed);
   if (violations.length > 0) {
     const detail = violations
-      .map((v) => `  [regla ${v.rule}] ${v.message}`)
+      .map((v) => `  [rule ${v.rule}] ${v.message}`)
       .join("\n");
-    throw new Error(`El dataset viola ${violations.length} regla(s):\n${detail}`);
+    throw new Error(`The dataset violates ${violations.length} rule(s):\n${detail}`);
   }
   return parsed;
 }

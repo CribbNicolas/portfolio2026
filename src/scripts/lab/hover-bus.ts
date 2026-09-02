@@ -1,39 +1,40 @@
 /**
- * El puente lista↔mapa.
+ * The list↔map bridge.
  *
- * No conoce three ni el markup: es un `EventTarget` con dos métodos. Por eso el
- * renderer se puede cambiar sin tocar el DOM, y al revés.
+ * It knows neither three nor the markup: it is an `EventTarget` with two
+ * methods. That is why the renderer can be swapped without touching the DOM,
+ * and the other way around.
  *
- * Ojo: en CSS el hover cruzado YA funciona sin JavaScript (`lab-hover-css.ts`).
- * Esto existe para el lado que el CSS no puede hacer — resaltar un nodo dentro
- * del canvas WebGL, donde no hay elementos ni `:hover`.
+ * Note: in CSS the cross-hover ALREADY works without JavaScript
+ * (`lab-hover-css.ts`). This exists for the side CSS cannot do — highlighting a
+ * node inside the WebGL canvas, where there are no elements and no `:hover`.
  */
 
-export type FuenteHover = "dom" | "canvas";
-export type OyenteHover = (id: string | null, fuente: FuenteHover) => void;
+export type HoverSource = "dom" | "canvas";
+export type HoverListener = (id: string | null, source: HoverSource) => void;
 
-export interface BusHover {
-  activar(id: string | null, fuente: FuenteHover): void;
-  alCambiar(fn: OyenteHover): () => void;
-  actual(): string | null;
+export interface HoverBus {
+  activate(id: string | null, source: HoverSource): void;
+  onChange(fn: HoverListener): () => void;
+  current(): string | null;
 }
 
-export function crearBusHover(): BusHover {
-  const oyentes = new Set<OyenteHover>();
-  let activo: string | null = null;
+export function createHoverBus(): HoverBus {
+  const listeners = new Set<HoverListener>();
+  let active: string | null = null;
 
   return {
-    activar(id, fuente) {
-      // La deduplicación es lo que impide el loop: los dos lados escuchan y
-      // emiten, así que sin esto un hover rebota indefinidamente.
-      if (id === activo) return;
-      activo = id;
-      for (const fn of oyentes) fn(id, fuente);
+    activate(id, source) {
+      // Deduplication is what prevents the loop: both sides listen and emit, so
+      // without this a hover bounces forever.
+      if (id === active) return;
+      active = id;
+      for (const fn of listeners) fn(id, source);
     },
-    alCambiar(fn) {
-      oyentes.add(fn);
-      return () => oyentes.delete(fn);
+    onChange(fn) {
+      listeners.add(fn);
+      return () => listeners.delete(fn);
     },
-    actual: () => activo,
+    current: () => active,
   };
 }

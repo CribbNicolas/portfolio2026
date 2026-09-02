@@ -1,90 +1,92 @@
 /**
- * Tests de las piezas puras de `/cv.pdf`.
+ * Tests of the pure pieces of `/cv.pdf`.
  *
- * No levantan un Worker a propósito: lo que se puede romper en silencio acá es
- * el CUERPO que se le manda a Browser Rendering (que el PDF servido deje de
- * pedir las mismas opciones que el PDF testeado) y la clave de caché (que cada
- * `?utm_source=` gaste un render). Las dos cosas se verifican sin red.
+ * They deliberately do not start a Worker: what can break silently here is the
+ * BODY sent to Browser Rendering (the served PDF no longer asking for the same
+ * options as the tested PDF) and the cache key (every `?utm_source=` spending a
+ * render). Both are verified with no network.
  *
- * Que el PDF resultante parsee lo verifica `pdf-output.check.ts`, que corre
- * contra los bytes reales — en local contra `dist/cv.pdf` y post-deploy contra
- * la URL publicada.
+ * That the resulting PDF parses is verified by `pdf-output.check.ts`, which
+ * runs against the real bytes — locally against `dist/cv.pdf` and post-deploy
+ * against the published URL.
  */
 
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { OPCIONES_PDF, ESPERA_CARGA } from "../scripts/pdf-options";
+import { PDF_OPTIONS, LOAD_WAIT } from "../scripts/pdf-options";
 import {
-  NOMBRE_POR_DEFECTO,
-  RUTA_ORIGEN,
-  SEGUNDOS_DE_CACHE,
-  cabecerasPdf,
-  claveDeCache,
-  cuerpoPeticion,
-  endpointBrowserRendering,
+  DEFAULT_FILENAME,
+  SOURCE_PATH,
+  CACHE_SECONDS,
+  pdfHeaders,
+  cacheKey,
+  requestBody,
+  browserRenderingEndpoint,
 } from "./_pdf";
 
-test("el cuerpo pide exactamente las mismas opciones que el PDF que se testea", () => {
-  // Este es EL test del archivo. Si alguien toca las opciones de un solo lado,
-  // el PDF que baja la gente deja de ser el PDF que pasó `test:pdf` y nadie se
-  // entera. Por eso `pdf-options.ts` es una sola fuente y esto lo custodia.
-  const cuerpo = JSON.parse(cuerpoPeticion("https://ejemplo.com"));
-  assert.deepEqual(cuerpo.pdfOptions, OPCIONES_PDF);
-  assert.equal(cuerpo.gotoOptions.waitUntil, ESPERA_CARGA);
+test("the body asks for exactly the same options as the PDF under test", () => {
+  // This is THE test of the file. If someone touches the options on one side
+  // only, the PDF people download stops being the PDF that passed `test:pdf`
+  // and nobody finds out. That is why `pdf-options.ts` is a single source and
+  // this guards it.
+  const body = JSON.parse(requestBody("https://example.com"));
+  assert.deepEqual(body.pdfOptions, PDF_OPTIONS);
+  assert.equal(body.gotoOptions.waitUntil, LOAD_WAIT);
 });
 
-test("tagged y outline viajan en el pedido", () => {
-  // Redundante con el test de arriba a propósito: si alguien decidiera sacar
-  // `tagged` de `OPCIONES_PDF`, aquel test seguiría en verde (compara contra la
-  // misma constante que cambió). Este falla, y el mensaje dice qué se perdió.
-  const { pdfOptions } = JSON.parse(cuerpoPeticion("https://ejemplo.com"));
-  assert.equal(pdfOptions.tagged, true, "sin tagged el PDF pierde el orden de lectura explícito");
-  assert.equal(pdfOptions.outline, true, "sin outline el PDF no tiene marcadores por sección");
+test("tagged and outline travel in the request", () => {
+  // Deliberately redundant with the test above: if someone decided to remove
+  // `tagged` from `PDF_OPTIONS`, that test would stay green (it compares
+  // against the same constant that changed). This one fails, and the message
+  // says what was lost.
+  const { pdfOptions } = JSON.parse(requestBody("https://example.com"));
+  assert.equal(pdfOptions.tagged, true, "without tagged the PDF loses its explicit reading order");
+  assert.equal(pdfOptions.outline, true, "without outline the PDF has no per-section bookmarks");
 });
 
-test("se imprime /cv del MISMO origen que recibió el pedido", () => {
-  // Un origen hardcodeado haría que el smoke de una preview testeara el PDF de
-  // producción, que es justo el bug que el smoke existe para atajar.
-  const { url } = JSON.parse(cuerpoPeticion("https://staging.portfolio2026.pages.dev"));
-  assert.equal(url, `https://staging.portfolio2026.pages.dev${RUTA_ORIGEN}`);
+test("it prints /cv from the SAME origin that received the request", () => {
+  // A hard-coded origin would make a preview's smoke test the production PDF,
+  // which is exactly the bug the smoke exists to catch.
+  const { url } = JSON.parse(requestBody("https://staging.portfolio2026.pages.dev"));
+  assert.equal(url, `https://staging.portfolio2026.pages.dev${SOURCE_PATH}`);
 });
 
-test("el origen se respeta aunque venga con puerto o path", () => {
-  const { url } = JSON.parse(cuerpoPeticion("http://127.0.0.1:8788"));
-  assert.equal(url, `http://127.0.0.1:8788${RUTA_ORIGEN}`);
+test("the origin is respected even with a port or a path", () => {
+  const { url } = JSON.parse(requestBody("http://127.0.0.1:8788"));
+  assert.equal(url, `http://127.0.0.1:8788${SOURCE_PATH}`);
 });
 
-test("el endpoint apunta a la cuenta que se le pasa", () => {
+test("the endpoint points at the account it is given", () => {
   assert.equal(
-    endpointBrowserRendering("abc123"),
+    browserRenderingEndpoint("abc123"),
     "https://api.cloudflare.com/client/v4/accounts/abc123/browser-rendering/pdf",
   );
 });
 
-test("la clave de caché descarta el query string", () => {
-  // Sin esto, cada campaña con su propio `utm_` es un render pago por visitante
-  // y el presupuesto diario se va en tráfico que pide el mismo archivo.
-  const conQuery = claveDeCache("https://ejemplo.com/cv.pdf?utm_source=linkedin");
-  const sinQuery = claveDeCache("https://ejemplo.com/cv.pdf");
-  assert.equal(conQuery.url, sinQuery.url);
-  assert.equal(conQuery.url, "https://ejemplo.com/cv.pdf");
+test("the cache key drops the query string", () => {
+  // Without this, every campaign with its own `utm_` is a paid render per
+  // visitor and the daily budget goes on traffic asking for the same file.
+  const withQuery = cacheKey("https://example.com/cv.pdf?utm_source=linkedin");
+  const withoutQuery = cacheKey("https://example.com/cv.pdf");
+  assert.equal(withQuery.url, withoutQuery.url);
+  assert.equal(withQuery.url, "https://example.com/cv.pdf");
 });
 
-test("la clave de caché descarta el fragmento", () => {
-  const conHash = claveDeCache("https://ejemplo.com/cv.pdf#pagina2");
-  assert.equal(conHash.url, "https://ejemplo.com/cv.pdf");
+test("the cache key drops the fragment", () => {
+  const withHash = cacheKey("https://example.com/cv.pdf#page2");
+  assert.equal(withHash.url, "https://example.com/cv.pdf");
 });
 
-test("las cabeceras declaran PDF, nombre de archivo y TTL", () => {
-  const h = cabecerasPdf("CV-Ejemplo.pdf");
+test("the headers declare PDF, filename and TTL", () => {
+  const h = pdfHeaders("CV-Example.pdf");
   assert.equal(h.get("content-type"), "application/pdf");
-  assert.equal(h.get("content-disposition"), 'inline; filename="CV-Ejemplo.pdf"');
-  assert.equal(h.get("cache-control"), `public, max-age=${SEGUNDOS_DE_CACHE}`);
+  assert.equal(h.get("content-disposition"), 'attachment; filename="CV-Example.pdf"');
+  assert.equal(h.get("cache-control"), `public, max-age=${CACHE_SECONDS}`);
   assert.equal(h.get("x-content-type-options"), "nosniff");
 });
 
-test("el nombre por defecto es un .pdf", () => {
-  // `content-disposition` con un nombre sin extensión hace que Windows guarde
-  // un archivo que no abre con nada.
-  assert.match(NOMBRE_POR_DEFECTO, /\.pdf$/);
+test("the default filename is a .pdf", () => {
+  // `content-disposition` with an extensionless name makes Windows save a file
+  // that opens with nothing.
+  assert.match(DEFAULT_FILENAME, /\.pdf$/);
 });

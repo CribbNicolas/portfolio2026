@@ -1,0 +1,89 @@
+/*
+ * The project list.
+ *
+ * No cards with shadows: the map above is already the page's element with visual
+ * weight, and competing with it here splits the attention. The hierarchy is
+ * typographic.
+ */
+
+.projects-section {
+  max-width: var(--width);
+  margin: 0 auto;
+  padding: 0 calc(var(--space) * 2.5) calc(var(--space) * 8);
+}
+
+.projects {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: calc(var(--space) * 4);
+}
+
+.project {
+  border-top: 1px solid var(--line);
+  padding-top: calc(var(--space) * 2);
+}
+
+.project__name {
+  font-size: 1.125rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  margin: 0 0 calc(var(--space) * 0.5);
+  display: flex;
+  align-items: baseline;
+  gap: calc(var(--space) * 1.5);
+  flex-wrap: wrap;
+}
+
+/* `in-progress` se dice, no se esconde: mostrar algo a medias como terminado
+   es lo que el schema evita con `status`. */
+.project__status {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--accent);
+  background: var(--accent-faint);
+  padding: 0.15em 0.6em;
+  border-radius: 999px;
+}
+
+.project__client {
+  margin: 0 0 calc(var(--space) * 1);
+  font-size: 0.8125rem;
+  color: var(--ink-soft);
+}
+
+.project__solution {
+  margin: 0 0 calc(var(--space) * 1.5);
+  line-height: 1.55;
+  text-wrap: pretty;
+}
+
+.project__stack {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: calc(var(--space) * 0.75);
+}
+
+.project__stack li {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--ink-soft);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 0.15em 0.6em;
+}
+
+.project__links {
+  margin: calc(var(--space) * 1.5) 0 0;
+  font-size: 0.875rem;
+}
+
+.project__links a {
+  color: var(--accent);
+}

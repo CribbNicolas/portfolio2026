@@ -1,105 +1,123 @@
 /**
- * KnowledgeGraph → posiciones en 3D.
+ * KnowledgeGraph → 3D positions.
  *
- * Corre en el FRONTMATTER de la página, o sea en Node durante `astro build`.
- * Nunca se envía al browser. Eso es deliberado y es lo que permite que el
- * fallback sin JavaScript sea el MISMO mapa y no una aproximación: el `<svg>`
- * server-rendered y la escena de three.js leen las mismas coordenadas.
+ * Runs in the page FRONTMATTER, i.e. in Node during `astro build`. It is never
+ * shipped to the browser. That is deliberate, and it is what lets the
+ * no-JavaScript fallback be the SAME map rather than an approximation: the
+ * server-rendered `<svg>` and the three.js scene read the same coordinates.
  *
- * Determinista por construcción: las posiciones iniciales salen de una esfera
- * de Fibonacci indexada por posición del nodo, no de un PRNG. No hay semilla
- * que sincronizar. Depende de que `buildKnowledgeGraph` emita los nodos en
- * orden estable — y eso lo afirma un test.
+ * Deterministic by construction: the initial positions come from a Fibonacci
+ * sphere indexed by node position, not from a PRNG. There is no seed to keep in
+ * sync. It depends on `buildKnowledgeGraph` emitting nodes in a stable order —
+ * and a test asserts exactly that.
  */
 
 import type { KnowledgeGraph, GraphEdge, GraphNode, GraphNodeKind } from "./knowledge-graph";
 
 // ---------------------------------------------------------------------------
-// PARÁMETROS
+// PARAMETERS
 // ---------------------------------------------------------------------------
 
-/** Iteraciones de la simulación. A 37 nodos son ~15 ms en build. */
+/** Simulation iterations. At 37 nodes this is ~15 ms at build time. */
 export const LAYOUT_TICKS = 700;
-/** Distancia de equilibrio entre nodos. Sube = grafo más disperso. */
-export const LAYOUT_K = 62;
-/** Radio de la esfera inicial. */
-export const LAYOUT_RADIO_INICIAL = 170;
+/** Equilibrium distance between nodes. Higher = more spread out. */
+export const LAYOUT_K = 118;
+/** Radius of the initial sphere. */
+export const LAYOUT_INITIAL_RADIUS = 240;
 /**
- * Radio objetivo por tipo, como fracción del radio del cuerpo.
+ * Target radius per kind, as a fraction of the body radius.
  *
- * Es lo que convierte la nube en una estructura legible: **núcleo = lo que sé,
- * corteza = dónde lo usé**. Los logros y proyectos quedan en el medio porque
- * son literalmente el puente entre una tecnología y un trabajo.
+ * This is what turns the cloud into a readable structure: **core = what I know,
+ * crust = where I used it**. Achievements and projects land in between because
+ * they are literally the bridge between a technology and a job.
+ *
+ * Skills sat at 0.42 and still read as a knot in the middle. 0.58 gives them
+ * the body of the sphere; the map is allowed to be large.
  */
-export const LAYOUT_RADIO_TIPO: Record<GraphNodeKind, number> = {
+export const LAYOUT_KIND_RADIUS: Record<GraphNodeKind, number> = {
   role: 1,
-  project: 0.7,
-  achievement: 0.55,
-  skill: 0.28,
+  project: 0.80,
+  achievement: 0.76,
+  skill: 0.48,
 };
 /**
- * Cuánto tira el sesgo radial. Es un SESGO, no una restricción: la atracción por
- * arista sigue mandando, así que un logro no se despega de su rol ni de sus
- * skills. Subirlo mucho aplana el grafo en capas y se pierde la estructura real.
+ * How hard the radial bias pulls. It is a BIAS, not a constraint: per-edge
+ * attraction still governs, so an achievement never detaches from its role or
+ * its skills. Raising it too far flattens the graph into layers and the real
+ * structure is lost.
  */
-export const LAYOUT_SESGO_RADIAL = 2;
+export const LAYOUT_RADIAL_BIAS = 2.8;
 /**
- * Cuánto pesa el tamaño del nodo en la repulsión.
+ * How much node size weighs into repulsion.
  *
- * Con 0 la repulsión es uniforme, que es como estaba cuando todos los nodos
- * medían casi lo mismo. Ahora van de 6 a 34: sin esto, React empuja igual que
- * Jotai y termina con una skill huérfana metida adentro del disco. La repulsión
- * de un par escala con el promedio de sus dos radios, así que un nodo grande se
- * hace lugar y uno chico casi no molesta.
+ * At 0 repulsion is uniform, which is how it was when every node measured
+ * roughly the same. They now run from 6 to 34: without this, React pushes as
+ * hard as Jotai and an orphan skill ends up inside its disc. Pairwise repulsion
+ * scales with the average of the two radii, so a large node makes room for
+ * itself and a small one barely interferes.
  */
-export const LAYOUT_REPULSION_POR_TAMANO = 1;
+export const LAYOUT_SIZE_REPULSION = 1.25;
 /**
- * Radio del núcleo de skills sin evidencia, como fracción del radio del cuerpo.
+ * Radius of the core of skills without evidence, as a fraction of the body
+ * radius.
  */
-export const LAYOUT_RADIO_NUCLEO = 0.14;
-/** Iteraciones de la relajación del núcleo. Solo mueve 11 nodos: es gratis. */
-export const LAYOUT_TICKS_NUCLEO = 120;
+export const LAYOUT_CORE_RADIUS = 0.14;
+/** Iterations of the core relaxation. It only moves 11 nodes: it is free. */
+export const LAYOUT_CORE_TICKS = 120;
 /**
- * Radio al que se normaliza el cuerpo del grafo. Fija el encuadre: sin esto, el
- * tamaño en pantalla depende de cuántos nodos haya y de qué tan lejos vuele el
- * más suelto, así que agregar un logro cambiaría el zoom de toda la página.
+ * Radius the graph body is normalized to. It fixes the framing: without it, the
+ * on-screen size would depend on how many nodes there are and how far the
+ * loosest one flies, so adding one achievement would change the zoom of the
+ * whole page.
  */
-export const LAYOUT_RADIO_OBJETIVO = 300;
+export const LAYOUT_TARGET_RADIUS = 300;
 /**
- * Percentil del que se toma el radio del cuerpo. 0.85 y no el máximo a
- * propósito: con el máximo, UN nodo poco conectado que se va lejos dicta la
- * escala y aplasta al resto contra el centro. Es exactamente lo que pasaba con
- * el rol "Independiente".
+ * Percentile the body radius is taken from. 0.85 and not the maximum, on
+ * purpose: with the maximum, ONE poorly connected node flying off dictates the
+ * scale and crushes everything else against the center. That is exactly what
+ * the "Independiente" role used to do.
  */
-export const LAYOUT_PERCENTIL_RADIO = 0.85;
-/** Fuerza que tira todo hacia el origen. Evita que el grafo derive. */
-export const LAYOUT_CENTRADO = 0.012;
+export const LAYOUT_RADIUS_PERCENTILE = 0.85;
+/** Force pulling everything toward the origin. Keeps the graph from drifting. */
+export const LAYOUT_CENTERING = 0.007;
 /**
- * Cuánto tira una arista de afinidad respecto de una estructural, por unidad de
- * peso. Menor a 1 porque son muchas más: con 1 aplastarían la estructura.
+ * How hard an affinity edge pulls relative to a structural one, per unit of
+ * weight. Below 1 because there are many more of them: at 1 they would flatten
+ * the structure.
  */
-export const LAYOUT_TIRON_AFINIDAD = 0.55;
+export const LAYOUT_AFFINITY_PULL = 0.16;
+/**
+ * Disc radius per kind, matching the larger of the two renderers (the overlap
+ * test in knowledge-graph.test.ts uses the same numbers). Collision resolve
+ * after the force step uses these so two large skills cannot swallow each other.
+ */
+export const LAYOUT_DRAW_RADIUS: Record<GraphNodeKind, number> = {
+  role: 17,
+  project: 14,
+  skill: 10,
+  achievement: 9,
+};
 
 export interface Vec3 { x: number; y: number; z: number }
 
 export interface PositionedNode extends GraphNode, Vec3 {
   /**
-   * true si el nodo no tiene una sola arista: ninguna skill lo respalda y él no
-   * respalda a nadie. El `<svg>` los dibuja distinto, y son el mapa mostrando
-   * dónde falta contenido, no un bug del layout.
+   * true when the node has not a single edge: no skill backs it and it backs
+   * nobody. The `<svg>` draws these differently, and they are the map showing
+   * where content is missing, not a bug in the layout.
    */
-  sinEvidencia: boolean;
+  withoutEvidence: boolean;
 }
 
 export interface PositionedGraph {
   nodes: PositionedNode[];
   edges: GraphEdge[];
   /**
-   * Distancia del nodo más lejano al origen. La cámara la usa para el encuadre
-   * inicial y para los planos de la niebla, así que TIENE que contener todo:
-   * un nodo por fuera entra recortado o directamente no se ve.
+   * Distance from the origin to the farthest node. The camera uses it for the
+   * initial framing and for the fog planes, so it MUST contain everything: a
+   * node outside it comes out clipped, or not visible at all.
    */
-  radioEncuadre: number;
+  framingRadius: number;
 }
 
 // ---------------------------------------------------------------------------
@@ -107,48 +125,48 @@ export interface PositionedGraph {
 // ---------------------------------------------------------------------------
 
 export function layoutGraph(graph: KnowledgeGraph): PositionedGraph {
-  const conEvidencia = graph.nodes.filter((n) => n.degree > 0);
+  const withEvidence = graph.nodes.filter((n) => n.degree > 0);
 
   const pos = new Map<string, Vec3>();
 
-  // Esfera de Fibonacci: reparte N puntos casi uniformemente sin aleatoriedad.
-  const total = conEvidencia.length;
-  conEvidencia.forEach((n, i) => {
+  // Fibonacci sphere: spreads N points almost uniformly with no randomness.
+  const total = withEvidence.length;
+  withEvidence.forEach((n, i) => {
     const t = (i + 0.5) / total;
     const phi = Math.acos(1 - 2 * t);
     const theta = Math.PI * (1 + Math.sqrt(5)) * i;
     pos.set(n.id, {
-      x: Math.cos(theta) * Math.sin(phi) * LAYOUT_RADIO_INICIAL,
-      y: Math.sin(theta) * Math.sin(phi) * LAYOUT_RADIO_INICIAL,
-      z: Math.cos(phi) * LAYOUT_RADIO_INICIAL,
+      x: Math.cos(theta) * Math.sin(phi) * LAYOUT_INITIAL_RADIUS,
+      y: Math.sin(theta) * Math.sin(phi) * LAYOUT_INITIAL_RADIUS,
+      z: Math.cos(phi) * LAYOUT_INITIAL_RADIUS,
     });
   });
 
-  // Solo las aristas entre nodos que están en la simulación.
-  const activas = graph.edges.filter((e) => pos.has(e.source) && pos.has(e.target));
+  // Only the edges between nodes that are in the simulation.
+  const active = graph.edges.filter((e) => pos.has(e.source) && pos.has(e.target));
 
   for (let it = 0; it < LAYOUT_TICKS; it++) {
-    // Temple: el paso máximo baja con las iteraciones para que converja en vez
-    // de oscilar. Sin esto el grafo late para siempre.
-    const paso = 26 * (1 - it / LAYOUT_TICKS);
-    const disp = new Map<string, Vec3>(conEvidencia.map((n) => [n.id, { x: 0, y: 0, z: 0 }]));
+    // Annealing: the maximum step decreases with the iterations so it converges
+    // instead of oscillating. Without this the graph pulses forever.
+    const step = 26 * (1 - it / LAYOUT_TICKS);
+    const disp = new Map<string, Vec3>(withEvidence.map((n) => [n.id, { x: 0, y: 0, z: 0 }]));
 
-    // Repulsión entre todos los pares. O(N²), y a N=37 eso son 666 pares:
-    // Barnes-Hut no compra nada a esta escala y cuesta 200 líneas.
-    for (let i = 0; i < conEvidencia.length; i++) {
-      for (let k = i + 1; k < conEvidencia.length; k++) {
-        const a = conEvidencia[i]!.id;
-        const b = conEvidencia[k]!.id;
+    // Repulsion between every pair. O(N²), and at N=37 that is 666 pairs:
+    // Barnes-Hut buys nothing at this scale and costs 200 lines.
+    for (let i = 0; i < withEvidence.length; i++) {
+      for (let k = i + 1; k < withEvidence.length; k++) {
+        const a = withEvidence[i]!.id;
+        const b = withEvidence[k]!.id;
         const A = pos.get(a)!;
         const B = pos.get(b)!;
         let dx = A.x - B.x, dy = A.y - B.y, dz = A.z - B.z;
         const d = Math.hypot(dx, dy, dz) || 0.01;
-        // El tamaño entra acá: un nodo grande necesita más lugar libre, no más
-        // fuerza de arista. `escalaRadio` es 1 fuera de las skills, así que para
-        // roles, proyectos y logros esto es exactamente la repulsión de siempre.
-        const tamano = 1 + LAYOUT_REPULSION_POR_TAMANO
-          * ((conEvidencia[i]!.escalaRadio + conEvidencia[k]!.escalaRadio) / 2 - 1);
-        const f = ((LAYOUT_K * LAYOUT_K) / d) * tamano;
+        // Size enters here: a large node needs more free room, not more edge
+        // force. `radiusScale` is 1 outside skills, so for roles, projects and
+        // achievements this is exactly the repulsion it always was.
+        const size = 1 + LAYOUT_SIZE_REPULSION
+          * ((withEvidence[i]!.radiusScale + withEvidence[k]!.radiusScale) / 2 - 1);
+        const f = ((LAYOUT_K * LAYOUT_K) / d) * size;
         dx /= d; dy /= d; dz /= d;
         const dA = disp.get(a)!;
         const dB = disp.get(b)!;
@@ -157,14 +175,14 @@ export function layoutGraph(graph: KnowledgeGraph): PositionedGraph {
       }
     }
 
-    // Atracción por arista.
-    for (const e of activas) {
+    // Per-edge attraction.
+    for (const e of active) {
       const A = pos.get(e.source)!;
       const B = pos.get(e.target)!;
       let dx = A.x - B.x, dy = A.y - B.y, dz = A.z - B.z;
       const d = Math.hypot(dx, dy, dz) || 0.01;
-      const escala = e.kind === "afinidad" ? LAYOUT_TIRON_AFINIDAD * e.weight : 1;
-      const f = ((d * d) / LAYOUT_K) * escala;
+      const scale = e.kind === "affinity" ? LAYOUT_AFFINITY_PULL * e.weight : 1;
+      const f = ((d * d) / LAYOUT_K) * scale;
       dx /= d; dy /= d; dz /= d;
       const dA = disp.get(e.source)!;
       const dB = disp.get(e.target)!;
@@ -172,194 +190,232 @@ export function layoutGraph(graph: KnowledgeGraph): PositionedGraph {
       dB.x += dx * f; dB.y += dy * f; dB.z += dz * f;
     }
 
-    // Centrado: sin esto el grafo entero deriva y queda descentrado en el cuadro.
-    for (const n of conEvidencia) {
+    // Centering: without it the whole graph drifts and sits off-center in frame.
+    for (const n of withEvidence) {
       const p = pos.get(n.id)!;
       const d = disp.get(n.id)!;
-      d.x -= p.x * LAYOUT_CENTRADO * LAYOUT_K;
-      d.y -= p.y * LAYOUT_CENTRADO * LAYOUT_K;
-      d.z -= p.z * LAYOUT_CENTRADO * LAYOUT_K;
+      d.x -= p.x * LAYOUT_CENTERING * LAYOUT_K;
+      d.y -= p.y * LAYOUT_CENTERING * LAYOUT_K;
+      d.z -= p.z * LAYOUT_CENTERING * LAYOUT_K;
     }
 
-    // Sesgo radial por tipo: los trabajos hacia la corteza, las tecnologías
-    // hacia el núcleo. La referencia es el MISMO percentil que usa la
-    // normalización de más abajo, así el objetivo de cada tipo significa lo
-    // mismo durante la simulación que después de escalar.
-    const ref = percentilRadio(conEvidencia, pos);
-    for (const n of conEvidencia) {
+    // Radial bias per kind: jobs toward the crust, technologies toward the
+    // core. The reference is the SAME percentile the normalization below uses,
+    // so each kind's target means the same during the simulation as it does
+    // after scaling.
+    const ref = radiusPercentile(withEvidence, pos);
+    for (const n of withEvidence) {
       const p = pos.get(n.id)!;
       const d = disp.get(n.id)!;
       const r = Math.hypot(p.x, p.y, p.z) || 0.01;
-      const f = (LAYOUT_RADIO_TIPO[n.kind] * ref - r) * LAYOUT_SESGO_RADIAL;
+      const f = (LAYOUT_KIND_RADIUS[n.kind] * ref - r) * LAYOUT_RADIAL_BIAS;
       d.x += (p.x / r) * f; d.y += (p.y / r) * f; d.z += (p.z / r) * f;
     }
 
-    for (const n of conEvidencia) {
+    for (const n of withEvidence) {
       const p = pos.get(n.id)!;
       const d = disp.get(n.id)!;
       const m = Math.hypot(d.x, d.y, d.z) || 0.01;
-      const s = Math.min(m, paso) / m;
+      const s = Math.min(m, step) / m;
       p.x += d.x * s; p.y += d.y * s; p.z += d.z * s;
     }
   }
 
-  // --- Normalización: centroide al origen y escala fija ---------------------
-  // Sin esto el encuadre depende del dataset: sumar un logro movería el zoom de
-  // toda la página, y un nodo suelto que vuela lejos aplasta al resto.
-  const centro = { x: 0, y: 0, z: 0 };
-  for (const n of conEvidencia) {
+  // --- Normalization: centroid to the origin and a fixed scale --------------
+  // Without this the framing depends on the dataset: adding an achievement
+  // would move the zoom of the whole page, and one loose node flying off
+  // crushes the rest.
+  const center = { x: 0, y: 0, z: 0 };
+  for (const n of withEvidence) {
     const p = pos.get(n.id)!;
-    centro.x += p.x; centro.y += p.y; centro.z += p.z;
+    center.x += p.x; center.y += p.y; center.z += p.z;
   }
-  centro.x /= conEvidencia.length;
-  centro.y /= conEvidencia.length;
-  centro.z /= conEvidencia.length;
+  center.x /= withEvidence.length;
+  center.y /= withEvidence.length;
+  center.z /= withEvidence.length;
 
-  for (const n of conEvidencia) {
+  for (const n of withEvidence) {
     const p = pos.get(n.id)!;
-    p.x -= centro.x; p.y -= centro.y; p.z -= centro.z;
+    p.x -= center.x; p.y -= center.y; p.z -= center.z;
   }
 
-  // El percentil se mide sobre el CUERPO y no sobre todo: si las huérfanas
-  // contaran, agregar una skill sin evidencia cambiaría el zoom de la página.
-  const factor = LAYOUT_RADIO_OBJETIVO / percentilRadio(conEvidencia, pos);
+  // The percentile is measured over the BODY and not over everything: if the
+  // orphans counted, adding a skill without evidence would change the page zoom.
+  const factor = LAYOUT_TARGET_RADIUS / radiusPercentile(withEvidence, pos);
 
-  for (const n of conEvidencia) {
+  for (const n of withEvidence) {
     const p = pos.get(n.id)!;
     p.x *= factor; p.y *= factor; p.z *= factor;
   }
 
-  ubicarNucleo(graph.nodes.filter((n) => n.degree === 0), graph.nodes, pos);
+  // Two large skills that co-occur a lot (TypeScript/React) can still sit
+  // inside each other's disc after the force step: attraction along shared
+  // edges beats size-weighted repulsion. Push overlapping pairs apart using
+  // the same radii the renderers use, so the map does not hide a node.
+  resolveOverlaps(withEvidence, pos);
+
+  placeCore(graph.nodes.filter((n) => n.degree === 0), graph.nodes, pos);
 
   const nodes: PositionedNode[] = graph.nodes.map((n) => {
     const p = pos.get(n.id)!;
     return {
       ...n,
-      // Redondeo a 2 decimales: las coordenadas viajan en el HTML y la
-      // precisión de más son bytes que no cambian ni un píxel.
+      // Rounded to 2 decimals: the coordinates travel inside the HTML, and the
+      // extra precision is bytes that do not move a single pixel.
       x: round2(p.x),
       y: round2(p.y),
       z: round2(p.z),
-      sinEvidencia: n.degree === 0,
+      withoutEvidence: n.degree === 0,
     };
   });
 
-  // El encuadre sale del nodo más lejano REAL y no de una constante: ahora que
-  // los roles se empujan hacia afuera, quién queda al borde lo decide la
-  // simulación. Fijarlo a mano recortaría el mapa en cuanto se sume un rol.
-  const radioEncuadre = Math.max(...nodes.map((n) => Math.hypot(n.x, n.y, n.z)));
+  // The framing comes from the REAL farthest node and not from a constant: now
+  // that roles are pushed outward, who ends up at the edge is decided by the
+  // simulation. Hard-coding it would clip the map as soon as a role is added.
+  //
+  // Ceil, not round: `round2(412.344)` is 412.34, which leaves that node
+  // outside the camera. This number has to contain everything.
+  const framingRadius = Math.max(...nodes.map((n) => Math.hypot(n.x, n.y, n.z)));
 
-  return { nodes, edges: graph.edges, radioEncuadre: round2(radioEncuadre) };
+  return { nodes, edges: graph.edges, framingRadius: Math.ceil(framingRadius * 100) / 100 };
 }
 
 /**
- * Las skills sin evidencia, en el núcleo.
- *
- * NO entran a la simulación de fuerzas: sin una sola arista, la repulsión de los
- * otros 36 nodos le gana a cualquier ancla radial y se escapan al borde — que es
- * exactamente lo contrario de "las tecnologías van al centro".
- *
- * En vez de eso, el radio es un dato fijo y la repulsión solo las reparte
- * ANGULARMENTE sobre esa esfera. Esa restricción es lo que hace que funcione:
- * el centro del mapa está ocupado por las skills grandes (React dibuja radio 34
- * y su disco cubre el origen), así que las huérfanas no necesitan alejarse, sino
- * correrse al lado libre de la esfera. Con la posición libre no encuentran ese
- * lado; con el radio clavado, sí.
- *
- * Corre después de normalizar: así el núcleo se mide contra el cuerpo ya escalado
- * y no contra las unidades arbitrarias de la simulación.
+ * Separate pairs whose discs still overlap after the force simulation.
+ * Mutual push along the pair axis; a small pad survives `round2`.
  */
-function ubicarNucleo(nucleo: GraphNode[], todos: GraphNode[], pos: Map<string, Vec3>): void {
-  if (nucleo.length === 0) return;
-  const radio = LAYOUT_RADIO_OBJETIVO * LAYOUT_RADIO_NUCLEO;
+function resolveOverlaps(nodes: GraphNode[], pos: Map<string, Vec3>): void {
+  const rad = (n: GraphNode) => LAYOUT_DRAW_RADIUS[n.kind] * n.radiusScale;
+  const pad = 0.25;
+  for (let it = 0; it < 48; it++) {
+    let moved = false;
+    for (let i = 0; i < nodes.length; i++) {
+      for (let k = i + 1; k < nodes.length; k++) {
+        const a = nodes[i]!, b = nodes[k]!;
+        const A = pos.get(a.id)!, B = pos.get(b.id)!;
+        let dx = A.x - B.x, dy = A.y - B.y, dz = A.z - B.z;
+        const d = Math.hypot(dx, dy, dz) || 0.01;
+        const need = rad(a) + rad(b) + pad;
+        if (d >= need) continue;
+        const push = (need - d) / 2;
+        dx /= d; dy /= d; dz /= d;
+        A.x += dx * push; A.y += dy * push; A.z += dz * push;
+        B.x -= dx * push; B.y -= dy * push; B.z -= dz * push;
+        moved = true;
+      }
+    }
+    if (!moved) break;
+  }
+}
 
-  // Siembra de Fibonacci: reparte sin aleatoriedad, igual que el cuerpo.
-  nucleo.forEach((n, i) => {
-    const t = (i + 0.5) / nucleo.length;
+/**
+ * The skills without evidence, in the core.
+ *
+ * They do NOT enter the force simulation: with not a single edge, the repulsion
+ * of the other 36 nodes beats any radial anchor and they escape to the rim —
+ * the exact opposite of "technologies go to the center".
+ *
+ * Instead, the radius is a fixed value and repulsion only spreads them
+ * ANGULARLY over that sphere. That constraint is what makes it work: the center
+ * of the map is occupied by the large skills (React draws at radius 34 and its
+ * disc covers the origin), so the orphans do not need to move away, they need
+ * to move to the free side of the sphere. With a free position they never find
+ * that side; with the radius pinned, they do.
+ *
+ * Runs after normalization, so the core is measured against the already scaled
+ * body rather than the arbitrary units of the simulation.
+ */
+function placeCore(core: GraphNode[], all: GraphNode[], pos: Map<string, Vec3>): void {
+  if (core.length === 0) return;
+  const radius = LAYOUT_TARGET_RADIUS * LAYOUT_CORE_RADIUS;
+
+  // Fibonacci seeding: spreads with no randomness, same as the body.
+  core.forEach((n, i) => {
+    const t = (i + 0.5) / core.length;
     const phi = Math.acos(1 - 2 * t);
     const theta = Math.PI * (1 + Math.sqrt(5)) * i;
     pos.set(n.id, {
-      x: Math.cos(theta) * Math.sin(phi) * radio,
-      y: Math.sin(theta) * Math.sin(phi) * radio,
-      z: Math.cos(phi) * radio,
+      x: Math.cos(theta) * Math.sin(phi) * radius,
+      y: Math.sin(theta) * Math.sin(phi) * radius,
+      z: Math.cos(phi) * radius,
     });
   });
 
-  const sobreLaEsfera = (p: Vec3) => {
+  const ontoSphere = (p: Vec3) => {
     const m = Math.hypot(p.x, p.y, p.z) || 0.01;
-    p.x *= radio / m; p.y *= radio / m; p.z *= radio / m;
+    p.x *= radius / m; p.y *= radius / m; p.z *= radius / m;
   };
 
-  for (let it = 0; it < LAYOUT_TICKS_NUCLEO; it++) {
-    const paso = 0.5 * (1 - it / LAYOUT_TICKS_NUCLEO);
-    for (const n of nucleo) {
+  for (let it = 0; it < LAYOUT_CORE_TICKS; it++) {
+    const step = 0.5 * (1 - it / LAYOUT_CORE_TICKS);
+    for (const n of core) {
       const p = pos.get(n.id)!;
       let dx = 0, dy = 0, dz = 0;
-      for (const o of todos) {
+      for (const o of all) {
         if (o.id === n.id) continue;
         const q = pos.get(o.id)!;
         const ex = p.x - q.x, ey = p.y - q.y, ez = p.z - q.z;
         const d = Math.hypot(ex, ey, ez) || 0.01;
-        // Pesado por el radio de dibujo del vecino: lo que hay que despejar es
-        // su DISCO, y en este mapa los discos ya no miden todos lo mismo.
-        const f = (o.escalaRadio * LAYOUT_K * LAYOUT_K) / (d * d);
+        // Weighted by the neighbour's drawn radius: what has to be cleared is
+        // its DISC, and in this map the discs no longer all measure the same.
+        const f = (o.radiusScale * LAYOUT_K * LAYOUT_K) / (d * d);
         dx += (ex / d) * f; dy += (ey / d) * f; dz += (ez / d) * f;
       }
-      p.x += dx * paso; p.y += dy * paso; p.z += dz * paso;
-      // La componente radial se descarta: solo se permite girar sobre la esfera.
-      sobreLaEsfera(p);
+      p.x += dx * step; p.y += dy * step; p.z += dz * step;
+      // The radial component is discarded: only rotation over the sphere.
+      ontoSphere(p);
     }
   }
 }
 
 /**
- * Radio del cuerpo, por percentil. Vive acá porque lo usan dos cosas que TIENEN
- * que coincidir: el sesgo radial durante la simulación y la normalización final.
+ * Body radius, by percentile. It lives here because two things that MUST agree
+ * use it: the radial bias during the simulation, and the final normalization.
  */
-function percentilRadio(nodos: GraphNode[], pos: Map<string, Vec3>): number {
-  const radios = nodos
+function radiusPercentile(nodes: GraphNode[], pos: Map<string, Vec3>): number {
+  const radii = nodes
     .map((n) => { const p = pos.get(n.id)!; return Math.hypot(p.x, p.y, p.z); })
     .sort((a, b) => a - b);
-  return radios[Math.floor(radios.length * LAYOUT_PERCENTIL_RADIO)] || 1;
+  return radii[Math.floor(radii.length * LAYOUT_RADIUS_PERCENTILE)] || 1;
 }
 
 const round2 = (n: number): number => Math.round(n * 100) / 100;
 
 // ---------------------------------------------------------------------------
-// PROYECCIÓN
+// PROJECTION
 // ---------------------------------------------------------------------------
 
-/** Rotación fija de la cámara. La misma la usa el `<svg>` y la pose inicial 3D. */
-export const CAMARA_RX = -0.42;
-export const CAMARA_RY = 0.62;
-/** Distancia focal y distancia de cámara. Definen cuánta perspectiva hay. */
-export const CAMARA_F = 1250;
-export const CAMARA_DIST = 1150;
+/** Fixed camera rotation. Shared by the `<svg>` and the initial 3D pose. */
+export const CAMERA_RX = -0.42;
+export const CAMERA_RY = 0.62;
+/** Focal length and camera distance. They define how much perspective there is. */
+export const CAMERA_F = 1250;
+export const CAMERA_DIST = 1150;
 
 export interface ProjectedNode {
   id: string;
-  /** Coordenadas en el plano del SVG. */
+  /** Coordinates on the SVG plane. */
   x: number;
   y: number;
-  /** Factor de perspectiva: >1 está cerca, <1 está lejos. Manda tamaño y niebla. */
-  escala: number;
-  /** Profundidad tras rotar. Se usa para ordenar el pintado. */
+  /** Perspective factor: >1 is near, <1 is far. Governs size and fog. */
+  scale: number;
+  /** Depth after rotating. Used to order painting. */
   z: number;
 }
 
 /**
- * Proyección en perspectiva. Es lo que hace que el mapa se lea con volumen en
- * un `<svg>` estático: sin esto, un grafo 3D dibujado en 2D es indistinguible
- * de uno plano.
+ * Perspective projection. This is what makes the map read with volume inside a
+ * static `<svg>`: without it, a 3D graph drawn in 2D is indistinguishable from
+ * a flat one.
  */
 export function projectNode(n: Vec3): Omit<ProjectedNode, "id"> {
-  const x1 = n.x * Math.cos(CAMARA_RY) + n.z * Math.sin(CAMARA_RY);
-  const z1 = -n.x * Math.sin(CAMARA_RY) + n.z * Math.cos(CAMARA_RY);
-  const y2 = n.y * Math.cos(CAMARA_RX) - z1 * Math.sin(CAMARA_RX);
-  const z2 = n.y * Math.sin(CAMARA_RX) + z1 * Math.cos(CAMARA_RX);
+  const x1 = n.x * Math.cos(CAMERA_RY) + n.z * Math.sin(CAMERA_RY);
+  const z1 = -n.x * Math.sin(CAMERA_RY) + n.z * Math.cos(CAMERA_RY);
+  const y2 = n.y * Math.cos(CAMERA_RX) - z1 * Math.sin(CAMERA_RX);
+  const z2 = n.y * Math.sin(CAMERA_RX) + z1 * Math.cos(CAMERA_RX);
 
-  const escala = CAMARA_F / (z2 + CAMARA_DIST);
-  return { x: round2(x1 * escala), y: round2(y2 * escala), escala: round2(escala), z: round2(z2) };
+  const scale = CAMERA_F / (z2 + CAMERA_DIST);
+  return { x: round2(x1 * scale), y: round2(y2 * scale), scale: round2(scale), z: round2(z2) };
 }
 
 export function projectGraph(g: PositionedGraph): ProjectedNode[] {

@@ -1,113 +1,120 @@
 # portfolio2026
 
-Capa de contenido del portfolio y del CV. Fuente única de verdad: los datos viven
-en `content/data/` y el CV, el portfolio y los bloques de LinkedIn son **vistas**
-derivadas de ellos. Sobre esa capa hay un sitio Astro estático de **una sola
-página navegable**: hero, mapa, proyectos y el CV completo, con un índice de
-anclas y un botón flotante que baja el PDF. `/cv` sigue existiendo pero dejó de
-ser un destino — es la página desde la que se imprime el PDF, y va con `noindex`
-y sin links entrantes. El sitio publica además JSON-LD `Person`, `/cv.json` y
-`/llms.txt`.
+Content layer for a portfolio and a CV. Single source of truth: the data lives
+in `content/data/`, and the CV, the portfolio and the LinkedIn blocks are
+**views** derived from it. On top of that layer sits a static Astro site that is
+**one navigable page**: hero, map, projects and the full CV, with an anchor index
+and a floating button that downloads the PDF. `/cv` still exists but stopped
+being a destination — it is the page the PDF is printed from, and it carries
+`noindex` with no incoming links. The site also publishes JSON-LD `Person`,
+`/cv.json` and `/llms.txt`.
 
-El corazón de la landing es el **mapa de conocimiento**
-que cruza logros, roles, proyectos y tecnologías como grafo. El tamaño de cada
-tecnología sale de sus años de uso por sus conexiones; los trabajos quedan en la
-corteza y las tecnologías en el núcleo. Se renderiza en el servidor como SVG y,
-si el dispositivo lo aguanta, se superpone la versión en WebGL. Sin JavaScript el
-mapa sigue completo, hover cruzado incluido.
+The heart of the landing is the **knowledge map**, which cross-references
+achievements, roles, projects and technologies as a graph. Each technology's size
+comes from its years of use times its connections; the jobs sit in the crust and
+the technologies in the core. It is server-rendered as SVG and, if the device can
+take it, the WebGL version is layered on top. Without JavaScript the map is still
+complete, cross-hover included.
 
-**El PDF no es un archivo del build.** `/cv.pdf` lo genera una Cloudflare Pages
-Function a demanda, pidiéndole a Browser Rendering que imprima nuestro propio
-`/cv`, y lo cachea en el borde. Por eso `pnpm run build` es sólo `astro build` y
-corre en cualquier lado. Ver [`docs/05`](./docs/05-deploy-y-analitica.md).
+**The PDF is not a build artifact.** `/cv.pdf` is generated on demand by a
+Cloudflare Pages Function that asks Browser Rendering to print our own `/cv`, and
+caches it at the edge. That is why `pnpm run build` is only `astro build` and
+runs anywhere. See [`docs/05`](./docs/05-deploy-and-analytics.md).
 
-## Arranque
+> The site content is in **Spanish** — it is a CV for the LatAm market. The code,
+> the comments and these docs are in English.
 
-Requiere **pnpm** (`corepack enable` alcanza) y Node >= 22.12.
+## Getting started
+
+Requires **pnpm** (`corepack enable` is enough) and Node >= 22.12.
 
 ```bash
 pnpm install
 pnpm run dev          # astro dev
-pnpm run build        # SOLO astro build. Sin Chromium: por eso corre en Cloudflare
-pnpm run pdf:local    # imprime dist/cv.pdf con Playwright. Gate local, no el entregable
+pnpm run build        # ONLY astro build. No Chromium: that is why it runs on Cloudflare
+pnpm run pdf:local    # prints dist/cv.pdf with Playwright. Local gate, not the deliverable
+pnpm run editor       # local editor on 127.0.0.1:4322: the page, and the API it runs on
+pnpm run format:data  # rewrites content.es.json in canonical form via DatasetStore
 ```
 
-Verificación — **todos tienen que pasar**:
+Verification — **all of these have to pass**:
 
 ```bash
-pnpm run test:workflows # los .yml de CI parsean y declaran jobs. Corre PRIMERO
+pnpm run test:workflows # the CI .yml files parse and declare jobs. Runs FIRST
 pnpm run typecheck      # astro sync + tsc --noEmit + astro check
-pnpm run validate       # Zod (forma) + reglas duras (coherencia)
-pnpm test               # reglas que el schema no valida (visibility, locale, grafo, versión)
-pnpm run test:pdf       # el PDF parsea y pasa el ATS. Necesita pdf:local, o PDF_SOURCE=<url>
-pnpm run test:js        # ninguna página salvo la home envía JavaScript
-pnpm run test:bundle    # home: three fuera del camino crítico y dentro del techo
-pnpm run test:landing   # /cv aislada, sección CV sincronizada con el PDF, 404 propia
-pnpm run test:og        # la tarjeta social no quedó vieja respecto del dataset
-pnpm run test:version   # el PR sube package.json.version. Necesita: git fetch origin develop
-pnpm run test:servido   # verifica el sitio PUBLICADO. Necesita SITIO=https://…
-pnpm run audit:todos    # lista TODOs publicados. No bloquea
+pnpm run validate       # Zod (shape) + hard rules (coherence)
+pnpm test               # rules the schema does not validate (visibility, locale, graph, version, invariants)
+pnpm run test:pdf       # the PDF parses and passes the ATS. Needs pdf:local, or PDF_SOURCE=<url>
+pnpm run test:js        # no page other than the home ships JavaScript
+pnpm run test:bundle    # home: three off the critical path and within budget
+pnpm run test:landing   # /cv isolated, CV section in sync with the PDF, real 404
+pnpm run test:endpoints # /cv.json parses, /llms.txt has no empty fields
+pnpm run test:og        # the social card has not gone stale against the dataset
+pnpm run test:version   # the PR raises package.json.version. Needs: git fetch origin develop
+pnpm run test:served    # verifies the PUBLISHED site. Needs SITE=https://…
+pnpm run audit:todos    # lists published TODOs. Not blocking
 pnpm run audit:deps     # pnpm audit --audit-level high
 ```
 
-Si `validate` falla, el mensaje dice qué regla se violó y cómo arreglarla.
+If `validate` fails, the message says which rule was violated and how to fix it.
 
-## Límites y techos
+## Limits and ceilings
 
-**El código es la fuente de verdad de cada número**; esta tabla es un resumen
-con lo medido el 2026-08-25.
+**The code is the source of truth for every number**; this table is a summary of
+what was measured on 2026-08-25.
 
-### Presupuesto del sitio
+### Site budget
 
-| Recurso | Techo | Hoy | Definido en |
+| Resource | Ceiling | Today | Defined in |
 |---|---|---|---|
-| HTML de la home | 30 KB gzip | 11.2 KB | `scripts/bundle-budget.check.ts` |
-| JS crítico de la home | 4 KB gzip | 2.4 KB | ídem |
-| Chunk del campo WebGL | 8 KB gzip | 2.0 KB | ídem |
-| **Chunk 3D diferido** (`three`) | 150 KB gzip | **129.8 KB** | ídem |
-| **Páginas del PDF** | 2 | **2** | `scripts/pdf-output.check.ts` |
-| JS en cualquier página que no sea la home | 0 | 0 | `scripts/no-client-js.check.ts` |
-| **Tarjeta social** (`og.jpg`) | 300 KB | **61 KB** | `scripts/og-template.ts` |
+| Home HTML | 30 KB gzip | 11.2 KB | `scripts/bundle-budget.check.ts` |
+| Home critical JS | 4 KB gzip | 2.4 KB | idem |
+| WebGL field chunk | 8 KB gzip | 2.0 KB | idem |
+| **Deferred 3D chunk** (`three`) | 150 KB gzip | **129.8 KB** | idem |
+| **PDF pages** | 2 | **2** | `scripts/pdf-output.check.ts` |
+| JS on any page other than the home | 0 | 0 | `scripts/no-client-js.check.ts` |
+| **Social card** (`og.jpg`) | 300 KB | **61 KB** | `scripts/og-template.ts` |
 
-El techo de la tarjeta social no es prolijidad: **WhatsApp no llega a mostrar
-la previsualización si la imagen pesa de más**, así que pasarlo significa que el
-link deja de mostrar tarjeta en el canal donde más se comparte. Se regula con
-`CALIDAD` en `scripts/build-og.ts`; por eso la imagen es JPEG y no PNG.
+The social card ceiling is not tidiness: **WhatsApp does not get as far as
+showing the preview if the image is too heavy**, so going over means the link
+stops showing a card in the channel where it is shared most. It is tuned with
+`QUALITY` in `scripts/build-og.ts`; that is why the image is JPEG and not PNG.
 
-**Dos están al límite, y conviene saberlo antes de chocarlos:**
+**Two are at the limit, and it is worth knowing before hitting them:**
 
-- **El PDF está en 2 de 2 páginas.** Cualquier logro, rol o sección que se sume
-  al dataset lo empuja a 3 y `test:pdf` lo frena. No es un bug del test: dos
-  páginas es la regla de [`docs/03`](./docs/03-cv.md) §2. Agregar contenido al
-  CV implica sacar otro.
-- **El chunk 3D está al 87% de su techo.** Subir de versión `three` o importar
-  un módulo más puede pasarlo. El techo existe para que esa decisión sea
-  explícita, no para bloquearla.
+- **The PDF is at 2 of 2 pages.** Any achievement, role or section added to the
+  dataset pushes it to 3 and `test:pdf` stops it. That is not a bug in the test:
+  two pages is the rule from [`docs/03`](./docs/03-cv.md) §2. Adding content to
+  the CV means removing something else.
+- **The 3D chunk is at 87% of its ceiling.** Bumping `three` or importing one
+  more module can push it over. The ceiling exists so that decision is explicit,
+  not to block it.
 
-### Servicios externos, todos en plan gratuito
+### External services, all on free plans
 
-| Servicio | Límite | Consumo real |
+| Service | Limit | Actual usage |
 |---|---|---|
-| Cloudflare Pages | 500 builds/mes; banda y requests ilimitados | unos pocos por semana |
-| Cloudflare Browser Rendering | 10 min de browser/día · 3 concurrentes · 1 instancia nueva cada 20 s | 3-5 s por render, caché de borde de 1 h |
-| GitHub Actions | **ilimitado** — el repo es público | — |
-| Microsoft Clarity | gratis, sin tope | — |
-| Cloudflare Web Analytics | gratis | — |
+| Cloudflare Pages | 500 builds/month; unlimited bandwidth and requests | a few per week |
+| Cloudflare Browser Rendering | 10 browser minutes/day · 3 concurrent · one new instance every 20 s | 3-5 s per render, 1 h edge cache |
+| GitHub Actions | **unlimited** — the repo is public | — |
+| Microsoft Clarity | free, no cap | — |
+| Cloudflare Web Analytics | free | — |
 
-**El límite que sí se toca es el de Browser Rendering**, y no el diario sino el
-de ritmo: la cadena `develop` → `staging` → `main` son dos deploys seguidos y
-cada uno pide un render en frío. Ya pasó una vez — el smoke falló con un 429 con
-el sitio sano. Por eso `smoke-deploy.yml` calienta el PDF tolerando el 429 antes
-de correr los tests. Detalle en [`docs/07`](./docs/07-deuda-tecnica.md) §16.
+**The limit that actually gets touched is Browser Rendering's**, and not the
+daily one but the rate: the `develop` → `staging` → `main` chain is two deploys
+back to back and each asks for a cold render. It happened once — the smoke failed
+with a 429 on a healthy site. That is why `smoke-deploy.yml` warms the PDF,
+tolerating the 429, before running the tests. Detail in
+[`docs/07`](./docs/07-technical-debt.md) §16.
 
-## Cómo se trabaja
+## How work happens
 
-`feature/*` → `develop` → `staging` → `main`. Cada PR a `develop` **sube la
-versión** de `package.json`, y a `staging` y a `main` solo entra la rama de
-arriba — las dos cosas las hace cumplir CI, no la disciplina. Ver
-[`docs/08`](./docs/08-ramas-y-versionado.md).
+`feature/*` → `develop` → `staging` → `main`. Every PR into `develop` **raises
+the version** in `package.json`, and only the branch above enters `staging` and
+`main` — both are enforced by CI, not by discipline. See
+[`docs/08`](./docs/08-branches-and-versioning.md).
 
-## Uso desde el frontend
+## Using it from the frontend
 
 ```ts
 import { content } from "./content/source";
@@ -116,13 +123,13 @@ const cv = await content.getView("cv", "es");
 const web = await content.getView("portfolio", "es");
 ```
 
-El frontend **nunca** filtra por `visibility` ni calcula duraciones: recibe listas
-ya resueltas por `getView()`.
+The frontend **never** filters by `visibility` and never computes durations: it
+receives lists already resolved by `getView()`.
 
-## Dónde seguir
+## Where to go next
 
-- **Qué se hace ahora y en qué orden:** [`docs/06`](./docs/06-proxima-sesion.md).
-- **Deuda técnica, con cómo comprobar cada entrada:** [`docs/07`](./docs/07-deuda-tecnica.md).
-- **Estado, decisiones y qué falta:** [`docs/00-indice.md`](./docs/00-indice.md).
-- **Cómo trabajar en el repo (invariantes, convenciones, mapa de archivos):**
+- **What gets done now and in what order:** [`docs/06`](./docs/06-next-session.md).
+- **Technical debt, with how to check each entry:** [`docs/07`](./docs/07-technical-debt.md).
+- **Status, decisions and what is missing:** [`docs/00-index.md`](./docs/00-index.md).
+- **How to work in the repo (invariants, conventions, file map):**
   [`CLAUDE.md`](./CLAUDE.md).

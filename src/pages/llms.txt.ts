@@ -1,13 +1,14 @@
 /**
- * Resumen en markdown para agentes (docs/04 §3).
+ * A markdown summary for agents (docs/04 §3).
  *
- * Cada vez más reclutadores pegan la URL en un LLM y preguntan si el candidato
- * sirve. Esto es lo que ese modelo lee. Se genera del dataset: escribirlo a
- * mano garantiza que en tres meses diga otra cosa que el CV.
+ * More and more recruiters paste the URL into an LLM and ask whether the
+ * candidate is a fit. This is what that model reads. It is generated from the
+ * dataset: writing it by hand guarantees that in three months it says something
+ * different from the CV.
  */
 
 import type { APIRoute } from "astro";
-import { content, formatDateRange, formatRoleTitle, formatSeniority } from "@content";
+import { content, formatDateRange, formatRoleTitle, formatSeniority, groupedSkills } from "@content";
 
 export const GET: APIRoute = async ({ site }) => {
   const view = await content.getView("public-api", "es");
@@ -29,9 +30,11 @@ export const GET: APIRoute = async ({ site }) => {
     `- Datos en JSON: ${base}/cv.json`,
     "",
     "## Stack",
-    ...Object.entries(view.skills)
-      .filter(([, list]) => list.length > 0)
-      .map(([cat, list]) => `- ${cat}: ${list.map((s) => s.name).join(", ")}`),
+    // Same grouping and same order as the CV: `groupedSkills` is the one
+    // definition. Walking `view.skills` here is what made this surface print
+    // `- language:` while the CV printed `Lenguajes:`.
+    ...groupedSkills(view.skills)
+      .map(({ label, skills }) => `- ${label}: ${skills.map((s) => s.name).join(", ")}`),
     "",
     "## Experiencia",
     ...view.experience.flatMap((role) => [
@@ -46,7 +49,7 @@ export const GET: APIRoute = async ({ site }) => {
       `### ${p.name}${p.client ? ` (${p.client})` : ""}`,
       p.problem.short,
       p.solution.short,
-      ...(p.slug ? [`Caso: ${base}/proyectos/${p.slug}`] : []),
+      ...(p.slug ? [`Caso: ${base}/projects/${p.slug}`] : []),
       "",
     ]),
   ];

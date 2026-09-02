@@ -1,176 +1,176 @@
 /**
- * La tarjeta de Open Graph: el HTML del que sale `public/og.jpg`.
+ * The Open Graph card: the HTML `public/og.jpg` comes from.
  *
- * Función PURA a propósito —no lee archivos, no abre un browser—: recibe los
- * textos ya resueltos y los binarios ya en `data:`. Eso la deja testeable sin
- * Chromium y hace que `build-og.ts` sea lo único con I/O, igual que
- * `render-pdf.ts` frente a `build-pdf.ts`.
+ * A PURE function on purpose — it reads no files and opens no browser: it takes
+ * already resolved texts and binaries already as `data:`. That keeps it
+ * testable without Chromium and makes `build-og.ts` the only thing with I/O,
+ * the same way `render-pdf.ts` relates to `build-pdf.ts`.
  *
- * Por qué una plantilla suelta y no una página en `src/pages/`: una página se
- * buildea, entra en `dist/`, y los tres checks que recorren `dist/`
- * —`no-client-js`, `bundle-budget`, `landing-unica`— tendrían que aprender a
- * ignorarla. Una excepción en un check es una grieta permanente. Además sería
- * una ruta indexable que no es un destino, justo lo que la landing única
- * promete que no existe.
+ * Why a loose template and not a page in `src/pages/`: a page gets built, lands
+ * in `dist/`, and the three checks walking `dist/` — `no-client-js`,
+ * `bundle-budget`, `single-landing` — would have to learn to ignore it. An
+ * exception inside a check is a permanent crack. It would also be an indexable
+ * route that is not a destination, exactly what the single landing promises
+ * does not exist.
  */
 
 /**
- * 1200×630 es la relación 1.91:1 que piden Facebook, LinkedIn, WhatsApp, Slack
- * y Discord, y también la del `summary_large_image` de Twitter. NO hace falta
- * una imagen por plataforma: todas leen la misma etiqueta `og:image`, y lo que
- * cambia entre ellas es cómo la recortan, no qué archivo piden.
+ * 1200×630 is the 1.91:1 ratio Facebook, LinkedIn, WhatsApp, Slack and Discord
+ * ask for, and also Twitter's `summary_large_image`. One image per platform is
+ * NOT needed: they all read the same `og:image` tag, and what differs between
+ * them is how they crop it, not which file they ask for.
  */
-export const OG_ANCHO = 1200;
-export const OG_ALTO = 630;
+export const OG_WIDTH = 1200;
+export const OG_HEIGHT = 630;
 
 /**
- * El techo de peso. WhatsApp no llega a mostrar la previsualización si la
- * imagen pesa de más, así que este número no es prolijidad: es la diferencia
- * entre que la tarjeta aparezca en un chat o no. Por eso el archivo sale en
- * JPEG y no en PNG — con una foto adentro, un PNG se va a más de 800 KB.
+ * The weight ceiling. WhatsApp does not get as far as showing the preview when
+ * the image is too heavy, so this number is not tidiness: it is the difference
+ * between the card appearing in a chat or not. That is why the file comes out
+ * as JPEG and not PNG — with a photo inside, a PNG goes past 800 KB.
  */
-export const OG_PESO_MAXIMO = 300 * 1024;
+export const OG_MAX_BYTES = 300 * 1024;
 
-export interface DatosOg {
+export interface OgData {
   /** `identity.fullName`. */
-  nombre: string;
-  /** `identity.brandTitle`. El volanta de arriba. */
+  name: string;
+  /** `identity.brandTitle`. The kicker on top. */
   kicker: string;
-  /** Rol, antigüedad y ciudad, ya formateados con los helpers del contrato. */
-  rol: string;
-  /** La foto como `data:`. Cuadrada; se recorta al círculo. */
-  fotoDataUri: string;
-  /** Los `@font-face` de Manrope con las fuentes embebidas en `data:`. */
-  fuenteCss: string;
-  /** El SVG de la marca, de `src/lib/marca.ts`. */
-  marca: string;
+  /** Role, seniority and city, already formatted with the contract helpers. */
+  role: string;
+  /** The photo as `data:`. Square; clipped to the circle. */
+  photoDataUri: string;
+  /** Manrope's `@font-face` rules with the fonts embedded as `data:`. */
+  fontCss: string;
+  /** The brand SVG, from `src/lib/brand.ts`. */
+  brand: string;
 }
 
-// Tokens de `src/styles/tokens.css`, resueltos a mano porque este HTML no pasa
-// por el bundler y no hay cascada de la que heredarlos. Modo claro siempre: la
-// tarjeta la renderiza el servidor de cada red social, no el browser de nadie,
-// así que no hay `prefers-color-scheme` que consultar.
-const FONDO = "#f7f6f4";
-const TINTA = "#17181c";
-const SUAVE = "#5f636e";
-const ACENTO = "#b0472a";
-const LINEA = "#e5e3df";
+// Tokens from `src/styles/tokens.css`, resolved by hand because this HTML does
+// not go through the bundler and there is no cascade to inherit from. Always
+// light mode: the card is rendered by each social network's server, not by
+// anybody's browser, so there is no `prefers-color-scheme` to consult.
+const BACKGROUND = "#f7f6f4";
+const INK = "#17181c";
+const SOFT = "#5f636e";
+const ACCENT = "#b0472a";
+const LINE = "#e5e3df";
 
-/** El aro que enmarca la foto. Mismo idioma que la marca: abierto a la derecha. */
-const HUECO = 24; // % del perímetro
-const RETRATO = 380;
+/** The ring framing the photo. Same language as the brand: open on the right. */
+const GAP = 24; // % of the perimeter
+const PORTRAIT = 380;
 
-function retrato(fotoDataUri: string): string {
-  const c = RETRATO / 2;
-  const rAro = c - 12;
-  const rFoto = c - 30;
-  const lado = rFoto * 2;
+function portrait(photoDataUri: string): string {
+  const c = PORTRAIT / 2;
+  const ringR = c - 12;
+  const photoR = c - 30;
+  const side = photoR * 2;
   return (
-    `<svg width="${RETRATO}" height="${RETRATO}" viewBox="0 0 ${RETRATO} ${RETRATO}" aria-hidden="true">` +
-    `<defs><clipPath id="recorte"><circle cx="${c}" cy="${c}" r="${rFoto}"/></clipPath></defs>` +
-    `<image href="${fotoDataUri}" x="${c - rFoto}" y="${c - rFoto}" width="${lado}" height="${lado}"` +
-    ` clip-path="url(#recorte)" preserveAspectRatio="xMidYMid slice"/>` +
-    // `pathLength=100` hace que el hueco se mida en porcentaje del perímetro y
-    // no en unidades, y `rotate(hueco * 1.8)` lo centra exacto a la derecha.
-    // La cuenta es la misma que la del aro de la marca.
-    `<circle cx="${c}" cy="${c}" r="${rAro}" fill="none" stroke="${ACENTO}" stroke-width="14"` +
-    ` stroke-linecap="round" pathLength="100" stroke-dasharray="${100 - HUECO} ${HUECO}"` +
-    ` transform="rotate(${HUECO * 1.8} ${c} ${c})"/>` +
+    `<svg width="${PORTRAIT}" height="${PORTRAIT}" viewBox="0 0 ${PORTRAIT} ${PORTRAIT}" aria-hidden="true">` +
+    `<defs><clipPath id="clip"><circle cx="${c}" cy="${c}" r="${photoR}"/></clipPath></defs>` +
+    `<image href="${photoDataUri}" x="${c - photoR}" y="${c - photoR}" width="${side}" height="${side}"` +
+    ` clip-path="url(#clip)" preserveAspectRatio="xMidYMid slice"/>` +
+    // `pathLength=100` makes the gap measured as a percentage of the perimeter
+    // rather than in units, and `rotate(gap * 1.8)` centers it exactly on the
+    // right. The arithmetic is the same as the brand ring's.
+    `<circle cx="${c}" cy="${c}" r="${ringR}" fill="none" stroke="${ACCENT}" stroke-width="14"` +
+    ` stroke-linecap="round" pathLength="100" stroke-dasharray="${100 - GAP} ${GAP}"` +
+    ` transform="rotate(${GAP * 1.8} ${c} ${c})"/>` +
     `</svg>`
   );
 }
 
-export function buildOgHtml(d: DatosOg): string {
+export function buildOgHtml(d: OgData): string {
   return `<!doctype html>
 <html lang="es">
 <head>
 <meta charset="utf-8">
 <style>
-${d.fuenteCss}
+${d.fontCss}
 * { box-sizing: border-box; margin: 0; }
 body {
-  width: ${OG_ANCHO}px;
-  height: ${OG_ALTO}px;
-  background: ${FONDO};
-  color: ${TINTA};
+  width: ${OG_WIDTH}px;
+  height: ${OG_HEIGHT}px;
+  background: ${BACKGROUND};
+  color: ${INK};
   font-family: "Manrope", system-ui, sans-serif;
-  /* Las mismas ligaduras apagadas que en el sitio: acá no hay parser que las
-     lea, pero un rasterizado que difiera del HTML sería una sorpresa. */
+  /* The same ligatures switched off as on the site: there is no parser reading
+     them here, but a raster that differed from the HTML would be a surprise. */
   font-variant-ligatures: none;
   letter-spacing: -0.005em;
   display: flex;
   flex-direction: column;
   padding: 60px 68px;
 }
-.cuerpo { display: flex; flex: 1; align-items: center; gap: 52px; min-width: 0; }
-.texto { display: flex; flex-direction: column; gap: 18px; min-width: 0; flex: 1; }
-/* La marca arriba de todo y sola: no lleva el dominio al lado porque cada red
-   ya imprime el host abajo de la tarjeta, y repetirlo es ruido. */
-.marca { display: flex; margin-bottom: 10px; }
+.body { display: flex; flex: 1; align-items: center; gap: 52px; min-width: 0; }
+.text { display: flex; flex-direction: column; gap: 18px; min-width: 0; flex: 1; }
+/* The brand on top and alone: it does not carry the domain beside it, because
+   every network already prints the host below the card and repeating it is noise. */
+.brand { display: flex; margin-bottom: 10px; }
 .kicker {
   font-size: 19px; font-weight: 800; letter-spacing: 0.13em;
-  text-transform: uppercase; color: ${ACENTO};
+  text-transform: uppercase; color: ${ACCENT};
 }
-.nombre {
+.name {
   font-size: 76px; font-weight: 800; letter-spacing: -0.035em;
   line-height: 1.02; text-wrap: balance;
 }
-.rol {
-  font-size: 26px; font-weight: 400; color: ${SUAVE}; line-height: 1.35;
-  text-wrap: pretty; padding-top: 14px; border-top: 1px solid ${LINEA};
+.role {
+  font-size: 26px; font-weight: 400; color: ${SOFT}; line-height: 1.35;
+  text-wrap: pretty; padding-top: 14px; border-top: 1px solid ${LINE};
 }
-.retrato { flex: none; display: flex; }
+.portrait { flex: none; display: flex; }
 </style>
 </head>
 <body>
-  <div class="cuerpo">
-    <div class="texto">
-      <div class="marca">${d.marca}</div>
-      <p class="kicker">${escapar(d.kicker)}</p>
-      <h1 class="nombre">${escapar(d.nombre)}</h1>
-      <p class="rol">${escapar(d.rol)}</p>
+  <div class="body">
+    <div class="text">
+      <div class="brand">${d.brand}</div>
+      <p class="kicker">${escapeHtml(d.kicker)}</p>
+      <h1 class="name">${escapeHtml(d.name)}</h1>
+      <p class="role">${escapeHtml(d.role)}</p>
     </div>
-    <div class="retrato">${retrato(d.fotoDataUri)}</div>
+    <div class="portrait">${portrait(d.photoDataUri)}</div>
   </div>
 </body>
 </html>`;
 }
 
 /**
- * El lado del ícono de iOS. 180 es lo que pide el iPhone a 3x, y el tamaño
- * único que Apple recomienda declarar desde iOS 8: los demás los deriva solo.
+ * The side of the iOS icon. 180 is what the iPhone asks for at 3x, and the
+ * single size Apple recommends declaring since iOS 8: it derives the rest.
  */
-export const ICONO_LADO = 180;
+export const ICON_SIDE = 180;
 
 /**
- * El ícono de la pantalla de inicio de iOS.
+ * The iOS home screen icon.
  *
- * Existe aparte del favicon porque Safari **no acepta SVG** para
- * `apple-touch-icon`: tiene que ser un bitmap. Sin este archivo, guardar el
- * sitio en la pantalla de inicio no da un ícono sino una captura reducida de la
- * página, ilegible.
+ * It exists apart from the favicon because Safari **does not accept SVG** for
+ * `apple-touch-icon`: it has to be a bitmap. Without this file, saving the site
+ * to the home screen gives an unreadable shrunken screenshot of the page
+ * instead of an icon.
  *
- * Lleva la marca COMPLETA —el aro con la N— y no solo el aro: acá hay 180 px,
- * que es cuatro veces lo que tiene un favicon, y a ese tamaño las letras se
- * leen sin problema. La regla de "silueta sola" era por los 16 px, no por
- * gusto.
+ * It carries the COMPLETE brand — the ring with the N — and not only the ring:
+ * there are 180 px here, four times what a favicon has, and at that size the
+ * letters read fine. The "silhouette only" rule was about the 16 px, not about
+ * taste.
  *
- * Fondo opaco y esquinas cuadradas a propósito: iOS aplica su propia máscara
- * redondeada y compone la transparencia sobre negro, así que redondear acá deja
- * un borde raro y dejarlo transparente lo pone sobre un cuadrado negro.
+ * Opaque background and square corners on purpose: iOS applies its own rounded
+ * mask and composites transparency over black, so rounding here leaves a odd
+ * edge and leaving it transparent puts it on a black square.
  */
-export function buildIconoHtml(marca: string): string {
+export function buildIconHtml(brand: string): string {
   return `<!doctype html>
 <html>
 <head><meta charset="utf-8"></head>
-<body style="margin:0;width:${ICONO_LADO}px;height:${ICONO_LADO}px;background:${FONDO};display:flex;align-items:center;justify-content:center">
-${marca}
+<body style="margin:0;width:${ICON_SIDE}px;height:${ICON_SIDE}px;background:${BACKGROUND};display:flex;align-items:center;justify-content:center">
+${brand}
 </body>
 </html>`;
 }
 
-/** Los textos salen del dataset, no de nosotros: pueden traer `&` o comillas. */
-function escapar(s: string): string {
+/** The texts come from the dataset, not from us: they can carry `&` or quotes. */
+function escapeHtml(s: string): string {
   return s
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
