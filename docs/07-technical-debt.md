@@ -11,7 +11,7 @@ This file exists so they do not get lost. Each entry says what it is, **how to
 check it** — so the next session does not have to take my word for it — and what
 fixing it would cost.
 
-**22 of 36 entries are closed.** The open ones keep their original numbers: a
+**22 of 37 entries are closed.** The open ones keep their original numbers: a
 renumbered list breaks every reference from a commit message or another doc.
 
 What does **not** go here: product and data pending items, which live in
@@ -80,12 +80,13 @@ public.
 
 `/cv.json` serves the `public-api` surface, but `resolveView` only filters
 `phone` and `streetAddress`. Everything else passes through whole. Measured on
-`dist/cv.json` from the 2026-08-25 build:
+`dist/cv.json`, 2026-09-02 build (2026-08-25 numbers in brackets):
 
 ```
-publishPhoneOn exposed: true
-"priority"  keys in the output: 40
-"visibility" keys in the output: 40
+"visibility"     48  [40]
+"priority"       48  [40]
+"publishPhoneOn"  1  [1]
+"source"          3  [0]
 ```
 
 `visibility` and `priority` are **internal editorial decisions**: they say which
@@ -94,13 +95,36 @@ you decided not to show something. A recruiter opening the JSON sees the ranking
 you made of your own work. `publishPhoneOn` also describes a privacy policy
 nobody outside cares about.
 
+**New on 2026-09-02, found while designing the English version:** `Metric.source`
+is published too. No page renders it — `formatMetric` uses `label`, `before`,
+`after` and `delta` — but `/cv.json` serializes the whole view, so it ships. It
+is the evidence note written for the author to reread before an interview, and
+one of the three currently in the dataset carries the API URL the number came
+from. `LanguageSkill.note` is in the same position and reads 0 only because no
+language carries one today.
+
+That is what makes this grow rather than sit still: **anything `/cv.json`
+publishes has to be translated.** Per the design in
+[`specs/2026-09-02-cv-en-pdf-design.md`](./superpowers/specs/2026-09-02-cv-en-pdf-design.md)
+the staleness lock follows what ships, not what is rendered, so leaving these
+fields on the public surface means writing and maintaining an English
+`Metric.source` for a note nobody reads in either language.
+
 **Why it was not fixed here.** Touching `resolveView` is touching the file rule 8
-depends on, and doing that in the middle of a deploy change is asking for it.
+depends on, and doing that in the middle of a deploy change is asking for it. The
+2026-09-02 finding was left alone for the same reason: it appeared while writing
+a design document, and a `resolveView` change does not belong in a docs commit.
 
 **Fix.** In `resolveView`, for the `public-api` surface, map `Achievement` and
-`Skill` to a shape without `visibility` or `publishPhoneOn`. It is a projection,
-not a filter: the output type would have to be different from the internal
-surfaces', and that is where the real work is.
+`Skill` to a shape without `visibility`, `publishPhoneOn` or `Metric.source`. It
+is a projection, not a filter: the output type would have to be different from
+the internal surfaces', and that is where the real work is.
+
+**How to check it.** `pnpm run build`, then count the keys in `dist/cv.json`. The
+four counts above are the whole test.
+
+**Do it before, not after, the English dataset exists** — otherwise the fields get
+translated once and deleted right afterwards.
 
 ---
 
@@ -391,3 +415,43 @@ defect fix; adding coverage to it would blur what the diff says.
 **Fix.** The `textarea` test, with `reference` in the filter and `string` as the
 expected kind. Four lines in `hints.test.ts`.
 
+
+---
+
+## 37. The bundle budget measures one landing, by path
+
+**Severity: low today, medium the day `/en/` exists. Found 2026-09-02 while
+designing the English version.**
+
+`bundle-budget.check.ts` opens `dist/index.html` and nothing else:
+
+```ts
+const HOME = join(DIST, "index.html");
+```
+
+Every per-page assertion in the file — the 4 KB ceiling on critical JS, the
+30 KB one on the HTML — is therefore about that one path. The home is the only
+page shipping JavaScript, so today the check covers everything it should.
+
+The English landing of
+[`specs/2026-09-02-en-site-design.md`](./superpowers/specs/2026-09-02-en-site-design.md)
+is a second page with the same JS. It would be added to `PAGES_WITH_JS` in
+`no-client-js.check.ts` — an explicit line in a diff, which is the point of that
+allowlist — and then ship with **no byte budget at all**, silently.
+
+What is already covered, and does not need work: a duplicated 3D chunk. The
+`withThree.length === 1` assertion is global over `_astro/`, so if the locale
+split made Rollup emit two copies of three, this check fails today, before
+anyone thinks to look.
+
+**How to check it.** Add any second page importing `mountGraph`, build, and run
+`pnpm run test:bundle`: green, with the new page's critical path unmeasured.
+
+**Why it was not fixed.** The second landing does not exist yet. Writing the
+loop now means writing it against an imagined directory layout, and a gate
+written blind is how you get one that passes for the wrong reason.
+
+**Fix.** Take the pages to measure from `PAGES_WITH_JS` — the list that already
+decides which pages are allowed to ship JS — instead of a constant, and assert
+the per-page budgets over each. The two checks then share one definition of
+"page with JavaScript", which is what they were both always about.
