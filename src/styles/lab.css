@@ -51,9 +51,18 @@
 /* --- The map section ----------------------------------------------------- */
 
 .lab__map-section {
-  max-width: var(--width);
+  /* Wider than `--width` on purpose: the graph needs air, and a larger canvas
+     is how the nodes stop sitting in a knot. Copy stays on the reading measure. */
+  max-width: min(72rem, calc(100% - 2rem));
   margin: 0 auto;
   padding: calc(var(--space) * 4) calc(var(--space) * 2.5) calc(var(--space) * 8);
+}
+
+.lab__map-section .lab__intro,
+.lab__map-section .lab__indice {
+  max-width: var(--width);
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .lab__title {
@@ -109,6 +118,11 @@
   background: var(--bg-raised);
   border-radius: var(--radius);
   transition: background-color 400ms ease, border-radius 400ms ease;
+  /* The canvas does not take pointer events, so a drag lands on the SVG and
+     selects its labels. Kill selection on the map; the panel is not clickable
+     anyway (`pointer-events: none`). */
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 /* With the 3D mounted the panel disappears and the field shows through the map.
@@ -136,10 +150,7 @@
   cursor: grabbing;
 }
 
-/* With focus active the labels get in the way: the panel already says what it is. */
-.lab__map--focused .lab__labels {
-  opacity: 0.25;
-}
+/* Non-sticky labels dim in JS when a node is focused. Workplaces stay. */
 
 .lab__svg,
 .lab__canvas {
@@ -147,6 +158,8 @@
   inset: 0;
   width: 100%;
   height: 100%;
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 /* El SVG NUNCA se saca del DOM: si el 3D se apaga —contexto perdido, frames
@@ -172,36 +185,37 @@
 }
 
 .lab__edge {
-  stroke: var(--ink-soft);
+  stroke: color-mix(in srgb, var(--line) 72%, var(--accent));
 }
 
 .lab__edge--affinity {
-  stroke: var(--accent);
+  /* Same mix as structure. Full accent is reserved for a focused neighbourhood. */
+  stroke: color-mix(in srgb, var(--line) 72%, var(--accent));
 }
 
 .lab__halo {
   fill: var(--bg-raised);
 }
 
-/* The kind is told apart by VALUE — how dark it is — not by hue, so the map
-   survives in black and white. These are the same colors `colorFor()` computes
-   in `graph-3d.ts`: if they change here, they change there. */
-.lab__node--role { fill: var(--ink); }
-.lab__node--project { fill: var(--ink-soft); }
+/* The kind is told apart by VALUE — how dark it is — not by a second hue.
+   These mixes are the same as `colorFor()` in `graph-3d.ts`: terracotta dust
+   on ink, so the map is of this palette and not a cool gray chrome. */
+.lab__node--role { fill: color-mix(in srgb, var(--ink) 90%, var(--accent)); }
+.lab__node--project { fill: color-mix(in srgb, var(--ink-soft) 68%, var(--accent)); }
 .lab__node--achievement { fill: var(--accent); }
 /* Filled, not a ring. It was a ring when every skill measured the same and a
    small one reads as a dot; with size by years × connections, React draws at
    radius 19 and a ring of that diameter reads as a hole — exactly the node that
-   has to dominate. The 75% mirrors the 3D's `lerp(background, 0.25)`. */
+   has to dominate. */
 .lab__node--skill {
-  fill: color-mix(in srgb, var(--ink-soft) 75%, var(--bg-raised));
-  stroke: var(--ink-soft);
+  fill: color-mix(in srgb, color-mix(in srgb, var(--ink-soft) 80%, var(--accent)) 88%, var(--bg-raised));
+  stroke: color-mix(in srgb, var(--ink-soft) 75%, var(--accent));
 }
 
 /* Sin evidencia: hueco y punteado. La ausencia se dibuja, no se esconde. */
 .lab__node--empty {
   fill: none;
-  stroke: var(--ink-soft);
+  stroke: color-mix(in srgb, var(--ink-soft) 75%, var(--accent));
   stroke-dasharray: 2.4 2.8;
 }
 
@@ -217,6 +231,7 @@
 
 .lab__label--role { font-weight: 800; }
 .lab__label--project { font-weight: 600; }
+.lab__label--skill { font-weight: 700; }
 
 /* 3D labels: DOM over the canvas. Crisp text, no font atlas. */
 .lab__labels {
@@ -253,7 +268,13 @@
 .lab__label-3d--project {
   font-size: 0.8125rem;
   font-weight: 600;
-  color: var(--ink-soft);
+  color: color-mix(in srgb, var(--ink-soft) 70%, var(--accent));
+}
+
+.lab__label-3d--skill {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: color-mix(in srgb, var(--ink-soft) 55%, var(--accent));
 }
 
 .lab__tooltip {

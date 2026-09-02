@@ -21,21 +21,24 @@ import type { KnowledgeGraph, GraphEdge, GraphNode, GraphNodeKind } from "./know
 /** Simulation iterations. At 37 nodes this is ~15 ms at build time. */
 export const LAYOUT_TICKS = 700;
 /** Equilibrium distance between nodes. Higher = more spread out. */
-export const LAYOUT_K = 62;
+export const LAYOUT_K = 118;
 /** Radius of the initial sphere. */
-export const LAYOUT_INITIAL_RADIUS = 170;
+export const LAYOUT_INITIAL_RADIUS = 240;
 /**
  * Target radius per kind, as a fraction of the body radius.
  *
  * This is what turns the cloud into a readable structure: **core = what I know,
  * crust = where I used it**. Achievements and projects land in between because
  * they are literally the bridge between a technology and a job.
+ *
+ * Skills sat at 0.42 and still read as a knot in the middle. 0.58 gives them
+ * the body of the sphere; the map is allowed to be large.
  */
 export const LAYOUT_KIND_RADIUS: Record<GraphNodeKind, number> = {
   role: 1,
-  project: 0.7,
-  achievement: 0.55,
-  skill: 0.28,
+  project: 0.80,
+  achievement: 0.76,
+  skill: 0.48,
 };
 /**
  * How hard the radial bias pulls. It is a BIAS, not a constraint: per-edge
@@ -43,7 +46,7 @@ export const LAYOUT_KIND_RADIUS: Record<GraphNodeKind, number> = {
  * its skills. Raising it too far flattens the graph into layers and the real
  * structure is lost.
  */
-export const LAYOUT_RADIAL_BIAS = 2;
+export const LAYOUT_RADIAL_BIAS = 2.8;
 /**
  * How much node size weighs into repulsion.
  *
@@ -53,7 +56,7 @@ export const LAYOUT_RADIAL_BIAS = 2;
  * scales with the average of the two radii, so a large node makes room for
  * itself and a small one barely interferes.
  */
-export const LAYOUT_SIZE_REPULSION = 1;
+export const LAYOUT_SIZE_REPULSION = 1.25;
 /**
  * Radius of the core of skills without evidence, as a fraction of the body
  * radius.
@@ -76,13 +79,24 @@ export const LAYOUT_TARGET_RADIUS = 300;
  */
 export const LAYOUT_RADIUS_PERCENTILE = 0.85;
 /** Force pulling everything toward the origin. Keeps the graph from drifting. */
-export const LAYOUT_CENTERING = 0.012;
+export const LAYOUT_CENTERING = 0.007;
 /**
  * How hard an affinity edge pulls relative to a structural one, per unit of
  * weight. Below 1 because there are many more of them: at 1 they would flatten
  * the structure.
  */
-export const LAYOUT_AFFINITY_PULL = 0.55;
+export const LAYOUT_AFFINITY_PULL = 0.16;
+/**
+ * Disc radius per kind, matching the larger of the two renderers (the overlap
+ * test in knowledge-graph.test.ts uses the same numbers). Collision resolve
+ * after the force step uses these so two large skills cannot swallow each other.
+ */
+export const LAYOUT_DRAW_RADIUS: Record<GraphNodeKind, number> = {
+  role: 17,
+  project: 14,
+  skill: 10,
+  achievement: 9,
+};
 
 export interface Vec3 { x: number; y: number; z: number }
 
@@ -234,6 +248,12 @@ export function layoutGraph(graph: KnowledgeGraph): PositionedGraph {
     p.x *= factor; p.y *= factor; p.z *= factor;
   }
 
+  // Two large skills that co-occur a lot (TypeScript/React) can still sit
+  // inside each other's disc after the force step: attraction along shared
+  // edges beats size-weighted repulsion. Push overlapping pairs apart using
+  // the same radii the renderers use, so the map does not hide a node.
+  resolveOverlaps(withEvidence, pos);
+
   placeCore(graph.nodes.filter((n) => n.degree === 0), graph.nodes, pos);
 
   const nodes: PositionedNode[] = graph.nodes.map((n) => {
@@ -252,9 +272,40 @@ export function layoutGraph(graph: KnowledgeGraph): PositionedGraph {
   // The framing comes from the REAL farthest node and not from a constant: now
   // that roles are pushed outward, who ends up at the edge is decided by the
   // simulation. Hard-coding it would clip the map as soon as a role is added.
+  //
+  // Ceil, not round: `round2(412.344)` is 412.34, which leaves that node
+  // outside the camera. This number has to contain everything.
   const framingRadius = Math.max(...nodes.map((n) => Math.hypot(n.x, n.y, n.z)));
 
-  return { nodes, edges: graph.edges, framingRadius: round2(framingRadius) };
+  return { nodes, edges: graph.edges, framingRadius: Math.ceil(framingRadius * 100) / 100 };
+}
+
+/**
+ * Separate pairs whose discs still overlap after the force simulation.
+ * Mutual push along the pair axis; a small pad survives `round2`.
+ */
+function resolveOverlaps(nodes: GraphNode[], pos: Map<string, Vec3>): void {
+  const rad = (n: GraphNode) => LAYOUT_DRAW_RADIUS[n.kind] * n.radiusScale;
+  const pad = 0.25;
+  for (let it = 0; it < 48; it++) {
+    let moved = false;
+    for (let i = 0; i < nodes.length; i++) {
+      for (let k = i + 1; k < nodes.length; k++) {
+        const a = nodes[i]!, b = nodes[k]!;
+        const A = pos.get(a.id)!, B = pos.get(b.id)!;
+        let dx = A.x - B.x, dy = A.y - B.y, dz = A.z - B.z;
+        const d = Math.hypot(dx, dy, dz) || 0.01;
+        const need = rad(a) + rad(b) + pad;
+        if (d >= need) continue;
+        const push = (need - d) / 2;
+        dx /= d; dy /= d; dz /= d;
+        A.x += dx * push; A.y += dy * push; A.z += dz * push;
+        B.x -= dx * push; B.y -= dy * push; B.z -= dz * push;
+        moved = true;
+      }
+    }
+    if (!moved) break;
+  }
 }
 
 /**
