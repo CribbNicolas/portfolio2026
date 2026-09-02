@@ -1,7 +1,7 @@
 {
   "schemaVersion": "1.0.0",
   "locale": "es",
-  "updatedAt": "2026-08-10T00:00:00.000Z",
+  "updatedAt": "2026-09-01T18:23:48.650Z",
 
   "identity": {
     "fullName": "Nicolás Agustín Cribb Barbaro",
@@ -34,77 +34,83 @@
     },
     "summary": {
       "short": "Desarrollador full stack con foco en producto: React, Next.js y TypeScript, con base sólida en Node, Docker y CI/CD para llevar un proyecto del repo a producción.",
-      "long": "TODO — versión larga para LinkedIn y portfolio. Ver branding-kit, sección 1.2."
+      "long": "Si el producto no puede fallar en un checkout o en un mapa con miles de features, ahí me siento cómodo. El stack es el que el problema pide: React o Vue, Next o WordPress, Node o PHP o un rake en Ruby. No colecciono frameworks.\n\nAntes de Rosario laburé remoto desde Misiones. Landings en equipo con Vue, Quasar, Django y WordPress: no me acuerdo los clientes y no los invento. En adtech armé solo el frontend de un constructor de audiencias — queries con AND, OR, XOR y NOT sobre edad, rubro y localidad — y un mapa de POIs con Mapbox, Next y Node. En agencia adaptábamos sitios de un mercado de origen a otros países: no era traducir, era que el servicio que en un país existe en el otro no. Del cliente no hablo.\n\nEn Dinkum entrego las dos puntas. El mapa del informe de RPPL (~13.000 distritos escolares; el índice bajó de 3–5 s a ~500 ms en un Web Worker) y el plugin que conecta un mapa de asientos con el carrito de WooCommerce y las APIs de reserva. En Muse el front vive en un monorepo Vite/Turbo; toco el CRM — órdenes, eventos, Algolia — y el rake que limpia el índice global cuando un delete no se propagaba.\n\nUso Claude y Cursor todos los días. Lo que entra al repo lo reviso yo. Busco trabajo de full stack y freelance cuando hay un producto atrás, no una landing más."
     }
   },
 
   "skills": [
-    { "id": "typescript", "name": "TypeScript", "category": "language", "aliases": ["TS"], "level": "core", "active": true, "visibility": { "priority": 1 } },
-    { "id": "javascript", "name": "JavaScript", "category": "language", "aliases": ["JS", "ECMAScript"], "level": "core", "active": true, "visibility": { "priority": 1 } },
-    { "id": "react", "name": "React", "category": "frontend", "aliases": ["ReactJS", "React.js"], "level": "core", "periods": [{ "start": "2022-10" }], "active": true, "visibility": { "priority": 1 } },
+    { "id": "typescript", "name": "TypeScript", "category": "language", "aliases": ["TS"], "level": "core", "periods": [{ "start": "2022-09", "end": "2023-07" }, { "start": "2024-01" }], "active": true, "visibility": { "priority": 1 } },
+    { "id": "javascript", "name": "JavaScript", "category": "language", "aliases": ["JS", "ECMAScript"], "level": "core", "periods": [{ "start": "2020-04", "end": "2023-07" }, { "start": "2024-01" }], "active": true, "visibility": { "priority": 1 } },
+    { "id": "react", "name": "React", "category": "frontend", "aliases": ["ReactJS", "React.js"], "level": "core", "periods": [{ "start": "2022-10", "end": "2023-07" }, { "start": "2024-01" }], "active": true, "visibility": { "priority": 1 } },
     { "id": "nextjs", "name": "Next.js", "category": "frontend", "aliases": ["NextJS", "Next"], "level": "core", "active": true, "visibility": { "priority": 1 } },
-    { "id": "mapbox", "name": "Mapbox GL JS", "category": "data", "aliases": ["Mapbox", "Mapbox GL"], "level": "core", "active": true, "visibility": { "priority": 2 } },
-    { "id": "wordpress", "name": "WordPress", "category": "cms", "aliases": ["WordPress plugin development", "WooCommerce"], "level": "core", "active": true, "visibility": { "priority": 3 } },
-    { "id": "vite", "name": "Vite", "category": "tooling", "aliases": [], "level": "working", "active": true, "visibility": { "priority": 3 } },
+    { "id": "mapbox", "name": "Mapbox GL JS", "category": "data", "aliases": ["Mapbox", "Mapbox GL"], "level": "core", "periods": [{ "start": "2024-01", "end": "2025-07" }, { "start": "2025-09", "end": "2025-11" }], "active": true, "visibility": { "priority": 2 } },
+    { "id": "wordpress", "name": "WordPress", "category": "cms", "aliases": ["WordPress plugin development", "WooCommerce", "WordPress page builder"], "level": "core", "periods": [{ "start": "2021-07", "end": "2023-07" }, { "start": "2025-02" }], "active": true, "visibility": { "priority": 3 } },
+    { "id": "vite", "name": "Vite", "category": "tooling", "aliases": [], "level": "working", "periods": [{ "start": "2022-09", "end": "2023-07" }, { "start": "2024-01" }], "active": true, "visibility": { "priority": 3 } },
     { "id": "tailwind", "name": "Tailwind CSS", "category": "frontend", "aliases": ["TailwindCSS"], "level": "working", "active": true, "visibility": { "priority": 2 } },
-    { "id": "mui", "name": "Material UI", "category": "frontend", "aliases": ["MUI"], "level": "working", "active": true, "visibility": { "priority": 3 } },
-    { "id": "jotai", "name": "Jotai", "category": "frontend", "aliases": [], "level": "working", "active": true, "visibility": { "priority": 4 } },
-    { "id": "solidjs", "name": "SolidJS", "category": "frontend", "aliases": ["Solid"], "level": "working", "active": true, "visibility": { "priority": 4 } },
-    { "id": "vue", "name": "Vue 3", "category": "frontend", "aliases": ["Vue.js", "VueJS"], "level": "working", "active": true, "visibility": { "priority": 4 } },
+    { "id": "scss", "name": "SCSS", "category": "frontend", "aliases": ["Sass", "SASS", "SCSS"], "level": "working", "periods": [{ "start": "2024-01" }], "active": true, "visibility": { "priority": 4 } },
+    { "id": "mui", "name": "Material UI", "category": "frontend", "aliases": ["MUI"], "level": "working", "periods": [{ "start": "2022-10", "end": "2023-07" }, { "start": "2024-01", "end": "2024-09" }], "active": true, "visibility": { "priority": 3 } },
+    { "id": "jotai", "name": "Jotai", "category": "frontend", "aliases": ["atoms"], "level": "working", "active": true, "visibility": { "priority": 4 } },
+    { "id": "solidjs", "name": "SolidJS", "category": "frontend", "aliases": ["Solid"], "level": "familiar", "active": true, "visibility": { "only": [], "priority": 4 } },
+    { "id": "vue", "name": "Vue 3", "category": "frontend", "aliases": ["Vue.js", "VueJS"], "level": "working", "periods": [{ "start": "2021-06", "end": "2022-06" }, { "start": "2024-01", "end": "2024-09" }], "active": true, "visibility": { "priority": 4 } },
+    { "id": "quasar", "name": "Quasar", "category": "frontend", "aliases": ["Quasar Framework"], "level": "working", "periods": [{ "start": "2021-06", "end": "2022-06" }], "active": true, "visibility": { "priority": 4 } },
     { "id": "node", "name": "Node.js", "category": "backend", "aliases": ["NodeJS", "Node"], "level": "working", "active": true, "visibility": { "priority": 2 } },
-    { "id": "php", "name": "PHP", "category": "backend", "aliases": ["Laravel"], "level": "working", "active": true, "visibility": { "priority": 4 } },
-    { "id": "sanity", "name": "Sanity", "category": "cms", "aliases": ["Sanity.io", "headless CMS"], "level": "working", "active": true, "visibility": { "priority": 3 } },
+    { "id": "php", "name": "PHP", "category": "backend", "aliases": ["Laravel"], "level": "familiar", "periods": [{ "start": "2025-02" }], "active": true, "visibility": { "priority": 4 } },
+    { "id": "django", "name": "Django", "category": "backend", "aliases": ["Django REST"], "level": "working", "active": true, "visibility": { "priority": 4 } },
+    { "id": "ruby", "name": "Ruby", "category": "backend", "aliases": ["Rails", "Ruby on Rails"], "level": "familiar", "active": true, "visibility": { "priority": 4 } },
+    { "id": "sanity", "name": "Sanity", "category": "cms", "aliases": ["Sanity.io", "headless CMS"], "level": "familiar", "active": true, "visibility": { "only": [], "priority": 4 } },
     { "id": "playwright", "name": "Playwright", "category": "testing", "aliases": ["E2E testing"], "level": "working", "active": true, "visibility": { "priority": 2 } },
-    { "id": "docker", "name": "Docker", "category": "infra", "aliases": ["containerización"], "level": "working", "active": true, "visibility": { "priority": 2 } },
+    { "id": "docker", "name": "Docker", "category": "infra", "aliases": ["containerización"], "level": "working", "periods": [{ "start": "2021-06" }], "active": true, "visibility": { "priority": 2 } },
     { "id": "cicd", "name": "CI/CD", "category": "infra", "aliases": ["GitHub Actions", "integración continua"], "level": "working", "active": true, "visibility": { "priority": 2 } },
-    { "id": "cloudflare", "name": "Cloudflare", "category": "infra", "aliases": ["Cloudflare Workers"], "level": "working", "active": true, "visibility": { "priority": 3 } },
+    { "id": "cloudflare", "name": "Cloudflare", "category": "infra", "aliases": ["Cloudflare Workers"], "level": "working", "active": true, "visibility": { "only": [], "priority": 4 } },
     { "id": "monorepo", "name": "Monorepos", "category": "tooling", "aliases": ["monorepo"], "level": "working", "active": true, "visibility": { "priority": 3 } },
     { "id": "git", "name": "Git", "category": "tooling", "aliases": [], "level": "working", "active": true, "visibility": { "priority": 3 } },
-    { "id": "ai-assisted", "name": "Desarrollo asistido por IA", "category": "practice", "aliases": ["AI-assisted development", "Claude Code", "Cursor"], "level": "working", "active": true, "visibility": { "priority": 3 } }
+    { "id": "ai-assisted", "name": "Desarrollo asistido por IA", "category": "practice", "aliases": ["AI-assisted development", "Claude Code", "Cursor", "Codex", "Grok"], "level": "working", "active": true, "visibility": { "priority": 3 } }
   ],
 
   "roles": [
     {
       "id": "dinkum",
       "company": "Dinkum Interactive",
-      "title": "Desarrollador de front-end",
+      "title": "Desarrollador Full Stack",
       "displayTitle": "Desarrollador Full Stack",
       "employmentType": "full-time",
       "workMode": "remote",
-      "location": "Argentina",
+      "location": "Rosario, Argentina",
       "start": "2024-09",
       "end": null,
       "context": {
-        "short": "Desarrollo de sistemas a medida, en equipo y como único responsable: plugins de WordPress desde cero, mapas interactivos y servicios de backoffice."
+        "short": "Plugins WordPress, mapas interactivos y backoffice, en equipo y como único responsable."
       },
       "visibility": { "priority": 1 }
     },
     {
       "id": "adsmovil",
       "company": "Adsmovil",
-      "title": "Desarrollador web",
+      "title": "Desarrollador de front-end",
+      "displayTitle": "Desarrollador de front-end",
       "employmentType": "full-time",
       "workMode": "remote",
       "location": "Posadas, Misiones",
       "start": "2022-06",
       "end": "2024-09",
       "context": {
-        "short": "Adtech. Sistemas de recolección y análisis de datos para estrategias publicitarias, con foco en discovery de nichos y delivery."
+        "short": "Adtech. Audiencias y mapa en solitario; gestor de campañas y métricas en equipo."
       },
       "visibility": { "priority": 1 }
     },
     {
       "id": "hogarth",
       "company": "Hogarth",
-      "clientDescription": "cliente global del sector tecnológico",
-      "title": "Frontend Developer",
-      "employmentType": "contract",
+      "clientDescription": "cliente global del sector tecnológico (Fortune 500)",
+      "title": "Desarrollador de front-end",
+      "employmentType": "full-time",
       "concurrent": true,
-      "workMode": "remote",
+      "workMode": "hybrid",
+      "location": "Buenos Aires, Argentina",
       "start": "2023-07",
       "end": "2024-01",
       "context": {
-        "short": "Equipo de frontend para un cliente global: versiones localizadas de sus productos web, cuidando congruencia e identidad de marca."
+        "short": "Equipos grandes por tickets: adaptar la web a otros países (idioma y servicios por plaza). Git y Docker."
       },
       "visibility": { "priority": 2 }
     },
@@ -118,7 +124,7 @@
       "start": "2020-04",
       "end": "2022-06",
       "context": {
-        "short": "Proyectos completos para clientes propios, de relevamiento a deploy. Vue, Quasar, Django, SCSS y Docker."
+        "short": "Landings en equipo. Vue, Quasar, Django, SCSS, Docker y WordPress."
       },
       "visibility": { "priority": 2 }
     }
@@ -130,10 +136,16 @@
       "roleId": "dinkum",
       "projectId": "mapas-distritos",
       "text": {
-        "short": "Construí interfaces de mapas con Mapbox GL JS renderizando capas de polígonos por distrito escolar y estado.",
-        "long": "TODO — versión larga: qué volumen de datos, qué problema resolvía para el usuario final."
+        "short": "Construí el mapa del informe de RPPL: coropleta de distritos y estados.",
+        "long": "El mapa vive en el informe público de RPPL sobre gasto en formación docente. Un líder escolar o un researcher cambia entre vista de distritos y de estados, elige dólares por docente o porcentaje del presupuesto, busca un lugar y abre la ficha con el resto de indicadores (FRPL, urbanicity, cambio 2014-22, promedio estatal). No es un mapa de escuelas: es el visor del paper. Lo entregué como plugin de WordPress con shortcode, embebido en el sitio del cliente, trabajando desde Dinkum."
       },
-      "skillIds": ["mapbox", "react", "typescript"],
+      "metric": {
+        "label": "distritos escolares en el dataset",
+        "delta": "13.000",
+        "confidence": "estimated",
+        "source": "GET https://rpplpartnership.org/wp-json/dscm/v1/schooldistrict el 2026-09-01: 13.360 registros, 7,15 MB. Se publica redondeado a ~13.000."
+      },
+      "skillIds": ["typescript", "javascript", "react", "mapbox", "wordpress", "mui", "git"],
       "dimension": "delivery",
       "visibility": { "priority": 1 }
     },
@@ -142,72 +154,157 @@
       "roleId": "dinkum",
       "projectId": "mapas-distritos",
       "text": {
-        "short": "Resolví artefactos visuales en el renderizado corrigiendo paint properties, e implementé hover interactivo con feature-state."
+        "short": "Resolví artefactos de pintura en distritos sin datos y el hover a zoom extremo: feature-state solo para el highlight, mousemove global y queryRenderedFeatures.",
+        "long": "El hover de capa de Mapbox no dispara cuando el polígono no está renderizado, así que el mousemove es global y el hit-test es queryRenderedFeatures. El highlight va por feature-state (fill y stroke); el color del choropleta no, porque setFeatureState sobre miles de features reprocesa tiles. Los distritos sin cutpoints quedan blancos y fuera de la búsqueda. En Alaska y Hawái el flyTo usa el polígono de mayor área, no el bbox de las islas lejanas. Pitch y rotación están bloqueados: es un choropleta 2D."
       },
-      "skillIds": ["mapbox", "javascript"],
+      "skillIds": ["mapbox", "javascript", "typescript"],
       "dimension": "performance",
+      "visibility": { "priority": 4 }
+    },
+    {
+      "id": "dinkum-mapbox-index",
+      "roleId": "dinkum",
+      "projectId": "mapas-distritos",
+      "text": {
+        "short": "Reemplacé el merge en feature-state por un índice hash en un Web Worker.",
+        "long": "La primera versión mergeaba los ~13.000 registros en feature-state: tardaba 3-5 s, duplicaba memoria y crasheaba. Lo reemplacé por un índice hash FNV-1a armado en un Web Worker, con transferencia zero-copy del ArrayBuffer. El JSON de distritos pesa 7 MB; el hilo de UI no se bloquea mientras indexa. Los IDs se normalizan aparte: GEOID de distrito a 7 dígitos, FIPS de estado a 2. El color se pinta con una expresión Mapbox GEOID→color, no con feature-state."
+      },
+      "metric": {
+        "label": "tiempo de indexado",
+        "before": "3-5 s",
+        "after": "500 ms",
+        "confidence": "estimated",
+        "source": "Medición interna al migrar de merge en feature-state a FastIndex (Web Worker FNV-1a), octubre 2025."
+      },
+      "skillIds": ["mapbox", "typescript", "javascript"],
+      "dimension": "architecture",
       "visibility": { "priority": 2 }
     },
     {
       "id": "dinkum-vite",
       "roleId": "dinkum",
-      "projectId": "wp-plugins",
+      "projectId": "muse-crm",
       "text": {
-        "short": "Migré el tooling de build de Webpack a Vite, simplificando la configuración y acelerando el ciclo de desarrollo."
+        "short": "Armé el frontend de Muse en un monorepo Turborepo con Vite: admin, shop, diseñador de salas y el renderer que consume WooCommerce.",
+        "long": "Muse no es un plugin: es un monorepo (apps/admin, apps/shop, packages/seat-designer, seat-map, seat-renderer, react-ui). El admin es el CRM en app-next.musecrm.com; el renderer se publica a S3 y lo embebe el plugin de WordPress. No migró Webpack→Vite en el plugin de Woo — ese sigue en wp-scripts. Vite vive acá."
       },
-      "skillIds": ["vite", "typescript"],
+      "skillIds": ["vite", "typescript", "monorepo", "react"],
       "dimension": "architecture",
-      "visibility": { "priority": 2 }
+      "visibility": { "priority": 4 }
     },
     {
       "id": "dinkum-wp",
       "roleId": "dinkum",
       "projectId": "wp-plugins",
       "text": {
-        "short": "Desarrollé plugins de WordPress desde cero con React, Material UI y TypeScript, integrando endpoints AJAX, nonces y enqueueing."
+        "short": "Desarrollé el plugin WooCommerce Seat Map: puente entre mapa, carrito y APIs de reserva.",
+        "long": "El plugin no dibuja el mapa: carga el seat-renderer de Muse, habla con las APIs Elixir/Ruby para reservar, y engancha add-to-cart, minicart, checkout y metadatos de la orden. Estado en Jotai (nonce que WooCommerce 10 rota por request, sesión, reservas en vuelo). Yo fui el autor principal (~380 de 558 commits, 2024-10 → 2026-07)."
       },
-      "skillIds": ["wordpress", "react", "mui", "typescript", "php"],
+      "skillIds": ["wordpress", "react", "typescript", "php", "jotai"],
       "dimension": "delivery",
       "visibility": { "priority": 1 }
     },
     {
-      "id": "adsmovil-react",
+      "id": "dinkum-woo-sync",
+      "roleId": "dinkum",
+      "projectId": "wp-plugins",
+      "text": {
+        "short": "Implementé AsyncPile: una cola que serializa altas y bajas de asientos contra el carrito para que WooCommerce 10 no pierda el nonce ni el estado.",
+        "long": "Sin cola, dos clicks seguidos disparaban mutaciones concurrentes al Store API: el nonce rotaba y el mapa se desfasaba del carrito. AsyncPile ejecuta una operación a la vez y el ReservationSupervisor decide qué notificar al renderer (si el cambio vino del mapa, no reentrar). Pasé de cart_key a session_owner para que recarga, minicart y checkout vean los mismos asientos."
+      },
+      "skillIds": ["typescript", "javascript", "wordpress", "jotai"],
+      "dimension": "architecture",
+      "visibility": { "priority": 4 }
+    },
+    {
+      "id": "dinkum-muse-admin",
+      "roleId": "dinkum",
+      "projectId": "muse-crm",
+      "text": {
+        "short": "Construí el admin de Muse: órdenes, direcciones, Algolia y apertura de eventos.",
+        "long": "La mayor parte de mis commits en muse-seat-map están en apps/admin: sort de órdenes por cliente (réplica Algolia), cambio de dirección en órdenes completadas sin borrar fotos destacadas, city en texto libre, timezone del perfil en los datepickers, cache-bust del overview al abrir/cerrar un evento. El admin es lo que corre en app-next.musecrm.com."
+      },
+      "skillIds": ["react", "typescript", "jotai"],
+      "dimension": "delivery",
+      "visibility": { "priority": 2 }
+    },
+    {
+      "id": "dinkum-muse-designer",
+      "roleId": "dinkum",
+      "projectId": "muse-crm",
+      "text": {
+        "short": "Arreglé el diseñador de mapas (Konva): fondo al cambiar de mapa, asientos GA y la visual de reservas propias alineada con el shop.",
+        "long": "seat-designer es el editor visual de salas (React Konva). No lo empecé yo — el package figura a nombre de Dodik — pero sí el mantenimiento que lo deja usable: fondo stale al cambiar de seatmap, conteo restante en el modal GA, z-index, y que una reserva propia se vea igual en admin y en shop."
+      },
+      "skillIds": ["react", "typescript"],
+      "dimension": "performance",
+      "visibility": { "priority": 4 }
+    },
+    {
+      "id": "dinkum-muse-algolia",
+      "roleId": "dinkum",
+      "projectId": "muse-api",
+      "text": {
+        "short": "Escribí en Ruby el rake de Algolia: borra huérfanos del índice global, con dry-run.",
+        "long": "Hasta 2026-08 las bajas no se propagaban a muse_global_*: un perfil borrado seguía saliendo en la búsqueda global. El reindex masivo (AlgoliaMassiveUpdateWorker) limpia el global y no restaura Profile. La tarea compara índice global vs índice del modelo, sin database, con check (dry-run), MAX_DELETIONS y confirmación en producción. También sumé first_name/last_name a las direcciones de envío y el write local de la reserva cuando Muse App crea un place."
+      },
+      "skillIds": ["ruby"],
+      "dimension": "ownership",
+      "visibility": { "priority": 2 }
+    },
+    {
+      "id": "adsmovil-audiencias",
       "roleId": "adsmovil",
       "text": {
-        "short": "Integré el equipo de modernización tecnológica: primeros desarrollos en React, documentación y definición de buenas prácticas."
+        "short": "Construí en Vue 3 el frontend de un constructor de audiencias: queries con AND, OR, XOR y NOT sobre rangos etarios, rubros y localidad.",
+        "long": "El usuario armaba una audiencia cruzando categorías (edad, rubro tipo farmacia/perfumería, localidad) con operadores booleanos, incluido XOR, y veía el resultado de esa intersección. El frontend lo hice solo, en Vue 3. No recuerdo el nombre interno. En el mercado Adsmovil vende algo del mismo tipo (combinar segmentos socio-demo, geo y de consumo); no afirmo que fuera el producto que después llamaron Personas o Audience Marketplace, que se anunció después de que me fui."
       },
-      "skillIds": ["react", "javascript"],
-      "dimension": "architecture",
+      "skillIds": ["vue", "javascript", "cicd", "tailwind"],
+      "dimension": "delivery",
       "visibility": { "priority": 1 }
     },
     {
-      "id": "adsmovil-datos",
+      "id": "adsmovil-campanias",
       "roleId": "adsmovil",
       "text": {
-        "short": "Desarrollé sistemas que mejoraron la eficiencia en la recolección de datos para campañas publicitarias."
+        "short": "En equipo, desarrollé el frontend de un gestor de campañas digitales y el tablero de métricas asociado.",
+        "long": "Trabajo de equipo, no en solitario. Pantallas para operar campañas y ver métricas. El stack del gestor no lo tengo cerrado más allá de frontend; el rol era desarrollador frontend y en paralelo el equipo arrancaba entregas en React."
       },
-      "skillIds": ["react", "javascript"],
-      "dimension": "business",
+      "skillIds": ["react", "javascript", "cicd", "tailwind"],
+      "dimension": "collaboration",
+      "visibility": { "priority": 2 }
+    },
+    {
+      "id": "adsmovil-mapbox",
+      "roleId": "adsmovil",
+      "text": {
+        "short": "Construí de punta a punta un mapa de POIs geolocalizados con Mapbox, Next.js y Node.js.",
+        "long": "A diferencia del gestor de campañas, este lo entregué solo: Next.js en el front, Node en el back, Mapbox GL JS para POIs en el mapa (puntos de interés, no polígonos de distritos). No tengo el repo ni el nombre del producto. No es el mapa de RPPL (eso es Dinkum, 2025)."
+      },
+      "skillIds": ["nextjs", "mapbox", "node", "javascript", "cicd", "tailwind"],
+      "dimension": "ownership",
       "visibility": { "priority": 2 }
     },
     {
       "id": "hogarth-i18n",
       "roleId": "hogarth",
       "text": {
-        "short": "Desarrollé versiones localizadas de productos web para un cliente global, manteniendo congruencia funcional e identidad visual."
+        "short": "Adapté páginas a otros mercados: idioma y servicios distintos por país, sin romper comportamiento ni identidad.",
+        "long": "El empleador es Hogarth; el cliente final no se nombra (NDA). El trabajo era tomar experiencias web de un mercado de origen y dejarlas listas para otros países: no solo traducir, sino ajustar copy y flujos cuando un servicio no existía o se ofrecía distinto en esa plaza. Equipos grandes, la cola iba por tickets internos. Herramientas genéricas: Git y Docker. No publico nombres de páginas, de sistemas internos ni de mercados."
       },
-      "skillIds": ["javascript", "typescript"],
+      "skillIds": ["javascript", "typescript", "git", "docker"],
       "dimension": "collaboration",
       "visibility": { "priority": 2 }
     },
     {
-      "id": "freelance-build",
+      "id": "freelance-landings",
       "roleId": "freelance",
       "text": {
-        "short": "Optimicé el delivery de un sistema aplicando minificación y segmentación de código mediante un build system."
+        "short": "En equipo, desarrollé landings con Vue, Quasar, Django, SCSS, Docker y WordPress.",
+        "long": "Varias landings, siempre en equipo, no en solitario. El stack que conservo es Vue, Quasar, Django, SCSS, Docker y WordPress. No recuerdo clientes, nombres de sitios ni un caso concreto: no invento uno."
       },
-      "skillIds": ["javascript"],
-      "dimension": "performance",
+      "skillIds": ["vue", "quasar", "django", "scss", "docker", "wordpress", "javascript"],
+      "dimension": "collaboration",
       "visibility": { "priority": 2 }
     }
   ],
@@ -241,29 +338,72 @@
       "skillIds": ["nextjs", "react", "typescript", "sanity", "tailwind"],
       "links": [],
       "media": [],
-      "featured": true,
+      "featured": false,
       "slug": "jwd-maderas",
-      "visibility": { "priority": 1 }
+      "visibility": { "except": ["cv", "cv-short", "cv-ats", "portfolio", "linkedin", "public-api"], "priority": 5 }
     },
     {
       "id": "mapas-distritos",
-      "name": "Mapas interactivos de distritos",
-      "client": "producto interno",
+      "name": "Mapa de gasto en formación docente (RPPL)",
+      "client": "Research Partnership for Professional Learning",
       "roleId": "dinkum",
       "status": "shipped",
-      "start": "2025-01",
-      "end": null,
+      "start": "2025-09",
+      "end": "2025-11",
       "problem": {
-        "short": "TODO — qué necesitaba resolver el usuario que miraba el mapa."
+        "short": "Líderes escolares de RPPL necesitaban explorar el gasto en formación docente a escala nacional, por estado y por distrito, con varias métricas — no solo en un PDF.",
+        "long": "RPPL publica un informe nacional sobre cómo los distritos gastan en formación docente. El PDF no deja comparar un distrito con su estado ni cambiar de métrica. El usuario es un líder escolar o un researcher, no un desarrollador: tiene que poder explorar el país, un estado y un distrito en el mismo mapa."
       },
       "solution": {
-        "short": "Capas de polígonos por distrito escolar y estado sobre Mapbox GL JS, con hover interactivo y vista fija sin pitch ni rotación."
+        "short": "Plugin de WordPress con Mapbox GL JS: coropleta de distritos y estados, búsqueda, toggle de capa y métrica, hover y ficha lateral. Vista 2D, sin pitch ni rotación.",
+        "long": "Plugin de WordPress con shortcode, React, TypeScript y Mapbox GL JS, entregado desde Dinkum. Tiles vectoriales para los polígonos, datos analíticos por REST (ETag, cache 10 min), dos capas, toggle de métrica, búsqueda, popup y ficha lateral. Cámara 2D: pitch y rotación bloqueados. El color se pinta con una expresión Mapbox GEOID→color, no con feature-state."
       },
       "outcome": {
-        "short": "TODO — completar con volumen de datos o impacto en el flujo de trabajo del usuario."
+        "short": "Publicado el 29/10/2025 con el informe de RPPL. ~13.000 distritos y 50 estados más DC; el JSON de distritos pesa 7 MB y se indexa en un Web Worker sin bloquear la UI.",
+        "long": "Salió el 29 de octubre de 2025 en rpplpartnership.org junto al informe. El endpoint de distritos sirve ~13.000 registros (7 MB); 50 estados y DC en el otro. Desde noviembre de 2025 no hubo pedidos de cambio: el último commit queda como entrega estable."
       },
-      "skillIds": ["mapbox", "react", "typescript"],
-      "links": [],
+      "metrics": [
+        {
+          "label": "distritos escolares en el dataset",
+          "delta": "13.000",
+          "confidence": "estimated",
+          "source": "GET https://rpplpartnership.org/wp-json/dscm/v1/schooldistrict el 2026-09-01: 13.360 registros, 7,15 MB. Se publica redondeado a ~13.000."
+        }
+      ],
+      "decisions": [
+        {
+          "decision": "Índice hash en Web Worker en lugar de mergear los datos en feature-state",
+          "context": "El dataset son ~13.000 polígonos más 7 MB de JSON analítico. Mergear todo en feature-state duplicaba memoria, tardaba 3-5 s y crasheaba.",
+          "rationale": "Búsquedas O(1) on-demand, UI libre durante el indexado, transferencia zero-copy del ArrayBuffer.",
+          "tradeoff": "Hay que normalizar GEOID/FIPS a mano (7 dígitos vs 2) y el hover visual sigue en feature-state, separado de los datos."
+        },
+        {
+          "decision": "Color por expresión Mapbox (GEOID → color), no por feature-state",
+          "context": "Pintar el choropleta con setFeatureState sobre miles de features reprocesa tiles en cada carga.",
+          "rationale": "Una expresión case precalculada pinta en GPU sin tocar el estado de cada feature.",
+          "tradeoff": "La expresión crece con cada distrito; a cambio no se reprocesan tiles al pintar."
+        },
+        {
+          "decision": "flyTo solo sobre el polígono de mayor área en MultiPolygon",
+          "context": "El bbox de Alaska incluye las Aleutianas (miles de km al oeste) y el de Hawái todas las islas: el zoom dejaba visible un 20% del estado.",
+          "rationale": "La fórmula del cordón de zapato elige el polígono más grande y encuadra el territorio principal.",
+          "tradeoff": "Alaska y Hawái se ven bien; el encuadre oculta islas lejanas."
+        }
+      ],
+      "skillIds": [
+        "mapbox",
+        "react",
+        "typescript",
+        "wordpress",
+        "mui",
+        "php",
+        "cicd",
+        "ai-assisted",
+        "tailwind"
+      ],
+      "links": [
+        { "label": "Ver el mapa", "url": "https://rpplpartnership.org/external-resource/pl-spending-paper/", "kind": "demo" }
+      ],
       "media": [],
       "featured": true,
       "slug": "mapas-distritos",
@@ -271,34 +411,155 @@
     },
     {
       "id": "wp-plugins",
-      "name": "Plugins de WordPress con tooling moderno",
+      "name": "WooCommerce Seat Map",
+      "client": "Muse CRM",
       "roleId": "dinkum",
       "status": "shipped",
       "start": "2024-10",
       "end": null,
       "problem": {
-        "short": "Construir funcionalidad a medida dentro de WordPress sin renunciar a TypeScript, componentes y un ciclo de desarrollo rápido."
+        "short": "Vender asientos numerados en WooCommerce sin doble reserva: el mapa está en S3, el carrito en WordPress y la disponibilidad en APIs externas.",
+        "long": "Una tienda WooCommerce no sabe qué butaca está libre. El mapa visual vive en S3 (sin backend propio), la reserva real en servicios Elixir/Ruby, y el dinero en el checkout de WordPress. Si esos tres se desfasan, dos personas pagan el mismo asiento."
       },
       "solution": {
-        "short": "Plugins desde cero con React, Material UI y TypeScript sobre la API de WordPress, con build migrado de Webpack a Vite."
+        "short": "Plugin de WordPress que conecta el renderer del mapa, el carrito de WooCommerce y las APIs de reserva (Elixir/Ruby), con sesión y cola de operaciones.",
+        "long": "WooCommerce Seat Map es el puente: enqueuea el seat-renderer de Muse, traduce clicks en mutaciones al Store API, guarda la sesión y escribe metadatos en la orden. PHP en core/ (hooks de cart/checkout), React+Jotai en los widgets. Sigue en Webpack (wp-scripts), no en Vite. Suite Playwright de 19 specs (carrera al mismo asiento, expiración, persistencia entre browsers) — parte del equipo, no solo mía."
       },
       "outcome": {
-        "short": "TODO — completar con tiempo de build antes/después o cantidad de plugins entregados."
+        "short": "Plugin en producción (v1.1.30). Reserva, carrito y checkout sincronizados; suite Playwright que cubre carrera al mismo asiento y expiración de sesión.",
+        "long": "Autor principal del repo (~380 de 558 commits, 2024-10 → 2026-07). En producción contra WooCommerce 10: nonce rotatorio, sesión visible en toast, y el mapa deja de pelearse con el minicart."
       },
       "decisions": [
         {
-          "decision": "Migrar el build de Webpack a Vite",
-          "context": "La configuración de Webpack heredada era difícil de mantener y el ciclo de feedback en desarrollo era lento.",
-          "rationale": "Menos configuración, arranque en frío mucho más rápido y HMR usable dentro del entorno de WordPress.",
-          "tradeoff": "Hubo que resolver a mano el enqueueing y la convivencia con el sistema de assets de WordPress."
+          "decision": "No dibujar el mapa en el plugin: embeber el renderer de Muse",
+          "context": "El canvas, las capas y el hit-test ya existían en @muse/seat-renderer. Duplicarlos en WordPress era mantener dos mapas.",
+          "rationale": "El plugin orquesta (carrito, sesión, APIs). El renderer, publicado a S3, es el mismo que usa el shop de Muse.",
+          "tradeoff": "postinstall tiene que bajar una versión concreta del renderer; un desfase de contrato de eventos rompe Woo y Muse a la vez."
+        },
+        {
+          "decision": "Serializar las mutaciones del carrito con AsyncPile",
+          "context": "WooCommerce 10 rota el nonce en cada request. Dos reservas en paralelo invalidaban la segunda y el mapa quedaba sucio.",
+          "rationale": "Una cola de una operación a la vez; el ReservationSupervisor evita reentrar cuando el cambio ya vino del mapa.",
+          "tradeoff": "La UI espera a la cola: un click no pinta el asiento hasta que el Store API responde."
+        },
+        {
+          "decision": "session_owner en lugar de cart_key",
+          "context": "La clave de carrito cambiaba entre recarga, minicart e invitado vs logueado, y las reservas huérfanas no se limpiaban.",
+          "rationale": "Un dueño de sesión estable alinea mapa, toast de countdown y checkout.",
+          "tradeoff": "Hay que migrar sesiones viejas y cubrir invitado y usuario logueado en los mismos tests."
         }
       ],
-      "skillIds": ["wordpress", "react", "mui", "typescript", "vite", "php"],
+      "skillIds": [
+        "wordpress",
+        "react",
+        "typescript",
+        "php",
+        "jotai",
+        "playwright",
+        "cicd",
+        "ai-assisted",
+        "tailwind"
+      ],
       "links": [],
       "media": [],
       "featured": true,
-      "slug": "wordpress-tooling-moderno",
+      "slug": "woocommerce-seat-map",
       "visibility": { "priority": 2 }
+    },
+    {
+      "id": "muse-crm",
+      "name": "Muse CRM — mapa de asientos",
+      "client": "Muse CRM",
+      "roleId": "dinkum",
+      "status": "shipped",
+      "start": "2024-09",
+      "end": null,
+      "problem": {
+        "short": "Un CRM de ticketing para organizaciones de artes escénicas: vender asientos, donaciones y perfiles sobre un mapa visual, no una grilla de Excel.",
+        "long": "Muse lo usan orgs como Marlboro Music y PCMS. El staff necesita diseñar la sala, abrir un evento, vender butacas, cobrar, donar y buscar perfiles. El comprador ve el mismo mapa en el shop. Sin un frontend moderno, eso vivía en pantallas viejas y en el mapa desconectado del CRM."
+      },
+      "solution": {
+        "short": "Monorepo Turborepo con Vite: admin (CRM), shop, diseñador de salas en Konva y un renderer embebible que también usa el plugin de WooCommerce.",
+        "long": "apps/admin es el CRM (React, Jotai, Algolia, ActionCable, Lingui). apps/shop es la venta al público. packages/seat-designer edita la sala en Konva; seat-map y seat-renderer pintan y se publican a S3. Yo no fundé el repo (Dodik/Memo están desde el día uno); sí soy el mayor autor reciente del admin (~1500 toques de archivo) y del shop/designer/renderer."
+      },
+      "outcome": {
+        "short": "Admin y shop en app-next.musecrm.com. El renderer se publica a S3 y lo consume el plugin de WordPress.",
+        "long": "Producto vivo: musecrm.com (marketing) y app-next.musecrm.com (app). Mis commits van de 2024-09 a 2026-08. El mismo renderer alimenta WooCommerce Seat Map, así que un cambio de contrato se siente en los dos canales de venta."
+      },
+      "decisions": [
+        {
+          "decision": "Un monorepo (Turbo + pnpm) en lugar de repos sueltos para admin, shop y renderer",
+          "context": "El mapa tiene que verse igual en el CRM, en el shop y dentro de WordPress. Tres repos divergían el contrato de eventos.",
+          "rationale": "Un package @muse/seat-renderer versionado; el plugin de Woo lo consume por postinstall.",
+          "tradeoff": "Un breaking change en el renderer rompe admin, shop y Woo a la vez; hay que coordinar el release."
+        },
+        {
+          "decision": "Diseñador de salas en React Konva, no en SVG estático ni en Mapbox",
+          "context": "Una sala de concierto es un plano 2D con filas, GA y fondos. Mapbox es geo; SVG plano no escala al editor.",
+          "rationale": "Konva da hit-test, capas y drag en canvas. El shop y el admin leen el mismo documento de mapa.",
+          "tradeoff": "Hay que pintar a mano estados (propio, ajeno, GA). Un desfasaje admin/shop se nota en el color del asiento."
+        }
+      ],
+      "skillIds": [
+        "react",
+        "typescript",
+        "vite",
+        "jotai",
+        "monorepo",
+        "scss",
+        "cicd",
+        "ai-assisted",
+        "tailwind"
+      ],
+      "links": [
+        { "label": "App", "url": "https://app-next.musecrm.com/", "kind": "demo" },
+        { "label": "Sitio", "url": "https://www.musecrm.com/", "kind": "website" }
+      ],
+      "media": [],
+      "featured": true,
+      "slug": "muse-crm",
+      "visibility": { "priority": 1 }
+    },
+    {
+      "id": "muse-api",
+      "name": "Muse API — índice Algolia y reservas",
+      "client": "Muse CRM",
+      "roleId": "dinkum",
+      "status": "shipped",
+      "start": "2026-04",
+      "end": "2026-08",
+      "problem": {
+        "short": "La búsqueda global de Algolia acumulaba huérfanos: perfiles borrados seguían apareciendo porque el índice global no recibía las bajas.",
+        "long": "Muse API es un Rails de 2016. Yo no lo construí (26 commits míos contra miles del equipo). El hueco que toqué: muse_global_* no se enteraba de los deletes, y el reindex masivo excluía Profile. En paralelo, las direcciones de envío no guardaban el nombre del destinatario y Muse App no persistía la reserva al crear un place."
+      },
+      "solution": {
+        "short": "Tarea rake de reconciliación del índice global contra los índices por modelo, sin tocar la base: check (dry-run) y sync con tope y confirmación en producción.",
+        "long": "rake algolia:sync:check / sync compara muse_global_<env> con muse_profiles_<env> etc. SOURCE=index, sin database. MAX_DELETIONS aborta corridas enormes; producción pide confirmación. Specs en spec/maintenance. Además: first_name/last_name en Address, fact_profiles, y write local de seat reservation cuando Muse App crea un place."
+      },
+      "outcome": {
+        "short": "Check y sync listos para staging y producción. El reindex masivo anterior no se toca: borra perfiles del global y no los restaura.",
+        "long": "Documentado en scripts/README.md del API, con la advertencia de no usar algolia:reindex_global para recuperar. La vía segura es check → sync por modelo. No publico un recuento de huérfanos: no corrí el check contra producción en esta sesión."
+      },
+      "decisions": [
+        {
+          "decision": "Reconciliar índice vs índice, sin pasar por la base",
+          "context": "Correr esto desde un checkout local contra staging/producción. Pedir la database de producción era innecesario y riesgoso.",
+          "rationale": "El índice del modelo es la fuente de verdad. Si no está ahí, el global es un huérfano.",
+          "tradeoff": "Si el índice del modelo también está mal, el sync no lo arregla. No reindexa: solo borra del global."
+        },
+        {
+          "decision": "No usar AlgoliaMassiveUpdateWorker para recuperar el global",
+          "context": "Ese worker limpia muse_global y reindexa Venue/Event/Ensemble. Profile está en EXCLUDED_MODELS.",
+          "rationale": "Una tarea que solo borra huérfanos no puede vaciar perfiles. check nunca escribe.",
+          "tradeoff": "No rellena lo que falta en el global; solo limpia lo que sobra. Un profile nuevo mal indexado no entra por acá."
+        }
+      ],
+      "skillIds": ["ruby", "cicd", "ai-assisted", "tailwind"],
+      "links": [],
+      "media": [],
+      "featured": true,
+      "slug": "muse-api-algolia",
+      "visibility": { "priority": 3 }
     }
   ],
 
@@ -336,7 +597,7 @@
 
   "languages": [
     { "code": "es", "name": "Español", "level": "native" },
-    { "code": "en", "name": "Inglés", "level": "B1", "note": "TODO — confirmar nivel real; ajustar a B2 si aplica" }
+    { "code": "en", "name": "Inglés", "level": "A2" }
   ],
 
   "services": [],

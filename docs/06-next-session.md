@@ -50,14 +50,10 @@ exist rather than a tidiness fix:
   existing tests could not see it — they all read the extracted text, which does
   not change.
 
-What is left of phase 1 is one item, and it is not code:
-[`07`](./07-technical-debt.md) §13 — look at the cross-hover, the pill's inertia
-and the PDF in a real viewer. Ten minutes with `pnpm run dev` and
-`pnpm run pdf:local`. Nobody but the author can close it.
-
-**And one item nobody but the author can close** ([`07`](./07-technical-debt.md)
-§13): look at the cross-hover, the pill's inertia and the PDF in a real viewer.
-Ten minutes with `pnpm run dev` and `pnpm run pdf:local`.
+Phase 1 residue ([`07`](./07-technical-debt.md) §13) closed 2026-08-31: the
+author confirmed the cross-hover and the pill. The download button in
+`pnpm run dev` 404'd because Pages Functions do not run there; `astro.config.mjs`
+now serves `dist/cv.pdf` in dev.
 
 ---
 
@@ -170,45 +166,40 @@ None of this can be done without you (invariant 4: data is not invented). **It i
 exactly the work the phase 2 editor exists to make bearable**, so it is worth
 attacking with the tool built.
 
-### Metrics: zero across the dataset
+### Metrics: two loaded (RPPL map); the rest still empty
 
-`grep -c '"metric"' content/data/content.es.json` → **0**. Candidates in
-[`03-cv.md`](./03-cv.md):
+`dinkum-mapbox` and `dinkum-mapbox-index` carry `metric` as of 2026-09-01.
+Candidates still open in [`03-cv.md`](./03-cv.md):
 
 | Achievement | What to measure |
 |---|---|
-| `dinkum-vite` | Build time before/after |
-| `dinkum-mapbox` | Data or user volume of the map |
+| `dinkum-vite` | Closed as a Webpack→Vite claim: the Woo plugin is still wp-scripts. The Vite work is Muse. |
 | `adsmovil-datos` | Time, volume or error rate in the collection |
 | `adsmovil-react` | Team size, products migrated |
-| `freelance-build` | Bundle weight or load time before/after |
+| `freelance-landings` | Closed as a named case: landings in a team, stack only |
 | `hogarth-i18n` | Markets or languages |
 
 An honest range with `confidence: "estimated"` works — it renders with "~"
 (rule 4). An invented number collapses in the interview.
 
-### The 8 published TODOs
+### The published TODOs
 
-`audit:todos` reports **9** because it counts occurrences in `dist/` and one
-entry gets published in more than one output. They are 8 data points.
+English level closed 2026-08-31 (**A2**). The rest are still data, not code.
 
 | What | Missing |
 |---|---|
-| summary | The long version, for LinkedIn and the portfolio |
-| `dinkum-mapbox` | Data volume, what it solved for the end user |
-| `jwd-maderas` | Architecture and modelling; enquiries received or time saved |
-| `mapas-distritos` | What the user needed to solve; volume or impact |
-| `wp-plugins` | Build time before/after, plugins delivered |
-| languages | **The real English level** — declared today without confirmation |
+| summary | `long` drafted 2026-09-01 (LinkedIn About / portfolio). Author will edit. |
+| `jwd-maderas` | Unpublished 2026-09-01 (`except` every surface) until it ships. Still in the dataset. |
+| `wp-plugins` | Rewritten 2026-09-01 as WooCommerce Seat Map (no Vite; Playwright suite is team-owned) |
 
 ### Others
 
-- [ ] Links for the three projects: `links: []`. The section renders them only if
-      they exist — it is editing the dataset, not touching code.
-- [ ] **Hogarth**: confirm `employmentType` and `start: 2023-07`.
-- [ ] **Freelance role (2020-04 → 2022-06)**: one achievement, with
-      `skillIds: ["javascript"]`. Those 2.2 years connect to no other technology,
-      which is why WordPress — declared `core` — comes out small on the map.
+- [x] **RPPL map** (`mapas-distritos`): live demo link, problem/outcome, three
+      decisions, ~13.000 districts. Loaded 2026-09-01.
+- [ ] Links for the other two projects: `jwd-maderas` and `wp-plugins` still
+      have `links: []`.
+- [x] **Hogarth**: `full-time` + `concurrent: true`, `start: 2023-07` → `end: 2024-01`. Confirmed 2026-08-31.
+- [x] **Freelance role (2020-04 → 2022-06)**: `skillIds` now include WordPress, Docker, Vue, Quasar, SCSS. Still one achievement.
 - [ ] **`Skill.periods`**: only `react` is migrated, and with the span it already
       had. The real history per technology is yours to load.
 
@@ -268,6 +259,6 @@ audit:todos     9 published TODOs (missing data, not failures)
 Consumption against the ceilings: see the table in the
 [`README`](../README.md#limits-and-ceilings).
 
-Technical debt: **36 entries, 21 resolved.** Phase 3 still holds §6 and §7.
-§13 is the author's. The rest of the open list is low or negligible editor
-internals. See [`07`](./07-technical-debt.md).
+Technical debt: **36 entries, 22 resolved.** Phase 3 still holds §6 and §7.
+The rest of the open list is low or negligible editor internals. See
+[`07`](./07-technical-debt.md).
