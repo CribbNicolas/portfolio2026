@@ -10,9 +10,13 @@
  * Same pattern as `formatMetric` (rule 4) and `pdf-options.ts`: when two outputs
  * have to say the same thing, the definition lives in one place.
  *
- * The labels come from `messages.ts`'s locale, same as the rest of the chrome
- * copy: they are printed, and a parser maps `Habilidades técnicas` and the
- * categories under it exactly as they appear in the CV.
+ * The labels live in this table, each paired with its `SkillCategory`. They
+ * could live in `messages.ts` with the rest of the chrome copy, but keeping
+ * them here — one column away from the category they name — is what prevents
+ * the label and the order from drifting apart. Keeping them together is the
+ * deliberate design that fixed this problem (`07-technical-debt.md` §9).
+ * The labels are printed exactly as they appear in the CV, and parsers map
+ * `Habilidades técnicas` and the categories under it to these entries.
  */
 
 import type { Locale, SkillCategory } from "./content-schema";
