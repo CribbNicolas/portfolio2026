@@ -148,6 +148,6 @@ test("every surface is projected, not just the public one", async () => {
 // `content/schema/format.test.ts`; the minimal case stays here because this
 // file is the one documenting the rules the schema does not validate.
 test("rule 4: an estimated Metric renders with ~", () => {
-  const out = formatMetric({ label: "tiempo de build", delta: "40%", confidence: "estimated" });
+  const out = formatMetric({ label: "tiempo de build", delta: "40%", confidence: "estimated" }, "es");
   assert.match(String(out), /~|aprox\./);
 });

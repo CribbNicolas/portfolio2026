@@ -34,7 +34,7 @@
     },
     "summary": {
       "short": "Full-stack developer with a product focus: React, Next.js and TypeScript, with a solid grounding in Node, Docker and CI/CD to take a project from the repo to production.",
-      "long": "If the product is not allowed to fail at a checkout or on a map with thousands of features, that is where I am comfortable. The stack is whatever the problem asks for: React or Vue, Next or WordPress, Node or PHP or a rake task in Ruby. I do not collect frameworks.\n\nBefore Rosario I worked remotely from Misiones. Landing pages, on a team, with Vue, Quasar, Django and WordPress: I do not remember the clients and I am not going to make them up. In adtech I built the front end of an audience builder on my own — queries with AND, OR, XOR and NOT over age, business category and location — plus a POI map with Mapbox, Next and Node. At an agency we adapted sites from a home market to other countries: not translation, but the fact that a service which exists in one country does not exist in the other. I do not discuss the client.\n\nAt Dinkum I deliver both ends. The map in the RPPL report (~13,000 school districts; indexing went from 3–5 s to ~500 ms in a Web Worker) and the plugin that connects a seat map to the WooCommerce cart and the reservation APIs. At Muse the front end lives in a Vite/Turbo monorepo; I work on the CRM — orders, events, Algolia — and the rake task that cleans the global index when a delete was not propagating.\n\nI use Claude and Cursor every day. What goes into the repo, I review myself. I am looking for full-stack work, and freelance when there is a product behind it, not one more landing page."
+      "long": "If the product is not allowed to fail at a checkout or on a map with thousands of features, that is where I am comfortable. The stack is whatever the problem asks for: React or Vue, Next or WordPress, Node or PHP or a rake task in Ruby. I do not collect frameworks.\n\nBefore Rosario I worked remotely from Misiones. Landing pages, on a team, with Vue, Quasar, Django and WordPress: I do not remember the clients and I am not going to make them up. In adtech I built the front end of an audience builder on my own — queries with AND, OR, XOR and NOT over age, business category and location — plus a POI map with Mapbox, Next and Node. At an agency we adapted sites from a home market to other countries: not translation, but the fact that a service which exists in one country does not exist in the other. I do not discuss the client.\n\nAt Dinkum I deliver both ends. The map in the RPPL report (~13,000 school districts; indexing went from 3–5 s to ~500 ms in a Web Worker) and the plugin that connects a seat map to the WooCommerce cart and the reservation APIs. At Muse the front end lives in a Vite/Turbo monorepo; I work on the CRM — orders, events, Algolia — and the rake task that cleans the global index when a delete was not propagating.\n\nI use Claude and Cursor every day. I review everything that goes into the repo myself. I am looking for full-stack work, and freelance when there is a product behind it, not one more landing page."
     }
   },
 
@@ -64,7 +64,7 @@
     { "id": "cloudflare", "name": "Cloudflare", "category": "infra", "aliases": ["Cloudflare Workers"], "level": "working", "active": true, "visibility": { "only": [], "priority": 4 } },
     { "id": "monorepo", "name": "Monorepos", "category": "tooling", "aliases": ["monorepo"], "level": "working", "active": true, "visibility": { "priority": 3 } },
     { "id": "git", "name": "Git", "category": "tooling", "aliases": [], "level": "working", "active": true, "visibility": { "priority": 3 } },
-    { "id": "ai-assisted", "name": "AI-assisted development", "category": "practice", "aliases": ["AI-assisted coding", "Claude Code", "Cursor", "Codex", "Grok"], "level": "working", "active": true, "visibility": { "priority": 3 } }
+    { "id": "ai-assisted", "name": "AI-assisted development", "category": "practice", "aliases": ["AI-assisted development", "Claude Code", "Cursor", "Codex", "Grok"], "level": "working", "active": true, "visibility": { "priority": 3 } }
   ],
 
   "roles": [
@@ -141,7 +141,7 @@
       },
       "metric": {
         "label": "school districts in the dataset",
-        "delta": "13.000",
+        "delta": "13,000",
         "confidence": "estimated",
         "source": "GET https://rpplpartnership.org/wp-json/dscm/v1/schooldistrict el 2026-09-01: 13.360 registros, 7,15 MB. Se publica redondeado a ~13.000."
       },
@@ -267,7 +267,7 @@
       "id": "adsmovil-campanias",
       "roleId": "adsmovil",
       "text": {
-        "short": "On a team, I developed the front end of a digital campaign manager and the metrics dashboard that went with it.",
+        "short": "I developed the front end of a digital campaign manager and its metrics dashboard, working as part of a team.",
         "long": "Team work, not solo. Screens for running campaigns and viewing metrics. I cannot pin down the manager's stack beyond the front end; the role was front-end developer, and in parallel the team was starting to ship in React."
       },
       "skillIds": ["react", "javascript", "cicd", "tailwind"],
@@ -365,7 +365,7 @@
       "metrics": [
         {
           "label": "school districts in the dataset",
-          "delta": "13.000",
+          "delta": "13,000",
           "confidence": "estimated",
           "source": "GET https://rpplpartnership.org/wp-json/dscm/v1/schooldistrict el 2026-09-01: 13.360 registros, 7,15 MB. Se publica redondeado a ~13.000."
         }

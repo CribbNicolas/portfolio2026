@@ -32,7 +32,7 @@ const company = role.clientDescription
   {role.achievements.length > 0 && (
     <ul class="role__bullets">
       {role.achievements.map((a) => {
-        const metric = a.metric ? formatMetric(a.metric) : null;
+        const metric = a.metric ? formatMetric(a.metric, locale) : null;
         return (
           <li>
             {a.text.short}

@@ -42,6 +42,9 @@ export interface Messages {
   /** Contact labels in the CV header. They are written out, never icons. */
   emailLabel: string;
   phoneLabel: string;
+  /** `formatMetric`. The connectives of a before/after movement, rule 4. */
+  metricFrom: string;
+  metricTo: string;
   /** The landing's download buttons. */
   downloadCv: string;
   downloadCvOtherLocale: string;
@@ -66,6 +69,8 @@ export const MESSAGES: Record<Locale, Messages> = {
     senioritySuffix: "años",
     emailLabel: "Email",
     phoneLabel: "Tel",
+    metricFrom: "de",
+    metricTo: "a",
     downloadCv: "Descargar CV",
     downloadCvOtherLocale: "Download CV (English)",
   },
@@ -87,6 +92,8 @@ export const MESSAGES: Record<Locale, Messages> = {
     senioritySuffix: "years",
     emailLabel: "Email",
     phoneLabel: "Phone",
+    metricFrom: "from",
+    metricTo: "to",
     downloadCv: "Download CV",
     downloadCvOtherLocale: "Descargar CV (español)",
   },
