@@ -1,5 +1,28 @@
 ---
+import type { Locale } from "@content";
+import { MESSAGES } from "@content";
 import { OG_HEIGHT, OG_WIDTH } from "../../scripts/og-template";
+
+/** OG's own locale codes (BCP-ish, `xx_YY`) — a protocol detail, not chrome
+ *  copy, so it lives here and not in `messages.ts`. */
+const OG_LOCALE: Record<Locale, string> = { es: "es_AR", en: "en_US" };
+
+/**
+ * The set every `hreflang` page declares, INCLUDING itself — that
+ * self-reference is part of the spec, not a redundant line: a crawler that
+ * finds `/` announcing `/en/` as its alternate but not the other way around
+ * treats the pair as unconfirmed and may ignore both.
+ *
+ * `x-default` points at the Spanish landing rather than at "whichever page
+ * this is": the market this CV is written for is LatAm, so a crawler with no
+ * better signal (no `Accept-Language`, a bot) should default to Spanish, not
+ * to a guess. See docs/09 §2.3.
+ */
+const ALTERNATE_LOCALES: { hreflang: string; path: string }[] = [
+  { hreflang: "es", path: "/" },
+  { hreflang: "en", path: "/en/" },
+  { hreflang: "x-default", path: "/" },
+];
 
 /**
  * Base layout. Its only responsibility is the `<head>`.
@@ -12,6 +35,15 @@ interface Props {
   title: string;
   description: string;
   /**
+   * `<html lang>` and, when `shareable`, `og:locale` and the OG/Twitter image
+   * alt text. Defaults to `"es"` because every page predates the English ones
+   * and none of them pass it explicitly yet outside `/en/*`. The OG image
+   * itself (the JPEG `og:image` points at) stays the one committed artifact
+   * for both locales — regenerating it per language is a separate slice, not
+   * an oversight of this one.
+   */
+  locale?: Locale;
+  /**
    * When `true`, the page emits Open Graph and a Twitter Card.
    *
    * Opt-in rather than a default with exceptions, on purpose. `/cv` carries
@@ -21,10 +53,22 @@ interface Props {
    * forgetting means emitting no tags, which is the safe side of the mistake.
    */
   shareable?: boolean;
+  /**
+   * When `true`, the page emits `hreflang` alternates for the two indexable
+   * landings (`ALTERNATE_LOCALES` above).
+   *
+   * Opt-in for the same reason as `shareable`: `/cv` and `/en/cv` carry
+   * `noindex`, and `hreflang` on a page asking not to be indexed is a
+   * contradiction crawlers report as an error, not a courtesy they ignore.
+   * Forgetting to pass this on a new page means emitting nothing, which is
+   * the safe side of the mistake.
+   */
+  hreflang?: boolean;
 }
 
-const { title, description, shareable = false } = Astro.props;
+const { title, description, locale = "es", shareable = false, hreflang = false } = Astro.props;
 const canonical = new URL(Astro.url.pathname, Astro.site);
+const m = MESSAGES[locale];
 
 // The dimensions come from the same module that uses them to generate the
 // JPEG: if the card ever changes size, the tags follow on their own instead of
@@ -33,13 +77,19 @@ const socialImage = new URL("/og.jpg", Astro.site);
 ---
 
 <!doctype html>
-<html lang="es">
+<html lang={locale}>
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{title}</title>
     <meta name="description" content={description} />
     <link rel="canonical" href={canonical} />
+
+    {
+      hreflang && ALTERNATE_LOCALES.map(({ hreflang: lang, path }) => (
+        <link rel="alternate" hreflang={lang} href={new URL(path, Astro.site)} />
+      ))
+    }
 
     {/*
       SVG and not `.ico`: under 1 KB, scales to any size and responds to dark
@@ -85,7 +135,7 @@ const socialImage = new URL("/og.jpg", Astro.site);
           <meta property="og:title" content={title} />
           <meta property="og:description" content={description} />
           <meta property="og:url" content={canonical.toString()} />
-          <meta property="og:locale" content="es_AR" />
+          <meta property="og:locale" content={OG_LOCALE[locale]} />
 
           {/*
             The image. ONE for every network: Facebook, LinkedIn, WhatsApp,
@@ -109,7 +159,7 @@ const socialImage = new URL("/og.jpg", Astro.site);
           <meta property="og:image:type" content="image/jpeg" />
           <meta property="og:image:width" content={String(OG_WIDTH)} />
           <meta property="og:image:height" content={String(OG_HEIGHT)} />
-          <meta property="og:image:alt" content={`${title}. Retrato y marca.`} />
+          <meta property="og:image:alt" content={`${title}. ${m.ogImageAltSuffix}`} />
 
           {/*
             `summary_large_image` and not `summary`: the small one reserves a
@@ -120,7 +170,7 @@ const socialImage = new URL("/og.jpg", Astro.site);
           <meta name="twitter:title" content={title} />
           <meta name="twitter:description" content={description} />
           <meta name="twitter:image" content={socialImage.toString()} />
-          <meta name="twitter:image:alt" content={`${title}. Retrato y marca.`} />
+          <meta name="twitter:image:alt" content={`${title}. ${m.ogImageAltSuffix}`} />
         </Fragment>
       )
     }

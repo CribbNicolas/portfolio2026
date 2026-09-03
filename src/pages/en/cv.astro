@@ -1,0 +1,44 @@
+---
+/**
+ * The English CV in HTML. Same shell as `../cv.astro`, same shared
+ * `CvDocument`, different `locale`. See that file's header comment for why
+ * the JSON-LD and the `noindex` meta live here and not in the shared
+ * component.
+ *
+ * This page exists as the source for `/en/cv.pdf`. It is `noindex` and not
+ * a navigable destination: the reader reaches it through the English landing's
+ * `#cv` anchor.
+ */
+import Base from "../../layouts/Base.astro";
+import CvDocument from "../../components/cv/CvDocument.astro";
+import { content } from "@content";
+import { buildPersonJsonLd } from "../../lib/jsonld";
+
+import "@fontsource/manrope/400.css";
+import "@fontsource/manrope/600.css";
+import "@fontsource/manrope/800.css";
+import "../../styles/tokens.css";
+import "../../styles/cv.css";
+
+const locale = "en";
+
+const view = await content.getView("public-api", locale);
+const { identity } = view;
+const jsonLd = buildPersonJsonLd(view, new URL(Astro.site!));
+---
+
+<Base
+  locale={locale}
+  title={`CV — ${identity.fullName}, ${identity.searchTitle}`}
+  description={identity.summary.short}
+>
+  <script type="application/ld+json" is:inline slot="head" set:html={JSON.stringify(jsonLd)} />
+
+  {/*
+    Same reasoning as `../cv.astro`: this route exists to be printed, not to
+    be visited. The reader reaches it through the English landing's `#cv`
+    anchor.
+  */}
+  <meta name="robots" content="noindex, follow" slot="head" />
+  <CvDocument locale={locale} />
+</Base>

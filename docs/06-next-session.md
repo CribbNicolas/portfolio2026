@@ -236,8 +236,15 @@ Evaluated 2026-08-25 under the constraint of keeping the stack free.
 **Adopting it later costs the same as today:** writing `sanity-source.ts` and
 changing one line in `content/source/index.ts`. That option does not expire.
 
-**Decided NOT to do:** an English dataset. Translating a CV produces translated
-English, which is worse than written English.
+**Reversed 2026-09-02.** An English dataset now exists (`content.en.json`),
+with `/en/`, `/en/cv` and `/en/cv.pdf` as real, shipped routes. The worry
+behind the original call was real — translating a CV tends to produce
+translated English, worse than written English — but the answer turned out to
+be discipline, not avoidance: Spanish stays canonical, English is drafted by
+hand from it rather than machine-translated, and `translation.lock.json` flags
+every Spanish field that moved since its English counterpart was last edited,
+so a stale translation cannot publish silently. Workflow, and why the lock
+only checks one direction, in [`10-i18n.md`](./10-i18n.md).
 
 ---
 

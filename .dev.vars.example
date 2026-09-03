@@ -18,6 +18,3 @@ BROWSER_RENDERING_ACCOUNT_ID=
 # change.) If it shows up in a log or a commit: revoke it and generate another.
 # Rotating it takes two minutes, cleaning the git history does not.
 BROWSER_RENDERING_TOKEN=
-
-# Optional. The name the file is saved under by whoever downloads it. Default: cv.pdf
-PDF_FILENAME=

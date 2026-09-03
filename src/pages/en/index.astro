@@ -1,0 +1,107 @@
+---
+/**
+ * The English home. Same shell as `../index.astro`, same shared
+ * `HomeDocument`, different `locale` and its own dataset
+ * (`content.en.json`). See `../index.astro`'s header comment and
+ * `../../components/HomeDocument.astro`'s for why the split lands where it
+ * does.
+ *
+ * It is in `PAGES_WITH_JS` (`scripts/no-client-js.check.ts`) alongside `/`:
+ * it renders the same 3D map, so it needs the same script.
+ */
+import Base from "../../layouts/Base.astro";
+import { content, buildKnowledgeGraph, layoutGraph, MESSAGES } from "@content";
+import { buildPersonJsonLd } from "../../lib/jsonld";
+import { buildHoverCss } from "../../lib/lab-hover-css";
+import { buildLabData } from "../../lib/lab-data";
+import HomeDocument from "../../components/HomeDocument.astro";
+
+import "@fontsource/manrope/400.css";
+import "@fontsource/manrope/600.css";
+import "@fontsource/manrope/800.css";
+import "../../styles/tokens.css";
+import "../../styles/home.css";
+import "../../styles/cv.css";
+import "../../styles/projects.css";
+import "../../styles/lab.css";
+
+const locale = "en";
+const view = await content.getView("portfolio", locale);
+const { identity } = view;
+const jsonLd = buildPersonJsonLd(view, new URL(Astro.site!));
+const m = MESSAGES[locale];
+
+/**
+ * The Cloudflare Web Analytics beacon token. See `../index.astro`: same
+ * variable, same reasoning, read again here because Vite inlines
+ * `import.meta.env` per module.
+ */
+const cloudflareBeacon: string | undefined = import.meta.env.PUBLIC_CF_BEACON_TOKEN;
+
+const graph = buildKnowledgeGraph(view);
+const positioned = layoutGraph(graph);
+const hoverCss = buildHoverCss(positioned);
+
+// What the 3D runtime needs. `buildLabData` (src/lib/lab-data.ts) is what
+// makes this the SAME shape as `../index.astro`'s: one typed function both
+// pages call, instead of each inlining its own untyped copy of the field
+// list — see that module's header comment for the bug this closes.
+const graphData = JSON.stringify(buildLabData(positioned, m));
+---
+
+{/*
+  `shareable` and `hreflang`: see `../index.astro`. `locale` now drives the OG
+  card too (`og:locale`, the image alt text) as well as `<html lang>` — see
+  `Base.astro`'s `locale` prop doc. `ALTERNATE_LOCALES` is the same fixed pair
+  on both landings, not locale-dependent: each page in an `hreflang` set
+  declares the whole set, itself included.
+*/}
+<Base
+  locale={locale}
+  title={`${identity.fullName} — ${identity.searchTitle}`}
+  description={identity.summary.short}
+  shareable
+  hreflang
+>
+  <script type="application/ld+json" is:inline slot="head" set:html={JSON.stringify(jsonLd)} />
+  <style is:inline set:html={hoverCss} slot="head" />
+
+  <HomeDocument view={view} positioned={positioned} />
+
+  {cloudflareBeacon && (
+    <script
+      is:inline
+      type="module"
+      src="https://static.cloudflareinsights.com/beacon.min.js"
+      data-cf-beacon={JSON.stringify({ token: cloudflareBeacon })}
+    />
+  )}
+
+  <script type="application/json" is:inline data-lab-data set:html={graphData} />
+  <script>
+    // Analytics first, `start()` second — same ordering as `../index.astro`,
+    // same reason: `Clarity.init` cannot throw, `start()` can.
+    import { startAnalytics } from "../../scripts/analytics";
+    import { start } from "../../scripts/lab/boot";
+    startAnalytics();
+    start();
+  </script>
+</Base>
+
+<style>
+  /*
+   * `home.css` keys `scroll-margin-top` off the Spanish ids (`#mapa`,
+   * `#proyectos`, `#cv`) — see `src/lib/anchors.ts` for why the English ones
+   * are different words. That file is shared with the Spanish landing, and
+   * editing it to add the English ids would change ITS bundle's content hash
+   * too, which would show up as an unexplained diff in `dist/index.html` — the
+   * one file the plan's hard rule says must stay byte-identical beyond the
+   * switch and the second download link. This page-scoped, `:global()` rule
+   * covers the English ids without touching that shared file. `#cv` needs no
+   * equivalent: it is already the same word in both languages.
+   */
+  :global(#map),
+  :global(#projects) {
+    scroll-margin-top: calc(var(--space) * 9);
+  }
+</style>

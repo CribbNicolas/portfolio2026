@@ -10,26 +10,48 @@ import sitemap from "@astrojs/sitemap";
 const SITE = process.env.SITE_URL ?? "https://portfolio.invalid";
 
 /**
- * `astro dev` does not run Pages Functions, so `/cv.pdf` 404s and the download
- * button saves the HTML 404 under a .pdf name. Serve the file `pdf:local`
- * already wrote. Production is unchanged: `functions/cv.pdf.ts` owns the route.
+ * `astro dev` does not run Pages Functions, so `/cv.pdf` (and `/en/cv.pdf`)
+ * 404 and the download button saves the HTML 404 under a .pdf name. Serve the
+ * files `pdf:local` already wrote. Production is unchanged:
+ * `functions/cv.pdf.ts` / `functions/en/cv.pdf.ts` own the routes.
  */
 function localCvPdf() {
-  const candidates = [
-    join(process.cwd(), "public", "cv.pdf"),
-    join(process.cwd(), "dist", "cv.pdf"),
+  // One route per locale: the URL it answers, and where `pdf:local` leaves
+  // the bytes (public/ first, dist/ as a fallback for a `pdf:local` run
+  // before any `public/` copy existed). No `filename` here on purpose: the
+  // landing's `download=` attribute already names the file, derived from
+  // `pdfFilename` (content/schema/pdf-filename.ts) — the current dataset's
+  // `updatedAt`, not a name baked into this file. A second, hand-written name
+  // here would be a fourth place claiming to know the file name, and it
+  // already went stale once (it used to spell out the pre-rename
+  // `Nicolas-Cribb-Barbaro-Full-Stack-Developer[-EN].pdf`, 47 characters this
+  // branch replaced, while claiming in a comment to match `pdfFilename`'s
+  // output — it never did).
+  const ROUTES = [
+    {
+      url: "/cv.pdf",
+      candidates: [join(process.cwd(), "public", "cv.pdf"), join(process.cwd(), "dist", "cv.pdf")],
+    },
+    {
+      url: "/en/cv.pdf",
+      candidates: [
+        join(process.cwd(), "public", "en", "cv.pdf"),
+        join(process.cwd(), "dist", "en", "cv.pdf"),
+      ],
+    },
   ];
-  const filename = "Nicolas-Cribb-Barbaro-Full-Stack-Developer.pdf";
   return {
     name: "local-cv-pdf",
     configureServer(server) {
       server.middlewares.use(async (req, res, next) => {
-        if ((req.url ?? "").split("?")[0] !== "/cv.pdf") {
+        const url = (req.url ?? "").split("?")[0];
+        const route = ROUTES.find((r) => r.url === url);
+        if (!route) {
           next();
           return;
         }
         let body;
-        for (const file of candidates) {
+        for (const file of route.candidates) {
           try {
             body = await readFile(file);
             break;
@@ -42,14 +64,18 @@ function localCvPdf() {
           res.setHeader("content-type", "text/plain; charset=utf-8");
           res.setHeader("cache-control", "no-store");
           res.end(
-            "El PDF local se genera con `pnpm run build` y `pnpm run pdf:local`.\nEn producción /cv.pdf lo sirve la Function.\n",
+            `El PDF local se genera con \`pnpm run build\` y \`pnpm run pdf:local\`.\nEn producción ${url} lo sirve la Function.\n`,
           );
           return;
         }
         res.statusCode = 200;
         res.setHeader("content-type", "application/pdf");
         res.setHeader("content-length", String(body.length));
-        res.setHeader("content-disposition", `attachment; filename="${filename}"`);
+        // Bare `attachment`, no `filename`: the browser falls back to the
+        // link's own `download=` attribute, which is where the real name
+        // lives. See the comment above `ROUTES` for why a second name does
+        // not belong here.
+        res.setHeader("content-disposition", "attachment");
         res.setHeader("x-content-type-options", "nosniff");
         // Chrome's download manager may HEAD first. A body on HEAD makes it
         // report the file as missing.
@@ -90,6 +116,26 @@ export default defineConfig({
       // and two contradictory signals confuse more than the absence of one.
       // `single-landing.check.ts` guards the rest of that invariant.
       filter: (page) => !page.includes("/cv/"),
+      // Same two landings `Base.astro`'s `hreflang` tags point at each other,
+      // declared here too: a sitemap that disagrees with the `<head>` is
+      // worse than a sitemap that says nothing about locales at all — it
+      // gives the crawler two different answers to "what is the Spanish
+      // version of this page?" instead of one it can trust.
+      //
+      // `locales` maps the URL's locale PATH SEGMENT (`en/…`) to the
+      // `hreflang` value to emit for it — that is what this integration's
+      // `parseI18nUrl` keys on, not the page's own `locale` variable. `/`
+      // carries no segment, so it falls back to `defaultLocale`.
+      //
+      // No `x-default` entry: this integration links locales that share a
+      // URL after stripping the segment, one `hreflang` per physical page —
+      // there is no third page to hang an `x-default` link off, and Google's
+      // sitemap guidance treats it as optional. The `<head>` tag (present on
+      // both landings) is where `x-default` is actually declared.
+      i18n: {
+        defaultLocale: "es",
+        locales: { es: "es", en: "en" },
+      },
     }),
   ],
 });

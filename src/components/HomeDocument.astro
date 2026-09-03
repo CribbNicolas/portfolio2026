@@ -1,0 +1,338 @@
+---
+/**
+ * The landing body: the floating pill, the hero, the knowledge map, the
+ * projects and the CV section. Shared by `/` and `/en/`, parameterized by
+ * `locale` — `src/pages/index.astro` is the largest file in the repo and the
+ * only one shipping JavaScript, so two copies of its markup is exactly how the
+ * two languages start drifting on day three.
+ *
+ * Deliberately NOT responsible for anything that has to be a direct child of
+ * `<Base>`: the JSON-LD script, the hover-CSS `<style>`, the serialized graph
+ * data for the 3D boot, the analytics scripts and the Cloudflare beacon all
+ * stay in the calling page. Two reasons, not one:
+ *
+ *  - The first three are `slot="head"`/body-order-sensitive content wired
+ *    directly off `<Base>` in the page; a component nested one level down from
+ *    `<Base>` cannot redirect part of its own output into a *different* slot
+ *    than the one it was given as a whole. Moving them here would either
+ *    silently relocate the JSON-LD out of `<head>` or require `<Base>` itself
+ *    to know about the map, which is backwards.
+ *  - Even where that were not true, moving them would change `dist/index.html`
+ *    beyond the two diffs the plan allows (the switch, the second download
+ *    link): the JSON-LD script and the graph data script are unrelated to
+ *    either, so touching their position at all is a needless risk against the
+ *    Spanish byte-identity requirement.
+ *
+ * `positioned` (the 3D layout) is a prop and not fetched in here for the same
+ * reason: the page needs the SAME graph to build the hover CSS and the
+ * serialized boot data, and `layoutGraph` is deterministic but not free — a
+ * static build recomputing an identical force layout twice per page buys
+ * nothing. Everything else this component needs (the CV surface, chrome
+ * copy, both PDFs' file names, the map's SVG draw list, the sorted skill
+ * list) it derives itself from `locale` and `view`, same as `CvDocument`.
+ *
+ * `locale` is NOT a separate prop: it is read off `view.locale`. Two
+ * independent props (one prior version of this file took both) make "English
+ * chrome over the Spanish view" a typo away — swap the `view` a caller passes
+ * without also swapping `locale` and every check still passes, because
+ * nothing compares the two. `resolveView` stamps `locale` from the same
+ * dataset the rest of the view was resolved from, so deriving it here instead
+ * makes that divergence unrepresentable rather than merely untested.
+ */
+import type { ContentView, Locale } from "@content";
+import { content, formatSeniority, formatDateRange, formatYearMonth, pdfFilename, MESSAGES } from "@content";
+import { buildSvgMap } from "../lib/graph-svg";
+import { ITEM_ID } from "../lib/lab-hover-css";
+import { nodeHasMapLabel, isStickyMapLabel } from "../lib/map-labels";
+import { ANCHORS } from "../lib/anchors";
+import type { PositionedGraph } from "../../content/source/index";
+import Logo from "./Logo.astro";
+import LocaleSwitch from "./LocaleSwitch.astro";
+import GraphSvg from "./lab/GraphSvg.astro";
+import ProjectList from "./projects/ProjectList.astro";
+import Section from "./cv/Section.astro";
+import RoleBlock from "./cv/RoleBlock.astro";
+import SkillList from "./cv/SkillList.astro";
+
+interface Props {
+  view: ContentView;
+  positioned: PositionedGraph;
+}
+
+const { view, positioned } = Astro.props;
+const locale = view.locale;
+const { identity } = view;
+const m = MESSAGES[locale];
+const anchors = ANCHORS[locale];
+
+// Rule 7: `cv-ats` cuts by priority (cutoff 3) and caps at 5 achievements per
+// role; `portfolio` (the `view` prop) cuts nothing. This section has to show
+// EXACTLY what gets printed, because the download button promises "the CV".
+const viewCv = await content.getView("cv-ats", locale);
+
+// Both PDFs are offered on both landings, so both datasets are needed
+// regardless of which locale this page is: the current locale's file name
+// comes from its own `updatedAt`, and so does the other's — using the
+// current locale's date for both would silently mislabel whichever PDF is
+// not this page's own.
+const other: Locale = locale === "es" ? "en" : "es";
+const [datasetOwn, datasetOther] = await Promise.all([
+  content.getDataset(locale),
+  content.getDataset(other),
+]);
+const PDF_HREF: Record<Locale, string> = { es: "/cv.pdf", en: "/en/cv.pdf" };
+
+const map = buildSvgMap(positioned);
+
+// The DOM list: it is both the accessible content and the DOM side of the
+// hover bridge. Ordered by degree — the most connected on top, which is the
+// most proven, not whatever comes first alphabetically.
+const items = positioned.nodes
+  .filter((n) => n.kind === "skill")
+  .sort((a, b) => b.degree - a.degree || a.label.localeCompare(b.label, locale));
+
+const withEvidenceCount = items.filter((n) => n.degree > 0).length;
+const affinityCount = positioned.edges.filter((e) => e.kind === "affinity").length;
+
+// skillId → canonical name, for each project's stack. Built here and not in
+// `ProjectList`: `view.skills` arrives grouped by category, and flattening it
+// is this component's job, not the dumb one's.
+const skillNameById = new Map(
+  Object.values(view.skills).flat().map((s) => [s.id, s.name]),
+);
+---
+
+<div class="lab">
+  <canvas class="lab__field" data-lab-field aria-hidden="true"></canvas>
+
+  {/*
+    Index and contact in a pill that follows the scroll. It replaces the hero
+    buttons: the download CTA is already covered by the floating one below, and
+    two large buttons up top pushed the map off the first screen.
+
+    `href="#cv"` and NOT `/cv` — that route exists only to print the PDF, and
+    `single-landing.check.ts` verifies nobody links to it.
+
+    Without JS the pill is already fixed and usable: the script only adds the
+    lag while scrolling. That is why the initial `transform` lives in the CSS.
+  */}
+  <div class="bar" data-pill>
+    <header class="pill">
+      {/*
+        The logo is decorative on purpose (`label={null}`): the name is already
+        in the hero's `<h1>`, and a screen reader announcing it again here only
+        adds noise before the index.
+      */}
+      <Logo class="pill__logo" size={26} label={null} />
+
+      <span class="pill__sep" aria-hidden="true"></span>
+
+      <nav class="pill__nav" aria-label={m.navSectionsLabel}>
+        <a href={`#${anchors.map}`}>{m.navMap}</a>
+        <a href={`#${anchors.projects}`}>{m.navProjects}</a>
+        <a href={`#${anchors.cv}`}>CV</a>
+      </nav>
+
+      <span class="pill__sep" aria-hidden="true"></span>
+
+      <ul class="pill__contact">
+        <li>
+          <a href={`mailto:${identity.contact.email}`}>
+            <span class="pill__long">{identity.contact.email}</span>
+            <span class="pill__short">{m.emailLabel}</span>
+          </a>
+        </li>
+        {identity.links.map((link) => (
+          <li><a href={link.url} rel="me noopener">{link.label}</a></li>
+        ))}
+      </ul>
+
+      <span class="pill__sep" aria-hidden="true"></span>
+
+      {/* The language switch. A link, not a script — see LocaleSwitch.astro. */}
+      <LocaleSwitch locale={locale} />
+    </header>
+
+    {/*
+      Both PDFs, on both landings — the reader may want either regardless of
+      which page they landed on. The current locale's button keeps the
+      original placement and copy; the second one is the only other addition
+      `dist/index.html`'s diff is allowed to carry (besides the switch above).
+    */}
+    <a
+      class="download"
+      href={PDF_HREF[locale]}
+      download={pdfFilename(locale, datasetOwn.updatedAt)}
+    >
+      <span class="download__arrow" aria-hidden="true">↓</span>
+      <span class="pill__long">{m.downloadCv}</span>
+      <span class="pill__short">CV</span>
+    </a>
+    <a
+      class="download"
+      href={PDF_HREF[other]}
+      download={pdfFilename(other, datasetOther.updatedAt)}
+    >
+      <span class="download__arrow" aria-hidden="true">↓</span>
+      <span class="pill__long">{m.downloadCvOtherLocale}</span>
+      <span class="pill__short">{other.toUpperCase()}</span>
+    </a>
+  </div>
+
+  <main class="lab__content">
+    <section class="home lab__hero">
+      <p class="home__kicker">{identity.brandTitle}</p>
+      <h1 class="home__name">{identity.fullName}</h1>
+      <p class="home__role">
+        {identity.searchTitle} · {formatSeniority(view.yearsOfExperience, locale)} · {identity.location.city}, {identity.location.country}
+      </p>
+      <p class="home__tagline">{identity.tagline.short}</p>
+    </section>
+
+    <section id={anchors.map} class="lab__map-section">
+      <div class="lab__intro">
+        <h2 class="lab__title">{m.mapTitle}</h2>
+        <p class="lab__lede">{m.mapLede}</p>
+        <dl class="lab__figures">
+          <div><dt>{m.statsNodes}</dt><dd>{positioned.nodes.length}</dd></div>
+          <div><dt>{m.statsConnections}</dt><dd>{positioned.edges.length}</dd></div>
+          <div><dt>{m.statsAffinity}</dt><dd>{affinityCount}</dd></div>
+        </dl>
+      </div>
+
+      {/*
+        `tabindex` and `role` go on the CONTAINER, not on the canvas: the
+        canvas is `pointer-events: none` and cannot receive anything. The drag,
+        the click and the arrow keys are listened for here.
+      */}
+      <div
+        class="lab__map"
+        tabindex="0"
+        role="application"
+        aria-label={m.mapAriaLabel}
+      >
+        <GraphSvg
+          map={map}
+          ariaLabel={m.svgMapAriaLabel(positioned.nodes.length, positioned.edges.length)}
+        />
+        <canvas class="lab__canvas" data-lab-graph aria-hidden="true"></canvas>
+        {/*
+          The 3D labels live in the DOM, not in WebGL: a font atlas would cost
+          more than the whole scene and the text would come out blurry. They are
+          server-rendered and hidden until the 3D mounts; the SVG carries its own.
+        */}
+        <div class="lab__labels" aria-hidden="true">
+          {positioned.nodes
+            .filter((n) => nodeHasMapLabel(n))
+            .map((n) => (
+              <span
+                class={`lab__label-3d lab__label-3d--${n.kind}${isStickyMapLabel(n) ? " lab__label-3d--sticky" : ""}`}
+                data-lab-label
+                data-node={n.id}
+              >
+                {n.label}
+              </span>
+            ))}
+        </div>
+        <div class="lab__tooltip" data-lab-tooltip aria-hidden="true"></div>
+
+        {/*
+          El panel de detalle lo llena el JS con `textContent` sobre elementos
+          creados a mano — nunca `innerHTML`. `aria-live="polite"` hace que un
+          lector de pantalla anuncie el nodo enfocado sin interrumpir.
+        */}
+        <div class="lab__panel" data-lab-panel role="status" aria-live="polite"></div>
+
+        <p class="lab__hint" aria-hidden="true">{m.mapHint}</p>
+      </div>
+
+      <div class="lab__indice">
+        <h3 class="lab__index-title">
+          Stack <span class="lab__index-note">{m.stackEvidenceNote(withEvidenceCount, items.length)}</span>
+        </h3>
+        <ul class="lab__list">
+          {items.map((n) => (
+            <li>
+              <span
+                id={ITEM_ID(n.id)}
+                class={n.degree > 0 ? "lab__item" : "lab__item lab__item--empty"}
+                data-node={n.id}
+                tabindex="0"
+              >
+                <span class="lab__dot" aria-hidden="true"></span>
+                {n.label}
+                {n.degree > 0 && <span class="lab__degree">{n.degree}</span>}
+              </span>
+            </li>
+          ))}
+        </ul>
+        {items.length - withEvidenceCount > 0 && (
+        <p class="lab__note">{m.emptyStackNote(items.length - withEvidenceCount)}</p>
+        )}
+      </div>
+    </section>
+
+    <section id={anchors.projects} class="projects-section">
+      <h2 class="lab__title">{m.projectsTitle}</h2>
+      <ProjectList projects={view.projects} skillNameById={skillNameById} locale={locale} />
+    </section>
+
+    <section id={anchors.cv} class="cv">
+      <h2 class="cv__section-title">{m.cvTitle}</h2>
+
+      <Section title={m.sectionProfile}>
+        <p class="profile">{viewCv.identity.summary.short}</p>
+      </Section>
+
+      <Section title={m.sectionSkills}>
+        <SkillList skills={viewCv.skills} locale={locale} />
+      </Section>
+
+      <Section title={m.sectionExperience}>
+        {viewCv.experience.map((role) => <RoleBlock role={role} locale={locale} />)}
+      </Section>
+
+      <Section title={m.sectionEducation}>
+        {viewCv.education.map((e) => (
+          <div class="entry">
+            <p class="entry__title">{e.degree}{e.field && <> — {e.field}</>}</p>
+            <p class="entry__meta">
+              {e.institution}
+              {e.end && <> · {e.start ? formatDateRange(e.start, e.end, locale) : formatYearMonth(e.end, locale)}</>}
+              {e.status === "partial" && <> · {m.studyPartial}</>}
+              {e.status === "in-progress" && <> · {m.studyInProgress}</>}
+            </p>
+          </div>
+        ))}
+      </Section>
+
+      <Section title={m.sectionLanguages}>
+        {viewCv.languages.map((l) => (
+          <p class="skill-group">
+            <span class="skill-group__label">{l.name}:</span>{" "}
+            {l.level === "native" ? m.levelNative : l.level}
+          </p>
+        ))}
+      </Section>
+    </section>
+  </main>
+
+  {/*
+    The privacy line. Clarity uses cookies and records sessions; saying so is
+    the least that is reasonable if EU traffic arrives (docs/05 §5). It lives
+    here and not in `Base.astro` because the analytics do not live there
+    either: if they are removed tomorrow, this line goes with them and is not
+    left orphaned on `/cv`.
+
+    Cloudflare Web Analytics is named separately because it is NOT the same:
+    it uses no cookies and identifies nobody. Putting both in one sentence
+    would suggest both record, and that would overstate in the direction that
+    does not apply.
+  */}
+  <footer class="footer">
+    <p>{m.footerPrivacyIntro}<a
+        href="https://privacy.microsoft.com/privacystatement"
+        rel="noopener noreferrer"
+        target="_blank">{m.footerPrivacyLinkText}</a>{m.footerPrivacyOutro}</p>
+  </footer>
+</div>

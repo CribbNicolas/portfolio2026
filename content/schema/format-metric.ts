@@ -7,7 +7,8 @@
  * holding. Just as `dates.ts` is the file of rule 1, this one is rule 4's.
  */
 
-import type { Metric } from "./content-schema";
+import type { Locale, Metric } from "./content-schema";
+import { MESSAGES } from "./messages";
 
 /** Estimation marker. The contract allows "~" or "aprox."; "~" wins on space. */
 const APPROX = "~";
@@ -22,16 +23,19 @@ const APPROX = "~";
  * `before`/`after` wins over `delta` because showing the full movement is more
  * defensible in an interview than a percentage on its own.
  *
- * The movement is written "de X a Y" and NOT with an arrow: `→` (U+2192) is
- * outside Manrope's `latin` subset, the only one the pages load. Chromium
- * silently substitutes a system font for that one glyph, so the PDF stopped
- * carrying only embedded fonts — which is exactly what `pdf-output.check.ts`
- * refuses. Anything this file emits gets printed: it stays inside the subset.
+ * The movement is written "de X a Y" / "from X to Y" and NOT with an arrow:
+ * `→` (U+2192) is outside Manrope's `latin` subset, the only one the pages
+ * load. Chromium silently substitutes a system font for that one glyph, so the
+ * PDF stopped carrying only embedded fonts — which is exactly what
+ * `pdf-output.check.ts` refuses. Anything this file emits gets printed: it
+ * stays inside the subset, in every locale.
  */
-export function formatMetric(m: Metric): string | null {
+export function formatMetric(m: Metric, locale: Locale): string | null {
   const approx = m.confidence === "estimated" ? APPROX : "";
+  const { metricFrom, metricTo } = MESSAGES[locale];
 
-  if (m.before && m.after) return `de ${approx}${m.before} a ${approx}${m.after}`;
+  if (m.before && m.after)
+    return `${metricFrom} ${approx}${m.before} ${metricTo} ${approx}${m.after}`;
   if (m.delta) return `${approx}${m.delta}`;
   return null;
 }

@@ -11,7 +11,7 @@ This file exists so they do not get lost. Each entry says what it is, **how to
 check it** — so the next session does not have to take my word for it — and what
 fixing it would cost.
 
-**22 of 36 entries are closed.** The open ones keep their original numbers: a
+**24 of 39 entries are closed.** The open ones keep their original numbers: a
 renumbered list breaks every reference from a commit message or another doc.
 
 What does **not** go here: product and data pending items, which live in
@@ -31,6 +31,7 @@ Kept as a one-line record. The reasoning is in the commit that closed each one.
 | 3 | Three dead symbols in `graph-3d.ts`. `ORBIT` was the bad one: a configuration constant with a believable name that did nothing | Deleted, and the two genuinely ignored values marked as such |
 | 4 | Three `<script>` tags carrying the `astro(4000)` hint | Explicit `is:inline`. Typecheck went from 7 hints to 0 |
 | 5 | A merge into `main` left no CI run of its own, which reads as if the merge skipped validation | Accepted and closed. The check that counts comes from the `pull_request` event and always runs; the per-branch run adds nothing |
+| 7 | `/cv.json` published `visibility`, `priority`, `publishPhoneOn` and `Metric.source` | `Viewed<T>` in the view types; `resolveView` projects every surface |
 | 8 | `/cv.json` and `/llms.txt`, the two surfaces agents consume, had no gate at all. A real `formatRoleTitle` bug had already got through into one of them | `scripts/endpoints.check.ts`, in `content-validation.yml` with the other checks that read `dist/` |
 | 9 | The skill grouping lived in two places and had diverged: the CV printed `Lenguajes:` in editorial order, `/llms.txt` printed `- language:` in insertion order | `content/schema/skill-groups.ts`, imported by both |
 | 10 | Nothing verified the fonts were embedded. The PDF would look right on a machine with Manrope installed and wrong on every other one | A test in `pdf-output.check.ts` reading the font descriptors, which runs against the published PDF too |
@@ -48,6 +49,7 @@ Kept as a one-line record. The reasoning is in the commit that closed each one.
 | 32 | After a 409, Save re-enabled on the next keystroke | `stale` latch, cleared only by `load()` |
 | 35 | Clearing an optional object left `{}` and blocked the save | `set()` prunes hollow nested objects |
 | 36 | A failed fetch at load left the page on "loading…" | `load()` checks both responses and draws the error |
+| 37 | The bundle budget measured `dist/index.html` by path, so `/en/` shipped with no byte ceiling, and the `WebGLRenderer` scan followed the same hard-coded `<script src>` — silently blind after Rollup started sharing the boot chunk between two entries | `bundle-budget.check.ts` now takes its pages from `PAGES_WITH_JS` (`scripts/pages-with-js.ts`, shared with `no-client-js.check.ts`) and follows static `import` specifiers transitively from each page's entry chunk, so the byte budget and the `three` scan both see the real payload, not the wrapper |
 
 ---
 
@@ -70,37 +72,6 @@ previews included — so the cycle is "push to `staging` and watch the smoke", n
 exposing the local `wrangler pages dev` on a public URL. That is infrastructure
 for a problem solved today by waiting a minute for a preview. It does not look
 worth it.
-
----
-
-## 7. The public API publishes internal fields
-
-**Severity: medium.** It is a contract with third parties, and the repo is now
-public.
-
-`/cv.json` serves the `public-api` surface, but `resolveView` only filters
-`phone` and `streetAddress`. Everything else passes through whole. Measured on
-`dist/cv.json` from the 2026-08-25 build:
-
-```
-publishPhoneOn exposed: true
-"priority"  keys in the output: 40
-"visibility" keys in the output: 40
-```
-
-`visibility` and `priority` are **internal editorial decisions**: they say which
-achievement you consider first-tier and which third-tier, and on which surfaces
-you decided not to show something. A recruiter opening the JSON sees the ranking
-you made of your own work. `publishPhoneOn` also describes a privacy policy
-nobody outside cares about.
-
-**Why it was not fixed here.** Touching `resolveView` is touching the file rule 8
-depends on, and doing that in the middle of a deploy change is asking for it.
-
-**Fix.** In `resolveView`, for the `public-api` surface, map `Achievement` and
-`Skill` to a shape without `visibility` or `publishPhoneOn`. It is a projection,
-not a filter: the output type would have to be different from the internal
-surfaces', and that is where the real work is.
 
 ---
 
@@ -391,3 +362,70 @@ defect fix; adding coverage to it would blur what the diff says.
 **Fix.** The `textarea` test, with `reference` in the filter and `string` as the
 expected kind. Four lines in `hints.test.ts`.
 
+
+---
+
+## 38. Four schema types carry no `id`, so reordering them reads as a translation gone stale
+
+**Severity: low. Found 2026-09-02 while building the translation lock.**
+
+`scripts/i18n-fields.ts` keys each array item's path by its own `id` precisely
+so reordering an array does not invalidate every translation under it — moving
+an achievement does not make its `text.short` look like it changed. Four types
+in `content-schema.ts` have no `id` field at all: `TechnicalDecision`, `Link`,
+`LanguageSkill`, `Media`. For every array of these, the walker falls back to
+the array index, so reordering the array — not editing a single word in it —
+makes `pnpm run test:i18n` report every item after the moved one as stale, for
+text that never changed.
+
+**How to check it.** Swap the order of the two entries in `identity.links`
+(`GitHub` before `LinkedIn` today) and run `pnpm run test:i18n`: it reports the
+`label` and `url` paths as stale, even though neither string moved — only its
+position did.
+
+**Why it was not fixed.** `identity.links` has two entries and does not get
+reordered in the ordinary course of editing the CV; `TechnicalDecision` and
+`Media` are not populated in either dataset yet (see entry 22); `languages` has
+two entries in a fixed, meaningful order (Spanish first). The false positive is
+real but currently unreachable in practice, and the fix touches
+`content-schema.ts` and its Zod mirror — a schema change, not a scoped fix to
+`i18n-fields.ts` alone.
+
+**Fix.** Add `id` to the four interfaces (and their Zod schemas in the same
+commit, per this repo's convention) the day any of their arrays grows past a
+size where reordering is realistic — `TechnicalDecision` the moment case
+studies start populating it.
+
+---
+
+## 39. `Service.name` has no path override waiting for it in the translation walker
+
+**Severity: low. Found 2026-09-02, same review as #38.**
+
+`i18n-fields.ts`'s `NOT_TEXT` denylist excludes the key `name` everywhere
+except two path-specific overrides: `projects.*.name` (a title) and
+`languages.*.name` (a word in the language it names). `services` is empty in
+both datasets today — see [`00-index.md`](./00-index.md) — so nothing is lost
+yet. But `Service.name` is a title exactly like `Project.name`
+("Desarrollo de un panel a medida", not "Panel"), not a proper noun like
+`Skill.name`. When `services` gets filled in, its `name` field will silently
+fall into the excluded set: `test:i18n` will not flag it as missing, `i18n:lock`
+will not stamp it, and the field will simply never be checked for a translation
+— no error, no warning, just an English CV missing text nobody was told to look
+for.
+
+**How to check it.** Add one entry to `services` in `content.es.json` with a
+`name`, run `pnpm run test:i18n`: it passes, even with `services` absent
+entirely from `content.en.json`, because `services` itself is not `projects` or
+`languages` and the path never reaches `translatableFields`'s walker as
+tracked text.
+
+**Why it was not fixed.** `services` is intentionally empty — filling it with a
+placeholder just to add the override would be inventing data to test a check,
+which is exactly what invariant 4 forbids. The override is one line
+(`isServiceName`, mirroring `isProjectName`) but it is untestable against real
+data until there is real data.
+
+**Fix.** The day the first `Service` is written: add
+`const isServiceName = key === "name" && /^services\.[^.]+$/.test(path);` next
+to the existing two, and confirm `test:i18n` demands a translation for it.

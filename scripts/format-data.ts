@@ -1,5 +1,5 @@
 /**
- * Writes `content.es.json` in canonical form.
+ * Writes every committed dataset in canonical form.
  *
  * It exists so the gate has an answer: `data-format.check.ts` tells you the
  * file has drifted, and this is what puts it back. Deliberately not a
@@ -15,35 +15,38 @@
 
 import { readFile } from "node:fs/promises";
 
-import { DATASET_FILE, DatasetStore, InvalidDatasetError } from "../editor/store";
+import { DATASET_FILES, DatasetStore, InvalidDatasetError } from "../editor/store";
 
-const store = new DatasetStore();
-const before = (await readFile(DATASET_FILE, "utf8")).replace(/\r\n/g, "\n");
+// Every committed dataset, not only the authored one: the English file is
+// hand-edited too, and a file the formatter never visits is a file that drifts.
+for (const file of DATASET_FILES) {
+  const store = new DatasetStore(file);
+  const before = (await readFile(file, "utf8")).replace(/\r\n/g, "\n");
 
-// A rule violation here is data to fix, not a crash: print the rule messages
-// alone, the same way `validate.ts` does, instead of a raw stack trace.
-try {
-  const { data, etag } = await store.read();
-  await store.write(data, etag);
-} catch (err) {
-  if (err instanceof InvalidDatasetError) {
-    for (const issue of err.report.zodIssues) console.error(`  ${issue.path}: ${issue.message}`);
-    for (const violation of err.report.violations) {
-      console.error(`  [rule ${violation.rule}] ${violation.message}`);
+  // A rule violation here is data to fix, not a crash: print the rule messages
+  // alone, the same way `validate.ts` does, instead of a raw stack trace.
+  try {
+    const { data, etag } = await store.read();
+    await store.write(data, etag);
+  } catch (err) {
+    if (err instanceof InvalidDatasetError) {
+      console.error(file);
+      for (const issue of err.report.zodIssues) console.error(`  ${issue.path}: ${issue.message}`);
+      for (const violation of err.report.violations) {
+        console.error(`  [rule ${violation.rule}] ${violation.message}`);
+      }
+      process.exit(1);
     }
+    // Hand-broken JSON (a stray comma, a missing brace) is a plausible reason to
+    // reach for this script in the first place, and `store.read()` throws a bare
+    // `SyntaxError` for it — not an `InvalidDatasetError`, since the file never
+    // got far enough to be validated. A message beats a stack trace here too.
+    console.error(`${file}: ${err instanceof Error ? err.message : String(err)}`);
     process.exit(1);
   }
-  // Hand-broken JSON (a stray comma, a missing brace) is a plausible reason to
-  // reach for this script in the first place, and `store.read()` throws a bare
-  // `SyntaxError` for it — not an `InvalidDatasetError`, since the file never
-  // got far enough to be validated. A message beats a stack trace here too.
-  console.error(err instanceof Error ? err.message : err);
-  process.exit(1);
-}
 
-const after = (await readFile(DATASET_FILE, "utf8")).replace(/\r\n/g, "\n");
-console.log(
-  after === before
-    ? `${DATASET_FILE} was already canonical.`
-    : `${DATASET_FILE} rewritten in canonical form.`,
-);
+  const after = (await readFile(file, "utf8")).replace(/\r\n/g, "\n");
+  console.log(
+    after === before ? `${file} was already canonical.` : `${file} rewritten in canonical form.`,
+  );
+}
