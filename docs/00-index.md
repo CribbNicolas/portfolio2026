@@ -15,6 +15,7 @@ exist.
 | [07-technical-debt.md](./07-technical-debt.md) | What was found while working on something else and NOT fixed on the spot. With how to check it and what it costs |
 | [08-branches-and-versioning.md](./08-branches-and-versioning.md) | The four branches, which one deploys, and why the version rises on merge |
 | [09-seo-and-metadata.md](./09-seo-and-metadata.md) | What the `<head>` emits and what it deliberately does NOT, with the condition that would make each omission worth reconsidering. Debt gets paid; a decision gets reviewed |
+| [10-i18n.md](./10-i18n.md) | The bilingual workflow: Spanish first always, the lock loop, what is translated and what is not, what is bilingual today and what deliberately is not |
 
 ---
 
@@ -47,6 +48,11 @@ Dated, so we know what to revisit when the context changes.
 | 2026-08-25 | No backend. Keystatic discarded, Sanity postponed | With the data outside git, the content stops passing through the gates: `validate`, rules 7 and 8 and `test:pdf` run on push, not on a webhook. Detail in [06](./06-next-session.md) |
 | 2026-08-26 | `Skill.periods` replaces `since`: a list of spans, years as the sum of the merged ones | A technology gets dropped and picked back up. An end-to-end span counted the gap as experience |
 | 2026-08-26 | The repo migrates to **English**: identifiers, comments and docs | The chat stays in Spanish. The CV content stays in Spanish — it is what the reader reads |
+| 2026-09-02 | The site is bilingual: Spanish at the root, English under `/en/` | The market is LatAm and Spanish stays canonical, but the CV is read by English-speaking recruiters and agents |
+| 2026-09-02 | This REVERSES "No English dataset for now" (2026-08) | The mitigation stands: the English is written and reviewed, not machine-emitted and shipped |
+| 2026-09-02 | Staleness through per-field hashes, not a per-file `updatedAt` | A file timestamp says the whole translation is old the moment a date changes. A hash per field says which text drifted |
+| 2026-09-02 | Chrome copy in `messages.ts`, author's text in the dataset | The compiler covers one; the lock covers the other. Neither covers both |
+| 2026-09-02 | The PDF is `Cribb_Nicolas_CV_<updatedAt>.pdf` | An ATS does not read the file name; the list that shows it truncates near 30-35 characters |
 
 ## Status
 
@@ -68,6 +74,10 @@ Dated, so we know what to revisit when the context changes.
 - [x] Hogarth `full-time` + `concurrent` (2023-07 → 2024-01) and English **A2**, confirmed 2026-08-31
 - [x] Phase 1 closed: 15 of the 18 debt entries, including the three gates that did not exist (invariants, endpoints, embedded fonts)
 - [x] `pnpm run editor` — phase 2 of [06](./06-next-session.md), including the PR 4 affordances (remove, header, prune, 409 latch)
+- [x] Bilingual site: `content.en.json`, `/en/` + `/en/cv`, both CV PDFs, an
+      ES/EN switch on both landings. Workflow and what is still Spanish-only
+      (`/llms.txt`, `/cv.json`, the OG card) in [10-i18n.md](./10-i18n.md)
+- [ ] `hreflang` on both landings — see [09](./09-seo-and-metadata.md) §2.3
 - [ ] LinkedIn text blocks
 - [ ] Portfolio case studies — the research of [04 §6](./04-portfolio.md) comes first
 - [x] Freelance 2020-04 → 2022-06 connected to WordPress, Docker, Vue, Quasar, SCSS (still one achievement; the stack is now on the map)

@@ -11,7 +11,7 @@ This file exists so they do not get lost. Each entry says what it is, **how to
 check it** — so the next session does not have to take my word for it — and what
 fixing it would cost.
 
-**23 of 37 entries are closed.** The open ones keep their original numbers: a
+**23 of 39 entries are closed.** The open ones keep their original numbers: a
 renumbered list breaks every reference from a commit message or another doc.
 
 What does **not** go here: product and data pending items, which live in
@@ -401,3 +401,70 @@ written blind is how you get one that passes for the wrong reason.
 decides which pages are allowed to ship JS — instead of a constant, and assert
 the per-page budgets over each. The two checks then share one definition of
 "page with JavaScript", which is what they were both always about.
+
+---
+
+## 38. Four schema types carry no `id`, so reordering them reads as a translation gone stale
+
+**Severity: low. Found 2026-09-02 while building the translation lock.**
+
+`scripts/i18n-fields.ts` keys each array item's path by its own `id` precisely
+so reordering an array does not invalidate every translation under it — moving
+an achievement does not make its `text.short` look like it changed. Four types
+in `content-schema.ts` have no `id` field at all: `TechnicalDecision`, `Link`,
+`LanguageSkill`, `Media`. For every array of these, the walker falls back to
+the array index, so reordering the array — not editing a single word in it —
+makes `pnpm run test:i18n` report every item after the moved one as stale, for
+text that never changed.
+
+**How to check it.** Swap the order of the two entries in `identity.links`
+(`GitHub` before `LinkedIn` today) and run `pnpm run test:i18n`: it reports the
+`label` and `url` paths as stale, even though neither string moved — only its
+position did.
+
+**Why it was not fixed.** `identity.links` has two entries and does not get
+reordered in the ordinary course of editing the CV; `TechnicalDecision` and
+`Media` are not populated in either dataset yet (see entry 22); `languages` has
+two entries in a fixed, meaningful order (Spanish first). The false positive is
+real but currently unreachable in practice, and the fix touches
+`content-schema.ts` and its Zod mirror — a schema change, not a scoped fix to
+`i18n-fields.ts` alone.
+
+**Fix.** Add `id` to the four interfaces (and their Zod schemas in the same
+commit, per this repo's convention) the day any of their arrays grows past a
+size where reordering is realistic — `TechnicalDecision` the moment case
+studies start populating it.
+
+---
+
+## 39. `Service.name` has no path override waiting for it in the translation walker
+
+**Severity: low. Found 2026-09-02, same review as #38.**
+
+`i18n-fields.ts`'s `NOT_TEXT` denylist excludes the key `name` everywhere
+except two path-specific overrides: `projects.*.name` (a title) and
+`languages.*.name` (a word in the language it names). `services` is empty in
+both datasets today — see [`00-index.md`](./00-index.md) — so nothing is lost
+yet. But `Service.name` is a title exactly like `Project.name`
+("Desarrollo de un panel a medida", not "Panel"), not a proper noun like
+`Skill.name`. When `services` gets filled in, its `name` field will silently
+fall into the excluded set: `test:i18n` will not flag it as missing, `i18n:lock`
+will not stamp it, and the field will simply never be checked for a translation
+— no error, no warning, just an English CV missing text nobody was told to look
+for.
+
+**How to check it.** Add one entry to `services` in `content.es.json` with a
+`name`, run `pnpm run test:i18n`: it passes, even with `services` absent
+entirely from `content.en.json`, because `services` itself is not `projects` or
+`languages` and the path never reaches `translatableFields`'s walker as
+tracked text.
+
+**Why it was not fixed.** `services` is intentionally empty — filling it with a
+placeholder just to add the override would be inventing data to test a check,
+which is exactly what invariant 4 forbids. The override is one line
+(`isServiceName`, mirroring `isProjectName`) but it is untestable against real
+data until there is real data.
+
+**Fix.** The day the first `Service` is written: add
+`const isServiceName = key === "name" && /^services\.[^.]+$/.test(path);` next
+to the existing two, and confirm `test:i18n` demands a translation for it.

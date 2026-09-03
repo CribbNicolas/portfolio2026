@@ -80,12 +80,23 @@ no guessing. That is phase 2 editor work, not this document's.
 
 ### 2.3 `hreflang`
 
-**Why not.** There is one language. No EN dataset exists and the decision not to
-load one is dated in [`00`](./00-index.md). An `hreflang` pointing at a single
-variant tells nobody anything.
+**Why not, still.** `content.en.json` now exists, and `/en/` and `/en/cv` are
+real routes — see [`10-i18n.md`](./10-i18n.md) for the whole bilingual system.
+That is not enough on its own: `hreflang` on a page tells crawlers "here is the
+equivalent of this URL in another language", and `/cv` / `/en/cv` are both
+`noindex` — asking a crawler to follow a language alternate into a page it is
+also told not to index is a contradiction crawlers report as an error, not a
+courtesy they ignore. Emitting the tag today, before both indexable landings
+exist as a pair, would mean pointing it at pages the site itself says not to
+index.
 
-**When to reconsider.** The day `content.en.json` exists. Then it is mandatory,
-together with `x-default`.
+**When to reconsider.** The two indexable landings, `/` and `/en/`, both exist
+as of this same date — that is what makes `hreflang` a real annotation instead
+of a promise about a page nobody should crawl. The tag is scoped to those two:
+`es` → `/`, `en` → `/en/`, `x-default` → `/`, never `/cv` or `/en/cv`. Adding it
+is the next slice's work, not this document's — see
+[`07-technical-debt.md`](./07-technical-debt.md) #37 for the bundle-budget gap
+that has to close alongside it.
 
 ### 2.4 `twitter:site` and `twitter:creator`
 
