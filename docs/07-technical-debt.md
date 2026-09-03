@@ -11,8 +11,10 @@ This file exists so they do not get lost. Each entry says what it is, **how to
 check it** — so the next session does not have to take my word for it — and what
 fixing it would cost.
 
-**24 of 42 entries are closed.** The open ones keep their original numbers: a
+**26 of 42 entries are closed.** The open ones keep their original numbers: a
 renumbered list breaks every reference from a commit message or another doc.
+The remaining sixteen are the four waves in
+[2026-09-03-close-technical-debt](./superpowers/plans/2026-09-03-close-technical-debt.md).
 
 What does **not** go here: product and data pending items, which live in
 [00-index](./00-index.md) and [06-next-session](./06-next-session.md). This is
@@ -31,6 +33,7 @@ Kept as a one-line record. The reasoning is in the commit that closed each one.
 | 3 | Three dead symbols in `graph-3d.ts`. `ORBIT` was the bad one: a configuration constant with a believable name that did nothing | Deleted, and the two genuinely ignored values marked as such |
 | 4 | Three `<script>` tags carrying the `astro(4000)` hint | Explicit `is:inline`. Typecheck went from 7 hints to 0 |
 | 5 | A merge into `main` left no CI run of its own, which reads as if the merge skipped validation | Accepted and closed. The check that counts comes from the `pull_request` event and always runs; the per-branch run adds nothing |
+| 6 | The Function cannot be tested end to end locally: Browser Rendering cannot print `localhost` | Accepted 2026-09-03. The smoke already prints the published PDF; a tunnel is infra for a one-minute preview |
 | 7 | `/cv.json` published `visibility`, `priority`, `publishPhoneOn` and `Metric.source` | `Viewed<T>` in the view types; `resolveView` projects every surface |
 | 8 | `/cv.json` and `/llms.txt`, the two surfaces agents consume, had no gate at all. A real `formatRoleTitle` bug had already got through into one of them | `scripts/endpoints.check.ts`, in `content-validation.yml` with the other checks that read `dist/` |
 | 9 | The skill grouping lived in two places and had diverged: the CV printed `Lenguajes:` in editorial order, `/llms.txt` printed `- language:` in insertion order | `content/schema/skill-groups.ts`, imported by both |
@@ -44,34 +47,13 @@ Kept as a one-line record. The reasoning is in the commit that closed each one.
 | 17 | The `<head>` had seven tags: no Open Graph, no Twitter Card, favicon 404, sitemap 404 | `Base.astro` with opt-in `shareable`, `favicon.svg`, `robots.txt.ts`, `@astrojs/sitemap` |
 | 18 | No social image existed, so the card had nothing to show | `build-og.ts` + `og.lock.json` + `og-output.check.ts` |
 | 24 | GET of an already-invalid dataset returned a bare 500 | Same 422 report PUT already returns, drawn on the page |
+| 28 | The write queue's Map never evicts | Accepted 2026-09-03. The process writes one path; eviction is more machinery than the leak |
 | 29 | Top-level collection items could be added but never removed | `remove this item` in the detail header; refused when something still points at the id |
 | 30 | Top-level scalars were unreachable; `updatedAt` never refreshed | `header` nav group; stamped on save only when the rest of the dataset changed |
 | 32 | After a 409, Save re-enabled on the next keystroke | `stale` latch, cleared only by `load()` |
 | 35 | Clearing an optional object left `{}` and blocked the save | `set()` prunes hollow nested objects |
 | 36 | A failed fetch at load left the page on "loading…" | `load()` checks both responses and draws the error |
 | 37 | The bundle budget measured `dist/index.html` by path, so `/en/` shipped with no byte ceiling, and the `WebGLRenderer` scan followed the same hard-coded `<script src>` — silently blind after Rollup started sharing the boot chunk between two entries | `bundle-budget.check.ts` now takes its pages from `PAGES_WITH_JS` (`scripts/pages-with-js.ts`, shared with `no-client-js.check.ts`) and follows static `import` specifiers transitively from each page's entry chunk, so the byte budget and the `three` scan both see the real payload, not the wrapper |
-
----
-
-## 6. The Function cannot be tested end to end locally
-
-**Severity: low. It is a limitation, not a defect — noted so it is not
-rediscovered.**
-
-`pnpm dlx wrangler pages dev dist` serves `/cv.pdf` and is enough to verify
-routing, caching and the error paths. What it **cannot** verify is the render:
-the Function asks Browser Rendering to print `http://localhost:8788/cv`, and that
-URL does not resolve from Cloudflare's cloud.
-
-So the render is only tested by deploying. That is covered today by
-`smoke-deploy.yml`, which runs `test:pdf` against every successful deploy —
-previews included — so the cycle is "push to `staging` and watch the smoke", not
-"push to production and pray".
-
-**Way out, if it ever becomes annoying:** a tunnel (`cloudflared tunnel`)
-exposing the local `wrangler pages dev` on a public URL. That is infrastructure
-for a problem solved today by waiting a minute for a preview. It does not look
-worth it.
 
 ---
 
@@ -269,26 +251,6 @@ one-liner.
 
 **Fix.** Key by `realpath` where the file exists, or normalize case only on
 `win32`. Worth doing if the editor ever takes a path from user input.
-
----
-
-## 28. The write queue's Map never evicts
-
-**Severity: negligible. Same re-review as §27.**
-
-`writeQueues` in `editor/store.ts` holds one entry per resolved path for the
-lifetime of the process, with no eviction.
-
-**How to check it.** Read the module scope of `editor/store.ts`: nothing ever
-calls `delete`.
-
-**Why it was not fixed.** In practice the process writes one path, so the Map
-holds one entry. Eviction would need to know when a queue is idle, which is
-more machinery than the leak it prevents.
-
-**Fix.** Delete the entry when a write settles and the tail is still the one it
-installed. Only worth it if something ever drives many paths through one
-process.
 
 ---
 

@@ -6,6 +6,7 @@ exist.
 | Document | What it holds |
 |---|---|
 | [06-next-session.md](./06-next-session.md) | **The three-phase work plan**, with how to proceed on each task. Start here |
+| [2026-09-03-close-technical-debt](./superpowers/plans/2026-09-03-close-technical-debt.md) | The four remaining waves that close `07` to zero, plus the bilingual leftovers |
 | [CONTRACT.md](./CONTRACT.md) | Rules of the content system |
 | [01-filters-and-selection.md](./01-filters-and-selection.md) | How the filters work today, what the evidence says, what raises the score |
 | [02-branding.md](./02-branding.md) | Positioning, headline, About, voice, LinkedIn |
@@ -87,8 +88,10 @@ Dated, so we know what to revisit when the context changes.
       pages, so sharing the English landing on LinkedIn previews in Spanish.
       `build-og.ts` emits one image and `og.lock.json` fingerprints one
 - [ ] **`/404.html` is Spanish for both locales** — a mistyped URL under `/en/`
-      lands on a Spanish page. Decide bilingual-in-one-page vs. one per locale
-      before building it: the second needs Pages to route by prefix
+      lands on a Spanish page. Decision locked: bilingual-in-one-page (Cloudflare
+      Pages only serves root `404.html`; a per-prefix 404 needs a Function, and
+      404 stays at zero JS). Wave 4 of
+      [the campaign](./superpowers/plans/2026-09-03-close-technical-debt.md)
 - [ ] **Read the English dataset.** `content.en.json` is a reviewed-for-accuracy
       draft: a review confirmed it invents no number, client or date, and that
       every hedge survived. Nothing checks whether it reads as written English
