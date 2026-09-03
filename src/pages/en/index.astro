@@ -80,7 +80,7 @@ const graphData = JSON.stringify({
   <script type="application/ld+json" is:inline slot="head" set:html={JSON.stringify(jsonLd)} />
   <style is:inline set:html={hoverCss} slot="head" />
 
-  <HomeDocument locale={locale} view={view} positioned={positioned} />
+  <HomeDocument view={view} positioned={positioned} />
 
   {cloudflareBeacon && (
     <script

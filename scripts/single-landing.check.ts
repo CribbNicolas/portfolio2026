@@ -21,6 +21,7 @@ import { accessSync, constants } from "node:fs";
 import { readdir, readFile } from "node:fs/promises";
 import { join, relative, sep } from "node:path";
 import { pdfFilename } from "../content/source/index";
+import { MESSAGES } from "../content/schema/messages";
 import { ANCHORS } from "../src/lib/anchors";
 import datasetEs from "../content/data/content.es.json";
 import datasetEn from "../content/data/content.en.json";
@@ -326,6 +327,43 @@ test("neither landing repeats the CV header", () => {
     assert.ok(
       markup(pdf).includes("cv__name"),
       `/${name === "Spanish" ? "cv" : "en/cv"} lost its <Header>: the PDF needs the name at the top`,
+    );
+  }
+});
+
+/**
+ * I1: `HomeDocument.astro` used to take `locale` and `view` as two
+ * independent props, and `ContentView` carried no `locale` of its own —
+ * nothing stopped `src/pages/en/index.astro` from fetching the Spanish view
+ * while keeping `locale="en"`, and typecheck, `pnpm test` and every other
+ * check here would still pass, because none of them look at what LANGUAGE
+ * the rendered text is actually in. This is that check: each landing has to
+ * carry its own locale's chrome copy and its own locale's author text, and
+ * not the other's.
+ *
+ * The map title is chrome (`messages.ts`, a closed compile-time set); the
+ * identity summary is author's prose (the dataset, the thing `resolveView`
+ * resolves). Between the two they cover both halves of what a mismatched
+ * `locale`/`view` pair would get wrong.
+ */
+test("each landing renders its own locale's content, not the other's", () => {
+  for (const [name, html, own, other, dataset] of [
+    ["Spanish", landing, MESSAGES.es, MESSAGES.en, datasetEs],
+    ["English", enLanding, MESSAGES.en, MESSAGES.es, datasetEn],
+  ] as const) {
+    assert.ok(
+      html.includes(own.mapTitle),
+      `the ${name} landing is missing its own map title ("${own.mapTitle}")`,
+    );
+    assert.ok(
+      !html.includes(other.mapTitle),
+      `the ${name} landing contains the OTHER locale's map title ("${other.mapTitle}") — ` +
+        "locale/view mismatch: the chrome copy and the data are speaking different languages",
+    );
+    assert.ok(
+      html.includes(dataset.identity.summary.short),
+      `the ${name} landing is missing its own identity.summary.short — it may be ` +
+        "rendering the other locale's dataset",
     );
   }
 });

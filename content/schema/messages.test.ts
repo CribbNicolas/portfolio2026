@@ -26,3 +26,35 @@ test("the CV section names are the standard ones docs/03 §2 asks for", () => {
   assert.equal(MESSAGES.es.sectionSkills, "Habilidades técnicas");
   assert.equal(MESSAGES.en.sectionSkills, "Technical skills");
 });
+
+test("no English message is a pasted Spanish string", () => {
+  // The two locale blocks sit ~60 lines apart in this one file, hand-edited:
+  // an equality check between them cannot tell "translated" from "copied",
+  // because a real translation is SUPPOSED to differ from the Spanish — the
+  // gap this test closes is the other direction, where nothing caught it
+  // because nothing differs at all. An accented character (or an inverted
+  // punctuation mark, `¿`/`¡`) has no legitimate reason to appear in English
+  // copy, so its presence means a Spanish value was pasted into the `en`
+  // block rather than translated. This clears every genuinely identical
+  // short label ("Email", "Frontend", "CMS"), which by definition contains no
+  // such character — an equality check against `MESSAGES.es` would instead
+  // have to special-case each of those by hand.
+  const SPANISH_ONLY_CHARS = /[áéíóúñ¿¡]/i;
+  // `downloadCvOtherLocale` is the ONE key that is Spanish BY DESIGN on the
+  // English side: it labels the button that downloads the *Spanish* CV
+  // ("Descargar CV (español)"), named in the language of the file it hands
+  // over rather than the language of the page showing it — the same reason
+  // `MESSAGES.es.downloadCvOtherLocale` is deliberately English
+  // ("Download CV (English)"). A real accidental paste would show up on ANY
+  // other key; this is the only one allowed to fail the character test.
+  const DELIBERATELY_OTHER_LOCALE = new Set(["downloadCvOtherLocale"]);
+  for (const [key, raw] of Object.entries(MESSAGES.en)) {
+    if (DELIBERATELY_OTHER_LOCALE.has(key)) continue;
+    const value = typeof raw === "function" ? raw(1, 1) : raw;
+    assert.doesNotMatch(
+      value,
+      SPANISH_ONLY_CHARS,
+      `MESSAGES.en.${key} ("${value}") looks like pasted Spanish, not a translation`,
+    );
+  }
+});

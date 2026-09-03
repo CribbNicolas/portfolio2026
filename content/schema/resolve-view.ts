@@ -155,6 +155,7 @@ export function resolveView(data: ContentDataset, surface: Surface): ContentView
 
   return {
     surface,
+    locale: data.locale,
     identity,
     experience,
     projects,

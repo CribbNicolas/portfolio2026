@@ -30,6 +30,14 @@
  * nothing. Everything else this component needs (the CV surface, chrome
  * copy, both PDFs' file names, the map's SVG draw list, the sorted skill
  * list) it derives itself from `locale` and `view`, same as `CvDocument`.
+ *
+ * `locale` is NOT a separate prop: it is read off `view.locale`. Two
+ * independent props (one prior version of this file took both) make "English
+ * chrome over the Spanish view" a typo away — swap the `view` a caller passes
+ * without also swapping `locale` and every check still passes, because
+ * nothing compares the two. `resolveView` stamps `locale` from the same
+ * dataset the rest of the view was resolved from, so deriving it here instead
+ * makes that divergence unrepresentable rather than merely untested.
  */
 import type { ContentView, Locale } from "@content";
 import { content, formatSeniority, formatDateRange, formatYearMonth, pdfFilename, MESSAGES } from "@content";
@@ -47,12 +55,12 @@ import RoleBlock from "./cv/RoleBlock.astro";
 import SkillList from "./cv/SkillList.astro";
 
 interface Props {
-  locale: Locale;
   view: ContentView;
   positioned: PositionedGraph;
 }
 
-const { locale, view, positioned } = Astro.props;
+const { view, positioned } = Astro.props;
+const locale = view.locale;
 const { identity } = view;
 const m = MESSAGES[locale];
 const anchors = ANCHORS[locale];

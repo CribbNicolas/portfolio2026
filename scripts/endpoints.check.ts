@@ -42,7 +42,7 @@ test("/cv.json carries the keys the contract promises", () => {
   // The keys of `ContentView` (CONTRACT §2). If one disappears because a
   // generator changed, whoever consumes this finds out by getting `undefined`.
   const expected = [
-    "surface", "identity", "experience", "projects", "skills",
+    "surface", "locale", "identity", "experience", "projects", "skills",
     "education", "certifications", "languages", "services", "testimonials",
     "yearsOfExperience",
   ];

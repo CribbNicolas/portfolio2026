@@ -439,6 +439,15 @@ export type ViewedIdentity = Omit<Identity, "contact"> & {
 /** A dataset already resolved for one concrete surface. */
 export interface ContentView {
   surface: Surface;
+  /**
+   * Which dataset this view was resolved from. `resolveView` sets it straight
+   * from `data.locale` — it is never chosen independently of the content, so
+   * a component that takes both a `locale` prop and a `view` prop cannot end
+   * up rendering one language's chrome over the other's data (see
+   * `HomeDocument.astro`, which derives `locale` from this field instead of
+   * accepting it as a separate prop for exactly that reason).
+   */
+  locale: Locale;
   identity: ViewedIdentity;
   /** Roles with their achievements already nested, filtered and ordered. */
   experience: Array<
