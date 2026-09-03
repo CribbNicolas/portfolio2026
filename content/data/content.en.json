@@ -25,8 +25,8 @@
       "publishPhoneOn": []
     },
     "links": [
-      { "label": "GitHub", "url": "https://github.com/CribbNicolas", "kind": "github" },
-      { "label": "LinkedIn", "url": "https://www.linkedin.com/in/cribb-barbaro-nicolas/", "kind": "linkedin" }
+      { "id": "github", "label": "GitHub", "url": "https://github.com/CribbNicolas", "kind": "github" },
+      { "id": "linkedin", "label": "LinkedIn", "url": "https://www.linkedin.com/in/cribb-barbaro-nicolas/", "kind": "linkedin" }
     ],
     "careerStart": "2020-04",
     "tagline": {
@@ -329,6 +329,7 @@
       },
       "decisions": [
         {
+          "id": "next-sanity-not-wp",
           "decision": "Next.js + Sanity instead of WordPress",
           "context": "The client needs to edit prices and the catalog without touching code, but the site has to load fast on rural mobile networks.",
           "rationale": "Decoupled content and static generation: the editor gets a panel of their own and the visitor gets pre-rendered HTML.",
@@ -372,18 +373,21 @@
       ],
       "decisions": [
         {
+          "id": "hash-index-worker",
           "decision": "A hash index in a Web Worker instead of merging the data into feature-state",
           "context": "The dataset is ~13,000 polygons plus 7 MB of analytics JSON. Merging all of it into feature-state doubled memory use, took 3-5 s and crashed.",
           "rationale": "O(1) lookups on demand, a free UI while the indexing runs, a zero-copy transfer of the ArrayBuffer.",
           "tradeoff": "GEOID/FIPS have to be normalized by hand (7 digits vs 2), and the visual hover stays in feature-state, separate from the data."
         },
         {
+          "id": "mapbox-color-expression",
           "decision": "Color by a Mapbox expression (GEOID → color), not by feature-state",
           "context": "Painting the choropleth with setFeatureState over thousands of features reprocesses tiles on every load.",
           "rationale": "A precomputed case expression paints on the GPU without touching the state of each feature.",
           "tradeoff": "The expression grows with every district; in exchange no tiles are reprocessed when painting."
         },
         {
+          "id": "flyto-largest-polygon",
           "decision": "flyTo over the largest polygon by area in a MultiPolygon",
           "context": "Alaska's bbox includes the Aleutians (thousands of km to the west) and Hawaii's includes every island: the zoom left 20% of the state visible.",
           "rationale": "The shoelace formula picks the largest polygon and frames the main territory.",
@@ -402,7 +406,7 @@
         "tailwind"
       ],
       "links": [
-        { "label": "See the map", "url": "https://rpplpartnership.org/external-resource/pl-spending-paper/", "kind": "demo" }
+        { "id": "rppl-map", "label": "See the map", "url": "https://rpplpartnership.org/external-resource/pl-spending-paper/", "kind": "demo" }
       ],
       "media": [],
       "featured": true,
@@ -431,18 +435,21 @@
       },
       "decisions": [
         {
+          "id": "embed-muse-renderer",
           "decision": "Do not draw the map in the plugin: embed Muse's renderer",
           "context": "The canvas, the layers and the hit test already existed in @muse/seat-renderer. Duplicating them in WordPress meant maintaining two maps.",
           "rationale": "The plugin orchestrates (cart, session, APIs). The renderer, published to S3, is the same one Muse's shop uses.",
           "tradeoff": "postinstall has to pull a specific version of the renderer; a mismatch in the event contract breaks Woo and Muse at once."
         },
         {
+          "id": "async-pile-cart",
           "decision": "Serialize the cart mutations with AsyncPile",
           "context": "WooCommerce 10 rotates the nonce on every request. Two reservations in parallel invalidated the second one and left the map dirty.",
           "rationale": "A queue of one operation at a time; the ReservationSupervisor avoids re-entering when the change already came from the map.",
           "tradeoff": "The UI waits on the queue: a click does not paint the seat until the Store API answers."
         },
         {
+          "id": "session-owner-not-cart-key",
           "decision": "session_owner instead of cart_key",
           "context": "The cart key changed between a reload, the minicart and guest vs logged in, and orphaned reservations were not cleaned up.",
           "rationale": "A stable session owner lines up the map, the countdown toast and checkout.",
@@ -488,12 +495,14 @@
       },
       "decisions": [
         {
+          "id": "turbo-monorepo",
           "decision": "One monorepo (Turbo + pnpm) instead of separate repos for admin, shop and renderer",
           "context": "The map has to look the same in the CRM, in the shop and inside WordPress. Three repos let the event contract drift apart.",
           "rationale": "One versioned @muse/seat-renderer package; the Woo plugin consumes it through postinstall.",
           "tradeoff": "A breaking change in the renderer breaks admin, shop and Woo at once; the release has to be coordinated."
         },
         {
+          "id": "konva-not-svg",
           "decision": "The venue designer in React Konva, not in static SVG or in Mapbox",
           "context": "A concert hall is a 2D floor plan with rows, GA and backgrounds. Mapbox is geo; flat SVG does not scale to an editor.",
           "rationale": "Konva gives hit testing, layers and dragging on canvas. The shop and the admin read the same map document.",
@@ -512,8 +521,8 @@
         "tailwind"
       ],
       "links": [
-        { "label": "App", "url": "https://app-next.musecrm.com/", "kind": "demo" },
-        { "label": "Site", "url": "https://www.musecrm.com/", "kind": "website" }
+        { "id": "app", "label": "App", "url": "https://app-next.musecrm.com/", "kind": "demo" },
+        { "id": "site", "label": "Site", "url": "https://www.musecrm.com/", "kind": "website" }
       ],
       "media": [],
       "featured": true,
@@ -542,12 +551,14 @@
       },
       "decisions": [
         {
+          "id": "index-vs-index",
           "decision": "Reconcile index against index, without going through the database",
           "context": "Running this from a local checkout against staging/production. Asking for the production database was unnecessary and risky.",
           "rationale": "The model's index is the source of truth. If it is not there, the global entry is an orphan.",
           "tradeoff": "If the model's index is wrong too, the sync does not fix it. It does not reindex: it only deletes from the global index."
         },
         {
+          "id": "no-massive-update-worker",
           "decision": "Do not use AlgoliaMassiveUpdateWorker to recover the global index",
           "context": "That worker clears muse_global and reindexes Venue/Event/Ensemble. Profile is in EXCLUDED_MODELS.",
           "rationale": "A task that only deletes orphans cannot empty out profiles. check never writes.",

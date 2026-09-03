@@ -63,6 +63,7 @@ export interface Prose {
 }
 
 export interface Link {
+  id: string;
   label: string;
   url: string;
   /** For the JSON-LD `sameAs` and for the contact block. */
@@ -70,6 +71,7 @@ export interface Link {
 }
 
 export interface Media {
+  id: string;
   kind: "image" | "gif" | "video";
   url: string;
   /** Mandatory: descriptive alt. It is accessibility, and it is signal for agents. */
@@ -262,6 +264,7 @@ export interface Role {
 
 /** This is what almost no portfolio has. It is your differentiator. */
 export interface TechnicalDecision {
+  id: string;
   /** "Migrar el build de Webpack a Vite" */
   decision: string;
   /** What problem forced the decision. */

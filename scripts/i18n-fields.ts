@@ -29,6 +29,9 @@ const NOT_TEXT = new Set([
   "before", "after",
   "url", "email", "phone", "featured", "active", "approved",
   "company", "client", "institution", "name",  // proper nouns
+  // `LanguageSkill.code` is the identifier (`es` / `en`), not prose. It is
+  // what `arrayKey` uses when there is no `id`.
+  "code",
   // `Link.kind` is a closed union of identifiers ("github" | "linkedin" | …),
   // not prose: there is no English version of a tag, only a fixed set of
   // values the code branches on.
@@ -45,9 +48,10 @@ const NOT_TEXT = new Set([
  * walk in this file so a path built by one means the same thing to another.
  */
 function arrayKey(item: unknown, index: number): string {
-  return typeof (item as { id?: unknown })?.id === "string"
-    ? (item as { id: string }).id
-    : String(index);
+  const rec = item as { id?: unknown; code?: unknown };
+  if (typeof rec?.id === "string") return rec.id;
+  if (typeof rec?.code === "string") return rec.code;
+  return String(index);
 }
 
 /**
@@ -91,10 +95,14 @@ export function translatableFields(dataset: ContentDataset): Map<string, string>
         // "Inglés" — which is a word in the language it names, not an
         // identifier for it, so it IS translated). Both verified against both
         // committed datasets. Handled by path, not by key, so `Skill.name`
-        // (a proper noun) stays excluded. `languages` items carry no `id`, so
-        // the walker keys them by array index: the path is `languages.<n>`.
+        // (a proper noun) stays excluded. `languages` items have no `id`;
+        // `arrayKey` uses `code`, so the path is `languages.es.name`.
         const isProjectName = key === "name" && /^projects\.[^.]+$/.test(path);
         const isLanguageName = key === "name" && /^languages\.[^.]+$/.test(path);
+        // `Service.name` is a title ("Custom dashboard"), not a proper noun
+        // like `Skill.name`. Without this override it falls into NOT_TEXT and
+        // `test:i18n` never asks for a translation — silent missing English.
+        const isServiceName = key === "name" && /^services\.[^.]+$/.test(path);
         // `skills.ai-assisted.name` is "Desarrollo asistido por IA" /
         // "AI-assisted development" — a descriptive phrase, not a product
         // name. Every other `Skill.name` ("TypeScript", "Docker") has no
@@ -108,7 +116,7 @@ export function translatableFields(dataset: ContentDataset): Map<string, string>
         const isFreelanceCompany = key === "company" && path === "roles.freelance";
         if (
           NOT_TEXT.has(key) &&
-          !isProjectName && !isLanguageName && !isSkillDisplayName && !isFreelanceCompany
+          !isProjectName && !isLanguageName && !isServiceName && !isSkillDisplayName && !isFreelanceCompany
         ) continue;
         walk(value, path ? `${path}.${key}` : key);
       }

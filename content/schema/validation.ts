@@ -53,6 +53,7 @@ const prose = z.object({
 }).strict();
 
 const link = z.object({
+  id: z.string(),
   label: z.string(),
   url: z.string().url(),
   kind: z.enum([
@@ -72,6 +73,7 @@ const skillPeriod = z.object({
 }).strict();
 
 const media = z.object({
+  id: z.string(),
   kind: z.enum(["image", "gif", "video"]),
   url: z.string(),
   alt: z.string().min(1, "Rule 5: every media needs an alt"),
@@ -174,6 +176,7 @@ const role = z.object({
 }).strict();
 
 const technicalDecision = z.object({
+  id: z.string(),
   decision: z.string(),
   context: z.string(),
   rationale: z.string(),
