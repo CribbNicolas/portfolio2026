@@ -22,8 +22,12 @@ const NOT_TEXT = new Set([
   "roleId", "projectId", "skillId", "skillIds", "category", "level",
   "employmentType", "workMode", "status", "confidence", "dimension",
   "priority", "only", "except", "visibility", "publishPhoneOn",
-  "before", "after", "delta",       // numbers with units: "500 ms" is "500 ms"
-  "url", "email", "phone", "aliases", "featured", "active", "approved",
+  // `before`/`after` are numbers with a unit baked in: "500 ms" is "500 ms"
+  // in both languages, so the value is copied, not translated. `delta` is
+  // deliberately NOT in this set — see the comment above `translatableFields`
+  // for why it moved out.
+  "before", "after",
+  "url", "email", "phone", "featured", "active", "approved",
   "company", "client", "institution", "name",  // proper nouns
   // `Link.kind` is a closed union of identifiers ("github" | "linkedin" | …),
   // not prose: there is no English version of a tag, only a fixed set of
@@ -35,6 +39,37 @@ const NOT_TEXT = new Set([
   "source",
 ]);
 
+/**
+ * An identified array item keys by its id, so reordering the array does not
+ * move a single path. Anything else falls back to the index. Shared by every
+ * walk in this file so a path built by one means the same thing to another.
+ */
+function arrayKey(item: unknown, index: number): string {
+  return typeof (item as { id?: unknown })?.id === "string"
+    ? (item as { id: string }).id
+    : String(index);
+}
+
+/**
+ * `delta` looked like `before`/`after` — a number with a unit — and was
+ * denylisted alongside them. It is not: `before`/`after` never move (a
+ * measurement is a measurement), but `delta` renders as PROSE with a locale
+ * convention baked in — "13.000" (thousands separator `.`) in Spanish,
+ * "13,000" in English. `formatMetric` prints it verbatim on both CVs and
+ * both landings. Denylisting it meant an English `delta` could go stale — or
+ * simply wrong — with every gate green.
+ *
+ * `aliases` looked like `name` — mostly proper nouns ("TypeScript", "React.js")
+ * with no English form — and was denylisted for the same reason. But a few
+ * entries are genuine words ("containerización" → "containerization"), not
+ * product names, and those need the same drift protection as any other prose.
+ * Tracking every alias costs nothing: the proper-noun ones are short and
+ * identical in both datasets, which passes the "untranslated" check exactly
+ * the way `Mapbox GL JS` does for `name`-as-proper-noun. No per-entry override
+ * needed — unlike `name`, there is no reading of `aliases` where the
+ * proper-noun case must be EXCLUDED, only entries where translation happens to
+ * be a no-op.
+ */
 export function translatableFields(dataset: ContentDataset): Map<string, string> {
   const out = new Map<string, string>();
 
@@ -45,12 +80,7 @@ export function translatableFields(dataset: ContentDataset): Map<string, string>
     }
     if (Array.isArray(node)) {
       for (const [i, item] of node.entries()) {
-        // An identified item keys by its id, so reordering the array does not
-        // move a single path. Anything else falls back to the index.
-        const key = typeof (item as { id?: unknown })?.id === "string"
-          ? (item as { id: string }).id
-          : String(i);
-        walk(item, `${path}.${key}`);
+        walk(item, `${path}.${arrayKey(item, i)}`);
       }
       return;
     }
@@ -65,7 +95,21 @@ export function translatableFields(dataset: ContentDataset): Map<string, string>
         // the walker keys them by array index: the path is `languages.<n>`.
         const isProjectName = key === "name" && /^projects\.[^.]+$/.test(path);
         const isLanguageName = key === "name" && /^languages\.[^.]+$/.test(path);
-        if (NOT_TEXT.has(key) && !isProjectName && !isLanguageName) continue;
+        // `skills.ai-assisted.name` is "Desarrollo asistido por IA" /
+        // "AI-assisted development" — a descriptive phrase, not a product
+        // name. Every other `Skill.name` ("TypeScript", "Docker") has no
+        // English form to write; this one id is the sole exception, verified
+        // against both committed datasets, same shape as the language
+        // exception above.
+        const isSkillDisplayName = key === "name" && path === "skills.ai-assisted";
+        // `roles.freelance.company` is "Independiente" / "Independent" — a
+        // description of the arrangement (no employer), not a business name.
+        // Every other `Role.company` ("Hogarth") is a proper noun.
+        const isFreelanceCompany = key === "company" && path === "roles.freelance";
+        if (
+          NOT_TEXT.has(key) &&
+          !isProjectName && !isLanguageName && !isSkillDisplayName && !isFreelanceCompany
+        ) continue;
         walk(value, path ? `${path}.${key}` : key);
       }
     }
@@ -73,6 +117,43 @@ export function translatableFields(dataset: ContentDataset): Map<string, string>
 
   walk(dataset, "");
   return out;
+}
+
+/**
+ * The full dataset, with every TRACKED leaf (what `translatableFields`
+ * returns) replaced by `null`. What is left over is exactly the structure:
+ * ids, dates, `skillIds`, `visibility.priority`, `Metric.confidence` — every
+ * field this module does not consider prose — plus any `NOT_TEXT` field whose
+ * value happens to be a string too (`company`, `url`, `kind`…), untouched.
+ *
+ * Deep-comparing two datasets' skeletons is the real structural-parity check.
+ * `translatableFields()` alone cannot do this job: it is blind to anything
+ * `NOT_TEXT` excludes, because it never walks INTO that subtree, so a drifted
+ * `roles.dinkum.start` or `achievements.dinkum-mapbox.visibility.priority`
+ * never produces a path either dataset's tracked set can disagree over — both
+ * sets simply omit it. This function walks EVERYTHING (nothing is skipped by
+ * `NOT_TEXT`) and blanks only what `translatableFields` would have tracked, so
+ * a comparison of two skeletons catches drift in anything left over.
+ */
+export function structuralSkeleton(dataset: ContentDataset): unknown {
+  const tracked = translatableFields(dataset);
+
+  const walk = (node: unknown, path: string): unknown => {
+    if (typeof node === "string") return tracked.has(path) ? null : node;
+    if (Array.isArray(node)) {
+      return node.map((item, i) => walk(item, `${path}.${arrayKey(item, i)}`));
+    }
+    if (node && typeof node === "object") {
+      const out: Record<string, unknown> = {};
+      for (const [key, value] of Object.entries(node)) {
+        out[key] = walk(value, path ? `${path}.${key}` : key);
+      }
+      return out;
+    }
+    return node;
+  };
+
+  return walk(dataset, "");
 }
 
 /**
