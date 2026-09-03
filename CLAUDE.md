@@ -10,13 +10,14 @@ freelance clients in LatAm/Spanish. Guiding principle: **the data is the single
 source of truth; the CV, the portfolio and the LinkedIn blocks are derived
 VIEWS.** The backend stores atomic facts (`Achievement`, `Skill`, `Role`,
 `Metric`), never documents. There is a content layer (schema + validation + JSON
-dataset + one `ContentSource` implementation) and a static Astro frontend that is
-**one navigable page**: `/` with hero, anchor index, knowledge map, projects and
-the full CV. `/cv` still exists but is NOT a destination — it is the source the
-PDF is printed from, with `noindex` and no incoming links. Long-form case
-studies, services and the freelance side wait for the next slice. Why the schema
-is the way it is: `docs/CONTRACT.md` and `docs/01`–`04`. Do not rewrite them;
-read them.
+dataset + one `ContentSource` implementation) and a static Astro frontend with
+**one navigable page per language**: `/` (Spanish) and `/en/` (English), each with
+hero, anchor index, knowledge map, projects and the full CV. `/cv` and `/en/cv`
+are NOT destinations — they are the sources from which the PDFs are printed, with
+`noindex` and no incoming links. See `docs/10-i18n.md` for the bilingual system.
+Long-form case studies, services and the freelance side wait for the next slice.
+Why the schema is the way it is: `docs/CONTRACT.md` and `docs/01`–`04`. Do not
+rewrite them; read them.
 
 **Language.** The site content is in Spanish — it is a CV for a Spanish-speaking
 market — and, since 2026-09-02, also in English under `/en/`: see
@@ -114,8 +115,8 @@ src/
   lib/jsonld.ts       ContentView → schema.org Person.
   lib/graph-svg.ts    PositionedGraph → draw list. Fog, paint order, labels.
   lib/lab-hover-css.ts  Graph → `:has()` rules. The cross-hover works with NO JS.
-  scripts/analytics.ts  Clarity. ONLY index.astro calls it; never Base.astro (/cv at zero JS).
-                      The Cloudflare Web Analytics beacon goes in index.astro too, also by hand: enabling it
+  scripts/analytics.ts  Clarity. Both landing files call it (index.astro and en/index.astro); never Base.astro (/cv and /en/cv at zero JS).
+                      The Cloudflare Web Analytics beacon goes in both landing files too, also by hand: enabling it
                       from the Pages dashboard injects it into the WHOLE site and no-client-js.check.ts would
                       not see it (it looks at dist/, not at what is served).
                       Without PUBLIC_CLARITY_ID the import is tree-shaken and costs nothing.
@@ -159,10 +160,10 @@ scripts/
   build-pdf.ts        Serves dist/ and prints /cv → dist/cv.pdf. Outside `build`: it is `pdf:local`.
   pdf-output.check.ts Verifies the PDF. With PDF_SOURCE=<url> it runs the SAME assertions against the published
                       PDF. Deliberately not a *.test.ts.
-  no-client-js.check.ts  Per-page JS policy over all of dist/. Shields /cv.
+  no-client-js.check.ts  Per-page JS policy over all of dist/. Shields /cv and /en/cv.
   bundle-budget.check.ts The home's budget: three off the critical path.
-  single-landing.check.ts The landing is the only door: /cv without links or indexing, and the landing's CV
-                      section in sync with the PDF. Plus: 404.html exists.
+  single-landing.check.ts The two landings are the only doors: /cv and /en/cv without links or indexing, and the
+                      landing sections in sync with the PDFs. Plus: 404.html exists.
   endpoints.check.ts  /cv.json and /llms.txt, the two surfaces agents consume. That the JSON parses and
                       carries the contract keys, and that the markdown has no empty fields.
   format-data.ts      Writes content.es.json in canonical form. The fix path the gate points at. `format:data`.
