@@ -19,23 +19,25 @@ Measured over `dist/` on 2026-08-25.
 
 | What | Where it is generated | Where it is enforced |
 |---|---|---|
-| `title`, `description`, `canonical`, `lang="es"` | `Base.astro` | — |
-| Open Graph: `type`, `title`, `description`, `url`, `locale` | `Base.astro`, behind the `shareable` prop | `og-output.check.ts` |
+| `title`, `description`, `canonical`, `lang` (`es`/`en`, from the `locale` prop) | `Base.astro` | — |
+| Open Graph: `type`, `title`, `description`, `url`, `locale` (`es_AR`/`en_US`, from the same `locale` prop) | `Base.astro`, behind the `shareable` prop | `og-output.check.ts` |
 | `og:image` + `type`, `width`, `height`, `alt` | `Base.astro` over `public/og.jpg` | `og-output.check.ts` |
 | Twitter Card `summary_large_image` + `title`, `description`, `image`, `image:alt` | `Base.astro` | `og-output.check.ts` |
+| `hreflang` alternates (`es`, `en`, `x-default`), on the two indexable landings only | `Base.astro`, behind the `hreflang` prop — see §2.3 | `single-landing.check.ts` |
 | JSON-LD `Person` (15 keys, with `sameAs`, `worksFor`, `alumniOf`, `knowsAbout`) | `src/lib/jsonld.ts` | — |
 | `favicon.svg` | `public/`, geometry from `src/lib/brand.ts` | `og-output.check.ts` |
 | `apple-touch-icon.png` 180×180 | `pnpm run og:local` | `og-output.check.ts` |
 | `theme-color`, light and dark | `Base.astro` | `og-output.check.ts` |
 | `robots.txt` with the `Sitemap:` line | `src/pages/robots.txt.ts` | — |
-| `sitemap-index.xml`, with `/cv` excluded | `@astrojs/sitemap` in `astro.config.mjs` | — |
+| `sitemap-index.xml`, with `/cv` and `/en/cv` excluded, `es`/`en` alternates via the `i18n` option | `@astrojs/sitemap` in `astro.config.mjs` | — |
 | A real `404.html` | `src/pages/404.astro` | `single-landing.check.ts` |
-| Indexable landing, `/cv` with `noindex` and no incoming links | — | `single-landing.check.ts` |
+| Two indexable landings (`/`, `/en/`); `/cv` and `/en/cv` with `noindex` and no incoming links | — | `single-landing.check.ts` |
 
 **The social tags are opt-in**, not a default with exceptions: `/cv` and the 404
 do not emit them because somebody remembered to switch them off, but because
 `shareable` has to be asked for explicitly. Forgetting on a new page means not
-emitting them, which is the safe side of the mistake.
+emitting them, which is the safe side of the mistake. `hreflang` repeats the
+same shape for the same reason — see §2.3.
 
 ---
 
@@ -80,23 +82,51 @@ no guessing. That is phase 2 editor work, not this document's.
 
 ### 2.3 `hreflang`
 
-**Why not, still.** `content.en.json` now exists, and `/en/` and `/en/cv` are
-real routes — see [`10-i18n.md`](./10-i18n.md) for the whole bilingual system.
-That is not enough on its own: `hreflang` on a page tells crawlers "here is the
-equivalent of this URL in another language", and `/cv` / `/en/cv` are both
-`noindex` — asking a crawler to follow a language alternate into a page it is
-also told not to index is a contradiction crawlers report as an error, not a
-courtesy they ignore. Emitting the tag today, before both indexable landings
-exist as a pair, would mean pointing it at pages the site itself says not to
-index.
+**Emitted since 2026-09-03**, on the two indexable landings only: `es` → `/`,
+`en` → `/en/`, `x-default` → `/`. `x-default` is Spanish, not a guess at the
+visitor's browser language, because the market this CV is written for is
+LatAm.
 
-**When to reconsider.** The two indexable landings, `/` and `/en/`, both exist
-as of this same date — that is what makes `hreflang` a real annotation instead
-of a promise about a page nobody should crawl. The tag is scoped to those two:
-`es` → `/`, `en` → `/en/`, `x-default` → `/`, never `/cv` or `/en/cv`. Adding it
-is the next slice's work, not this document's — see
-[`07-technical-debt.md`](./07-technical-debt.md) #37 for the bundle-budget gap
-that has to close alongside it.
+This entry keeps its number and its place under "what is NOT emitted", even
+though the tag itself now is: `docs/00-index.md`, `docs/10-i18n.md` and three
+code comments (`Base.astro`, `src/pages/index.astro`,
+`single-landing.check.ts`) all point readers at "docs/09 §2.3" for this
+reasoning. Moving the text into §1's table on the day the absence closed would
+turn every one of those into a pointer at nothing — the anchor staying put is
+worth more than the section header being literally true.
+
+**Why it waited.** `content.en.json` existing was not enough on its own:
+`hreflang` on a page tells crawlers "here is the equivalent of this URL in
+another language", and `/cv` / `/en/cv` are both `noindex` — asking a crawler
+to follow a language alternate into a page it is also told not to index is a
+contradiction crawlers report as an error, not a courtesy they ignore. The
+condition that closed it: `/` and `/en/` both existing as real, indexable
+landings — see [`10-i18n.md`](./10-i18n.md) for the whole bilingual system.
+Once that pair existed, `hreflang` stopped being a promise about a page nobody
+should crawl and became a real annotation.
+
+**Where it is enforced.**
+- `Base.astro`'s `hreflang` prop — opt-in, the same shape as `shareable` and
+  for the same reason: a new page that forgets to pass it emits nothing, which
+  is the safe side of the mistake — renders the three `<link rel="alternate">`
+  tags, reciprocally, on both landings.
+- `@astrojs/sitemap`'s `i18n` option in `astro.config.mjs` makes the sitemap
+  declare the same `es`/`en` relations, so the sitemap and the `<head>` cannot
+  silently disagree — a sitemap that disagrees with the tags is worse than a
+  sitemap that says nothing about locales. It carries no `x-default`: the
+  underlying `sitemap` package links locales that share a URL after stripping
+  the path segment, one `hreflang` per physical page, and there is no third
+  page for `x-default` to point at. The `<head>` tag is where `x-default` is
+  authoritative; Google's sitemap guidance treats the sitemap copy as
+  optional.
+- `single-landing.check.ts` asserts both halves over `dist/`: `es`/`en`/
+  `x-default` present and reciprocal on both landings, and absent on `/cv` and
+  `/en/cv`. It runs from `dist/`, not `served.check.ts`'s published response,
+  because nothing between the build and the edge can alter a `<link>` tag the
+  way an injected `<script>` can — the blind spot `served.check.ts` exists for
+  does not apply here.
+- Closed alongside [`07-technical-debt.md`](./07-technical-debt.md) #37: the
+  bundle-budget check that had gone blind to the second landing.
 
 ### 2.4 `twitter:site` and `twitter:creator`
 

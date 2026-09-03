@@ -108,6 +108,26 @@ export default defineConfig({
       // and two contradictory signals confuse more than the absence of one.
       // `single-landing.check.ts` guards the rest of that invariant.
       filter: (page) => !page.includes("/cv/"),
+      // Same two landings `Base.astro`'s `hreflang` tags point at each other,
+      // declared here too: a sitemap that disagrees with the `<head>` is
+      // worse than a sitemap that says nothing about locales at all — it
+      // gives the crawler two different answers to "what is the Spanish
+      // version of this page?" instead of one it can trust.
+      //
+      // `locales` maps the URL's locale PATH SEGMENT (`en/…`) to the
+      // `hreflang` value to emit for it — that is what this integration's
+      // `parseI18nUrl` keys on, not the page's own `locale` variable. `/`
+      // carries no segment, so it falls back to `defaultLocale`.
+      //
+      // No `x-default` entry: this integration links locales that share a
+      // URL after stripping the segment, one `hreflang` per physical page —
+      // there is no third page to hang an `x-default` link off, and Google's
+      // sitemap guidance treats it as optional. The `<head>` tag (present on
+      // both landings) is where `x-default` is actually declared.
+      i18n: {
+        defaultLocale: "es",
+        locales: { es: "es", en: "en" },
+      },
     }),
   ],
 });

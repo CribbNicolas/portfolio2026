@@ -92,12 +92,17 @@ const graphData = JSON.stringify({
   them: `/cv` has noindex and exists only to print the PDF, and the 404 is not a
   destination. In `Base.astro` it is opt-in, so forgetting it on a new page
   means not emitting them — the safe side of the mistake.
+
+  `hreflang` is the same shape of opt-in, for the same reason: this and
+  `/en/` are the two indexable landings `Base.astro`'s `ALTERNATE_LOCALES`
+  point at each other, and `/cv` must never carry it (docs/09 §2.3).
 */}
 <Base
   locale={locale}
   title={`${identity.fullName} — ${identity.searchTitle}`}
   description={identity.summary.short}
   shareable
+  hreflang
 >
   <script type="application/ld+json" is:inline slot="head" set:html={JSON.stringify(jsonLd)} />
   <style is:inline set:html={hoverCss} slot="head" />

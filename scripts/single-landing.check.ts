@@ -199,6 +199,44 @@ test("`/en/` exists and is indexable", () => {
   );
 });
 
+test("both landings declare hreflang for each other, with Spanish as x-default", () => {
+  // Reciprocity matters as much as presence: a crawler that finds `/`
+  // pointing at `/en/` but not the other way around treats the pair as
+  // unconfirmed (docs/09 §2.3), so this checks BOTH pages for ALL THREE tags,
+  // not just one page for one.
+  const ALTERNATES: [string, RegExp][] = [
+    ["es", /^https?:\/\/[^"]*\/$/],
+    ["en", /^https?:\/\/[^"]*\/en\/$/],
+    ["x-default", /^https?:\/\/[^"]*\/$/],
+  ];
+  for (const [name, html] of [["Spanish", landing], ["English", enLanding]] as const) {
+    for (const [hreflang, hrefPattern] of ALTERNATES) {
+      const found = new RegExp(`<link\\s+rel="alternate"\\s+hreflang="${hreflang}"\\s+href="([^"]+)"`).exec(html);
+      assert.ok(found, `the ${name} landing is missing hreflang="${hreflang}"`);
+      assert.match(
+        found![1]!,
+        hrefPattern,
+        `the ${name} landing's hreflang="${hreflang}" points at an unexpected URL: ${found![1]}`,
+      );
+    }
+  }
+});
+
+test("neither `/cv` nor `/en/cv` carries hreflang", () => {
+  // The other half of the same contradiction `single-landing.check.ts`
+  // already guards for `noindex`: `hreflang` tells a crawler "here is the
+  // equivalent of this page in another language", and pointing that at a
+  // page marked `noindex` is an error crawlers report, not a courtesy they
+  // ignore (docs/09 §2.3).
+  for (const [name, html] of [["/cv", cv], ["/en/cv", enCv]] as const) {
+    assert.doesNotMatch(
+      html,
+      /<link\s+rel="alternate"\s+hreflang=/,
+      `${name} carries hreflang. It is noindex and must not announce a language alternate.`,
+    );
+  }
+});
+
 test("each landing offers both PDFs, under the file name for each locale's own dataset", () => {
   const esName = pdfFilename("es", datasetEs.updatedAt);
   const enName = pdfFilename("en", datasetEn.updatedAt);

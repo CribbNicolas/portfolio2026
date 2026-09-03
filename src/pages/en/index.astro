@@ -64,15 +64,18 @@ const graphData = JSON.stringify({
 ---
 
 {/*
-  `shareable`: see `../index.astro`. `locale` now drives the OG card too
-  (`og:locale`, the image alt text) as well as `<html lang>` — see
-  `Base.astro`'s `locale` prop doc.
+  `shareable` and `hreflang`: see `../index.astro`. `locale` now drives the OG
+  card too (`og:locale`, the image alt text) as well as `<html lang>` — see
+  `Base.astro`'s `locale` prop doc. `ALTERNATE_LOCALES` is the same fixed pair
+  on both landings, not locale-dependent: each page in an `hreflang` set
+  declares the whole set, itself included.
 */}
 <Base
   locale={locale}
   title={`${identity.fullName} — ${identity.searchTitle}`}
   description={identity.summary.short}
   shareable
+  hreflang
 >
   <script type="application/ld+json" is:inline slot="head" set:html={JSON.stringify(jsonLd)} />
   <style is:inline set:html={hoverCss} slot="head" />

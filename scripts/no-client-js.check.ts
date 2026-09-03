@@ -22,18 +22,9 @@ import assert from "node:assert/strict";
 import { readdir, readFile } from "node:fs/promises";
 import { join, relative, sep } from "node:path";
 
-const DIST = "dist";
+import { PAGES_WITH_JS } from "./pages-with-js";
 
-/**
- * The ONLY pages allowed to ship JavaScript. Adding one is an explicit decision
- * in a diff, not an accident nobody notices.
- *
- * `en/index.html` joined `index.html` when the English landing shipped: it
- * renders the same knowledge map, so it needs the same script. `/cv` and
- * `/en/cv` are deliberately absent — both stay at zero JS, because the PDF is
- * printed from them.
- */
-const PAGES_WITH_JS = new Set(["index.html", "en/index.html"]);
+const DIST = "dist";
 
 /** `<script>` types that are NOT code: they are data for crawlers and agents. */
 const DATA_TYPES = new Set(["application/ld+json", "application/json"]);

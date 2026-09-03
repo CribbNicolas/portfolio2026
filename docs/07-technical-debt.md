@@ -11,7 +11,7 @@ This file exists so they do not get lost. Each entry says what it is, **how to
 check it** — so the next session does not have to take my word for it — and what
 fixing it would cost.
 
-**23 of 39 entries are closed.** The open ones keep their original numbers: a
+**24 of 39 entries are closed.** The open ones keep their original numbers: a
 renumbered list breaks every reference from a commit message or another doc.
 
 What does **not** go here: product and data pending items, which live in
@@ -49,6 +49,7 @@ Kept as a one-line record. The reasoning is in the commit that closed each one.
 | 32 | After a 409, Save re-enabled on the next keystroke | `stale` latch, cleared only by `load()` |
 | 35 | Clearing an optional object left `{}` and blocked the save | `set()` prunes hollow nested objects |
 | 36 | A failed fetch at load left the page on "loading…" | `load()` checks both responses and draws the error |
+| 37 | The bundle budget measured `dist/index.html` by path, so `/en/` shipped with no byte ceiling, and the `WebGLRenderer` scan followed the same hard-coded `<script src>` — silently blind after Rollup started sharing the boot chunk between two entries | `bundle-budget.check.ts` now takes its pages from `PAGES_WITH_JS` (`scripts/pages-with-js.ts`, shared with `no-client-js.check.ts`) and follows static `import` specifiers transitively from each page's entry chunk, so the byte budget and the `three` scan both see the real payload, not the wrapper |
 
 ---
 
@@ -361,46 +362,6 @@ defect fix; adding coverage to it would blur what the diff says.
 **Fix.** The `textarea` test, with `reference` in the filter and `string` as the
 expected kind. Four lines in `hints.test.ts`.
 
-
----
-
-## 37. The bundle budget measures one landing, by path
-
-**Severity: low today, medium the day `/en/` exists. Found 2026-09-02 while
-designing the English version.**
-
-`bundle-budget.check.ts` opens `dist/index.html` and nothing else:
-
-```ts
-const HOME = join(DIST, "index.html");
-```
-
-Every per-page assertion in the file — the 4 KB ceiling on critical JS, the
-30 KB one on the HTML — is therefore about that one path. The home is the only
-page shipping JavaScript, so today the check covers everything it should.
-
-The English landing of
-[`specs/2026-09-02-en-site-design.md`](./superpowers/specs/2026-09-02-en-site-design.md)
-is a second page with the same JS. It would be added to `PAGES_WITH_JS` in
-`no-client-js.check.ts` — an explicit line in a diff, which is the point of that
-allowlist — and then ship with **no byte budget at all**, silently.
-
-What is already covered, and does not need work: a duplicated 3D chunk. The
-`withThree.length === 1` assertion is global over `_astro/`, so if the locale
-split made Rollup emit two copies of three, this check fails today, before
-anyone thinks to look.
-
-**How to check it.** Add any second page importing `mountGraph`, build, and run
-`pnpm run test:bundle`: green, with the new page's critical path unmeasured.
-
-**Why it was not fixed.** The second landing does not exist yet. Writing the
-loop now means writing it against an imagined directory layout, and a gate
-written blind is how you get one that passes for the wrong reason.
-
-**Fix.** Take the pages to measure from `PAGES_WITH_JS` — the list that already
-decides which pages are allowed to ship JS — instead of a constant, and assert
-the per-page budgets over each. The two checks then share one definition of
-"page with JavaScript", which is what they were both always about.
 
 ---
 
