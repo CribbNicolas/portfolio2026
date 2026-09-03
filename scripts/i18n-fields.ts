@@ -25,6 +25,10 @@ const NOT_TEXT = new Set([
   "before", "after", "delta",       // numbers with units: "500 ms" is "500 ms"
   "url", "email", "phone", "aliases", "featured", "active", "approved",
   "company", "client", "institution", "name",  // proper nouns
+  // `Link.kind` is a closed union of identifiers ("github" | "linkedin" | …),
+  // not prose: there is no English version of a tag, only a fixed set of
+  // values the code branches on.
+  "kind",
   // `Metric.source` is the author's private interview note: no resolved view
   // ever emits it, so asking for an English version would translate text
   // nobody can read.
@@ -52,11 +56,16 @@ export function translatableFields(dataset: ContentDataset): Map<string, string>
     }
     if (node && typeof node === "object") {
       for (const [key, value] of Object.entries(node)) {
-        // `name` is a proper noun everywhere EXCEPT `Project.name`, which is a
-        // title and IS translated (verified against both committed datasets).
-        // Handled by path, not by key, so `Skill.name` stays excluded.
+        // `name` is a proper noun everywhere EXCEPT `Project.name` (a title)
+        // and `LanguageSkill.name` (the language's display name — "Español",
+        // "Inglés" — which is a word in the language it names, not an
+        // identifier for it, so it IS translated). Both verified against both
+        // committed datasets. Handled by path, not by key, so `Skill.name`
+        // (a proper noun) stays excluded. `languages` items carry no `id`, so
+        // the walker keys them by array index: the path is `languages.<n>`.
         const isProjectName = key === "name" && /^projects\.[^.]+$/.test(path);
-        if (NOT_TEXT.has(key) && !isProjectName) continue;
+        const isLanguageName = key === "name" && /^languages\.[^.]+$/.test(path);
+        if (NOT_TEXT.has(key) && !isProjectName && !isLanguageName) continue;
         walk(value, path ? `${path}.${key}` : key);
       }
     }
