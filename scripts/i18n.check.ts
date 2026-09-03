@@ -141,9 +141,9 @@ test("a project's name is tracked; a skill's name is not", () => {
 test("a language's display name is tracked; a skill's name is not", () => {
   // "Español"/"Inglés" is a word IN the language it names, translated the
   // same way any other prose is; "TypeScript" is a proper noun with no
-  // English form to write. `languages` items carry no `id`, so the walker
-  // keys them by array index (`languages.0`, `languages.1`, …).
-  assert.ok(esFields.has("languages.0.name"));
+  // English form to write. `languages` items have no `id`; `arrayKey` uses
+  // `code`, so the path is `languages.es.name`.
+  assert.ok(esFields.has("languages.es.name"));
   assert.equal(esFields.has("skills.typescript.name"), false);
 });
 
