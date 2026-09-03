@@ -79,7 +79,7 @@ const graphData = JSON.stringify(buildLabData(positioned, m));
   means not emitting them — the safe side of the mistake.
 
   `hreflang` is the same shape of opt-in, for the same reason: this and
-  `/en/` are the two indexable landings `Base.astro`'s `ALTERNATE_LOCALES`
+  `/en/` are the two indexable landings `HREFLANG` in `src/lib/anchors.ts`
   point at each other, and `/cv` must never carry it (docs/09 §2.3).
 */}
 <Base

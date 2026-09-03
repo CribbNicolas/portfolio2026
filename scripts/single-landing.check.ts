@@ -22,7 +22,7 @@ import { readdir, readFile } from "node:fs/promises";
 import { join, relative, sep } from "node:path";
 import { pdfFilename } from "../content/source/index";
 import { MESSAGES } from "../content/schema/messages";
-import { ANCHORS } from "../src/lib/anchors";
+import { ANCHORS, LOCALE_PATHS, anchorScrollCss } from "../src/lib/anchors";
 import datasetEs from "../content/data/content.es.json";
 import datasetEn from "../content/data/content.en.json";
 
@@ -258,13 +258,21 @@ test("each landing offers both PDFs, under the file name for each locale's own d
 
 test("each landing's switch links to the OTHER locale's home", () => {
   assert.ok(
-    landing.includes('href="/en/"'),
-    "the Spanish landing's switch does not link to /en/",
+    landing.includes(`href="${LOCALE_PATHS.en.home}"`),
+    `the Spanish landing's switch does not link to ${LOCALE_PATHS.en.home}`,
   );
   assert.ok(
-    enLanding.includes('href="/"'),
-    "the English landing's switch does not link back to /",
+    enLanding.includes(`href="${LOCALE_PATHS.es.home}"`),
+    `the English landing's switch does not link back to ${LOCALE_PATHS.es.home}`,
   );
+});
+
+test("every landing-anchor id has a scroll-margin, emitted from ANCHORS", () => {
+  // Renaming ANCHORS.en.map used to pass every gate and drop the offset on
+  // `/en/`. The rule is built from ANCHORS, so both landings must carry it.
+  const css = anchorScrollCss();
+  assert.ok(landing.includes(css), "the Spanish landing is missing the ANCHORS scroll-margin rule");
+  assert.ok(enLanding.includes(css), "the English landing is missing the ANCHORS scroll-margin rule");
 });
 
 test("the Spanish landing has its three anchors, the English landing has its own", () => {

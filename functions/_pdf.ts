@@ -18,13 +18,11 @@ import { PDF_OPTIONS, LOAD_WAIT } from "../scripts/pdf-options";
 import datasetEs from "../content/data/content.es.json";
 import datasetEn from "../content/data/content.en.json";
 import { pdfFilename } from "../content/schema/pdf-filename";
-
-/**
- * The page that gets printed, per locale. Same layout, two callers: `/cv`
- * prints `src/pages/cv.astro`, `/en/cv.pdf` prints `src/pages/en/cv.astro`. It
- * is the SAME pair `scripts/build-pdf.ts` prints locally.
- */
-export const sourcePath = (locale: Locale): string => (locale === "es" ? "/cv" : `/${locale}/cv`);
+import { sourcePath } from "../src/lib/anchors";
+// Re-export so existing callers (`_pdf.test.ts`, `pdf-check-locales.ts`) keep
+// one import. The definition lives next to ANCHORS: a third locale is a
+// compile error in that table, not a ternary that silently returns English.
+export { sourcePath };
 
 /**
  * The name it is saved under, from THAT locale's own dataset — not the

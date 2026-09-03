@@ -121,6 +121,8 @@ src/
   lib/lab-data.ts     PositionedGraph + Messages → the `LabData` JSON both landings embed for the boot
                       script. One typed `buildLabData()` both pages call, so the two cannot drift into
                       shipping different-shaped payloads with nothing catching it until a click throws.
+  lib/anchors.ts      Section ids AND locale → URL. `LOCALE_PATHS` is the one table; the switch, hreflang,
+                      PDF buttons and `sourcePath` all read it. `anchorScrollCss()` is emitted from the ids.
   scripts/analytics.ts  Clarity. Both landing files call it (index.astro and en/index.astro); never Base.astro (/cv and /en/cv at zero JS).
                       The Cloudflare Web Analytics beacon goes in both landing files too, also by hand: enabling it
                       from the Pages dashboard injects it into the WHOLE site and no-client-js.check.ts would
