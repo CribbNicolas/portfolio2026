@@ -9,8 +9,13 @@ test("both locales define the same keys", () => {
 });
 
 test("no message is empty", () => {
+  // A handful of messages are functions (numbers are interpolated, not fixed
+  // copy — `svgMapAriaLabel`, `stackEvidenceNote`, `emptyStackNote`): call
+  // them with representative args and check the *output*, not the function
+  // itself.
   for (const [locale, dict] of Object.entries(MESSAGES)) {
-    for (const [key, value] of Object.entries(dict)) {
+    for (const [key, raw] of Object.entries(dict)) {
+      const value = typeof raw === "function" ? raw(1, 1) : raw;
       assert.ok(value.trim().length > 0, `${locale}.${key} is empty`);
     }
   }

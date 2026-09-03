@@ -13,7 +13,7 @@
  * is the difference between this and the scroll hijacking spec §3.4 forbids.
  */
 
-import type { LabData, LabNode } from "./types";
+import type { LabData, LabNode, LabStrings } from "./types";
 
 /** Threshold in px separating a click from a drag. */
 const DRAG_THRESHOLD = 5;
@@ -321,7 +321,8 @@ export function createInteraction({
 
     const meta = document.createElement("p");
     meta.className = "lab__panel-meta";
-    meta.textContent = [KIND_LABEL[n.k], n.c, `${n.d} ${n.d === 1 ? "conexión" : "conexiones"}`]
+    const [connSingular, connPlural] = data.strings.connection;
+    meta.textContent = [data.strings.kind[n.k], n.c, `${n.d} ${n.d === 1 ? connSingular : connPlural}`]
       .filter(Boolean).join(" · ");
 
     const children: HTMLElement[] = [h, meta];
@@ -339,7 +340,7 @@ export function createInteraction({
     const achievements = connected.filter((v) => v.k === "achievement");
     const rest = connected.filter((v) => v.k !== "achievement");
 
-    if (achievements.length) children.push(achievementGroup(achievements));
+    if (achievements.length) children.push(achievementGroup(achievements, data.strings));
     if (rest.length) children.push(chipGroup(rest));
 
     panel.replaceChildren(...children);
@@ -386,13 +387,6 @@ export function createInteraction({
   };
 }
 
-const KIND_LABEL: Record<string, string> = {
-  role: "Rol",
-  project: "Proyecto",
-  achievement: "Logro",
-  skill: "Tecnología",
-};
-
 /**
  * How many achievements fit before the panel stops being a panel.
  *
@@ -401,13 +395,14 @@ const KIND_LABEL: Record<string, string> = {
  */
 const MAX_ACHIEVEMENTS = 2;
 
-function achievementGroup(achievements: LabNode[]): HTMLElement {
+function achievementGroup(achievements: LabNode[], strings: LabStrings): HTMLElement {
   const wrapper = document.createElement("div");
   wrapper.className = "lab__panel-group";
 
+  const [achSingular, achPlural] = strings.achievement;
   const heading = document.createElement("p");
   heading.className = "lab__panel-subtitle";
-  heading.textContent = achievements.length === 1 ? "Logro" : `Logros (${achievements.length})`;
+  heading.textContent = achievements.length === 1 ? achSingular : `${achPlural} (${achievements.length})`;
   wrapper.append(heading);
 
   const list = document.createElement("ul");
@@ -424,7 +419,7 @@ function achievementGroup(achievements: LabNode[]): HTMLElement {
   if (achievements.length > MAX_ACHIEVEMENTS) {
     const more = document.createElement("p");
     more.className = "lab__panel-more";
-    more.textContent = `+${achievements.length - MAX_ACHIEVEMENTS} más`;
+    more.textContent = strings.more.replace("{n}", String(achievements.length - MAX_ACHIEVEMENTS));
     wrapper.append(more);
   }
   return wrapper;

@@ -25,7 +25,7 @@
  * markup, the projects, the CV section — is shared with `/en/`.
  */
 import Base from "../layouts/Base.astro";
-import { content, buildKnowledgeGraph, layoutGraph } from "@content";
+import { content, buildKnowledgeGraph, layoutGraph, MESSAGES } from "@content";
 import { buildPersonJsonLd } from "../lib/jsonld";
 import { buildHoverCss } from "../lib/lab-hover-css";
 import HomeDocument from "../components/HomeDocument.astro";
@@ -43,6 +43,7 @@ const locale = "es";
 const view = await content.getView("portfolio", locale);
 const { identity } = view;
 const jsonLd = buildPersonJsonLd(view, new URL(Astro.site!));
+const m = MESSAGES[locale];
 
 /**
  * The Cloudflare Web Analytics beacon token.
@@ -73,6 +74,16 @@ const graphData = JSON.stringify({
   })),
   edges: positioned.edges.map((e) => ({ s: e.source, t: e.target, a: e.kind === "affinity", w: e.weight })),
   radius: positioned.framingRadius,
+  // Chrome words for the panel/tooltip, built once per page rather than once
+  // per node: `interaction.ts` runs in the browser and may not import
+  // `@content` (it would drag zod and the dataset along), so this is the
+  // only path a translated label has into that file. See `messages.ts`.
+  strings: {
+    kind: { role: m.mapKindRole, project: m.mapKindProject, achievement: m.mapKindAchievement, skill: m.mapKindSkill },
+    connection: [m.mapConnectionSingular, m.mapConnectionPlural],
+    achievement: [m.mapAchievementSingular, m.mapAchievementPlural],
+    more: m.mapMoreTemplate,
+  },
 });
 ---
 

@@ -12,18 +12,19 @@ import type { SvgMap } from "../../lib/graph-svg";
 
 interface Props {
   map: SvgMap;
-  totalNodes: number;
-  totalEdges: number;
+  /** Already resolved by the caller (`HomeDocument`), from `messages.ts`'s
+   *  `svgMapAriaLabel` — this component stays dumb and computes no copy. */
+  ariaLabel: string;
 }
 
-const { map, totalNodes, totalEdges } = Astro.props;
+const { map, ariaLabel } = Astro.props;
 ---
 
 <svg
   class="lab__svg"
   viewBox={map.viewBox}
   role="img"
-  aria-label={`Mapa de conocimiento: ${totalNodes} nodos y ${totalEdges} conexiones entre roles, projects, logros y tecnologías.`}
+  aria-label={ariaLabel}
 >
   {map.edges.map((a) => (
     <line

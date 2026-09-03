@@ -119,9 +119,9 @@ const skillNameById = new Map(
 
       <span class="pill__sep" aria-hidden="true"></span>
 
-      <nav class="pill__nav" aria-label="Secciones">
-        <a href={`#${anchors.map}`}>Mapa</a>
-        <a href={`#${anchors.projects}`}>Proyectos</a>
+      <nav class="pill__nav" aria-label={m.navSectionsLabel}>
+        <a href={`#${anchors.map}`}>{m.navMap}</a>
+        <a href={`#${anchors.projects}`}>{m.navProjects}</a>
         <a href={`#${anchors.cv}`}>CV</a>
       </nav>
 
@@ -183,15 +183,12 @@ const skillNameById = new Map(
 
     <section id={anchors.map} class="lab__map-section">
       <div class="lab__intro">
-        <h2 class="lab__title">Mapa de conocimiento</h2>
-        <p class="lab__lede">
-          Los logros no viven adentro de cada trabajo: viven sueltos y se cruzan por
-          tecnología, por rol y por proyecto. Esto es ese cruce, dibujado.
-        </p>
+        <h2 class="lab__title">{m.mapTitle}</h2>
+        <p class="lab__lede">{m.mapLede}</p>
         <dl class="lab__figures">
-          <div><dt>Nodos</dt><dd>{positioned.nodes.length}</dd></div>
-          <div><dt>Conexiones</dt><dd>{positioned.edges.length}</dd></div>
-          <div><dt>Por afinidad</dt><dd>{affinityCount}</dd></div>
+          <div><dt>{m.statsNodes}</dt><dd>{positioned.nodes.length}</dd></div>
+          <div><dt>{m.statsConnections}</dt><dd>{positioned.edges.length}</dd></div>
+          <div><dt>{m.statsAffinity}</dt><dd>{affinityCount}</dd></div>
         </dl>
       </div>
 
@@ -204,12 +201,11 @@ const skillNameById = new Map(
         class="lab__map"
         tabindex="0"
         role="application"
-        aria-label="Mapa de conocimiento. Arrastrá para rotar, hacé click en un nodo para ver qué lo respalda. Las flechas también rotan."
+        aria-label={m.mapAriaLabel}
       >
         <GraphSvg
           map={map}
-          totalNodes={positioned.nodes.length}
-          totalEdges={positioned.edges.length}
+          ariaLabel={m.svgMapAriaLabel(positioned.nodes.length, positioned.edges.length)}
         />
         <canvas class="lab__canvas" data-lab-graph aria-hidden="true"></canvas>
         {/*
@@ -239,12 +235,12 @@ const skillNameById = new Map(
         */}
         <div class="lab__panel" data-lab-panel role="status" aria-live="polite"></div>
 
-        <p class="lab__hint" aria-hidden="true">Arrastrá para rotar · click en un nodo</p>
+        <p class="lab__hint" aria-hidden="true">{m.mapHint}</p>
       </div>
 
       <div class="lab__indice">
         <h3 class="lab__index-title">
-          Stack <span class="lab__index-note">{withEvidenceCount} de {items.length} con evidencia</span>
+          Stack <span class="lab__index-note">{m.stackEvidenceNote(withEvidenceCount, items.length)}</span>
         </h3>
         <ul class="lab__list">
           {items.map((n) => (
@@ -263,22 +259,18 @@ const skillNameById = new Map(
           ))}
         </ul>
         {items.length - withEvidenceCount > 0 && (
-        <p class="lab__note">
-          Las {items.length - withEvidenceCount} tecnologías sin conexiones son reales: las uso,
-          pero todavía no escribí el logro que lo demuestre. Van huecas y chicas, agrupadas
-          en el núcleo. El mapa muestra el hueco en vez de taparlo.
-        </p>
+        <p class="lab__note">{m.emptyStackNote(items.length - withEvidenceCount)}</p>
         )}
       </div>
     </section>
 
     <section id={anchors.projects} class="projects-section">
-      <h2 class="lab__title">Proyectos</h2>
-      <ProjectList projects={view.projects} skillNameById={skillNameById} />
+      <h2 class="lab__title">{m.projectsTitle}</h2>
+      <ProjectList projects={view.projects} skillNameById={skillNameById} locale={locale} />
     </section>
 
     <section id={anchors.cv} class="cv">
-      <h2 class="cv__section-title">Currículum</h2>
+      <h2 class="cv__section-title">{m.cvTitle}</h2>
 
       <Section title={m.sectionProfile}>
         <p class="profile">{viewCv.identity.summary.short}</p>
@@ -330,15 +322,9 @@ const skillNameById = new Map(
     does not apply.
   */}
   <footer class="footer">
-    <p>
-      Uso Microsoft Clarity para ver qué partes de esta página se leen: mide
-      clicks y scroll, y graba sesiones anónimas. Usa cookies.{" "}
-      <a
+    <p>{m.footerPrivacyIntro}<a
         href="https://privacy.microsoft.com/privacystatement"
         rel="noopener noreferrer"
-        target="_blank">Su política de privacidad</a>. También uso Cloudflare
-      Web Analytics para el tráfico y la velocidad de carga: no usa cookies ni
-      identifica visitantes.
-    </p>
+        target="_blank">{m.footerPrivacyLinkText}</a>{m.footerPrivacyOutro}</p>
   </footer>
 </div>

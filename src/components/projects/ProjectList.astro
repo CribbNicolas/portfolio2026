@@ -14,22 +14,24 @@
  * cross-hover with the map works WITHOUT JavaScript, using rules that already
  * exist.
  */
-import type { ContentView, Project } from "@content";
-import { nodeId } from "@content";
+import type { ContentView, Locale, Project } from "@content";
+import { nodeId, MESSAGES } from "@content";
 import { ITEM_ID } from "../../lib/lab-hover-css";
 
 interface Props {
   projects: ContentView["projects"];
   /** skillId → canonical name. The page builds it from the view. */
   skillNameById: Map<string, string>;
+  locale: Locale;
 }
 
-const { projects, skillNameById } = Astro.props;
+const { projects, skillNameById, locale } = Astro.props;
+const m = MESSAGES[locale];
 
 /** What is shown next to the name. `archived` is not labelled: it adds nothing. */
 const STATUS: Partial<Record<Project["status"], string>> = {
-  "in-progress": "En curso",
-  prototype: "Prototipo",
+  "in-progress": m.projectStatusInProgress,
+  prototype: m.projectStatusPrototype,
 };
 ---
 

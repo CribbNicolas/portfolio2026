@@ -10,7 +10,7 @@
  * it renders the same 3D map, so it needs the same script.
  */
 import Base from "../../layouts/Base.astro";
-import { content, buildKnowledgeGraph, layoutGraph } from "@content";
+import { content, buildKnowledgeGraph, layoutGraph, MESSAGES } from "@content";
 import { buildPersonJsonLd } from "../../lib/jsonld";
 import { buildHoverCss } from "../../lib/lab-hover-css";
 import HomeDocument from "../../components/HomeDocument.astro";
@@ -28,6 +28,7 @@ const locale = "en";
 const view = await content.getView("portfolio", locale);
 const { identity } = view;
 const jsonLd = buildPersonJsonLd(view, new URL(Astro.site!));
+const m = MESSAGES[locale];
 
 /**
  * The Cloudflare Web Analytics beacon token. See `../index.astro`: same
@@ -51,13 +52,21 @@ const graphData = JSON.stringify({
   })),
   edges: positioned.edges.map((e) => ({ s: e.source, t: e.target, a: e.kind === "affinity", w: e.weight })),
   radius: positioned.framingRadius,
+  // See `../index.astro`: the panel/tooltip labels `interaction.ts` needs,
+  // carried in the payload because that file may not import `@content`.
+  strings: {
+    kind: { role: m.mapKindRole, project: m.mapKindProject, achievement: m.mapKindAchievement, skill: m.mapKindSkill },
+    connection: [m.mapConnectionSingular, m.mapConnectionPlural],
+    achievement: [m.mapAchievementSingular, m.mapAchievementPlural],
+    more: m.mapMoreTemplate,
+  },
 });
 ---
 
 {/*
-  `shareable`: see `../index.astro`. The OG card itself stays Spanish here on
-  purpose (dated decision, non-blocking) — only `<html lang>` changes, via the
-  `locale` prop below.
+  `shareable`: see `../index.astro`. `locale` now drives the OG card too
+  (`og:locale`, the image alt text) as well as `<html lang>` — see
+  `Base.astro`'s `locale` prop doc.
 */}
 <Base
   locale={locale}
@@ -68,11 +77,6 @@ const graphData = JSON.stringify({
   <script type="application/ld+json" is:inline slot="head" set:html={JSON.stringify(jsonLd)} />
   <style is:inline set:html={hoverCss} slot="head" />
 
-  {/*
-    The pill's nav labels, the map's headings and the footer's privacy note
-    are still Spanish inside `HomeDocument.astro` — that component has no
-    English chrome copy yet. Flagged in the task report; not fixed here.
-  */}
   <HomeDocument locale={locale} view={view} positioned={positioned} />
 
   {cloudflareBeacon && (
