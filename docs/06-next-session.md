@@ -272,8 +272,7 @@ audit:todos     9 published TODOs (missing data, not failures)
 Consumption against the ceilings: see the table in the
 [`README`](../README.md#limits-and-ceilings).
 
-Technical debt as of 2026-09-03 (`0.21.0`): **26 of 42 resolved.** §6 and §28
-accepted; §7 was already closed in 0.20.0. The remaining sixteen are the four
-waves in
+Technical debt as of 2026-09-03 (`0.22.0`): **35 of 42 resolved.** Wave 1
+(editor nets) closed in this version. The remaining seven are waves 2–4 in
 [`2026-09-03-close-technical-debt`](./superpowers/plans/2026-09-03-close-technical-debt.md).
 See [`07`](./07-technical-debt.md).

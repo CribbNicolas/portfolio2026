@@ -130,7 +130,12 @@ function scalarFields() {
   );
 }
 
+/** One handle per collection item so an id/code/name edit can retitle the
+ *  row without calling `renderNav()` — a full rebuild steals focus. */
+const navButtons = new Map();
+
 function renderNav() {
+  navButtons.clear();
   navEl.replaceChildren();
 
   if (scalarFields().length > 0) {
@@ -175,7 +180,25 @@ function navButton(label, index, collection, count) {
     renderNav();
     renderDetail();
   });
+  if (index !== null) navButtons.set(`${collection}:${index}`, button);
   return button;
+}
+
+function updateNavLabel(path) {
+  const parts = path.split(".");
+  const last = parts[parts.length - 1];
+  if (last !== "id" && last !== "code" && last !== "name") return;
+  if (parts.length < 3) return;
+  const collection = parts[0];
+  const index = Number(parts[1]);
+  if (!Number.isInteger(index)) return;
+  const button = navButtons.get(`${collection}:${index}`);
+  if (!button) return;
+  const item = state.collection(collection)[index];
+  const label = labelFor(item, index);
+  const text = button.childNodes[0];
+  if (text && text.nodeType === Node.TEXT_NODE) text.textContent = label;
+  else button.textContent = label;
 }
 
 // ---------------------------------------------------------------------------
@@ -187,6 +210,7 @@ const context = () => ({
   state,
   onChange(path, value) {
     state.set(path, value);
+    updateNavLabel(path);
     scheduleValidate();
   },
   onAdd(path, value) {

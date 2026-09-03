@@ -7,26 +7,30 @@
  * source of truth would be a worse bug than anything it could catch.
  */
 
-import { test } from "node:test";
+import { after, test } from "node:test";
 import assert from "node:assert/strict";
-import { mkdtemp, readFile, readdir, writeFile } from "node:fs/promises";
-import { tmpdir } from "node:os";
+import { readFile, readdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
 import type { ContentDataset } from "../content/schema/content-schema";
 import {
   DatasetStore,
   InvalidDatasetError,
+  SerializationError,
   StaleEtagError,
   etagOf,
 } from "./store";
+import { createTempDirs } from "./temp-dir";
 
 const REAL_FILE = "content/data/content.es.json";
 const canonical = (await readFile(REAL_FILE, "utf8")).replace(/\r\n/g, "\n");
 
+const tmp = createTempDirs();
+after(() => tmp.cleanup());
+
 /** A store over a throwaway copy of the real dataset. */
 async function freshStore(): Promise<{ store: DatasetStore; file: string; dir: string }> {
-  const dir = await mkdtemp(join(tmpdir(), "editor-store-"));
+  const dir = await tmp.dir("editor-store-");
   const file = join(dir, "content.es.json");
   await writeFile(file, canonical, "utf8");
   return { store: new DatasetStore(file), file, dir };
@@ -53,7 +57,7 @@ test("the etag changes when the file changes", async () => {
 });
 
 test("a CRLF file reads to the same etag as an LF one: the machine cannot change the verdict", async () => {
-  const dir = await mkdtemp(join(tmpdir(), "editor-store-crlf-"));
+  const dir = await tmp.dir("editor-store-crlf-");
   const file = join(dir, "content.es.json");
   await writeFile(file, canonical.replace(/\n/g, "\r\n"), "utf8");
   assert.equal((await new DatasetStore(file).read()).etag, etagOf(canonical));
@@ -221,7 +225,7 @@ test("two DatasetStore instances over the SAME file: exactly one wins, the loser
 // ---------------------------------------------------------------------------
 
 test("a writeFile failure is cleaned up: no .tmp file survives it", async () => {
-  const dir = await mkdtemp(join(tmpdir(), "editor-store-nodir-"));
+  const dir = await tmp.dir("editor-store-nodir-");
   // The parent of this path is never created, so writeFile(tmp, ...) fails —
   // this is what makes the catch branch in write() actually run, rather than
   // the etag check refusing the write before any tmp file is attempted.
@@ -231,4 +235,48 @@ test("a writeFile failure is cleaned up: no .tmp file survives it", async () => 
 
   await assert.rejects(() => store.write(data, "irrelevant"));
   assert.deepEqual(await readdir(dir), []);
+});
+
+test("a serializer that does not round-trip throws SerializationError and writes nothing", async () => {
+  const dir = await tmp.dir("editor-store-ser-");
+  const file = join(dir, "content.es.json");
+  await writeFile(file, canonical, "utf8");
+  const store = new DatasetStore(file, () => "{}");
+  const { data, etag } = await store.read();
+
+  await assert.rejects(
+    () => store.write(data, etag),
+    (err: unknown) => {
+      assert.ok(err instanceof SerializationError);
+      return true;
+    },
+  );
+  assert.equal(await readRaw(file), canonical);
+});
+
+const windowsQueue = process.platform === "win32" ? test : test.skip;
+
+windowsQueue("two stores over the same file differing only in drive-letter case share the queue", async () => {
+  const { store: storeA, file } = await freshStore();
+  const flipped = file === file.toLowerCase() ? file.toUpperCase() : file.toLowerCase();
+  assert.notEqual(flipped, file, "the two spellings have to actually differ");
+  const storeB = new DatasetStore(flipped);
+  assert.equal((await storeB.read()).etag, etagOf(canonical), "the flipped path has to be the same file");
+  const { data, etag } = await storeA.read();
+
+  const editedA = structuredClone(data) as ContentDataset;
+  editedA.identity.preferredName = "A";
+  const editedB = structuredClone(data) as ContentDataset;
+  editedB.identity.preferredName = "B";
+
+  const [a, b] = await Promise.allSettled([
+    storeA.write(editedA, etag),
+    storeB.write(editedB, etag),
+  ]);
+
+  const fulfilled = [a, b].filter((r) => r.status === "fulfilled");
+  const rejected = [a, b].filter((r) => r.status === "rejected");
+  assert.equal(fulfilled.length, 1, "exactly one of the two overlapping writes should succeed");
+  assert.equal(rejected.length, 1, "the other should be refused, not silently discarded");
+  assert.ok(rejected[0].status === "rejected" && rejected[0].reason instanceof StaleEtagError);
 });

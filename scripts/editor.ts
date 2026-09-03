@@ -13,6 +13,13 @@ import { EDITOR_PORT, createEditorServer } from "../editor/server";
 const store = new DatasetStore();
 const server = createEditorServer(store);
 
+const die = (kind: string, err: unknown): void => {
+  console.error(kind, err);
+  process.exit(1);
+};
+process.on("unhandledRejection", (err) => die("unhandledRejection", err));
+process.on("uncaughtException", (err) => die("uncaughtException", err));
+
 server.on("error", (err: NodeJS.ErrnoException) => {
   if (err.code === "EADDRINUSE") {
     console.error(`Port ${EDITOR_PORT} is busy. Another editor is probably already running.`);

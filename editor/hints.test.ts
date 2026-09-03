@@ -76,6 +76,13 @@ test("a textarea hint only ever sits on a string", () => {
   }
 });
 
+test("a reference hint only ever sits on a string", () => {
+  for (const [path, hint] of Object.entries(HINTS)) {
+    if (hint.widget !== "reference") continue;
+    assert.equal(descriptorAt(path)?.kind, "string", `${path} is not a string`);
+  }
+});
+
 test("a reference-list hint only ever sits on an array of strings", () => {
   for (const [path, hint] of Object.entries(HINTS)) {
     if (hint.widget !== "reference-list") continue;
