@@ -8,7 +8,7 @@ with hero, map, projects and the full CV, an anchor index and a floating button
 that downloads either PDF. `/cv` and `/en/cv` still exist but stopped being
 destinations — they are the pages each PDF is printed from, and both carry
 `noindex` with no incoming links. The site also publishes JSON-LD `Person`,
-`/cv.json` and `/llms.txt` (Spanish only for now — see `docs/10-i18n.md` §6).
+`/cv.json` and `/llms.txt`, plus `/en/cv.json` and `/en/llms.txt`.
 
 The heart of each landing is the **knowledge map**, which cross-references
 achievements, roles, projects and technologies as a graph. Each technology's size
@@ -55,7 +55,7 @@ pnpm run test:pdf       # both PDFs parse and pass the ATS. Needs pdf:local, or 
 pnpm run test:js        # no page other than the two landings ships JavaScript
 pnpm run test:bundle    # both landings: three off the critical path and within budget, on each
 pnpm run test:landing   # /cv and /en/cv isolated, each CV section in sync with its own PDF, real 404
-pnpm run test:endpoints # /cv.json parses, /llms.txt has no empty fields
+pnpm run test:endpoints # /cv.json and /en/cv.json parse; both llms.txt files have no empty fields
 pnpm run test:og        # the social card has not gone stale against the dataset
 pnpm run test:version   # the PR raises package.json.version. Needs: git fetch origin develop
 pnpm run test:served    # verifies the PUBLISHED site. Needs SITE=https://…

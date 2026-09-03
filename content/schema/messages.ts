@@ -116,6 +116,24 @@ export interface Messages {
   pdfTimeout: string;
   pdfQuotaExceeded: string;
   pdfGenerationFailed: string;
+  /** `/llms.txt` section headings and line labels. */
+  llmsContact: string;
+  llmsStack: string;
+  llmsExperience: string;
+  llmsProjects: string;
+  llmsHtmlCv: string;
+  llmsPdfCv: string;
+  llmsJson: string;
+  llmsCase: string;
+  /** 404 page. Spanish first on the one shared `404.html`. */
+  errorTitle: string;
+  errorDescription: string;
+  errorText: string;
+  errorBack: string;
+  errorNavLabel: string;
+  errorDestMap: string;
+  errorDestProjects: string;
+  errorDestCv: string;
 }
 
 export const MESSAGES: Record<Locale, Messages> = {
@@ -181,6 +199,23 @@ export const MESSAGES: Record<Locale, Messages> = {
     pdfTimeout: "El render del PDF tardó demasiado. Probá de nuevo en un minuto.",
     pdfQuotaExceeded: "Se agotó la cuota de render del día. Probá más tarde.",
     pdfGenerationFailed: "No se pudo generar el PDF.",
+    llmsContact: "Contacto",
+    llmsStack: "Stack",
+    llmsExperience: "Experiencia",
+    llmsProjects: "Proyectos",
+    llmsHtmlCv: "CV en HTML",
+    llmsPdfCv: "CV en PDF",
+    llmsJson: "Datos en JSON",
+    llmsCase: "Caso",
+    errorTitle: "Esta página no existe",
+    errorDescription: "La dirección que pediste no corresponde a ninguna página de este sitio.",
+    errorText:
+      "La dirección que pediste no corresponde a ninguna página del sitio. Puede que el link estuviera mal copiado, o que apuntara a algo que ya no está.",
+    errorBack: "Volver al inicio",
+    errorNavLabel: "Secciones del sitio",
+    errorDestMap: "El mapa de conocimiento",
+    errorDestProjects: "Los proyectos",
+    errorDestCv: "El CV completo",
   },
   en: {
     sectionProfile: "Profile",
@@ -248,5 +283,22 @@ export const MESSAGES: Record<Locale, Messages> = {
     pdfTimeout: "The PDF render took too long. Try again in a minute.",
     pdfQuotaExceeded: "Today's render quota is used up. Try again later.",
     pdfGenerationFailed: "The PDF could not be generated.",
+    llmsContact: "Contact",
+    llmsStack: "Stack",
+    llmsExperience: "Experience",
+    llmsProjects: "Projects",
+    llmsHtmlCv: "CV in HTML",
+    llmsPdfCv: "CV as PDF",
+    llmsJson: "Data as JSON",
+    llmsCase: "Case",
+    errorTitle: "This page doesn't exist",
+    errorDescription: "The address you asked for doesn't match any page on this site.",
+    errorText:
+      "The address you asked for doesn't match any page on this site. The link may have been copied wrong, or it pointed at something that is no longer here.",
+    errorBack: "Back to the home page",
+    errorNavLabel: "Site sections",
+    errorDestMap: "The knowledge map",
+    errorDestProjects: "The projects",
+    errorDestCv: "The full CV",
   },
 };

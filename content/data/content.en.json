@@ -33,8 +33,8 @@
       "short": "I build whole web products, not just the interface."
     },
     "summary": {
-      "short": "Full-stack developer with a product focus: React, Next.js and TypeScript, with a solid grounding in Node, Docker and CI/CD to take a project from the repo to production.",
-      "long": "If the product is not allowed to fail at a checkout or on a map with thousands of features, that is where I am comfortable. The stack is whatever the problem asks for: React or Vue, Next or WordPress, Node or PHP or a rake task in Ruby. I do not collect frameworks.\n\nBefore Rosario I worked remotely from Misiones. Landing pages, on a team, with Vue, Quasar, Django and WordPress: I do not remember the clients and I am not going to make them up. In adtech I built the front end of an audience builder on my own — queries with AND, OR, XOR and NOT over age, business category and location — plus a POI map with Mapbox, Next and Node. At an agency we adapted sites from a home market to other countries: not translation, but the fact that a service which exists in one country does not exist in the other. I do not discuss the client.\n\nAt Dinkum I deliver both ends. The map in the RPPL report (~13,000 school districts; indexing went from 3–5 s to ~500 ms in a Web Worker) and the plugin that connects a seat map to the WooCommerce cart and the reservation APIs. At Muse the front end lives in a Vite/Turbo monorepo; I work on the CRM — orders, events, Algolia — and the rake task that cleans the global index when a delete was not propagating.\n\nI use Claude and Cursor every day. I review everything that goes into the repo myself. I am looking for full-stack work, and freelance when there is a product behind it, not one more landing page."
+      "short": "Full-stack developer with a product focus: React, Next.js and TypeScript, plus the Node, Docker and CI/CD to take a project from the repo to production.",
+      "long": "If a checkout or a map with thousands of features is not allowed to go down, that's where I'm useful. The stack is whatever the problem asks for: React or Vue, Next or WordPress, Node or PHP or a rake task in Ruby. I don't collect frameworks.\n\nBefore Rosario I worked remotely from Misiones. Landing pages, on a team, with Vue, Quasar, Django and WordPress: I don't remember the clients and I'm not going to invent them. In adtech I built the front end of an audience builder on my own — AND, OR, XOR and NOT queries over age, business category and location — plus a POI map with Mapbox, Next and Node. At an agency we adapted sites from a home market to other countries: not translation. A service that exists in one country often doesn't exist in the other. I don't name the client.\n\nAt Dinkum I ship both ends. The map in the RPPL report (~13,000 school districts; indexing went from 3–5 s to ~500 ms in a Web Worker) and the plugin that hooks a seat map into the WooCommerce cart and the reservation APIs. At Muse the front end lives in a Vite/Turbo monorepo; I work on the CRM — orders, events, Algolia — and the rake task that cleans the global index when a delete wasn't propagating.\n\nI use Claude and Cursor every day. I review everything that lands in the repo. I'm looking for full-stack work, and freelance when there's a product behind it — not one more landing page."
     }
   },
 
@@ -110,7 +110,7 @@
       "start": "2023-07",
       "end": "2024-01",
       "context": {
-        "short": "Large teams working through tickets: adapting the site for other countries (language and services per market). Git and Docker."
+        "short": "Large teams, ticket by ticket: adapting the site for other countries — language, and which services exist in that market. Git and Docker."
       },
       "visibility": { "priority": 2 }
     },

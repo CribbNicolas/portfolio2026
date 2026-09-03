@@ -206,7 +206,8 @@ would have given it away until someone shared the link.
 
 ## 4. The gate
 
-`public/og.jpg` and `public/apple-touch-icon.png` are **committed** artifacts:
+`public/og.jpg`, `public/og.en.jpg` and `public/apple-touch-icon.png` are
+**committed** artifacts:
 they are generated with `pnpm run og:local` and not in the build, because
 rasterizing needs Chromium and the Cloudflare builder does not have it (the same
 reason that took the PDF out of the build).

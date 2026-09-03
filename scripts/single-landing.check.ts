@@ -134,6 +134,15 @@ test("there is a real 404 page", () => {
   );
 });
 
+test("the 404 is bilingual in one page and never links to /cv", async () => {
+  const html = await readFile(join(DIST, "404.html"), "utf8");
+  assert.match(html, /lang="en"/, "the 404 has no English block");
+  assert.ok(html.includes(`href="/#${ANCHORS.es.map}"`), "the 404 does not link to the Spanish map");
+  assert.ok(html.includes(`href="/en/#${ANCHORS.en.map}"`), "the 404 does not link to the English map");
+  assert.doesNotMatch(html, /href="\/cv"/, "the 404 links to /cv");
+  assert.doesNotMatch(html, /href="\/en\/cv"/, "the 404 links to /en/cv");
+});
+
 test("only the two landings emit Open Graph", () => {
   // `shareable` is opt-in in `Base.astro`, but that only prevents forgetting in
   // one direction: nothing stops someone marking it on `/cv`. And there it
