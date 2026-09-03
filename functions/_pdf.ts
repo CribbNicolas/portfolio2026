@@ -27,12 +27,10 @@ import { pdfFilename } from "../content/schema/pdf-filename";
 export const sourcePath = (locale: Locale): string => (locale === "es" ? "/cv" : `/${locale}/cv`);
 
 /**
- * The name it is saved under when `PDF_FILENAME` is not configured, from
- * THAT locale's own dataset — not the Spanish one for both. An environment
- * variable was the alternative and it drifts the day somebody edits content
- * and forgets the Cloudflare dashboard; a shared constant would drift the day
- * the two datasets' `updatedAt` diverge (a translation lagging the source, the
- * exact case `pdfFilename`'s own header comment calls out).
+ * The name it is saved under, from THAT locale's own dataset — not the
+ * Spanish one for both. The filename is always derived from `updatedAt`
+ * to keep a file's saved name in sync with its content's date: a drift
+ * (name vs content) has to be fixed in the data, not by rotating an env var.
  */
 export const defaultFilename = (locale: Locale): string =>
   pdfFilename(locale, (locale === "es" ? datasetEs : datasetEn).updatedAt);

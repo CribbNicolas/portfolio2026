@@ -146,7 +146,6 @@ Preview):
 |---|---|---|
 | `BROWSER_RENDERING_ACCOUNT_ID` | Plaintext | The Cloudflare Account ID |
 | `BROWSER_RENDERING_TOKEN` | **Secret** | A token with ONE permission: Developer Platform → Browser Run → Edit |
-| `PDF_FILENAME` | Plaintext, optional | The name the file is saved under. Default: `cv.pdf` |
 
 **Analytics variables**, Production only, so a preview does not pollute the data:
 `PUBLIC_CF_BEACON_TOKEN` and `PUBLIC_CLARITY_ID`. Both are public — they travel

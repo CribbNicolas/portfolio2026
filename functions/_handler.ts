@@ -47,8 +47,6 @@ interface Env {
   BROWSER_RENDERING_ACCOUNT_ID?: string;
   /** Token with ONE permission: Browser Rendering → Edit. Goes in as a secret. */
   BROWSER_RENDERING_TOKEN?: string;
-  /** Optional. The name it is saved under by whoever downloads it. */
-  PDF_FILENAME?: string;
 }
 
 /**
@@ -132,7 +130,11 @@ export function createPdfHandler(locale: Locale) {
 
     const bytes = await response.arrayBuffer();
     const pdf = new Response(bytes, {
-      headers: pdfHeaders(env.PDF_FILENAME ?? defaultFilename(locale)),
+      // The filename comes from the dataset's own updatedAt, not from config:
+      // a file in the user's Downloads shows which content it holds. An env var
+      // that could override it reintroduces drift — a name claiming a date the
+      // file does not have. Deleting the override keeps the two in sync.
+      headers: pdfHeaders(defaultFilename(locale)),
     });
 
     // `clone()` because a Response can be read once and we have to return one

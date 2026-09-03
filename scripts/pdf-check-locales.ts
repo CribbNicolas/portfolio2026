@@ -45,6 +45,11 @@ function originOf(esPdfUrl: string): string {
   return esPdfUrl.slice(0, -suffix.length);
 }
 
+// Run checks for both locales and collect results. One CI run should tell you
+// about both languages, not require a fix-and-retry loop to learn which one
+// is broken. Exit with the first non-zero status if either failed.
+let firstFailure = 0;
+
 for (const locale of LOCALES) {
   console.log(`\n— pdf-output.check.ts (PDF_LOCALE=${locale}) —`);
 
@@ -66,7 +71,11 @@ for (const locale of LOCALES) {
     env,
   });
   if (result.error) throw result.error;
-  if (result.status !== 0) {
-    process.exit(result.status ?? 1);
+  if (result.status !== 0 && !firstFailure) {
+    firstFailure = result.status ?? 1;
   }
+}
+
+if (firstFailure) {
+  process.exit(firstFailure);
 }
