@@ -15,8 +15,14 @@
  * Rendering can print the PDF: it carries `noindex` and zero incoming links,
  * and the reader's destination is the landing's `#cv` anchor. A "looking for
  * the CV?" here would break that promise from the one page nobody reviews.
+ *
+ * Spanish only, for BOTH locales — there is no `/en/404`. A broken URL under
+ * `/en/` still lands here in Spanish. That is a deliberate scope cut, not an
+ * oversight: see docs/10-i18n.md §6. The links below point at `/#mapa` etc.
+ * (the Spanish landing) regardless of which locale's tree the visitor was in.
  */
 import Base from "../layouts/Base.astro";
+import { ANCHORS } from "../lib/anchors";
 
 import "@fontsource/manrope/400.css";
 import "@fontsource/manrope/600.css";
@@ -26,11 +32,17 @@ import "../styles/tokens.css";
 /**
  * The same destinations as the landing's index, anchor included: whoever ended
  * up here was looking for something, and these are the three things there are.
+ *
+ * `ANCHORS.es` and not a hand-written `#mapa`/`#proyectos`/`#cv`: that literal
+ * is exactly the drift `src/lib/anchors.ts` exists to prevent (see its header
+ * comment) — this page had been naming the ids by hand since before that file
+ * existed, and nothing caught it.
  */
+const anchors = ANCHORS.es;
 const DESTINATIONS = [
-  { href: "/#mapa", label: "El mapa de conocimiento" },
-  { href: "/#proyectos", label: "Los proyectos" },
-  { href: "/#cv", label: "El CV completo" },
+  { href: `/#${anchors.map}`, label: "El mapa de conocimiento" },
+  { href: `/#${anchors.projects}`, label: "Los proyectos" },
+  { href: `/#${anchors.cv}`, label: "El CV completo" },
 ];
 ---
 

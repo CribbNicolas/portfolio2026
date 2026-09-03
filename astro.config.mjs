@@ -16,16 +16,21 @@ const SITE = process.env.SITE_URL ?? "https://portfolio.invalid";
  * `functions/cv.pdf.ts` / `functions/en/cv.pdf.ts` own the routes.
  */
 function localCvPdf() {
-  // One route per locale: the URL it answers, where `pdf:local` leaves the
-  // bytes (public/ first, dist/ as a fallback for a `pdf:local` run before any
-  // `public/` copy existed), and the name the download is saved under —
-  // matching `pdfFilename`'s EN suffix so a local download does not lie about
-  // which language it is.
+  // One route per locale: the URL it answers, and where `pdf:local` leaves
+  // the bytes (public/ first, dist/ as a fallback for a `pdf:local` run
+  // before any `public/` copy existed). No `filename` here on purpose: the
+  // landing's `download=` attribute already names the file, derived from
+  // `pdfFilename` (content/schema/pdf-filename.ts) — the current dataset's
+  // `updatedAt`, not a name baked into this file. A second, hand-written name
+  // here would be a fourth place claiming to know the file name, and it
+  // already went stale once (it used to spell out the pre-rename
+  // `Nicolas-Cribb-Barbaro-Full-Stack-Developer[-EN].pdf`, 47 characters this
+  // branch replaced, while claiming in a comment to match `pdfFilename`'s
+  // output — it never did).
   const ROUTES = [
     {
       url: "/cv.pdf",
       candidates: [join(process.cwd(), "public", "cv.pdf"), join(process.cwd(), "dist", "cv.pdf")],
-      filename: "Nicolas-Cribb-Barbaro-Full-Stack-Developer.pdf",
     },
     {
       url: "/en/cv.pdf",
@@ -33,7 +38,6 @@ function localCvPdf() {
         join(process.cwd(), "public", "en", "cv.pdf"),
         join(process.cwd(), "dist", "en", "cv.pdf"),
       ],
-      filename: "Nicolas-Cribb-Barbaro-Full-Stack-Developer-EN.pdf",
     },
   ];
   return {
@@ -67,7 +71,11 @@ function localCvPdf() {
         res.statusCode = 200;
         res.setHeader("content-type", "application/pdf");
         res.setHeader("content-length", String(body.length));
-        res.setHeader("content-disposition", `attachment; filename="${route.filename}"`);
+        // Bare `attachment`, no `filename`: the browser falls back to the
+        // link's own `download=` attribute, which is where the real name
+        // lives. See the comment above `ROUTES` for why a second name does
+        // not belong here.
+        res.setHeader("content-disposition", "attachment");
         res.setHeader("x-content-type-options", "nosniff");
         // Chrome's download manager may HEAD first. A body on HEAD makes it
         // report the file as missing.

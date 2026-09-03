@@ -25,8 +25,19 @@ import { MESSAGES } from "../content/schema/messages";
  * scripts/pdf-output.check.ts` (or an old muscle-memory `PDF_SOURCE=` alone)
  * keeps working unchanged. `package.json`'s `test:pdf` runs this file twice,
  * once per locale, so both PDFs get the same eleven assertions.
+ *
+ * Checked, not cast: an unchecked `as Locale` turns a typo'd `PDF_LOCALE`
+ * (`PDF_LOCALE=EN`, `PDF_LOCALE=fr`) into `MESSAGES[LOCALE]` reading
+ * `undefined` and every later assertion failing with a TypeError instead of
+ * a message naming the actual mistake.
  */
-const LOCALE = (process.env.PDF_LOCALE ?? "es") as Locale;
+const rawLocale = process.env.PDF_LOCALE ?? "es";
+if (rawLocale !== "es" && rawLocale !== "en") {
+  throw new Error(
+    `PDF_LOCALE="${rawLocale}" is not a known locale. Use "es" or "en" (see content-schema.ts's Locale type).`,
+  );
+}
+const LOCALE: Locale = rawLocale;
 const MESSAGES_FOR_LOCALE = MESSAGES[LOCALE];
 
 /**

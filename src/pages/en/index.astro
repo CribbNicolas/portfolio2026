@@ -13,6 +13,7 @@ import Base from "../../layouts/Base.astro";
 import { content, buildKnowledgeGraph, layoutGraph, MESSAGES } from "@content";
 import { buildPersonJsonLd } from "../../lib/jsonld";
 import { buildHoverCss } from "../../lib/lab-hover-css";
+import { buildLabData } from "../../lib/lab-data";
 import HomeDocument from "../../components/HomeDocument.astro";
 
 import "@fontsource/manrope/400.css";
@@ -41,26 +42,11 @@ const graph = buildKnowledgeGraph(view);
 const positioned = layoutGraph(graph);
 const hoverCss = buildHoverCss(positioned);
 
-// What the 3D runtime needs. Same shape as the Spanish page's — the boot
-// script (`src/scripts/lab/boot.ts`) is locale-agnostic, it only draws
-// coordinates and labels that are already resolved server-side.
-const graphData = JSON.stringify({
-  nodes: positioned.nodes.map((n) => ({
-    i: n.id, k: n.kind, x: n.x, y: n.y, z: n.z, d: n.degree,
-    r: Math.round(n.radiusScale * 100) / 100,
-    n: n.label, t: n.detail, ...(n.category ? { c: n.category } : {}),
-  })),
-  edges: positioned.edges.map((e) => ({ s: e.source, t: e.target, a: e.kind === "affinity", w: e.weight })),
-  radius: positioned.framingRadius,
-  // See `../index.astro`: the panel/tooltip labels `interaction.ts` needs,
-  // carried in the payload because that file may not import `@content`.
-  strings: {
-    kind: { role: m.mapKindRole, project: m.mapKindProject, achievement: m.mapKindAchievement, skill: m.mapKindSkill },
-    connection: [m.mapConnectionSingular, m.mapConnectionPlural],
-    achievement: [m.mapAchievementSingular, m.mapAchievementPlural],
-    more: m.mapMoreTemplate,
-  },
-});
+// What the 3D runtime needs. `buildLabData` (src/lib/lab-data.ts) is what
+// makes this the SAME shape as `../index.astro`'s: one typed function both
+// pages call, instead of each inlining its own untyped copy of the field
+// list — see that module's header comment for the bug this closes.
+const graphData = JSON.stringify(buildLabData(positioned, m));
 ---
 
 {/*

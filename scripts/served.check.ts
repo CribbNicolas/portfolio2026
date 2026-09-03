@@ -44,32 +44,41 @@ const get = async (path: string): Promise<Response> => {
  */
 const ANALYTICS_FINGERPRINTS = ["clarity", "cloudflareinsights", "cf-beacon"];
 
-test("the served `/cv` executes no JavaScript", async () => {
-  const res = await get("/cv/");
-  assert.equal(res.status, 200, `/cv/ returned ${res.status}`);
-  const html = await res.text();
+/**
+ * Both pages the PDF gets printed from. `/cv/` alone used to be the whole
+ * list, from when it was the only one — `/en/cv/` is exactly as exposed to
+ * an edge injection as its sibling, and nothing else here was watching it.
+ */
+const PRINTED_PAGES = ["/cv/", "/en/cv/"];
 
-  const external = [...html.matchAll(/<script[^>]*\ssrc=["']([^"']+)["'][^>]*>/g)].map((m) => m[1]);
-  assert.deepEqual(
-    external,
-    [],
-    `the served /cv loads JS: ${external.join(", ")}. The dist/ can be clean and ` +
-      "this still happen: something injected it after the build. Suspect Web " +
-      "Analytics enabled from the Pages dashboard (docs/05 §3 step 8).",
-  );
-});
+for (const path of PRINTED_PAGES) {
+  test(`the served \`${path}\` executes no JavaScript`, async () => {
+    const res = await get(path);
+    assert.equal(res.status, 200, `${path} returned ${res.status}`);
+    const html = await res.text();
 
-test("the served `/cv` carries no analytics", async () => {
-  const html = await (await get("/cv/")).text();
-  const found = ANALYTICS_FINGERPRINTS.filter((h) => html.toLowerCase().includes(h));
-  assert.deepEqual(
-    found,
-    [],
-    `the served /cv mentions ${found.join(", ")}. The PDF comes out of that page: ` +
-      "a third-party script there changes the render and no PDF test notices, " +
-      "because the extracted text stays the same.",
-  );
-});
+    const external = [...html.matchAll(/<script[^>]*\ssrc=["']([^"']+)["'][^>]*>/g)].map((m) => m[1]);
+    assert.deepEqual(
+      external,
+      [],
+      `the served ${path} loads JS: ${external.join(", ")}. The dist/ can be clean and ` +
+        "this still happen: something injected it after the build. Suspect Web " +
+        "Analytics enabled from the Pages dashboard (docs/05 §3 step 8).",
+    );
+  });
+
+  test(`the served \`${path}\` carries no analytics`, async () => {
+    const html = await (await get(path)).text();
+    const found = ANALYTICS_FINGERPRINTS.filter((h) => html.toLowerCase().includes(h));
+    assert.deepEqual(
+      found,
+      [],
+      `the served ${path} mentions ${found.join(", ")}. The PDF comes out of that page: ` +
+        "a third-party script there changes the render and no PDF test notices, " +
+        "because the extracted text stays the same.",
+    );
+  });
+}
 
 test("a non-existent route returns 404, not 200", async () => {
   // The soft 404 we fixed with `src/pages/404.astro`. That the file exists is
