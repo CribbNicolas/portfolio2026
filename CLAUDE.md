@@ -150,6 +150,19 @@ scripts/
   endpoints.check.ts  /cv.json and /llms.txt, the two surfaces agents consume. That the JSON parses and
                       carries the contract keys, and that the markdown has no empty fields.
   format-data.ts      Writes content.es.json in canonical form. The fix path the gate points at. `format:data`.
+  i18n-fields.ts      The shared walker: `translatableFields(dataset)` → path → Spanish string, `hashOf(s)`.
+                      Path is built from ids, never array indices, so reordering achievements does not
+                      invalidate every translation. `NOT_TEXT` is a DENYLIST of key names — a new prose
+                      field is tracked the day it is added, which is the safe direction to be wrong in.
+  i18n-lock.ts        Writes `content/data/translation.lock.json`: hash of every Spanish string an English
+                      translation was checked against. `i18n:lock`. Same shape as `og.lock.json`: a
+                      committed artifact, a check that recomputes, a regenerate command the failure names.
+  i18n.check.ts       Three failures, three different fixes: structure drift (a tracked path in one dataset
+                      and not the other), missing translation (English still byte-identical to Spanish AND
+                      over 40 chars), stale translation (Spanish hash no longer matches the lock). Not a
+                      *.test.ts: `pnpm test`'s glob would run it against whatever the datasets happen to be
+                      at that point instead of at the deliberate moment `test:i18n` runs it, same reason as
+                      `data-format.check.ts`.
   editor.ts           Entry point of `pnpm run editor`. Loopback only: this process writes to the dataset.
   editor-page.check.ts  The page in a real browser: loads, renders from the schema, saves. Needs Chromium.
   data-format.check.ts  THE canonical written form of the dataset is committed as such. Not a *.test.ts: it reads a committed artifact.
@@ -194,8 +207,10 @@ pnpm run test:bundle # byte budget of the home's map (needs a build)
 pnpm run test:landing # /cv isolated + CV section in sync with the PDF (needs a build)
 pnpm run test:endpoints # /cv.json parses and /llms.txt is whole (needs a build)
 pnpm run test:format # the committed dataset is in canonical form (no build needed)
+pnpm run test:i18n   # EN is a current translation of ES: structure, no untranslated copies, no stale hash
 pnpm run test:editor # the editor page end to end in Chromium (needs no build)
 pnpm run format:data # rewrites content.es.json in canonical form. The fix for the above
+pnpm run i18n:lock   # re-stamps translation.lock.json to the current ES text. The fix test:i18n points at
 pnpm run test:og     # the social card has not gone stale + the favicon parses (needs a build)
 pnpm run test:served # verifies the PUBLISHED site. Needs SITE=https://…  (not dist/)
 pnpm run test:version # the PR raises package.json.version. Needs: git fetch origin develop
@@ -205,7 +220,7 @@ pnpm run audit:deps  # pnpm audit --audit-level high
 ```
 
 **Run the full sequence before calling anything done:**
-`pnpm run test:workflows && pnpm run typecheck && pnpm run validate && pnpm test && pnpm run test:format && pnpm run test:editor && pnpm run build && pnpm run pdf:local && pnpm run test:pdf && pnpm run test:js && pnpm run test:bundle && pnpm run test:landing && pnpm run test:endpoints && pnpm run test:og && pnpm run audit:todos`.
+`pnpm run test:workflows && pnpm run typecheck && pnpm run validate && pnpm test && pnpm run test:format && pnpm run test:i18n && pnpm run test:editor && pnpm run build && pnpm run pdf:local && pnpm run test:pdf && pnpm run test:js && pnpm run test:bundle && pnpm run test:landing && pnpm run test:endpoints && pnpm run test:og && pnpm run audit:todos`.
 If `validate` fails, the message says which rule was violated and how to fix it;
 read it, do not skip it. All of that runs in CI on every push
 (`.github/workflows/content-validation.yml`) — `audit:todos` included, but as the

@@ -1,6 +1,6 @@
 # Makes the claims in the docs true: the hard rules are CI, not intentions.
 # Local equivalent (all of them have to pass):
-#   pnpm run test:workflows && pnpm run typecheck && pnpm run validate && pnpm test && pnpm run test:format && pnpm run test:editor && pnpm run build && pnpm run pdf:local && pnpm run test:pdf && pnpm run test:js && pnpm run test:bundle && pnpm run test:landing && pnpm run test:endpoints && pnpm run test:og && pnpm run audit:todos
+#   pnpm run test:workflows && pnpm run typecheck && pnpm run validate && pnpm test && pnpm run test:format && pnpm run test:i18n && pnpm run test:editor && pnpm run build && pnpm run pdf:local && pnpm run test:pdf && pnpm run test:js && pnpm run test:bundle && pnpm run test:landing && pnpm run test:endpoints && pnpm run test:og && pnpm run audit:todos
 name: content-validation
 
 on:
@@ -45,6 +45,14 @@ jobs:
       # emit — after which the next editor save produces a diff full of
       # reformatting nobody asked for.
       - run: pnpm run test:format
+
+      # The English dataset is a translation of the Spanish one, one-directional:
+      # Spanish is always edited first. This is the only gate that reads BOTH
+      # datasets together — it fails when a field exists in one and not the
+      # other, when English text is still identical to the untranslated
+      # Spanish, or when the Spanish moved after the lock was stamped. See
+      # `scripts/i18n.check.ts` for the three failure modes and their fixes.
+      - run: pnpm run test:i18n
 
       # The PRODUCTION PDF no longer comes from here: `functions/cv.pdf.ts`
       # generates it on demand with Browser Rendering, which is why
