@@ -10,26 +10,44 @@ import sitemap from "@astrojs/sitemap";
 const SITE = process.env.SITE_URL ?? "https://portfolio.invalid";
 
 /**
- * `astro dev` does not run Pages Functions, so `/cv.pdf` 404s and the download
- * button saves the HTML 404 under a .pdf name. Serve the file `pdf:local`
- * already wrote. Production is unchanged: `functions/cv.pdf.ts` owns the route.
+ * `astro dev` does not run Pages Functions, so `/cv.pdf` (and `/en/cv.pdf`)
+ * 404 and the download button saves the HTML 404 under a .pdf name. Serve the
+ * files `pdf:local` already wrote. Production is unchanged:
+ * `functions/cv.pdf.ts` / `functions/en/cv.pdf.ts` own the routes.
  */
 function localCvPdf() {
-  const candidates = [
-    join(process.cwd(), "public", "cv.pdf"),
-    join(process.cwd(), "dist", "cv.pdf"),
+  // One route per locale: the URL it answers, where `pdf:local` leaves the
+  // bytes (public/ first, dist/ as a fallback for a `pdf:local` run before any
+  // `public/` copy existed), and the name the download is saved under —
+  // matching `pdfFilename`'s EN suffix so a local download does not lie about
+  // which language it is.
+  const ROUTES = [
+    {
+      url: "/cv.pdf",
+      candidates: [join(process.cwd(), "public", "cv.pdf"), join(process.cwd(), "dist", "cv.pdf")],
+      filename: "Nicolas-Cribb-Barbaro-Full-Stack-Developer.pdf",
+    },
+    {
+      url: "/en/cv.pdf",
+      candidates: [
+        join(process.cwd(), "public", "en", "cv.pdf"),
+        join(process.cwd(), "dist", "en", "cv.pdf"),
+      ],
+      filename: "Nicolas-Cribb-Barbaro-Full-Stack-Developer-EN.pdf",
+    },
   ];
-  const filename = "Nicolas-Cribb-Barbaro-Full-Stack-Developer.pdf";
   return {
     name: "local-cv-pdf",
     configureServer(server) {
       server.middlewares.use(async (req, res, next) => {
-        if ((req.url ?? "").split("?")[0] !== "/cv.pdf") {
+        const url = (req.url ?? "").split("?")[0];
+        const route = ROUTES.find((r) => r.url === url);
+        if (!route) {
           next();
           return;
         }
         let body;
-        for (const file of candidates) {
+        for (const file of route.candidates) {
           try {
             body = await readFile(file);
             break;
@@ -42,14 +60,14 @@ function localCvPdf() {
           res.setHeader("content-type", "text/plain; charset=utf-8");
           res.setHeader("cache-control", "no-store");
           res.end(
-            "El PDF local se genera con `pnpm run build` y `pnpm run pdf:local`.\nEn producción /cv.pdf lo sirve la Function.\n",
+            `El PDF local se genera con \`pnpm run build\` y \`pnpm run pdf:local\`.\nEn producción ${url} lo sirve la Function.\n`,
           );
           return;
         }
         res.statusCode = 200;
         res.setHeader("content-type", "application/pdf");
         res.setHeader("content-length", String(body.length));
-        res.setHeader("content-disposition", `attachment; filename="${filename}"`);
+        res.setHeader("content-disposition", `attachment; filename="${route.filename}"`);
         res.setHeader("x-content-type-options", "nosniff");
         // Chrome's download manager may HEAD first. A body on HEAD makes it
         // report the file as missing.

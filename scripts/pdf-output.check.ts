@@ -4,7 +4,8 @@
  *
  * The name does NOT end in `.test.ts` on purpose: `pnpm test` discovers every
  * `*.test.ts` and would run this one before the PDF exists. It runs separately,
- * with `pnpm run test:pdf`, and against two different sources depending on
+ * with `pnpm run test:pdf`, which runs this file twice — once per `PDF_LOCALE`
+ * — and against two different kinds of source per run depending on
  * `PDF_SOURCE` — see below.
  */
 
@@ -16,20 +17,35 @@ import { readFile } from "node:fs/promises";
 // @ts-ignore
 import { getDocument } from "pdfjs-dist/legacy/build/pdf.mjs";
 import { content, formatRoleTitle } from "../content/source/index";
+import type { Locale } from "../content/schema/content-schema";
+import { MESSAGES } from "../content/schema/messages";
+
+/**
+ * Which PDF this run verifies. Defaults to Spanish so a bare `tsx --test
+ * scripts/pdf-output.check.ts` (or an old muscle-memory `PDF_SOURCE=` alone)
+ * keeps working unchanged. `package.json`'s `test:pdf` runs this file twice,
+ * once per locale, so both PDFs get the same eleven assertions.
+ */
+const LOCALE = (process.env.PDF_LOCALE ?? "es") as Locale;
+const MESSAGES_FOR_LOCALE = MESSAGES[LOCALE];
 
 /**
  * Where the verified bytes come from.
  *
- * By default `dist/cv.pdf`, the one `pnpm run pdf:local` produces with
- * Playwright: that is the PRE-deploy gate and it depends on nobody's network.
+ * By default `dist/cv.pdf` (or `dist/en/cv.pdf` for `PDF_LOCALE=en`), the one
+ * `pnpm run pdf:local` produces with Playwright: that is the PRE-deploy gate
+ * and it depends on nobody's network.
  *
  * With `PDF_SOURCE=https://…/cv.pdf` the SAME tests run against the published
- * URL. That is the only thing proving the PDF `functions/cv.pdf.ts` serves
- * passes the ATS, and not only the one your machine produces: they are two
- * different Chromiums — local Playwright against Browser Rendering — over the
- * same layout, and the only way to know they print alike is to measure both.
+ * URL — for either locale, so the smoke sets both `PDF_SOURCE` and
+ * `PDF_LOCALE` together when it verifies `/en/cv.pdf`. That is the only thing
+ * proving the PDF the Function serves passes the ATS, and not only the one
+ * your machine produces: they are two different Chromiums — local Playwright
+ * against Browser Rendering — over the same layout, and the only way to know
+ * they print alike is to measure both.
  */
-const SOURCE = process.env.PDF_SOURCE ?? "dist/cv.pdf";
+const DEFAULT_SOURCE = LOCALE === "es" ? "dist/cv.pdf" : `dist/${LOCALE}/cv.pdf`;
+const SOURCE = process.env.PDF_SOURCE ?? DEFAULT_SOURCE;
 
 let rawBytes: Uint8Array | undefined;
 
@@ -102,7 +118,7 @@ test("layer 1: the PDF has extractable text, it is not an image", async () => {
 
 test("layer 1: the parser finds the name, the title and every company", async () => {
   const { text } = await extract();
-  const view = await content.getView("cv-ats", "es");
+  const view = await content.getView("cv-ats", LOCALE);
 
   const normal = text.replace(/\s+/g, " ");
   assert.ok(normal.includes(view.identity.fullName), "the full name is missing");
@@ -118,7 +134,7 @@ test("layer 1: the parser finds the name, the title and every company", async ()
 
 test("layer 1: the extraction order is sane (name before the first role)", async () => {
   const { text } = await extract();
-  const view = await content.getView("cv-ats", "es");
+  const view = await content.getView("cv-ats", LOCALE);
   const normal = text.replace(/\s+/g, " ");
 
   const namePos = normal.indexOf(view.identity.fullName);
@@ -148,9 +164,18 @@ test("layer 1: the standard section names extract whole", async () => {
   const { text } = await extract();
   const normal = text.replace(/\s+/g, " ");
 
-  // The headings stay in Spanish: they are CV content, and a parser maps them
-  // exactly as they are printed.
-  for (const section of ["Perfil", "Habilidades", "Experiencia", "Educación", "Idiomas"]) {
+  // The headings are CV content and a parser maps them exactly as they are
+  // printed — in whichever language this run's `LOCALE` is. Reading them from
+  // `MESSAGES` instead of a literal list is what lets `test:pdf` run this same
+  // assertion against the English PDF without a second copy of the list.
+  const sections = [
+    MESSAGES_FOR_LOCALE.sectionProfile,
+    MESSAGES_FOR_LOCALE.sectionSkills,
+    MESSAGES_FOR_LOCALE.sectionExperience,
+    MESSAGES_FOR_LOCALE.sectionEducation,
+    MESSAGES_FOR_LOCALE.sectionLanguages,
+  ];
+  for (const section of sections) {
     assert.match(
       normal,
       new RegExp(section, "i"),
@@ -163,11 +188,11 @@ test("layer 1: role titles and bullets extract whole", async () => {
   // formatRoleTitle y text.short son el textContent que de verdad se lee. Si el
   // CSS los parte en glifos sueltos, el PDF se ve bien y no dice nada.
   const { text } = await extract();
-  const view = await content.getView("cv-ats", "es");
+  const view = await content.getView("cv-ats", LOCALE);
   const normal = text.replace(/\s+/g, " ");
 
   for (const role of view.experience) {
-    const title = formatRoleTitle(role, "es");
+    const title = formatRoleTitle(role, LOCALE);
     assert.ok(
       normal.includes(title),
       `the role title "${title}" does not appear contiguous in the extracted text`,
@@ -199,7 +224,7 @@ test("layer 1: the email and the links extract whole", async () => {
   // A URL broken by a line break extracts with a space inside and stops being a
   // URL. It is the field an ATS uses to find the profile.
   const { text } = await extract();
-  const view = await content.getView("cv-ats", "es");
+  const view = await content.getView("cv-ats", LOCALE);
   const normal = text.replace(/\s+/g, " ");
 
   assert.ok(
@@ -282,7 +307,7 @@ test("the fonts travel inside the PDF, they are not borrowed from the machine", 
 
 test("rule 8: neither the phone nor the address appear in the PDF", async () => {
   const { text } = await extract();
-  const data = await content.getDataset("es");
+  const data = await content.getDataset(LOCALE);
   const normal = text.replace(/\s+/g, " ");
 
   if (data.identity.contact.phone) {

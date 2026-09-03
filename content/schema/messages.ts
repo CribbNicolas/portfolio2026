@@ -107,6 +107,15 @@ export interface Messages {
   footerPrivacyOutro: string;
   /** The OG/Twitter image alt text's suffix, appended to the page title. */
   ogImageAltSuffix: string;
+  /**
+   * `/cv.pdf` and `/en/cv.pdf`'s visitor-facing error bodies. Chrome copy, not
+   * CV content, but the same rule applies: a Spanish 503 on the English route
+   * is the same category of mistake as a Spanish heading on the English CV.
+   */
+  pdfUnconfigured: string;
+  pdfTimeout: string;
+  pdfQuotaExceeded: string;
+  pdfGenerationFailed: string;
 }
 
 export const MESSAGES: Record<Locale, Messages> = {
@@ -168,6 +177,10 @@ export const MESSAGES: Record<Locale, Messages> = {
     footerPrivacyOutro:
       ". También uso Cloudflare\n      Web Analytics para el tráfico y la velocidad de carga: no usa cookies ni\n      identifica visitantes.\n",
     ogImageAltSuffix: "Retrato y marca.",
+    pdfUnconfigured: "El PDF no está configurado en este entorno.",
+    pdfTimeout: "El render del PDF tardó demasiado. Probá de nuevo en un minuto.",
+    pdfQuotaExceeded: "Se agotó la cuota de render del día. Probá más tarde.",
+    pdfGenerationFailed: "No se pudo generar el PDF.",
   },
   en: {
     sectionProfile: "Profile",
@@ -231,5 +244,9 @@ export const MESSAGES: Record<Locale, Messages> = {
       ". I also use Cloudflare Web Analytics for traffic and load speed: it uses no cookies " +
       "and identifies no visitors.",
     ogImageAltSuffix: "Portrait and branding.",
+    pdfUnconfigured: "The PDF isn't configured in this environment.",
+    pdfTimeout: "The PDF render took too long. Try again in a minute.",
+    pdfQuotaExceeded: "Today's render quota is used up. Try again later.",
+    pdfGenerationFailed: "The PDF could not be generated.",
   },
 };
