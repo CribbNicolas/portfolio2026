@@ -32,6 +32,10 @@ const INLINE_ELEMENT_ARRAYS = new Set([
   "certifications",
   "links",
   "media",
+  // Currently unreachable: `periods` only exists on `Skill`, and every skill
+  // is already an element of the inline `skills` array, so `inline()` prints
+  // the whole skill without consulting this table. Kept so a future `periods`
+  // outside `Skill` still prints one span per line.
   "periods",
 ]);
 

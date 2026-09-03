@@ -6,22 +6,25 @@
  * and are not repeated here.
  */
 
-import { test } from "node:test";
+import { after, test } from "node:test";
 import assert from "node:assert/strict";
-import { mkdtemp, readFile, writeFile } from "node:fs/promises";
-import { tmpdir } from "node:os";
+import { readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { createConnection } from "node:net";
 import type { AddressInfo } from "node:net";
 
 import { DatasetStore } from "./store";
 import { createEditorServer } from "./server";
+import { createTempDirs } from "./temp-dir";
 
 const canonical = (await readFile("content/data/content.es.json", "utf8")).replace(/\r\n/g, "\n");
 
+const tmp = createTempDirs();
+after(() => tmp.cleanup());
+
 /** Binds port 0 — the OS picks a free one, so the test never collides with 4322. */
 async function serve(): Promise<{ base: string; close: () => Promise<void> }> {
-  const dir = await mkdtemp(join(tmpdir(), "editor-server-"));
+  const dir = await tmp.dir("editor-server-");
   const file = join(dir, "content.es.json");
   await writeFile(file, canonical, "utf8");
 

@@ -6,20 +6,23 @@
  * is tested once in `server.test.ts` and does not need repeating per route.
  */
 
-import { test } from "node:test";
+import { after, test } from "node:test";
 import assert from "node:assert/strict";
-import { mkdtemp, readFile, writeFile } from "node:fs/promises";
-import { tmpdir } from "node:os";
+import { readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
 import type { ContentDataset } from "../content/schema/content-schema";
 import { DatasetStore } from "./store";
 import { handleApi } from "./api";
+import { createTempDirs } from "./temp-dir";
 
 const canonical = (await readFile("content/data/content.es.json", "utf8")).replace(/\r\n/g, "\n");
 
+const tmp = createTempDirs();
+after(() => tmp.cleanup());
+
 async function freshStore(): Promise<{ store: DatasetStore; file: string }> {
-  const dir = await mkdtemp(join(tmpdir(), "editor-api-"));
+  const dir = await tmp.dir("editor-api-");
   const file = join(dir, "content.es.json");
   await writeFile(file, canonical, "utf8");
   return { store: new DatasetStore(file), file };
@@ -47,7 +50,7 @@ test("GET /api/dataset hands over the data and its etag", async () => {
 });
 
 test("GET of a dataset that is already invalid on disk is 422 with the report, not a thrown 500", async () => {
-  const dir = await mkdtemp(join(tmpdir(), "editor-api-"));
+  const dir = await tmp.dir("editor-api-");
   const file = join(dir, "content.es.json");
   await writeFile(file, "{}\n", "utf8");
   const store = new DatasetStore(file);
@@ -138,4 +141,22 @@ test("a known path with the wrong method is 405", async () => {
 test("an unknown path is 404", async () => {
   const { store } = await freshStore();
   assert.equal((await handleApi({ method: "GET", path: "/api/nope" }, store)).status, 404);
+});
+
+test("handleApi accepts a structural store, not only DatasetStore", async () => {
+  await assert.rejects(
+    () =>
+      handleApi(
+        { method: "GET", path: "/api/dataset" },
+        {
+          read: async () => {
+            throw new Error("boom");
+          },
+          write: async () => {
+            throw new Error("boom");
+          },
+        },
+      ),
+    { message: "boom" },
+  );
 });

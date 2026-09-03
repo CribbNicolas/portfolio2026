@@ -18,7 +18,7 @@ import type { IncomingMessage, Server } from "node:http";
 
 import { handleApi } from "./api";
 import { PUBLIC_DIR, resolveStatic } from "./static";
-import type { DatasetStore } from "./store";
+import type { DatasetApi } from "./store";
 
 /** The editor's port. 4322 sits next to Astro's 4321 on purpose. */
 export const EDITOR_PORT = 4322;
@@ -39,7 +39,7 @@ async function readBody(req: IncomingMessage): Promise<string> {
   return Buffer.concat(chunks).toString("utf8");
 }
 
-export function createEditorServer(store: DatasetStore): Server {
+export function createEditorServer(store: DatasetApi): Server {
   return createServer((req, res) => {
     void (async () => {
       const send = (status: number, body: unknown): void => {

@@ -80,7 +80,10 @@ editor/                 The local content editor; `pnpm run editor` serves the p
   inspect.ts          unknown → { ok, zodIssues, violations }. Calls datasetSchema.safeParse and checkRules:
                       it decides nothing itself.
   store.ts            THE only thing that touches the dataset file. Validates, round-trips its own output,
-                      checks the etag, renames a temp file into place.
+                      checks the etag, renames a temp file into place. `DatasetApi` is the structural
+                      type `handleApi` takes, so a test can pass a fake.
+  temp-dir.ts         Per-file temp dirs for editor tests. Each suite registers its own `after`; a
+                      shared Set would let one file delete a directory another is still reading.
   api.ts              The routes, as a pure function. No node:http, so every route is tested without a socket.
   server.ts           createEditorServer(store). Does NOT listen: scripts/editor.ts binds the port.
   hints.ts            Per-path widget overrides. Full paths, NOT field names: a convention would change a widget

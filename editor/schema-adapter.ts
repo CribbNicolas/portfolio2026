@@ -142,6 +142,21 @@ export function describe(schema: ZodTypeAny): Descriptor {
   return read(schema, { optional: false, nullable: false }, "$");
 }
 
+/**
+ * `describe`, narrowed to an object. The dataset schema is a `z.object()`,
+ * but `describe` returns the whole `Descriptor` union, and a cast would let
+ * a typo'd top-level kind compile. Throw instead.
+ */
+export function describeObject(schema: ZodTypeAny): ObjectDescriptor {
+  const described = describe(schema);
+  if (described.kind !== "object") {
+    throw new UnsupportedSchemaError(
+      `dataset schema is ${described.kind}, not object`,
+    );
+  }
+  return described;
+}
+
 // ---------------------------------------------------------------------------
 // The dataset's own tree
 // ---------------------------------------------------------------------------
@@ -151,4 +166,4 @@ export function describe(schema: ZodTypeAny): Descriptor {
  * and everything downstream (the serializer's key order, `GET /api/schema`)
  * reads the same instance.
  */
-export const datasetDescriptor = describe(datasetSchema) as ObjectDescriptor;
+export const datasetDescriptor = describeObject(datasetSchema);

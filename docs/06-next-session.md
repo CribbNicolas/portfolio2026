@@ -149,14 +149,20 @@ Editing from a phone. Deliberately discarded — §4.
 
 ## 3. Phase 3 — closing
 
-- **[`07`](./07-technical-debt.md) §7** — `/cv.json` publishes `publishPhoneOn`
-  and 40 `visibility` + 40 `priority`. It is a new projection for the
-  `public-api` surface, not a filter: the output type has to differ from the
-  internal surfaces'. **With the editor done**, because by then it will be clear
-  which fields are really internal.
-- **[`07`](./07-technical-debt.md) §6** — the Function is not tested end to end
-  locally. Decide whether it is worth a tunnel or accept it and close the entry.
-- Whatever turned up along the way.
+The original two bullets of this phase are done:
+
+- **[`07`](./07-technical-debt.md) §7** — closed in 0.20.0. `Viewed<T>` projects
+  every surface; `/cv.json` no longer publishes `visibility`, `priority`,
+  `publishPhoneOn` or `Metric.source`.
+- **[`07`](./07-technical-debt.md) §6** — accepted in 0.21.0. The smoke is the
+  E2E; a tunnel is not worth it. §28 (the write-queue Map never evicts) was
+  accepted in the same pass.
+
+What turned up along the way — editor internals, the bilingual leftovers, the
+i18n walker — is the four remaining waves of
+[`2026-09-03-close-technical-debt`](./superpowers/plans/2026-09-03-close-technical-debt.md).
+Do not start a wave until the previous one has merged: two PRs will fight over
+the same `07` Resolved rows.
 
 ---
 
@@ -266,6 +272,7 @@ audit:todos     9 published TODOs (missing data, not failures)
 Consumption against the ceilings: see the table in the
 [`README`](../README.md#limits-and-ceilings).
 
-Technical debt: **36 entries, 22 resolved.** Phase 3 still holds §6 and §7.
-The rest of the open list is low or negligible editor internals. See
-[`07`](./07-technical-debt.md).
+Technical debt as of 2026-09-03 (`0.22.0`): **35 of 42 resolved.** Wave 1
+(editor nets) closed in this version. The remaining seven are waves 2–4 in
+[`2026-09-03-close-technical-debt`](./superpowers/plans/2026-09-03-close-technical-debt.md).
+See [`07`](./07-technical-debt.md).

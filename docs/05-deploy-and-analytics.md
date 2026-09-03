@@ -181,7 +181,8 @@ pnpm dlx wrangler pages dev dist   # dlx: wrangler is not a repo dependency
 Browser Rendering will try to print `http://localhost:8788/cv`, which does not
 resolve from Cloudflare's cloud. So locally the Function verifies routing,
 caching and error handling, **not** the render. The render is tested on the
-`staging` preview. See [07](./07-technical-debt.md) §6.
+`staging` preview. Accepted as [07](./07-technical-debt.md) resolved #6: the
+smoke is the E2E; a tunnel is not worth it.
 
 ---
 

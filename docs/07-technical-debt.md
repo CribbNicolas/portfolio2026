@@ -11,8 +11,10 @@ This file exists so they do not get lost. Each entry says what it is, **how to
 check it** — so the next session does not have to take my word for it — and what
 fixing it would cost.
 
-**24 of 39 entries are closed.** The open ones keep their original numbers: a
+**35 of 42 entries are closed.** The open ones keep their original numbers: a
 renumbered list breaks every reference from a commit message or another doc.
+The remaining seven are waves 2–4 in
+[2026-09-03-close-technical-debt](./superpowers/plans/2026-09-03-close-technical-debt.md).
 
 What does **not** go here: product and data pending items, which live in
 [00-index](./00-index.md) and [06-next-session](./06-next-session.md). This is
@@ -31,6 +33,7 @@ Kept as a one-line record. The reasoning is in the commit that closed each one.
 | 3 | Three dead symbols in `graph-3d.ts`. `ORBIT` was the bad one: a configuration constant with a believable name that did nothing | Deleted, and the two genuinely ignored values marked as such |
 | 4 | Three `<script>` tags carrying the `astro(4000)` hint | Explicit `is:inline`. Typecheck went from 7 hints to 0 |
 | 5 | A merge into `main` left no CI run of its own, which reads as if the merge skipped validation | Accepted and closed. The check that counts comes from the `pull_request` event and always runs; the per-branch run adds nothing |
+| 6 | The Function cannot be tested end to end locally: Browser Rendering cannot print `localhost` | Accepted 2026-09-03. The smoke already prints the published PDF; a tunnel is infra for a one-minute preview |
 | 7 | `/cv.json` published `visibility`, `priority`, `publishPhoneOn` and `Metric.source` | `Viewed<T>` in the view types; `resolveView` projects every surface |
 | 8 | `/cv.json` and `/llms.txt`, the two surfaces agents consume, had no gate at all. A real `formatRoleTitle` bug had already got through into one of them | `scripts/endpoints.check.ts`, in `content-validation.yml` with the other checks that read `dist/` |
 | 9 | The skill grouping lived in two places and had diverged: the CV printed `Lenguajes:` in editorial order, `/llms.txt` printed `- language:` in insertion order | `content/schema/skill-groups.ts`, imported by both |
@@ -43,35 +46,23 @@ Kept as a one-line record. The reasoning is in the commit that closed each one.
 | 16 | The smoke treated a 429 from Browser Rendering as a broken PDF. It is the quota, not a failure | The smoke warms the PDF tolerating the 429; `pdf-output.check.ts` tells the two apart in its message |
 | 17 | The `<head>` had seven tags: no Open Graph, no Twitter Card, favicon 404, sitemap 404 | `Base.astro` with opt-in `shareable`, `favicon.svg`, `robots.txt.ts`, `@astrojs/sitemap` |
 | 18 | No social image existed, so the card had nothing to show | `build-og.ts` + `og.lock.json` + `og-output.check.ts` |
+| 20 | `datasetDescriptor` was an unchecked `as ObjectDescriptor` | `describeObject()` narrows and throws |
+| 21 | `periods` in the serializer's inline table never fired | Comment: unreachable while `skills` is itself inline; kept as a decision |
+| 23 | `SerializationError` had no test | Serializer injected on `DatasetStore`; one test hands it a liar |
 | 24 | GET of an already-invalid dataset returned a bare 500 | Same 422 report PUT already returns, drawn on the page |
+| 25 | `handleApi` could not be tested against a fake store | `DatasetApi` structural interface |
+| 26 | `scripts/editor.ts` installed no process-level safety net | `unhandledRejection` / `uncaughtException` log and exit non-zero |
+| 27 | The write queue's key did not case-fold on Windows | `queueKey` lowercases on `win32` |
+| 28 | The write queue's Map never evicts | Accepted 2026-09-03. The process writes one path; eviction is more machinery than the leak |
 | 29 | Top-level collection items could be added but never removed | `remove this item` in the detail header; refused when something still points at the id |
 | 30 | Top-level scalars were unreachable; `updatedAt` never refreshed | `header` nav group; stamped on save only when the rest of the dataset changed |
+| 31 | The sidebar label did not follow an edited `id` | `navButtons` map; `onChange` retitles the one row |
 | 32 | After a 409, Save re-enabled on the next keystroke | `stale` latch, cleared only by `load()` |
+| 33 | Editor test fixtures never cleaned up their `mkdtemp` directories | `createTempDirs()` per file, `after` cleanup |
+| 34 | No test asserted a singular `reference` hint sits on a string | Four lines in `hints.test.ts` |
 | 35 | Clearing an optional object left `{}` and blocked the save | `set()` prunes hollow nested objects |
 | 36 | A failed fetch at load left the page on "loading…" | `load()` checks both responses and draws the error |
 | 37 | The bundle budget measured `dist/index.html` by path, so `/en/` shipped with no byte ceiling, and the `WebGLRenderer` scan followed the same hard-coded `<script src>` — silently blind after Rollup started sharing the boot chunk between two entries | `bundle-budget.check.ts` now takes its pages from `PAGES_WITH_JS` (`scripts/pages-with-js.ts`, shared with `no-client-js.check.ts`) and follows static `import` specifiers transitively from each page's entry chunk, so the byte budget and the `three` scan both see the real payload, not the wrapper |
-
----
-
-## 6. The Function cannot be tested end to end locally
-
-**Severity: low. It is a limitation, not a defect — noted so it is not
-rediscovered.**
-
-`pnpm dlx wrangler pages dev dist` serves `/cv.pdf` and is enough to verify
-routing, caching and the error paths. What it **cannot** verify is the render:
-the Function asks Browser Rendering to print `http://localhost:8788/cv`, and that
-URL does not resolve from Cloudflare's cloud.
-
-So the render is only tested by deploying. That is covered today by
-`smoke-deploy.yml`, which runs `test:pdf` against every successful deploy —
-previews included — so the cycle is "push to `staging` and watch the smoke", not
-"push to production and pray".
-
-**Way out, if it ever becomes annoying:** a tunnel (`cloudflared tunnel`)
-exposing the local `wrangler pages dev` on a public URL. That is infrastructure
-for a problem solved today by waiting a minute for a preview. It does not look
-worth it.
 
 ---
 
@@ -100,48 +91,6 @@ anyway.
 
 ---
 
-## 20. `datasetDescriptor` is an unchecked cast
-
-**Severity: very low. Same review as §19.**
-
-`editor/schema-adapter.ts` ends with `describe(datasetSchema) as
-ObjectDescriptor`. `describe` returns the whole `Descriptor` union, so nothing
-statically guarantees the top-level result is an object.
-
-**How to check it.** Read the last lines of the file: the `as` is right there.
-
-**Why it was not fixed.** `datasetSchema` is a hardcoded `z.object(...).strict()`
-at the call site, so the cast cannot diverge from reality without someone
-rewriting the schema's top level — and several tests read `datasetDescriptor` at
-import time, so a wrong shape fails immediately.
-
-**Fix.** A `describeObject()` helper that narrows and throws otherwise, removing
-the cast. Ten lines.
-
----
-
-## 21. One entry of the serializer's inline table is unreachable
-
-**Severity: very low. Same review as §19.**
-
-`editor/serialize.ts` lists `periods` in `INLINE_ELEMENT_ARRAYS`, but the entry
-never fires: `periods` only exists on `Skill`, every `Skill` is an element of the
-`skills` array, and that array is itself inline — so a skill is printed whole by
-`inline()`, which consults no table.
-
-**How to check it.** Put a `throw` inside the `INLINE_ELEMENT_ARRAYS.has(key)`
-branch for `periods` and run `pnpm run test:format`: it passes.
-
-**Why it was not fixed.** It is correct-but-dormant, not wrong. Removing it would
-have to be undone the day `periods` — or any field like it — is used outside
-`Skill`, and the cost of keeping it is one line in a table that is meant to be
-read as a decision.
-
-**Fix.** Delete the entry, or leave a comment saying it is currently unreachable.
-Decide it when the schema next moves.
-
----
-
 ## 22. The serializer's tests cover the dataset we have, not the schema we allow
 
 **Severity: low. Same review as §19.**
@@ -167,201 +116,6 @@ that keeps them working.
 natural moment to do it when the metrics gap in
 [06](./06-next-session.md) §4 is filled, because the dataset will then carry the
 shapes for real.
-
----
-
-## 23. `SerializationError` has no test
-
-**Severity: low. Found in the final review of `feature/editor-server` (`0.16.0`).**
-
-`DatasetStore.writeExclusive` parses its own serializer's output back and
-refuses the save if it does not deep-equal the input — the round-trip guard the
-whole file's opening comment leans on. Nothing exercises that path: every test
-that reaches `write()` does so with real data, and the real serializer round-trips
-it, so `SerializationError` is thrown by no committed test.
-
-**How to check it.** `grep SerializationError editor/store.test.ts` → no matches.
-
-**Why it was not fixed.** Provoking it honestly needs a serializer that lies —
-either a modified `editor/serialize.ts` for the duration of one test, or
-dependency injection added to `DatasetStore` purely so a test can hand it a
-broken one. Neither is a small change to make in passing.
-
-**Fix.** Inject the serializer (or a narrower "round-trip check" function) as an
-optional constructor parameter, defaulting to the real one, and have one test
-pass a fake that returns text which does not parse back. A few lines on the
-class, one test.
-
----
-
-## 25. `handleApi` cannot be tested against a fake store
-
-**Severity: low. Found in the same review as §23.**
-
-`handleApi`'s `store` parameter is typed as `DatasetStore`, the concrete class —
-not an interface. `DatasetStore` has private members (`file`, `readRaw`,
-`writeExclusive`), and TypeScript compares classes carrying private members
-nominally, not structurally: a plain object implementing `read`/`write` with the
-right signatures still fails to typecheck as a `DatasetStore`. The file's own
-opening comment says routing is tested "without binding a port", which is true,
-but not yet "against any store that throws whatever it likes" — every existing
-`api.test.ts` case goes through a real `DatasetStore` over a temp file.
-
-**How to check it.** Try passing `{ read: async () => {...}, write: async () =>
-{...} }` where `handleApi` expects its second argument: `tsc` refuses it.
-
-**Why it was not fixed.** No test currently needs it — the temp-file
-`DatasetStore` is fast enough that nothing has reached for a fake yet.
-
-**Fix.** Type the parameter as a structural interface (`{ read(): ...; write():
-... }`) exported from `store.ts` or `api.ts`. Natural moment: when PR 3 next
-touches this file and a test wants a store that throws on demand.
-
----
-
-## 26. The editor entry point installs no process-level safety net
-
-**Severity: medium. Found in the same review as §23.**
-
-`scripts/editor.ts` handles `EADDRINUSE` on the server's own `error` event, but
-nothing in the process listens for `unhandledRejection` or `uncaughtException`.
-Commit `5784467` established the stakes: this is the one process holding write
-access to the dataset, and an unhandled rejection kills a Node process outright
-since v15. `editor/server.ts`'s outer `try/catch` closes that gap for the request
-handler today, but it closes it per-handler — every route, present and future,
-has to remember to funnel its errors through `send` — rather than structurally,
-at the one place that would catch whatever a future handler forgets.
-
-**How to check it.** `grep -n "unhandledRejection\|uncaughtException" scripts/editor.ts` → no matches.
-
-**Why it was not fixed.** Today's only handler (`handleApi`) is already covered
-by `server.ts`'s catch, so there is no live gap yet — this is a net for what PR 3
-adds, not for what exists now.
-
-**Fix.** A few lines in `scripts/editor.ts`: log and exit non-zero on either
-event, rather than letting Node's default handling decide. PR 3 adds a static
-file handler, which is exactly the kind of code that forgets a try/catch — do
-this before or alongside it.
-
----
-
-## 27. The write queue's key is a resolved path, and Windows does not case-fold it
-
-**Severity: very low. Found in the re-review of the editor's `0.16.0` fix wave.**
-
-`editor/store.ts` serializes concurrent writes through a module-level
-`Map<string, Promise<void>>` keyed by `resolve(this.file)`. That makes two
-`DatasetStore` instances over the same file share one queue — which is the
-point, and what the comments now truthfully claim. But `resolve()` does not
-case-fold on Windows, so two instances built from paths differing only in case
-(`C:\...` against `c:\...`) land in different entries and quietly get the
-pre-`5f1cdb7` race back: both check the same etag, both pass, the second rename
-discards the first, and both callers see success.
-
-**How to check it.** Construct two stores over the same file, one path
-upper-cased in its drive letter, and issue overlapping writes. Both fulfil.
-
-**Why it was not fixed.** Every construction site in the repo passes either the
-default `DATASET_FILE` constant or a path from `mkdtemp`, so no caller can
-currently produce the mismatch. Normalizing case would be wrong on
-case-sensitive filesystems, so the fix is a real decision rather than a
-one-liner.
-
-**Fix.** Key by `realpath` where the file exists, or normalize case only on
-`win32`. Worth doing if the editor ever takes a path from user input.
-
----
-
-## 28. The write queue's Map never evicts
-
-**Severity: negligible. Same re-review as §27.**
-
-`writeQueues` in `editor/store.ts` holds one entry per resolved path for the
-lifetime of the process, with no eviction.
-
-**How to check it.** Read the module scope of `editor/store.ts`: nothing ever
-calls `delete`.
-
-**Why it was not fixed.** In practice the process writes one path, so the Map
-holds one entry. Eviction would need to know when a queue is idle, which is
-more machinery than the leak it prevents.
-
-**Fix.** Delete the entry when a write settles and the tail is still the one it
-installed. Only worth it if something ever drives many paths through one
-process.
-
----
-
-## 31. The sidebar label does not follow an edited `id`
-
-**Severity: low. Same review as §29.**
-
-`onAdd` and `onRemove` both call `renderNav()`; `onChange` does not. Editing a
-skill's `id` therefore changes the field and the dataset but leaves the sidebar
-showing the old label until something else forces a re-render — navigating away
-and back. `labelFor` reads `item.id || item.code || item.name`, so the same
-staleness hits `name` where there is no `id`.
-
-**How to check it.** Select a skill, change its `id`, look at the sidebar: the
-row still carries the previous text.
-
-**Why it was not fixed.** Calling `renderNav()` from `onChange` re-renders the
-whole sidebar on every keystroke, and the naive version also fights focus. The
-right shape is to redraw the one button whose label changed, which needs the nav
-to know which node belongs to which item.
-
-**Fix.** Keep a handle on the button per `collection.index` and update its text
-in `onChange` when the edited path ends in `id`/`code`/`name`, rather than
-rebuilding the nav.
-
----
-
-## 33. The editor's test fixtures never clean up their `mkdtemp` directories
-
-**Severity: low. Same review as §29; pre-existing.**
-
-`static.test.ts`, `api.test.ts` and `store.test.ts` each create temp directories
-with `mkdtemp` and none of them removes one — `store.test.ts` creates four.
-`scripts/editor-page.check.ts` does the same with the dataset copy it edits.
-Every run leaves another `editor-*` directory in the system temp folder, holding
-a copy of the dataset. Nothing breaks; the litter simply accumulates, and on
-Windows nothing sweeps it.
-
-**How to check it.** `grep -rn "rm(\|rmdir" editor/*.test.ts` → no matches. Run
-`pnpm test` twice and list `%TEMP%`: one new `editor-*` directory per fixture per
-run.
-
-**Why it was not fixed.** It costs nothing per run and the tests are correct as
-they are, so it never blocked anything — and a `rm(..., { recursive: true })` in
-the wrong `after` hook deletes a directory another still-running test is reading.
-
-**Fix.** A shared `tempDir()` helper that registers the directory and removes it
-in one `test.after`, used by the three tests and the smoke.
-
----
-
-## 34. No test asserts a singular `reference` hint sits on a string
-
-**Severity: low. Same review as §29.**
-
-`hints.test.ts` checks the descriptor KIND under a `textarea` hint (must be a
-string) and under a `reference-list` hint (must be an array of strings). The
-third widget has no such check: `reference` is only tested for naming a
-collection that exists. A `reference` hint moved onto an array — or onto an
-object — would pass every test in the file and produce a `<select>` bound to a
-value it cannot represent.
-
-**How to check it.** Point `"achievements[].skillIds"` at `{ widget:
-"reference", source: "skills" }` and run `pnpm test`: green, and the page draws
-a single-value picker over an array field.
-
-**Why it was not fixed.** The gap is symmetrical with two checks that already
-exist, so it is four lines — but it is a test, and this branch's commit is a
-defect fix; adding coverage to it would blur what the diff says.
-
-**Fix.** The `textarea` test, with `reference` in the filter and `string` as the
-expected kind. Four lines in `hints.test.ts`.
-
 
 ---
 
@@ -429,3 +183,67 @@ data until there is real data.
 **Fix.** The day the first `Service` is written: add
 `const isServiceName = key === "name" && /^services\.[^.]+$/.test(path);` next
 to the existing two, and confirm `test:i18n` demands a translation for it.
+
+---
+
+## 40. Locale → URL is encoded four times, in two styles with opposite failure modes
+
+**Severity: low today, medium the day a third language exists. Found in the
+whole-branch review of the bilingual slice (`0.20.0`).**
+
+The same mapping is written four times: `PDF_HREF` in `HomeDocument.astro`,
+`other === "es" ? "/" : "/en/"` in `LocaleSwitch.astro`, `ALTERNATE_LOCALES` in
+`Base.astro`, and `sourcePath` in `functions/_pdf.ts`.
+
+Two of those are `Record<Locale, …>` tables and two are ternaries, and **that is
+the real problem, not the repetition**: adding `pt` makes the tables a compile
+error and makes the ternaries silently return the English answer.
+
+**How to check it.** Add `"pt"` to `Locale` in `content-schema.ts` and run
+`pnpm run typecheck`. The tables complain; `LocaleSwitch.astro` and
+`functions/_pdf.ts` compile and are wrong.
+
+**Fix.** One `LOCALE_PATHS: Record<Locale, { home: string; cv: string; pdf: string }>`
+beside `ANCHORS` in `src/lib/anchors.ts`, and delete the other three.
+
+---
+
+## 41. The English anchors' scroll offset lives in a page, not in the stylesheet
+
+**Severity: low. Same review.**
+
+`src/styles/home.css` hard-codes `#mapa`/`#proyectos` for `scroll-margin-top`,
+and `src/pages/en/index.astro` compensates with a page-scoped `:global(#map),
+:global(#projects)` block. That was correct while the slice had to prove the
+Spanish output was byte-identical; the constraint expired at merge.
+
+It leaves the anchor names in a third place `single-landing.check.ts` does not
+read. Renaming `ANCHORS.en.map` passes every gate and silently drops the offset,
+so every anchor jump on `/en/` lands with the heading hidden under the floating
+pill — a bug that only shows after a click, which is why nothing caught it.
+
+**How to check it.** Rename `ANCHORS.en.map` to anything and run the full gate:
+green. Then click the index link on `/en/`.
+
+**Fix.** Both id sets in `home.css`, delete the page-scoped block. Better: emit
+the rule from `ANCHORS`, the way `lab-hover-css.ts` already emits CSS from data.
+
+---
+
+## 42. `messages.test.ts` catches an untranslated string only if it has an accent
+
+**Severity: low. Same review.**
+
+The guard against pasting a Spanish string into `MESSAGES.en` is a regex for
+`[áéíóúñ¿¡]`. It catches the realistic case and false-positives on nothing, but
+a Spanish string with no diacritics — `"Proyectos"`, `"Contacto"`, `"Stack"` —
+slips through silently.
+
+The dataset has a real answer for this (`UNTRANSLATED_MIN_LENGTH` in
+`i18n.check.ts`: identical AND over 40 characters); the chrome copy does not,
+because most chrome strings are short enough that identical is often legitimate.
+
+**Fix.** Not obvious, which is why it is here rather than done: either a list of
+keys allowed to be identical (maintenance every time one is added), or accept
+the gap and rely on the accent test plus review. Revisit if a bare-ASCII Spanish
+string ever reaches production.

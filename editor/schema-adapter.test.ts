@@ -13,7 +13,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { z } from "zod";
 
-import { datasetDescriptor, describe, UnsupportedSchemaError } from "./schema-adapter";
+import { datasetDescriptor, describe, describeObject, UnsupportedSchemaError } from "./schema-adapter";
 import type {
   ArrayDescriptor,
   Descriptor,
@@ -148,6 +148,17 @@ const fieldOf = (object: ObjectDescriptor, key: string): Descriptor => {
   assert.ok(found, `the descriptor has no field "${key}"`);
   return found.descriptor;
 };
+
+test("describeObject refuses a non-object schema instead of casting", () => {
+  assert.throws(
+    () => describeObject(z.string()),
+    (err: unknown) => {
+      assert.ok(err instanceof UnsupportedSchemaError);
+      assert.match((err as Error).message, /string/);
+      return true;
+    },
+  );
+});
 
 test("the dataset describes as an object, and its top-level order is the schema's", () => {
   assert.equal(datasetDescriptor.kind, "object");
