@@ -1,6 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { MESSAGES } from "./messages";
+import type { Messages } from "./messages";
 
 test("both locales define the same keys", () => {
   // The type already guarantees it. This catches the other direction: a key
@@ -56,5 +57,21 @@ test("no English message is a pasted Spanish string", () => {
       SPANISH_ONLY_CHARS,
       `MESSAGES.en.${key} ("${value}") looks like pasted Spanish, not a translation`,
     );
+  }
+});
+
+test("English chrome copy is not a silent paste of the Spanish", () => {
+  // The accent test above misses bare-ASCII Spanish ("Proyectos", "Contacto").
+  // Identical short labels are often legitimate ("Email"), so the allowlist
+  // is the reviewable decision; every other key must actually differ.
+  const MAY_BE_IDENTICAL = new Set<keyof Messages>(["emailLabel"]);
+  const OTHER_LOCALE_ON_PURPOSE = new Set<keyof Messages>(["downloadCvOtherLocale"]);
+  for (const key of Object.keys(MESSAGES.es) as (keyof Messages)[]) {
+    if (MAY_BE_IDENTICAL.has(key) || OTHER_LOCALE_ON_PURPOSE.has(key)) continue;
+    const es = MESSAGES.es[key];
+    const en = MESSAGES.en[key];
+    const esText = typeof es === "function" ? es(1, 1) : es;
+    const enText = typeof en === "function" ? en(1, 1) : en;
+    assert.notEqual(enText, esText, `MESSAGES.en.${key} is still the Spanish string`);
   }
 });

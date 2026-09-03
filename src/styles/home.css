@@ -250,15 +250,6 @@
   }
 }
 
-/* The pill is `fixed`: without this, the anchor jump leaves the section title
-   underneath it. It is the pill's height plus its distance from the top, plus
-   some air. */
-#mapa,
-#proyectos,
-#cv {
-  scroll-margin-top: calc(var(--space) * 9);
-}
-
 /* Smooth scrolling is what makes the index read as navigation rather than as a
    jump. `tokens.css` cancels animations under `prefers-reduced-motion`, but
    `scroll-behavior` is not an animation and that reset does not reach it. */

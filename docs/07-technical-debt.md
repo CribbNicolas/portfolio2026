@@ -11,9 +11,9 @@ This file exists so they do not get lost. Each entry says what it is, **how to
 check it** — so the next session does not have to take my word for it — and what
 fixing it would cost.
 
-**35 of 42 entries are closed.** The open ones keep their original numbers: a
+**38 of 42 entries are closed.** The open ones keep their original numbers: a
 renumbered list breaks every reference from a commit message or another doc.
-The remaining seven are waves 2–4 in
+The remaining four are waves 3–4 in
 [2026-09-03-close-technical-debt](./superpowers/plans/2026-09-03-close-technical-debt.md).
 
 What does **not** go here: product and data pending items, which live in
@@ -63,6 +63,9 @@ Kept as a one-line record. The reasoning is in the commit that closed each one.
 | 35 | Clearing an optional object left `{}` and blocked the save | `set()` prunes hollow nested objects |
 | 36 | A failed fetch at load left the page on "loading…" | `load()` checks both responses and draws the error |
 | 37 | The bundle budget measured `dist/index.html` by path, so `/en/` shipped with no byte ceiling, and the `WebGLRenderer` scan followed the same hard-coded `<script src>` — silently blind after Rollup started sharing the boot chunk between two entries | `bundle-budget.check.ts` now takes its pages from `PAGES_WITH_JS` (`scripts/pages-with-js.ts`, shared with `no-client-js.check.ts`) and follows static `import` specifiers transitively from each page's entry chunk, so the byte budget and the `three` scan both see the real payload, not the wrapper |
+| 40 | Locale → URL encoded four times, two of them ternaries that fail silent with a third language | `LOCALE_PATHS` next to `ANCHORS`; switch, hreflang, PDF buttons and `sourcePath` all read it |
+| 41 | English anchors' scroll offset lived in a page-scoped style, so renaming `ANCHORS.en.map` dropped it | `anchorScrollCss()` emitted from `ANCHORS`; `single-landing.check.ts` asserts both landings carry it |
+| 42 | `messages.test.ts` only caught pasted Spanish if it had an accent | Allowlist of keys that may be identical; every other key must differ |
 
 ---
 
@@ -183,67 +186,3 @@ data until there is real data.
 **Fix.** The day the first `Service` is written: add
 `const isServiceName = key === "name" && /^services\.[^.]+$/.test(path);` next
 to the existing two, and confirm `test:i18n` demands a translation for it.
-
----
-
-## 40. Locale → URL is encoded four times, in two styles with opposite failure modes
-
-**Severity: low today, medium the day a third language exists. Found in the
-whole-branch review of the bilingual slice (`0.20.0`).**
-
-The same mapping is written four times: `PDF_HREF` in `HomeDocument.astro`,
-`other === "es" ? "/" : "/en/"` in `LocaleSwitch.astro`, `ALTERNATE_LOCALES` in
-`Base.astro`, and `sourcePath` in `functions/_pdf.ts`.
-
-Two of those are `Record<Locale, …>` tables and two are ternaries, and **that is
-the real problem, not the repetition**: adding `pt` makes the tables a compile
-error and makes the ternaries silently return the English answer.
-
-**How to check it.** Add `"pt"` to `Locale` in `content-schema.ts` and run
-`pnpm run typecheck`. The tables complain; `LocaleSwitch.astro` and
-`functions/_pdf.ts` compile and are wrong.
-
-**Fix.** One `LOCALE_PATHS: Record<Locale, { home: string; cv: string; pdf: string }>`
-beside `ANCHORS` in `src/lib/anchors.ts`, and delete the other three.
-
----
-
-## 41. The English anchors' scroll offset lives in a page, not in the stylesheet
-
-**Severity: low. Same review.**
-
-`src/styles/home.css` hard-codes `#mapa`/`#proyectos` for `scroll-margin-top`,
-and `src/pages/en/index.astro` compensates with a page-scoped `:global(#map),
-:global(#projects)` block. That was correct while the slice had to prove the
-Spanish output was byte-identical; the constraint expired at merge.
-
-It leaves the anchor names in a third place `single-landing.check.ts` does not
-read. Renaming `ANCHORS.en.map` passes every gate and silently drops the offset,
-so every anchor jump on `/en/` lands with the heading hidden under the floating
-pill — a bug that only shows after a click, which is why nothing caught it.
-
-**How to check it.** Rename `ANCHORS.en.map` to anything and run the full gate:
-green. Then click the index link on `/en/`.
-
-**Fix.** Both id sets in `home.css`, delete the page-scoped block. Better: emit
-the rule from `ANCHORS`, the way `lab-hover-css.ts` already emits CSS from data.
-
----
-
-## 42. `messages.test.ts` catches an untranslated string only if it has an accent
-
-**Severity: low. Same review.**
-
-The guard against pasting a Spanish string into `MESSAGES.en` is a regex for
-`[áéíóúñ¿¡]`. It catches the realistic case and false-positives on nothing, but
-a Spanish string with no diacritics — `"Proyectos"`, `"Contacto"`, `"Stack"` —
-slips through silently.
-
-The dataset has a real answer for this (`UNTRANSLATED_MIN_LENGTH` in
-`i18n.check.ts`: identical AND over 40 characters); the chrome copy does not,
-because most chrome strings are short enough that identical is often legitimate.
-
-**Fix.** Not obvious, which is why it is here rather than done: either a list of
-keys allowed to be identical (maintenance every time one is added), or accept
-the gap and rely on the accent test plus review. Revisit if a bare-ASCII Spanish
-string ever reaches production.

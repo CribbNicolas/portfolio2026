@@ -2,27 +2,11 @@
 import type { Locale } from "@content";
 import { MESSAGES } from "@content";
 import { OG_HEIGHT, OG_WIDTH } from "../../scripts/og-template";
+import { HREFLANG } from "../lib/anchors";
 
 /** OG's own locale codes (BCP-ish, `xx_YY`) — a protocol detail, not chrome
  *  copy, so it lives here and not in `messages.ts`. */
 const OG_LOCALE: Record<Locale, string> = { es: "es_AR", en: "en_US" };
-
-/**
- * The set every `hreflang` page declares, INCLUDING itself — that
- * self-reference is part of the spec, not a redundant line: a crawler that
- * finds `/` announcing `/en/` as its alternate but not the other way around
- * treats the pair as unconfirmed and may ignore both.
- *
- * `x-default` points at the Spanish landing rather than at "whichever page
- * this is": the market this CV is written for is LatAm, so a crawler with no
- * better signal (no `Accept-Language`, a bot) should default to Spanish, not
- * to a guess. See docs/09 §2.3.
- */
-const ALTERNATE_LOCALES: { hreflang: string; path: string }[] = [
-  { hreflang: "es", path: "/" },
-  { hreflang: "en", path: "/en/" },
-  { hreflang: "x-default", path: "/" },
-];
 
 /**
  * Base layout. Its only responsibility is the `<head>`.
@@ -55,7 +39,7 @@ interface Props {
   shareable?: boolean;
   /**
    * When `true`, the page emits `hreflang` alternates for the two indexable
-   * landings (`ALTERNATE_LOCALES` above).
+   * landings (`HREFLANG` in `src/lib/anchors.ts`).
    *
    * Opt-in for the same reason as `shareable`: `/cv` and `/en/cv` carry
    * `noindex`, and `hreflang` on a page asking not to be indexed is a
@@ -86,7 +70,7 @@ const socialImage = new URL("/og.jpg", Astro.site);
     <link rel="canonical" href={canonical} />
 
     {
-      hreflang && ALTERNATE_LOCALES.map(({ hreflang: lang, path }) => (
+      hreflang && HREFLANG.map(({ hreflang: lang, path }) => (
         <link rel="alternate" hreflang={lang} href={new URL(path, Astro.site)} />
       ))
     }

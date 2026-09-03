@@ -15,9 +15,15 @@
  * Relative import and NOT the `@content` alias: this module is loaded both by
  * Vite (`.astro` files) and by `tsx` running a `*.check.ts` on its own, which
  * does not resolve the alias. Same reason as `src/lib/jsonld.ts` and
- * `src/lib/lab-hover-css.ts`. It is `import type`, so there is no runtime cost.
+ * `src/lib/lab-hover-css.ts`. Functions import it too (`functions/_pdf.ts`),
+ * so Locale comes from `content-schema` rather than the content source.
+ *
+ * Locale → URL used to be four copies, two of them ternaries: adding a third
+ * language made the tables a compile error and the ternaries silently English.
+ * `LOCALE_PATHS` is the one table; `sourcePath` / the switch / hreflang / the
+ * PDF buttons all read it.
  */
-import type { Locale } from "../../content/source/index";
+import type { Locale } from "../../content/schema/content-schema";
 
 export interface LandingAnchors {
   map: string;
@@ -29,3 +35,52 @@ export const ANCHORS: Record<Locale, LandingAnchors> = {
   es: { map: "mapa", projects: "proyectos", cv: "cv" },
   en: { map: "map", projects: "projects", cv: "cv" },
 };
+
+export interface LocalePaths {
+  home: string;
+  cv: string;
+  pdf: string;
+}
+
+export const LOCALE_PATHS: Record<Locale, LocalePaths> = {
+  es: { home: "/", cv: "/cv", pdf: "/cv.pdf" },
+  en: { home: "/en/", cv: "/en/cv", pdf: "/en/cv.pdf" },
+};
+
+/** The binary switch. A third language is a compile error here, not a guess. */
+export const OTHER_LOCALE: Record<Locale, Locale> = {
+  es: "en",
+  en: "es",
+};
+
+/** The page Browser Rendering prints, per locale. */
+export const sourcePath = (locale: Locale): string => LOCALE_PATHS[locale].cv;
+
+/**
+ * `hreflang` for the two indexable landings, including the self-reference the
+ * spec requires, plus `x-default` → Spanish (the market is LatAm).
+ */
+export const HREFLANG: { hreflang: string; path: string }[] = [
+  { hreflang: "es", path: LOCALE_PATHS.es.home },
+  { hreflang: "en", path: LOCALE_PATHS.en.home },
+  { hreflang: "x-default", path: LOCALE_PATHS.es.home },
+];
+
+/** Selector listing every landing section id, both languages. */
+export function anchorScrollSelector(): string {
+  const ids = new Set<string>();
+  for (const anchors of Object.values(ANCHORS) as LandingAnchors[]) {
+    ids.add(anchors.map);
+    ids.add(anchors.projects);
+    ids.add(anchors.cv);
+  }
+  return [...ids].map((id) => `#${id}`).join(", ");
+}
+
+/**
+ * The pill is `fixed`: without this, an anchor jump hides the heading under
+ * it. Emitted from `ANCHORS` so renaming an id cannot drop the offset.
+ */
+export function anchorScrollCss(): string {
+  return `${anchorScrollSelector()} { scroll-margin-top: calc(var(--space) * 9); }`;
+}

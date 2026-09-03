@@ -44,7 +44,7 @@ import { content, formatSeniority, formatDateRange, formatYearMonth, pdfFilename
 import { buildSvgMap } from "../lib/graph-svg";
 import { ITEM_ID } from "../lib/lab-hover-css";
 import { nodeHasMapLabel, isStickyMapLabel } from "../lib/map-labels";
-import { ANCHORS } from "../lib/anchors";
+import { ANCHORS, LOCALE_PATHS, OTHER_LOCALE, anchorScrollCss } from "../lib/anchors";
 import type { PositionedGraph } from "../../content/source/index";
 import Logo from "./Logo.astro";
 import LocaleSwitch from "./LocaleSwitch.astro";
@@ -75,12 +75,11 @@ const viewCv = await content.getView("cv-ats", locale);
 // comes from its own `updatedAt`, and so does the other's — using the
 // current locale's date for both would silently mislabel whichever PDF is
 // not this page's own.
-const other: Locale = locale === "es" ? "en" : "es";
+const other: Locale = OTHER_LOCALE[locale];
 const [datasetOwn, datasetOther] = await Promise.all([
   content.getDataset(locale),
   content.getDataset(other),
 ]);
-const PDF_HREF: Record<Locale, string> = { es: "/cv.pdf", en: "/en/cv.pdf" };
 
 const map = buildSvgMap(positioned);
 
@@ -103,6 +102,7 @@ const skillNameById = new Map(
 ---
 
 <div class="lab">
+  <style is:inline set:html={anchorScrollCss()} />
   <canvas class="lab__field" data-lab-field aria-hidden="true"></canvas>
 
   {/*
@@ -161,7 +161,7 @@ const skillNameById = new Map(
     */}
     <a
       class="download"
-      href={PDF_HREF[locale]}
+      href={LOCALE_PATHS[locale].pdf}
       download={pdfFilename(locale, datasetOwn.updatedAt)}
     >
       <span class="download__arrow" aria-hidden="true">↓</span>
@@ -170,7 +170,7 @@ const skillNameById = new Map(
     </a>
     <a
       class="download"
-      href={PDF_HREF[other]}
+      href={LOCALE_PATHS[other].pdf}
       download={pdfFilename(other, datasetOther.updatedAt)}
     >
       <span class="download__arrow" aria-hidden="true">↓</span>

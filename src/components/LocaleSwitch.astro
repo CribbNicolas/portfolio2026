@@ -18,14 +18,15 @@
  * exactly what the browser and a screen reader need to announce it correctly.
  */
 import type { Locale } from "@content";
+import { LOCALE_PATHS, OTHER_LOCALE } from "../lib/anchors";
 
 interface Props {
   locale: Locale;
 }
 
 const { locale } = Astro.props;
-const other: Locale = locale === "es" ? "en" : "es";
-const otherHref = other === "es" ? "/" : "/en/";
+const other: Locale = OTHER_LOCALE[locale];
+const otherHref = LOCALE_PATHS[other].home;
 
 const LABEL: Record<Locale, string> = { es: "ES", en: "EN" };
 const SWITCH_LABEL: Record<Locale, string> = {
