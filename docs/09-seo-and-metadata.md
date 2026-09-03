@@ -82,7 +82,7 @@ no guessing. That is phase 2 editor work, not this document's.
 
 ### 2.3 `hreflang`
 
-**Emitted since 2026-09-03**, on the two indexable landings only: `es` → `/`,
+**Emitted since 2026-09-02**, on the two indexable landings only: `es` → `/`,
 `en` → `/en/`, `x-default` → `/`. `x-default` is Spanish, not a guess at the
 visitor's browser language, because the market this CV is written for is
 LatAm.

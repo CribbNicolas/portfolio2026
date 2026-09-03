@@ -115,6 +115,9 @@ src/
   lib/jsonld.ts       ContentView → schema.org Person.
   lib/graph-svg.ts    PositionedGraph → draw list. Fog, paint order, labels.
   lib/lab-hover-css.ts  Graph → `:has()` rules. The cross-hover works with NO JS.
+  lib/lab-data.ts     PositionedGraph + Messages → the `LabData` JSON both landings embed for the boot
+                      script. One typed `buildLabData()` both pages call, so the two cannot drift into
+                      shipping different-shaped payloads with nothing catching it until a click throws.
   scripts/analytics.ts  Clarity. Both landing files call it (index.astro and en/index.astro); never Base.astro (/cv and /en/cv at zero JS).
                       The Cloudflare Web Analytics beacon goes in both landing files too, also by hand: enabling it
                       from the Pages dashboard injects it into the WHOLE site and no-client-js.check.ts would
@@ -157,32 +160,39 @@ scripts/
                       diverge silently.
   render-pdf.ts       renderPdf({ url }). Takes a URL, not a component. It NO LONGER produces the deliverable:
                       it produces the dist/cv.pdf the pre-deploy gate runs against.
-  build-pdf.ts        Serves dist/ and prints /cv → dist/cv.pdf. Outside `build`: it is `pdf:local`.
+  build-pdf.ts        Serves dist/ and prints /cv → dist/cv.pdf and /en/cv → dist/en/cv.pdf.
+                      Outside `build`: it is `pdf:local`.
   pdf-output.check.ts Verifies the PDF. With PDF_SOURCE=<url> it runs the SAME assertions against the published
                       PDF. Deliberately not a *.test.ts.
   no-client-js.check.ts  Per-page JS policy over all of dist/. Shields /cv and /en/cv.
-  bundle-budget.check.ts The home's budget: three off the critical path.
+  bundle-budget.check.ts The two landings' budget: three off the critical path, on both.
   single-landing.check.ts The two landings are the only doors: /cv and /en/cv without links or indexing, and the
                       landing sections in sync with the PDFs. Plus: 404.html exists.
   endpoints.check.ts  /cv.json and /llms.txt, the two surfaces agents consume. That the JSON parses and
                       carries the contract keys, and that the markdown has no empty fields.
-  format-data.ts      Writes content.es.json in canonical form. The fix path the gate points at. `format:data`.
-  i18n-fields.ts      The shared walker: `translatableFields(dataset)` → path → Spanish string, `hashOf(s)`.
-                      Path is built from ids, never array indices, so reordering achievements does not
-                      invalidate every translation. `NOT_TEXT` is a DENYLIST of key names — a new prose
-                      field is tracked the day it is added, which is the safe direction to be wrong in.
+  format-data.ts      Writes both content.es.json and content.en.json in canonical form. The fix path
+                      the gate points at. `format:data`.
+  i18n-fields.ts      The shared walker: `translatableFields(dataset)` → path → Spanish string, `hashOf(s)`,
+                      and `structuralSkeleton(dataset)` → the same dataset with every tracked leaf blanked —
+                      what is left over IS the structure `i18n.check.ts`'s parity test compares. Path is
+                      built from ids, never array indices, so reordering achievements does not invalidate
+                      every translation. `NOT_TEXT` is a DENYLIST of key names — a new prose field is
+                      tracked the day it is added, which is the safe direction to be wrong in.
   i18n-lock.ts        Writes `content/data/translation.lock.json`: hash of every Spanish string an English
                       translation was checked against. `i18n:lock`. Same shape as `og.lock.json`: a
                       committed artifact, a check that recomputes, a regenerate command the failure names.
-  i18n.check.ts       Three failures, three different fixes: structure drift (a tracked path in one dataset
-                      and not the other), missing translation (English still byte-identical to Spanish AND
-                      over 40 chars), stale translation (Spanish hash no longer matches the lock). Not a
-                      *.test.ts: `pnpm test`'s glob would run it against whatever the datasets happen to be
-                      at that point instead of at the deliberate moment `test:i18n` runs it, same reason as
-                      `data-format.check.ts`.
+  i18n.check.ts       Four failures, four different fixes: tracked-path drift (a translatable path in one
+                      dataset and not the other), structural drift (anything OUTSIDE the tracked set differs
+                      — an id, a date, a `skillIds` entry, a `visibility.priority` — caught by deep-comparing
+                      `structuralSkeleton(es)` against `structuralSkeleton(en)`, the two datasets with every
+                      translatable leaf blanked), missing translation (English still byte-identical to
+                      Spanish AND over 40 chars), stale translation (Spanish hash no longer matches the
+                      lock). Not a *.test.ts: `pnpm test`'s glob would run it against whatever the datasets
+                      happen to be at that point instead of at the deliberate moment `test:i18n` runs it,
+                      same reason as `data-format.check.ts`.
   editor.ts           Entry point of `pnpm run editor`. Loopback only: this process writes to the dataset.
   editor-page.check.ts  The page in a real browser: loads, renders from the schema, saves. Needs Chromium.
-  data-format.check.ts  THE canonical written form of the dataset is committed as such. Not a *.test.ts: it reads a committed artifact.
+  data-format.check.ts  THE canonical written form of both datasets is committed as such. Not a *.test.ts: it reads committed artifacts.
   served.check.ts     The ONLY thing verifying the SERVED response and not dist/. Runs from the smoke. Catches
                       what happens after the build: injections at the edge.
   audit-todos.ts      Non-blocking report of published TODOs.
@@ -300,8 +310,8 @@ waiting on `networkidle`, so a script slipping in changes the PDF silently.
 **Since 2026-08-25 that went from breaking your build to breaking production:**
 the PDF is printed by `functions/_handler.ts` (via `functions/cv.pdf.ts` and
 `functions/en/cv.pdf.ts`) over the PUBLISHED page, not over your `dist/`.
-`PAGES_WITH_JS` in `no-client-js.check.ts` is the allowlist — adding a page is
-an explicit decision in a diff, not an accident.
+`PAGES_WITH_JS` in `scripts/pages-with-js.ts` is the allowlist — adding a page
+is an explicit decision in a diff, not an accident.
 
 Rules, all verified in CI by `bundle-budget.check.ts` and
 `no-client-js.check.ts`:
