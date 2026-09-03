@@ -11,7 +11,7 @@ This file exists so they do not get lost. Each entry says what it is, **how to
 check it** — so the next session does not have to take my word for it — and what
 fixing it would cost.
 
-**24 of 39 entries are closed.** The open ones keep their original numbers: a
+**24 of 42 entries are closed.** The open ones keep their original numbers: a
 renumbered list breaks every reference from a commit message or another doc.
 
 What does **not** go here: product and data pending items, which live in
@@ -429,3 +429,67 @@ data until there is real data.
 **Fix.** The day the first `Service` is written: add
 `const isServiceName = key === "name" && /^services\.[^.]+$/.test(path);` next
 to the existing two, and confirm `test:i18n` demands a translation for it.
+
+---
+
+## 40. Locale → URL is encoded four times, in two styles with opposite failure modes
+
+**Severity: low today, medium the day a third language exists. Found in the
+whole-branch review of the bilingual slice (`0.20.0`).**
+
+The same mapping is written four times: `PDF_HREF` in `HomeDocument.astro`,
+`other === "es" ? "/" : "/en/"` in `LocaleSwitch.astro`, `ALTERNATE_LOCALES` in
+`Base.astro`, and `sourcePath` in `functions/_pdf.ts`.
+
+Two of those are `Record<Locale, …>` tables and two are ternaries, and **that is
+the real problem, not the repetition**: adding `pt` makes the tables a compile
+error and makes the ternaries silently return the English answer.
+
+**How to check it.** Add `"pt"` to `Locale` in `content-schema.ts` and run
+`pnpm run typecheck`. The tables complain; `LocaleSwitch.astro` and
+`functions/_pdf.ts` compile and are wrong.
+
+**Fix.** One `LOCALE_PATHS: Record<Locale, { home: string; cv: string; pdf: string }>`
+beside `ANCHORS` in `src/lib/anchors.ts`, and delete the other three.
+
+---
+
+## 41. The English anchors' scroll offset lives in a page, not in the stylesheet
+
+**Severity: low. Same review.**
+
+`src/styles/home.css` hard-codes `#mapa`/`#proyectos` for `scroll-margin-top`,
+and `src/pages/en/index.astro` compensates with a page-scoped `:global(#map),
+:global(#projects)` block. That was correct while the slice had to prove the
+Spanish output was byte-identical; the constraint expired at merge.
+
+It leaves the anchor names in a third place `single-landing.check.ts` does not
+read. Renaming `ANCHORS.en.map` passes every gate and silently drops the offset,
+so every anchor jump on `/en/` lands with the heading hidden under the floating
+pill — a bug that only shows after a click, which is why nothing caught it.
+
+**How to check it.** Rename `ANCHORS.en.map` to anything and run the full gate:
+green. Then click the index link on `/en/`.
+
+**Fix.** Both id sets in `home.css`, delete the page-scoped block. Better: emit
+the rule from `ANCHORS`, the way `lab-hover-css.ts` already emits CSS from data.
+
+---
+
+## 42. `messages.test.ts` catches an untranslated string only if it has an accent
+
+**Severity: low. Same review.**
+
+The guard against pasting a Spanish string into `MESSAGES.en` is a regex for
+`[áéíóúñ¿¡]`. It catches the realistic case and false-positives on nothing, but
+a Spanish string with no diacritics — `"Proyectos"`, `"Contacto"`, `"Stack"` —
+slips through silently.
+
+The dataset has a real answer for this (`UNTRANSLATED_MIN_LENGTH` in
+`i18n.check.ts`: identical AND over 40 characters); the chrome copy does not,
+because most chrome strings are short enough that identical is often legitimate.
+
+**Fix.** Not obvious, which is why it is here rather than done: either a list of
+keys allowed to be identical (maintenance every time one is added), or accept
+the gap and rely on the accent test plus review. Revisit if a bare-ASCII Spanish
+string ever reaches production.
