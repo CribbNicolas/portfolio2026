@@ -1,0 +1,83 @@
+---
+/**
+ * The CV body: header, profile, skills, experience, education, languages.
+ *
+ * Extracted out of `src/pages/cv.astro` so `/cv` and `/en/cv` render the exact
+ * same markup, parameterized only by `locale` — the alternative, two page
+ * files with the same JSX, is how the two languages start drifting on day
+ * three (see `docs/04`'s "one layout" rule for the CV, now doubled to two
+ * locales instead of one).
+ *
+ * It fetches its OWN `cv-ats` view rather than receiving it as a prop: the
+ * caller (`cv.astro` / `en/cv.astro`) needs no view of its own to render
+ * `<Base>` — title and description come from Rule-8-filtered identity fields
+ * that do not vary by surface, so the page reads them off `public-api`
+ * (which it already fetches for the JSON-LD) and this component reads
+ * `cv-ats` independently. Two small fetches over the same in-memory dataset,
+ * not one shared one, because there is no clean way to hand a value computed
+ * inside a child component back up to the page's own frontmatter.
+ *
+ * Deliberately NOT responsible for the JSON-LD or the `noindex` meta tag: both
+ * have to land inside `<head>`, and `<head>` content can only be supplied by
+ * whoever calls `<Base>` directly — a slot given to a grandchild component
+ * does not reach past the component that received it. Moving either one in
+ * here would also change `dist/cv/index.html`'s bytes, which the Spanish
+ * build has to stay clear of entirely (see the plan's hard rule).
+ */
+import type { Locale } from "@content";
+import { content, formatDateRange, formatYearMonth, MESSAGES } from "@content";
+import Header from "./Header.astro";
+import Section from "./Section.astro";
+import RoleBlock from "./RoleBlock.astro";
+import SkillList from "./SkillList.astro";
+
+interface Props {
+  locale: Locale;
+}
+
+const { locale } = Astro.props;
+const view = await content.getView("cv-ats", locale);
+const { identity } = view;
+const m = MESSAGES[locale];
+---
+
+<main class="cv">
+  <Header identity={identity} locale={locale} />
+
+  <Section title={m.sectionProfile}>
+    <p class="profile">{identity.summary.short}</p>
+  </Section>
+
+  <Section title={m.sectionSkills}>
+    <SkillList skills={view.skills} locale={locale} />
+  </Section>
+
+  <Section title={m.sectionExperience}>
+    {view.experience.map((role) => <RoleBlock role={role} locale={locale} />)}
+  </Section>
+
+  <Section title={m.sectionEducation}>
+    {view.education.map((e) => (
+      <div class="entry">
+        <p class="entry__title">{e.degree}{e.field && <> — {e.field}</>}</p>
+        <p class="entry__meta">
+          {e.institution}
+          {/* Without `start` there is no range: formatDateRange(end, end) would print
+              "02/2022 — 02/2022", which reads like a loading error. */}
+          {e.end && <> · {e.start ? formatDateRange(e.start, e.end, locale) : formatYearMonth(e.end, locale)}</>}
+          {e.status === "partial" && <> · {m.studyPartial}</>}
+          {e.status === "in-progress" && <> · {m.studyInProgress}</>}
+        </p>
+      </div>
+    ))}
+  </Section>
+
+  <Section title={m.sectionLanguages}>
+    {view.languages.map((l) => (
+      <p class="skill-group">
+        <span class="skill-group__label">{l.name}:</span>{" "}
+        {l.level === "native" ? m.levelNative : l.level}
+      </p>
+    ))}
+  </Section>
+</main>

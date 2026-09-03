@@ -1,0 +1,114 @@
+---
+/**
+ * The English home. Same shell as `../index.astro`, same shared
+ * `HomeDocument`, different `locale` and its own dataset
+ * (`content.en.json`). See `../index.astro`'s header comment and
+ * `../../components/HomeDocument.astro`'s for why the split lands where it
+ * does.
+ *
+ * It is in `PAGES_WITH_JS` (`scripts/no-client-js.check.ts`) alongside `/`:
+ * it renders the same 3D map, so it needs the same script.
+ */
+import Base from "../../layouts/Base.astro";
+import { content, buildKnowledgeGraph, layoutGraph } from "@content";
+import { buildPersonJsonLd } from "../../lib/jsonld";
+import { buildHoverCss } from "../../lib/lab-hover-css";
+import HomeDocument from "../../components/HomeDocument.astro";
+
+import "@fontsource/manrope/400.css";
+import "@fontsource/manrope/600.css";
+import "@fontsource/manrope/800.css";
+import "../../styles/tokens.css";
+import "../../styles/home.css";
+import "../../styles/cv.css";
+import "../../styles/projects.css";
+import "../../styles/lab.css";
+
+const locale = "en";
+const view = await content.getView("portfolio", locale);
+const { identity } = view;
+const jsonLd = buildPersonJsonLd(view, new URL(Astro.site!));
+
+/**
+ * The Cloudflare Web Analytics beacon token. See `../index.astro`: same
+ * variable, same reasoning, read again here because Vite inlines
+ * `import.meta.env` per module.
+ */
+const cloudflareBeacon: string | undefined = import.meta.env.PUBLIC_CF_BEACON_TOKEN;
+
+const graph = buildKnowledgeGraph(view);
+const positioned = layoutGraph(graph);
+const hoverCss = buildHoverCss(positioned);
+
+// What the 3D runtime needs. Same shape as the Spanish page's — the boot
+// script (`src/scripts/lab/boot.ts`) is locale-agnostic, it only draws
+// coordinates and labels that are already resolved server-side.
+const graphData = JSON.stringify({
+  nodes: positioned.nodes.map((n) => ({
+    i: n.id, k: n.kind, x: n.x, y: n.y, z: n.z, d: n.degree,
+    r: Math.round(n.radiusScale * 100) / 100,
+    n: n.label, t: n.detail, ...(n.category ? { c: n.category } : {}),
+  })),
+  edges: positioned.edges.map((e) => ({ s: e.source, t: e.target, a: e.kind === "affinity", w: e.weight })),
+  radius: positioned.framingRadius,
+});
+---
+
+{/*
+  `shareable`: see `../index.astro`. The OG card itself stays Spanish here on
+  purpose (dated decision, non-blocking) — only `<html lang>` changes, via the
+  `locale` prop below.
+*/}
+<Base
+  locale={locale}
+  title={`${identity.fullName} — ${identity.searchTitle}`}
+  description={identity.summary.short}
+  shareable
+>
+  <script type="application/ld+json" is:inline slot="head" set:html={JSON.stringify(jsonLd)} />
+  <style is:inline set:html={hoverCss} slot="head" />
+
+  {/*
+    The pill's nav labels, the map's headings and the footer's privacy note
+    are still Spanish inside `HomeDocument.astro` — that component has no
+    English chrome copy yet. Flagged in the task report; not fixed here.
+  */}
+  <HomeDocument locale={locale} view={view} positioned={positioned} />
+
+  {cloudflareBeacon && (
+    <script
+      is:inline
+      type="module"
+      src="https://static.cloudflareinsights.com/beacon.min.js"
+      data-cf-beacon={JSON.stringify({ token: cloudflareBeacon })}
+    />
+  )}
+
+  <script type="application/json" is:inline data-lab-data set:html={graphData} />
+  <script>
+    // Analytics first, `start()` second — same ordering as `../index.astro`,
+    // same reason: `Clarity.init` cannot throw, `start()` can.
+    import { startAnalytics } from "../../scripts/analytics";
+    import { start } from "../../scripts/lab/boot";
+    startAnalytics();
+    start();
+  </script>
+</Base>
+
+<style>
+  /*
+   * `home.css` keys `scroll-margin-top` off the Spanish ids (`#mapa`,
+   * `#proyectos`, `#cv`) — see `src/lib/anchors.ts` for why the English ones
+   * are different words. That file is shared with the Spanish landing, and
+   * editing it to add the English ids would change ITS bundle's content hash
+   * too, which would show up as an unexplained diff in `dist/index.html` — the
+   * one file the plan's hard rule says must stay byte-identical beyond the
+   * switch and the second download link. This page-scoped, `:global()` rule
+   * covers the English ids without touching that shared file. `#cv` needs no
+   * equivalent: it is already the same word in both languages.
+   */
+  :global(#map),
+  :global(#projects) {
+    scroll-margin-top: calc(var(--space) * 9);
+  }
+</style>

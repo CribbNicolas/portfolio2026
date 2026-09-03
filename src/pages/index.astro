@@ -11,22 +11,24 @@
  * It is the ONLY page on the site that ships JavaScript, which is why it is in
  * `PAGES_WITH_JS` in `scripts/no-client-js.check.ts`. `/cv` stays at zero: the
  * PDF comes from there, and a script slipping in changes the render silently.
+ * (`/en/` ships it too now, for the same reason: it renders the same map.)
  *
  * ALL the graph computation runs here, at build time. None of that derivation
  * travels to the browser: the client receives already resolved coordinates.
+ *
+ * This file's own job is what CANNOT move into `HomeDocument.astro`: the
+ * `<Base>` shell, the JSON-LD and the hover CSS (both `slot="head"`, so only
+ * whoever calls `<Base>` directly can place them), the serialized graph data
+ * for the 3D boot, and the analytics wiring. See `HomeDocument.astro`'s header
+ * comment for why splitting it this way, and not further, is what keeps the
+ * Spanish build byte-identical. Everything else — the pill, the hero, the map
+ * markup, the projects, the CV section — is shared with `/en/`.
  */
 import Base from "../layouts/Base.astro";
-import { content, formatSeniority, formatDateRange, formatYearMonth, buildKnowledgeGraph, layoutGraph, pdfFilename, MESSAGES } from "@content";
+import { content, buildKnowledgeGraph, layoutGraph } from "@content";
 import { buildPersonJsonLd } from "../lib/jsonld";
-import { buildSvgMap } from "../lib/graph-svg";
-import { buildHoverCss, ITEM_ID } from "../lib/lab-hover-css";
-import { nodeHasMapLabel, isStickyMapLabel } from "../lib/map-labels";
-import Logo from "../components/Logo.astro";
-import GraphSvg from "../components/lab/GraphSvg.astro";
-import ProjectList from "../components/projects/ProjectList.astro";
-import Section from "../components/cv/Section.astro";
-import RoleBlock from "../components/cv/RoleBlock.astro";
-import SkillList from "../components/cv/SkillList.astro";
+import { buildHoverCss } from "../lib/lab-hover-css";
+import HomeDocument from "../components/HomeDocument.astro";
 
 import "@fontsource/manrope/400.css";
 import "@fontsource/manrope/600.css";
@@ -39,13 +41,7 @@ import "../styles/lab.css";
 
 const locale = "es";
 const view = await content.getView("portfolio", locale);
-const dataset = await content.getDataset(locale);
-// Rule 7: `cv-ats` cuts by priority (cutoff 3) and caps at 5 achievements per
-// role; `portfolio` cuts nothing. The section below has to show EXACTLY what
-// gets printed, because the download button promises "the CV".
-const viewCv = await content.getView("cv-ats", locale);
 const { identity } = view;
-const m = MESSAGES[locale];
 const jsonLd = buildPersonJsonLd(view, new URL(Astro.site!));
 
 /**
@@ -64,7 +60,6 @@ const cloudflareBeacon: string | undefined = import.meta.env.PUBLIC_CF_BEACON_TO
 
 const graph = buildKnowledgeGraph(view);
 const positioned = layoutGraph(graph);
-const map = buildSvgMap(positioned);
 const hoverCss = buildHoverCss(positioned);
 
 // What the 3D runtime needs. Coordinates already rounded by `layoutGraph`.
@@ -79,23 +74,6 @@ const graphData = JSON.stringify({
   edges: positioned.edges.map((e) => ({ s: e.source, t: e.target, a: e.kind === "affinity", w: e.weight })),
   radius: positioned.framingRadius,
 });
-
-// The DOM list: it is both the accessible content and the DOM side of the hover
-// bridge. Ordered by degree — the most connected on top, which is the most
-// proven, not whatever comes first alphabetically.
-const items = positioned.nodes
-  .filter((n) => n.kind === "skill")
-  .sort((a, b) => b.degree - a.degree || a.label.localeCompare(b.label, "es"));
-
-const withEvidenceCount = items.filter((n) => n.degree > 0).length;
-const affinityCount = positioned.edges.filter((e) => e.kind === "affinity").length;
-
-// skillId → canonical name, for each project's stack. Built here and not in the
-// component: `view.skills` arrives grouped by category, and flattening it is the
-// page's job, not the dumb component's.
-const skillNameById = new Map(
-  Object.values(view.skills).flat().map((s) => [s.id, s.name]),
-);
 ---
 
 {/*
@@ -105,6 +83,7 @@ const skillNameById = new Map(
   means not emitting them — the safe side of the mistake.
 */}
 <Base
+  locale={locale}
   title={`${identity.fullName} — ${identity.searchTitle}`}
   description={identity.summary.short}
   shareable
@@ -112,240 +91,7 @@ const skillNameById = new Map(
   <script type="application/ld+json" is:inline slot="head" set:html={JSON.stringify(jsonLd)} />
   <style is:inline set:html={hoverCss} slot="head" />
 
-  <div class="lab">
-    <canvas class="lab__field" data-lab-field aria-hidden="true"></canvas>
-
-    {/*
-      Index and contact in a pill that follows the scroll. It replaces the hero
-      buttons: the download CTA is already covered by the floating one below, and
-      two large buttons up top pushed the map off the first screen.
-
-      `href="#cv"` and NOT `/cv` — that route exists only to print the PDF, and
-      `single-landing.check.ts` verifies nobody links to it.
-
-      Without JS the pill is already fixed and usable: the script only adds the
-      lag while scrolling. That is why the initial `transform` lives in the CSS.
-    */}
-    <div class="bar" data-pill>
-      <header class="pill">
-        {/*
-          The logo is decorative on purpose (`label={null}`): the name is already
-          in the hero's `<h1>`, and a screen reader announcing it again here only
-          adds noise before the index.
-        */}
-        <Logo class="pill__logo" size={26} label={null} />
-
-        <span class="pill__sep" aria-hidden="true"></span>
-
-        <nav class="pill__nav" aria-label="Secciones">
-          <a href="#mapa">Mapa</a>
-          <a href="#proyectos">Proyectos</a>
-          <a href="#cv">CV</a>
-        </nav>
-
-        <span class="pill__sep" aria-hidden="true"></span>
-
-        <ul class="pill__contact">
-          <li>
-            <a href={`mailto:${identity.contact.email}`}>
-              <span class="pill__long">{identity.contact.email}</span>
-              <span class="pill__short">Email</span>
-            </a>
-          </li>
-          {identity.links.map((link) => (
-            <li><a href={link.url} rel="me noopener">{link.label}</a></li>
-          ))}
-        </ul>
-      </header>
-
-      {/*
-        The CTA lives next to the index and not in a corner: it is the only
-        action on the page, and separating it from the rest of the navigation
-        turned it into a loose element. It shares the bar's offset, so both
-        pieces move as one.
-      */}
-      <a
-        class="download"
-        href="/cv.pdf"
-        download={pdfFilename("es", dataset.updatedAt)}
-      >
-        <span class="download__arrow" aria-hidden="true">↓</span>
-        <span class="pill__long">Descargar CV</span>
-        <span class="pill__short">CV</span>
-      </a>
-    </div>
-
-    <main class="lab__content">
-      <section class="home lab__hero">
-        <p class="home__kicker">{identity.brandTitle}</p>
-        <h1 class="home__name">{identity.fullName}</h1>
-        <p class="home__role">
-          {identity.searchTitle} · {formatSeniority(view.yearsOfExperience, locale)} · {identity.location.city}, {identity.location.country}
-        </p>
-        <p class="home__tagline">{identity.tagline.short}</p>
-      </section>
-
-      <section id="mapa" class="lab__map-section">
-        <div class="lab__intro">
-          <h2 class="lab__title">Mapa de conocimiento</h2>
-          <p class="lab__lede">
-            Los logros no viven adentro de cada trabajo: viven sueltos y se cruzan por
-            tecnología, por rol y por proyecto. Esto es ese cruce, dibujado.
-          </p>
-          <dl class="lab__figures">
-            <div><dt>Nodos</dt><dd>{positioned.nodes.length}</dd></div>
-            <div><dt>Conexiones</dt><dd>{positioned.edges.length}</dd></div>
-            <div><dt>Por afinidad</dt><dd>{affinityCount}</dd></div>
-          </dl>
-        </div>
-
-        {/*
-          `tabindex` and `role` go on the CONTAINER, not on the canvas: the
-          canvas is `pointer-events: none` and cannot receive anything. The drag,
-          the click and the arrow keys are listened for here.
-        */}
-        <div
-          class="lab__map"
-          tabindex="0"
-          role="application"
-          aria-label="Mapa de conocimiento. Arrastrá para rotar, hacé click en un nodo para ver qué lo respalda. Las flechas también rotan."
-        >
-          <GraphSvg
-            map={map}
-            totalNodes={positioned.nodes.length}
-            totalEdges={positioned.edges.length}
-          />
-          <canvas class="lab__canvas" data-lab-graph aria-hidden="true"></canvas>
-          {/*
-            The 3D labels live in the DOM, not in WebGL: a font atlas would cost
-            more than the whole scene and the text would come out blurry. They are
-            server-rendered and hidden until the 3D mounts; the SVG carries its own.
-          */}
-          <div class="lab__labels" aria-hidden="true">
-            {positioned.nodes
-              .filter((n) => nodeHasMapLabel(n))
-              .map((n) => (
-                <span
-                  class={`lab__label-3d lab__label-3d--${n.kind}${isStickyMapLabel(n) ? " lab__label-3d--sticky" : ""}`}
-                  data-lab-label
-                  data-node={n.id}
-                >
-                  {n.label}
-                </span>
-              ))}
-          </div>
-          <div class="lab__tooltip" data-lab-tooltip aria-hidden="true"></div>
-
-          {/*
-            El panel de detalle lo llena el JS con `textContent` sobre elementos
-            creados a mano — nunca `innerHTML`. `aria-live="polite"` hace que un
-            lector de pantalla anuncie el nodo enfocado sin interrumpir.
-          */}
-          <div class="lab__panel" data-lab-panel role="status" aria-live="polite"></div>
-
-          <p class="lab__hint" aria-hidden="true">Arrastrá para rotar · click en un nodo</p>
-        </div>
-
-        <div class="lab__indice">
-          <h3 class="lab__index-title">
-            Stack <span class="lab__index-note">{withEvidenceCount} de {items.length} con evidencia</span>
-          </h3>
-          <ul class="lab__list">
-            {items.map((n) => (
-              <li>
-                <span
-                  id={ITEM_ID(n.id)}
-                  class={n.degree > 0 ? "lab__item" : "lab__item lab__item--empty"}
-                  data-node={n.id}
-                  tabindex="0"
-                >
-                  <span class="lab__dot" aria-hidden="true"></span>
-                  {n.label}
-                  {n.degree > 0 && <span class="lab__degree">{n.degree}</span>}
-                </span>
-              </li>
-            ))}
-          </ul>
-          {items.length - withEvidenceCount > 0 && (
-          <p class="lab__note">
-            Las {items.length - withEvidenceCount} tecnologías sin conexiones son reales: las uso,
-            pero todavía no escribí el logro que lo demuestre. Van huecas y chicas, agrupadas
-            en el núcleo. El mapa muestra el hueco en vez de taparlo.
-          </p>
-          )}
-        </div>
-      </section>
-
-      <section id="proyectos" class="projects-section">
-        <h2 class="lab__title">Proyectos</h2>
-        <ProjectList projects={view.projects} skillNameById={skillNameById} />
-      </section>
-
-      <section id="cv" class="cv">
-        <h2 class="cv__section-title">Currículum</h2>
-
-        <Section title={m.sectionProfile}>
-          <p class="profile">{viewCv.identity.summary.short}</p>
-        </Section>
-
-        <Section title={m.sectionSkills}>
-          <SkillList skills={viewCv.skills} locale={locale} />
-        </Section>
-
-        <Section title={m.sectionExperience}>
-          {viewCv.experience.map((role) => <RoleBlock role={role} locale={locale} />)}
-        </Section>
-
-        <Section title={m.sectionEducation}>
-          {viewCv.education.map((e) => (
-            <div class="entry">
-              <p class="entry__title">{e.degree}{e.field && <> — {e.field}</>}</p>
-              <p class="entry__meta">
-                {e.institution}
-                {e.end && <> · {e.start ? formatDateRange(e.start, e.end, locale) : formatYearMonth(e.end, locale)}</>}
-                {e.status === "partial" && <> · {m.studyPartial}</>}
-                {e.status === "in-progress" && <> · {m.studyInProgress}</>}
-              </p>
-            </div>
-          ))}
-        </Section>
-
-        <Section title={m.sectionLanguages}>
-          {viewCv.languages.map((l) => (
-            <p class="skill-group">
-              <span class="skill-group__label">{l.name}:</span>{" "}
-              {l.level === "native" ? m.levelNative : l.level}
-            </p>
-          ))}
-        </Section>
-      </section>
-    </main>
-
-    {/*
-      The privacy line. Clarity uses cookies and records sessions; saying so is
-      the least that is reasonable if EU traffic arrives (docs/05 §5). It lives
-      here and not in `Base.astro` because the analytics do not live there
-      either: if they are removed tomorrow, this line goes with them and is not
-      left orphaned on `/cv`.
-
-      Cloudflare Web Analytics is named separately because it is NOT the same:
-      it uses no cookies and identifies nobody. Putting both in one sentence
-      would suggest both record, and that would overstate in the direction that
-      does not apply.
-    */}
-    <footer class="footer">
-      <p>
-        Uso Microsoft Clarity para ver qué partes de esta página se leen: mide
-        clicks y scroll, y graba sesiones anónimas. Usa cookies.{" "}
-        <a
-          href="https://privacy.microsoft.com/privacystatement"
-          rel="noopener noreferrer"
-          target="_blank">Su política de privacidad</a>. También uso Cloudflare
-        Web Analytics para el tráfico y la velocidad de carga: no usa cookies ni
-        identifica visitantes.
-      </p>
-    </footer>
-  </div>
+  <HomeDocument locale={locale} view={view} positioned={positioned} />
 
   {/*
     El beacon de Cloudflare Web Analytics.

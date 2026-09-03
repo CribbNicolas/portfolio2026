@@ -27,8 +27,13 @@ const DIST = "dist";
 /**
  * The ONLY pages allowed to ship JavaScript. Adding one is an explicit decision
  * in a diff, not an accident nobody notices.
+ *
+ * `en/index.html` joined `index.html` when the English landing shipped: it
+ * renders the same knowledge map, so it needs the same script. `/cv` and
+ * `/en/cv` are deliberately absent — both stay at zero JS, because the PDF is
+ * printed from them.
  */
-const PAGES_WITH_JS = new Set(["index.html"]);
+const PAGES_WITH_JS = new Set(["index.html", "en/index.html"]);
 
 /** `<script>` types that are NOT code: they are data for crawlers and agents. */
 const DATA_TYPES = new Set(["application/ld+json", "application/json"]);
@@ -119,7 +124,12 @@ test("analytics live ONLY on the landing", async () => {
   const offenders: string[] = [];
   for (const file of pages) {
     const path = relative(DIST, file).split(sep).join("/");
-    if (path === "index.html") continue;
+    // Both landings run the map's boot script, which calls `startAnalytics()`
+    // first (see `src/pages/index.astro`'s ordering comment) — so both are
+    // expected to carry the fingerprints. `PAGES_WITH_JS` is the same
+    // allowlist for the same reason: shipping JS here is a decision, not an
+    // accident.
+    if (PAGES_WITH_JS.has(path)) continue;
     const html = await readFile(file, "utf8");
     for (const { mark, name } of ANALYTICS_FINGERPRINTS) {
       if (html.toLowerCase().includes(mark)) offenders.push(`${path} (${name})`);
@@ -128,7 +138,8 @@ test("analytics live ONLY on the landing", async () => {
   assert.deepEqual(
     offenders,
     [],
-    `analytics reached ${offenders.join(", ")}. They go ONLY in index.astro: if they ` +
-      "moved to Base.astro, /cv stopped being at zero JS and the PDF is printed from there.",
+    `analytics reached ${offenders.join(", ")}. They go ONLY in the landings' own ` +
+      "pages: if they moved to Base.astro, /cv or /en/cv stopped being at zero JS " +
+      "and the PDF is printed from there.",
   );
 });
