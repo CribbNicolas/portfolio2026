@@ -5,9 +5,9 @@
  * the JSON-LD and the `noindex` meta live here and not in the shared
  * component.
  *
- * `/en/cv.pdf` does not exist yet — that is the next task. This page renders
- * regardless: `pdf:local` prints from a route, and the route has to exist
- * before it can be printed from.
+ * This page exists as the source for `/en/cv.pdf`. It is `noindex` and not
+ * a navigable destination: the reader reaches it through the English landing's
+ * `#cv` anchor.
  */
 import Base from "../../layouts/Base.astro";
 import CvDocument from "../../components/cv/CvDocument.astro";

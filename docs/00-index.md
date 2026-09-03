@@ -77,7 +77,7 @@ Dated, so we know what to revisit when the context changes.
 - [x] Bilingual site: `content.en.json`, `/en/` + `/en/cv`, both CV PDFs, an
       ES/EN switch on both landings. Workflow and what is still Spanish-only
       (`/llms.txt`, `/cv.json`, the OG card) in [10-i18n.md](./10-i18n.md)
-- [ ] `hreflang` on both landings — see [09](./09-seo-and-metadata.md) §2.3
+- [x] `hreflang` on both landings: `es` → `/`, `en` → `/en/`, `x-default` → `/`; absent from `/cv` and `/en/cv`
 - [ ] LinkedIn text blocks
 - [ ] Portfolio case studies — the research of [04 §6](./04-portfolio.md) comes first
 - [x] Freelance 2020-04 → 2022-06 connected to WordPress, Docker, Vue, Quasar, SCSS (still one achievement; the stack is now on the map)
