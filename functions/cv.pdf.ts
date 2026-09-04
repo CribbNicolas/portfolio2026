@@ -1,135 +1,29 @@
 /**
- * `/cv.pdf` — el CV impreso a demanda.
+ * `/cv.pdf` — the Spanish CV printed on demand.
  *
- * Antes esto era un archivo estático que `pnpm run build` generaba con
- * Playwright. Eso ataba el build a un Chromium instalado, y por eso el build no
- * podía correr en Cloudflare. Ahora el build es `astro build` y nada más, y la
- * impresión pasó a runtime: esta Function le pide a Browser Rendering que
- * imprima nuestro propio `/cv` y devuelve los bytes.
- *
- * Consecuencia buscada, más allá del build: el día que los datos vengan de una
- * API, el PDF sale al día sin que nadie regenere un archivo. Lo único que hace
- * falta es que `/cv` esté al día, y de eso se encarga el deploy.
- *
- * El binding de Browser Rendering NO está disponible en Pages Functions (solo
- * KV, D1, R2, DO, Queues, AI y service bindings). Por eso se usa la REST API
- * con un token, que sí es un `fetch` común y corriente.
- *
- * `/cv` tiene que seguir en cero JavaScript. Antes un script que se colara
- * rompía tu build; ahora rompe el PDF en producción. El invariante no cambió,
- * subió de precio. Lo verifica `scripts/no-client-js.check.ts`.
+ * The route is this file's own path: Pages Functions map file location to
+ * URL, so `createPdfHandler("es")` living HERE is what makes it answer `/cv`
+ * and not `/en/cv`. The handler itself — cache, Browser Rendering, error
+ * shapes — lives in `_handler.ts`, shared with `functions/en/cv.pdf.ts`; see
+ * that file's header for why a factory and not a copy-paste.
  */
 
-import {
-  NOMBRE_POR_DEFECTO,
-  TIMEOUT_MS,
-  cabecerasPdf,
-  claveDeCache,
-  cuerpoPeticion,
-  endpointBrowserRendering,
-} from "./_pdf";
+import { createPdfHandler } from "./_handler";
 
-interface Env {
-  /** Account ID de Cloudflare. No es secreto, pero se configura igual. */
-  BROWSER_RENDERING_ACCOUNT_ID?: string;
-  /** Token con UN permiso: Browser Rendering → Edit. Va como secret. */
-  BROWSER_RENDERING_TOKEN?: string;
-  /** Opcional. Con qué nombre lo guarda quien lo baja. */
-  PDF_FILENAME?: string;
-}
+export const onRequestGet = createPdfHandler("es");
 
 /**
- * El contexto que Pages le pasa a la Function. Se declara a mano en vez de
- * traer `@cloudflare/workers-types`: ese paquete redefine globals del DOM y el
- * `tsconfig` de acá compila `src/` con `lib: ["ES2022","DOM"]`. Tres campos no
- * justifican pelearse con eso.
- */
-interface Contexto {
-  request: Request;
-  env: Env;
-  waitUntil(promesa: Promise<unknown>): void;
-}
-
-/** `caches.default` es de Cloudflare y no está en el `CacheStorage` del DOM. */
-const cacheDeBorde = (caches as unknown as { default: Cache }).default;
-
-function error(estado: number, mensaje: string): Response {
-  // Sin `cache-control` permisivo: un fallo no se cachea. Y el cuerpo no
-  // reexpone nada de la respuesta de la API — ahí puede venir el account ID.
-  return new Response(`${mensaje}\n`, {
-    status: estado,
-    headers: { "content-type": "text/plain; charset=utf-8", "cache-control": "no-store" },
-  });
-}
-
-export async function onRequestGet(contexto: Contexto): Promise<Response> {
-  const { request, env, waitUntil } = contexto;
-
-  const cuenta = env.BROWSER_RENDERING_ACCOUNT_ID;
-  const token = env.BROWSER_RENDERING_TOKEN;
-  if (!cuenta || !token) {
-    // 503 y no 500: el sitio está bien, falta configuración. Se distingue en
-    // los logs de un fallo de Browser Rendering, que es 502.
-    return error(503, "El PDF no está configurado en este entorno.");
-  }
-
-  const clave = claveDeCache(request.url);
-  const cacheado = await cacheDeBorde.match(clave);
-  if (cacheado) return cacheado;
-
-  let respuesta: Response;
-  try {
-    respuesta = await fetch(endpointBrowserRendering(cuenta), {
-      method: "POST",
-      headers: {
-        authorization: `Bearer ${token}`,
-        "content-type": "application/json",
-      },
-      body: cuerpoPeticion(new URL(request.url).origin),
-      signal: AbortSignal.timeout(TIMEOUT_MS),
-    });
-  } catch {
-    // Timeout o red caída. 504 para que quede claro que no es un 4xx nuestro.
-    return error(504, "El render del PDF tardó demasiado. Probá de nuevo en un minuto.");
-  }
-
-  if (!respuesta.ok) {
-    // 429 = se agotó el presupuesto diario de Browser Rendering. Se propaga tal
-    // cual, con Retry-After si vino, porque es la única señal que distingue
-    // "cuota" de "roto" cuando alguien mire esto en seis meses.
-    if (respuesta.status === 429) {
-      const reintentar = respuesta.headers.get("retry-after");
-      const r = error(429, "Se agotó la cuota de render del día. Probá más tarde.");
-      if (reintentar) r.headers.set("retry-after", reintentar);
-      return r;
-    }
-    return error(502, "No se pudo generar el PDF.");
-  }
-
-  const bytes = await respuesta.arrayBuffer();
-  const pdf = new Response(bytes, {
-    headers: cabecerasPdf(env.PDF_FILENAME ?? NOMBRE_POR_DEFECTO),
-  });
-
-  // `clone()` porque un Response se puede leer una sola vez y hay que devolver
-  // uno y guardar el otro. `waitUntil` para no hacer esperar al visitante por
-  // la escritura en caché.
-  waitUntil(cacheDeBorde.put(clave, pdf.clone()));
-  return pdf;
-}
-
-/**
- * HEAD contesta lo mismo que GET, sin cuerpo.
+ * HEAD answers the same as GET, without a body.
  *
- * Sin esto, Pages no matchea el pedido contra la Function —`onRequestGet` es
- * SOLO GET— y lo atiende el manejador de assets estáticos. Medido contra el
- * deploy: `HEAD /cv.pdf` devolvía `200 text/html`, byte por byte la misma
- * respuesta que `HEAD /una-ruta-que-no-existe`. Quien hace HEAD antes de bajar
- * —unfurlers de links, crawlers de reclutamiento, chequeos de monitoreo— veía
- * una página HTML donde esperaba un PDF.
+ * Without this, Pages does not match the request against the Function —
+ * `onRequestGet` is GET ONLY — and the static asset handler serves it. Measured
+ * against the deploy: `HEAD /cv.pdf` returned `200 text/html`, byte for byte
+ * the same response as `HEAD /a-route-that-does-not-exist`. Anyone doing a HEAD
+ * before downloading — link unfurlers, recruiting crawlers, monitoring checks —
+ * saw an HTML page where they expected a PDF.
  *
- * Reusar el handler es correcto: el runtime descarta el cuerpo de una respuesta
- * a HEAD. Y no duplica renders, porque `claveDeCache` arma siempre un GET, así
- * que un HEAD posterior al primer render pega el mismo caché.
+ * Reusing the handler is correct: the runtime discards the body of a response
+ * to HEAD. And it does not duplicate renders, because `cacheKey` always builds
+ * a GET, so a HEAD after the first render hits the same cache.
  */
 export const onRequestHead = onRequestGet;

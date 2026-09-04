@@ -1,124 +1,171 @@
 # 04 — Portfolio
 
-Dos objetivos a la vez: convencer a un equipo que contrata y cerrar clientes freelance. Y dos lectores: el humano y el agente.
+Two goals at once: convince a hiring team and close freelance clients. And two
+readers: the human and the agent.
 
 ---
 
-## 1. Estructura
+## 1. Structure
 
-Desde el 2026-08-24 el sitio es **una sola página navegable**. El orden real
-es el del spec de la landing única §3:
-
-```
-┌─ Barra fija    Mapa · Proyectos · CV · contacto · [↓ CV]  (sigue el scroll) [hecho]
-├─ Hero          nombre, rol, tagline. Sin botones.                 [hecho]
-├─ #mapa         Mapa de conocimiento. Ver §7.                     [hecho]
-├─ #proyectos    Proyectos, con link público                       [hecho]
-├─ #cv           El CV completo, superficie cv-ats                 [hecho]
-└─ #cv           el bloque más largo, y el último                 [hecho]
-```
-
-Lo que sigue pendiente:
+Since 2026-08-24 the site is **one navigable page**:
 
 ```
-Servicios       → qué te pueden contratar a hacer (lado freelance). [pendiente]
-Sobre mí        → historia corta, con voz. No un CV repetido.       [pendiente]
+┌─ Fixed bar     Mapa · Proyectos · CV · contact · [↓ CV]  (follows the scroll) [done]
+├─ Hero          name, role, tagline. No buttons.                    [done]
+├─ #mapa         Knowledge map. See §7.                              [done]
+├─ #proyectos    Projects, with a public link                        [done]
+└─ #cv           The full CV, cv-ats surface. The longest block, and the last [done]
 ```
 
-**"Casos" está hecho en su versión de lista compacta, no en el formato caso de
-estudio del §2.** Esa versión larga —problema → decisión → resultado— sigue
-pendiente porque `problem.short` y `outcome.short` tienen `TODO` en dos de los
-tres proyectos, y llenarlos a ojo viola el invariante 4. Los `links` de los tres
-también están vacíos: el componente renderiza el link solo cuando existe, así
-que cargarlos es editar el dataset, no tocar código.
-
-El contacto no está en el hero ni en el pie: vive en la píldora, que acompaña
-todo el scroll. En una sola página, el pie está detrás del CV entero — que es
-el bloque más largo— y el hero solo lo ve quien no bajó todavía.
-
-Las cuatro secciones comparten ancho (`--ancho`, 45rem). Es un solo token: con
-anchos distintos la página se lee como cuatro páginas pegadas.
-
-**El Stack no es una grilla de logos.** Ver §7: es un grafo, y el tamaño de cada
-tecnología es un dato derivado, no una opinión.
-
-**Blog:** opcional, pero si se abre hay que sostenerlo. Un blog con tres posts viejos resta más de lo que suma.
-
-## 2. Formato de caso de estudio
+Still pending:
 
 ```
-[Nombre]  ·  [Rol]  ·  [Año]
-
-El problema     → 2 frases sobre el negocio, no sobre la tecnología.
-Qué construí    → 3 bullets.
-Decisiones      → 2 decisiones técnicas con su porqué y su trade-off.
-Resultado       → número, o antes/después cualitativo.
-Stack           → lista.
-Links           → demo en vivo + repo si es público.
-Evidencia       → captura, GIF corto o video de 20s. No un mockup vacío.
+Servicios       → what you can be hired to do (freelance side).      [pending]
+Sobre mí        → a short story, with voice. Not a repeated CV.      [pending]
 ```
 
-**El bloque de decisiones es el diferencial.** Casi ningún portfolio lo tiene, y es lo único que un hiring manager técnico lee con atención de verdad. En el schema es `TechnicalDecision`, y el campo `tradeoff` es obligatorio: si no hay trade-off, no era una decisión.
+**"Cases" is done as a compact list, not in the case-study format of §2.** That
+long version — problem → decision → outcome — is still pending because
+`problem.short` and `outcome.short` carry a `TODO` in two of the three projects,
+and filling them by eye violates invariant 4. All three `links` are also empty:
+the component renders the link only when it exists, so loading them is editing
+the dataset, not touching code.
 
-### Los tres casos
+Contact is neither in the hero nor in the footer: it lives in the pill, which
+follows the whole scroll. On a single page, the footer sits behind the entire CV
+— the longest block — and the hero is only seen by whoever has not scrolled yet.
 
-| Proyecto | Qué demuestra |
+Every section shares its width (`--width`, 45rem). It is one token: with
+different widths the page reads as four pages glued together.
+
+**The Stack is not a grid of logos.** See §7: it is a graph, and each
+technology's size is derived data, not an opinion.
+
+**Blog:** optional, but if it opens it has to be sustained. A blog with three old
+posts subtracts more than it adds.
+
+## 2. Case study format
+
+```
+[Name]  ·  [Role]  ·  [Year]
+
+The problem     → 2 sentences about the business, not about the technology.
+What I built    → 3 bullets.
+Decisions       → 2 technical decisions with their why and their trade-off.
+Outcome         → a number, or a qualitative before/after.
+Stack           → a list.
+Links           → live demo + repo if public.
+Evidence        → a screenshot, a short GIF or a 20s video. Not an empty mockup.
+```
+
+**The decisions block is the differentiator.** Almost no portfolio has it, and it
+is the only thing a technical hiring manager reads with real attention. In the
+schema it is `TechnicalDecision`, and the `tradeoff` field is mandatory: with no
+trade-off it was not a decision.
+
+### The three cases
+
+| Project | What it demonstrates |
 |---|---|
-| **JWD Maderas** | Producto completo para un negocio real, con resultado medible. Next.js + Sanity. |
-| **Mapas de distritos** | Profundidad técnica poco común: datos geoespaciales, Mapbox GL JS, resolución de problemas de renderizado. |
-| **Plugins de WordPress con tooling moderno** | Trabajar en entornos legacy sin romperlos. En freelance esto vende muchísimo. |
+| **JWD Maderas** | A complete product for a real business, with a measurable outcome. Next.js + Sanity. |
+| **RPPL PL-spending map** | Uncommon technical depth: ~13.000 districts, Mapbox GL JS, FastIndex, rendering problems. |
+| **WordPress plugins with modern tooling** | Working in legacy environments without breaking them. In freelance this sells enormously. |
 
-Los tres están cargados en el dataset con `featured: true` y su `slug`. Faltan los `problem` y `outcome` de dos de ellos, y todo el material visual.
+All three are in the dataset with `featured: true` and their `slug`. The RPPL
+map has problem, outcome, decisions and a live link (2026-09-01). JWD and
+`wp-plugins` still miss outcome numbers, and all three miss visual material.
 
-**Proyectos privados:** se pueden mostrar sin links. `links: []` y `clientDescription` en vez de `client`. Vale la pena si el caso técnico es fuerte.
+**Private projects:** they can be shown without links. `links: []` and
+`clientDescription` instead of `client`. Worth it when the technical case is
+strong.
 
-## 3. Capa legible por máquinas
+## 3. Machine-readable layer
 
-Cada vez más reclutadores pegan la URL del portfolio en un LLM y preguntan si el candidato sirve. Que la respuesta sea buena depende de esto — y de paso es una demostración de la habilidad que se está vendiendo.
+More and more recruiters paste the portfolio URL into an LLM and ask whether the
+candidate is a fit. Whether the answer is good depends on this — and it doubles
+as a demonstration of the skill being sold.
 
-- **JSON-LD `Person` server-rendered** en el `<head>`. No inyectado por JS: los crawlers no lo ejecutan.
-  - `name`, `jobTitle` (usar `searchTitle`), `knowsAbout` con el stack, `sameAs` con LinkedIn y GitHub, `@id` estable.
-- **`schema.org/CreativeWork`** en cada caso de estudio.
-- **`/llms.txt`** en la raíz: resumen en markdown de quién sos, stack y proyectos, con links.
-- **`/cv` en HTML** además del PDF. El HTML se parsea perfecto; el PDF es para adjuntar.
-- **`/cv.json`** con el dataset filtrado por la superficie `public-api`.
-- Semántica real: un solo `<h1>` con nombre y rol, headings jerárquicos, `alt` descriptivo en cada imagen (regla 5 del contrato lo valida).
+- **Server-rendered JSON-LD `Person`** in the `<head>`. Not injected by JS:
+  crawlers do not execute it.
+  - `name`, `jobTitle` (using `searchTitle`), `knowsAbout` with the stack,
+    `sameAs` with LinkedIn and GitHub, a stable `@id`.
+- **`schema.org/CreativeWork`** on each case study.
+- **`/llms.txt`** at the root: a markdown summary of who you are, the stack and
+  the projects, with links.
+- **`/cv` in HTML** alongside the PDF. HTML parses perfectly; the PDF is for
+  attaching.
+- **`/cv.json`** with the dataset filtered by the `public-api` surface.
+- Real semantics: a single `<h1>` with name and role, hierarchical headings, a
+  descriptive `alt` on every image (contract rule 5 validates it).
 
-Todo esto se genera del mismo dataset. La superficie `public-api` ya excluye los datos de contacto privados.
+All of this is generated from the same dataset. The `public-api` surface already
+excludes the private contact data.
 
-## 4. Lado freelance
+## 4. The freelance side
 
-El cliente que llega al portfolio buscando contratar no mira la arquitectura: mira si resolviste un problema parecido al suyo. Para ese visitante:
+A client arriving at the portfolio looking to hire does not look at the
+architecture: they look at whether you solved a problem like theirs. For that
+visitor:
 
-- **Servicios** (`Service` en el schema): qué hacés, para quién, qué entregás. El campo `idealFor` filtra los leads malos antes de que escriban.
-- **Rango de precios**: publicarlo filtra consultas; no publicarlo genera más volumen de peor calidad. Decisión abierta.
-- **Testimonios** (`Testimonial`): solo con `approved: true`. La regla 6 lo valida.
-- **JWD Maderas es el caso principal para este público**, no los mapas.
+- **Services** (`Service` in the schema): what you do, for whom, what you
+  deliver. The `idealFor` field filters bad leads before they write.
+- **Price range**: publishing it filters enquiries; not publishing it generates
+  more volume of worse quality. Still open.
+- **Testimonials** (`Testimonial`): only with `approved: true`. Rule 6 validates
+  it.
+- **JWD Maderas is the main case for this audience**, not the maps.
 
-## 5. Advertencia
+## 5. A warning
 
-Un portfolio con backend propio no impresiona por existir: hay miles. Impresiona si el caso de estudio explica las decisiones. Y el backend es invisible para el cliente freelance — a ese lo convence el resultado de JWD Maderas.
+A portfolio with its own backend does not impress by existing: there are
+thousands. It impresses if the case study explains the decisions. And the backend
+is invisible to the freelance client — what convinces them is the JWD Maderas
+outcome.
 
-Por eso el orden es: portfolio online primero con JSON en el repo, backend después. Ver [CONTRATO.md](./CONTRATO.md), sección 5.
+That is why the order is: portfolio online first with JSON in the repo, backend
+later. See [CONTRACT.md](./CONTRACT.md).
 
-## 6. Pendiente de investigar
+## 6. Still to research
 
-Quedó abierta una segunda investigación sobre patrones de portfolios de referentes: estructura, tipografía y paletas, cómo presentan proyectos, qué errores se repiten en portfolios senior, cómo incorporan la IA a su marca.
+A second piece of research on the patterns of reference portfolios is still open:
+structure, typography and palettes, how they present projects, which mistakes
+repeat in senior portfolios, how they fold AI into their brand.
 
-**Se decidió avanzar sin ella** (2026-08). El plan original era investigar antes de tocar el diseño visual; en cambio se construyó primero el mapa de conocimiento (§7) y se lo puso de portada. El motivo: el mapa no es una decisión estética sino la única superficie que muestra el grafo de datos, y postergarlo por una investigación de tipografías era postergar lo que diferencia al sitio por lo que lo hace parecido a otros.
+**It was decided to move ahead without it** (2026-08). The original plan was to
+research before touching the visual design; instead the knowledge map (§7) was
+built first and put on the front page. The reason: the map is not an aesthetic
+decision but the only surface showing the data graph, and postponing it for
+typography research was postponing what makes the site different for what makes
+it look like the others.
 
-Lo que la investigación **sigue** teniendo que resolver, y hoy está sin decidir: tipografía y paleta más allá de los tokens actuales, y cómo se presentan los casos de estudio. Hacerla antes de escribir el §2, no después.
+What the research **still** has to resolve, and is undecided today: typography
+and palette beyond the current tokens, and how the case studies are presented.
+Do it before writing §2, not after.
 
-## 7. El mapa de conocimiento
+## 7. The knowledge map
 
-Es la portada. Cruza logros, roles, proyectos y tecnologías como grafo — la única vista que aprovecha que los `Achievement` viven sueltos (CONTRATO §3) en vez de anidados en cada trabajo.
+It is the front page. It cross-references achievements, roles, projects and
+technologies as a graph — the only view that takes advantage of `Achievement`s
+living loose (CONTRACT §3) instead of nested inside each job.
 
-**Qué dice el dibujo:**
+**What the drawing says:**
 
-- **El tamaño de una tecnología** = años de uso × cantidad de conexiones, por raíz (el ojo compara área, no radio). Los años salen de `Skill.since` o, si no está, del span de la evidencia fechada que la respalda. Nunca se estiman (invariante 4).
-- **La posición** = los trabajos en la corteza, las tecnologías en el núcleo. Núcleo = lo que sé, corteza = dónde lo usé.
-- **Las tecnologías sin evidencia** se dibujan chicas y huecas, agrupadas en el centro. Son las que declarás pero todavía no tienen un logro que las demuestre. **El mapa muestra el hueco en vez de taparlo** — y eso es a propósito: es el mismo criterio que la advertencia del §5.
+- **A technology's size** = years of use × number of connections, by square root
+  (the eye compares area, not radius). The years come from `Skill.periods` or,
+  failing that, from the span of the dated evidence backing it. They are never
+  estimated (invariant 4).
+- **The position** = jobs in the crust, technologies in the core. Core = what I
+  know, crust = where I used it.
+- **Technologies without evidence** are drawn small and hollow, grouped at the
+  centre. They are the ones you declare but that do not yet have an achievement
+  demonstrating them. **The map shows the gap instead of covering it** — and that
+  is on purpose: it is the same criterion as the warning in §5.
 
-**Por qué esto convence y una grilla de logos no:** una grilla afirma; el grafo muestra la evidencia. Un nodo grande lo es porque hay logros fechados detrás, y se puede clickear para ver cuáles.
+**Why this convinces and a grid of logos does not:** a grid asserts; the graph
+shows the evidence. A large node is large because there are dated achievements
+behind it, and it can be clicked to see which.
 
-**Costo:** es la única página del sitio con JavaScript. El camino crítico son 4 KB gzip; `three` (127 KB) baja recién cuando el mapa entra en pantalla, y solo si el dispositivo lo aguanta. Sin JavaScript el mapa sigue completo en SVG, hover cruzado incluido. `/cv` sigue en cero — de ahí sale el PDF.
+**Cost:** it is the only page on the site with JavaScript. The critical path is
+4 KB gzip; `three` (127 KB) only downloads when the map enters the viewport, and
+only if the device can take it. Without JavaScript the map is still complete in
+SVG, cross-hover included. `/cv` stays at zero — the PDF comes from there.

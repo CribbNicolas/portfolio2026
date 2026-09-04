@@ -1,7 +1,7 @@
 /**
- * Lo que el schema NO puede validar del grafo: integridad referencial del
- * resultado, determinismo del layout, y que ningún TODO del dataset se filtre
- * a un tooltip.
+ * What the schema CANNOT validate about the graph: referential integrity of
+ * the result, determinism of the layout, and that no TODO from the dataset
+ * leaks into a tooltip.
  */
 
 import test from "node:test";
@@ -9,273 +9,380 @@ import assert from "node:assert/strict";
 
 import { content } from "../source/index";
 import {
-  buildKnowledgeGraph, nodosSinEvidencia, afinidadDeSkills, aniosDeSkill,
-  ESCALA_RADIO_MIN, ESCALA_RADIO_MAX,
+  buildKnowledgeGraph, skillAffinity, skillYears, isQuietEdge,
+  RADIUS_SCALE_MIN, RADIUS_SCALE_MAX,
 } from "./knowledge-graph";
 import { monthsBetween } from "./dates";
 import { layoutGraph, projectGraph } from "./graph-layout";
+import type { ContentView, Skill } from "./content-schema";
 
 const view = await content.getView("portfolio", "es");
 const graph = buildKnowledgeGraph(view);
 
-test("todo nodo tiene id namespaced y único", () => {
+/** A skill with no periods and no citations. The live view may have none. */
+const GHOST: Skill = {
+  id: "ghost-uncited",
+  name: "Ghost",
+  category: "practice",
+  aliases: [],
+  level: "familiar",
+  active: true,
+  visibility: { priority: 5 },
+};
+
+function viewWithGhost(base: ContentView): ContentView {
+  return {
+    ...base,
+    skills: {
+      ...base.skills,
+      practice: [...(base.skills.practice ?? []), GHOST],
+    },
+  };
+}
+
+test("every node has a namespaced, unique id", () => {
   const ids = new Set<string>();
   for (const n of graph.nodes) {
-    assert.match(n.id, /^(skill|role|project|achievement):.+/, `id sin namespace: ${n.id}`);
-    assert.ok(!ids.has(n.id), `id duplicado: ${n.id}`);
+    assert.match(n.id, /^(skill|role|project|achievement):.+/, `id without namespace: ${n.id}`);
+    assert.ok(!ids.has(n.id), `duplicated id: ${n.id}`);
     ids.add(n.id);
   }
 });
 
-test("regla dura: ninguna arista apunta a un nodo inexistente", () => {
-  // Si esto falla, el layout opera sobre undefined y el grafo explota sin
-  // mensaje útil. `resolveView` filtra skills por `active`, así que la
-  // situación es real, no teórica.
+test("hard rule: no edge points at a node that does not exist", () => {
+  // If this fails, the layout operates on undefined and the graph blows up
+  // with no useful message. `resolveView` filters skills by `active`, so the
+  // situation is real, not theoretical.
   const ids = new Set(graph.nodes.map((n) => n.id));
   for (const e of graph.edges) {
-    assert.ok(ids.has(e.source), `arista huérfana, source: ${e.source}`);
-    assert.ok(ids.has(e.target), `arista huérfana, target: ${e.target}`);
+    assert.ok(ids.has(e.source), `orphan edge, source: ${e.source}`);
+    assert.ok(ids.has(e.target), `orphan edge, target: ${e.target}`);
   }
 });
 
-test("ningún tooltip arranca con un TODO del dataset", () => {
-  // `Project.problem` y `Project.outcome` todavía tienen TODO en 2 de 3
-  // proyectos. Por eso el builder usa `solution.short`. Este test es lo que
-  // convierte esa elección frágil en una regla.
+test("no tooltip starts with a TODO from the dataset", () => {
+  // `Project.problem` and `Project.outcome` still carry a TODO in 2 of 3
+  // projects. That is why the builder uses `solution.short`. This test is what
+  // turns that fragile choice into a rule.
   for (const n of graph.nodes) {
-    assert.ok(n.detail.length > 0, `detail vacío en ${n.id}`);
-    assert.ok(!n.detail.trimStart().startsWith("TODO"), `TODO filtrado en ${n.id}: ${n.detail}`);
+    assert.ok(n.detail.length > 0, `empty detail in ${n.id}`);
+    assert.ok(!n.detail.trimStart().startsWith("TODO"), `TODO leaked in ${n.id}: ${n.detail}`);
   }
 });
 
-test("el grado se calcula del grafo, no del dataset", () => {
-  const esperado = new Map(graph.nodes.map((n) => [n.id, 0]));
+test("degree is computed from the graph, not from the dataset", () => {
+  const expected = new Map(graph.nodes.map((n) => [n.id, 0]));
   for (const e of graph.edges) {
-    esperado.set(e.source, esperado.get(e.source)! + 1);
-    esperado.set(e.target, esperado.get(e.target)! + 1);
+    expected.set(e.source, expected.get(e.source)! + 1);
+    expected.set(e.target, expected.get(e.target)! + 1);
   }
-  for (const n of graph.nodes) assert.equal(n.degree, esperado.get(n.id));
+  for (const n of graph.nodes) assert.equal(n.degree, expected.get(n.id));
 });
 
-test("afinidad: solo pares que comparten una fuente real", () => {
-  const pares = afinidadDeSkills(view);
-  for (const p of pares) {
-    assert.ok(p.weight >= 1, `peso inválido en ${p.a}|${p.b}`);
-    assert.notEqual(p.a, p.b, "una skill no puede tener afinidad consigo misma");
-  }
-  // Sin duplicados: el par se normaliza alfabéticamente antes de agrupar.
-  const claves = pares.map((p) => `${p.a}|${p.b}`);
-  assert.equal(new Set(claves).size, claves.length, "par de afinidad duplicado");
+test("affinity: co-occurrence is not relatedness", () => {
+  // React and CI/CD share projects. That is two project→skill edges, not a
+  // reason to draw React↔CI/CD: one does not extend the other.
+  const keys = new Set(skillAffinity(view).map((p) => `${p.a}|${p.b}`));
+  assert.equal(keys.has("cicd|react"), false);
 });
 
-test("afinidad: toda skill de una arista de afinidad tiene evidencia", () => {
-  // Una skill sin logros no puede co-ocurrir con nada. Si aparece acá, la
-  // derivación está leyendo de donde no debe.
-  const sinEvidencia = new Set(nodosSinEvidencia(graph).map((n) => n.id));
-  for (const e of graph.edges.filter((x) => x.kind === "afinidad")) {
-    assert.ok(!sinEvidencia.has(e.source), `afinidad desde nodo sin evidencia: ${e.source}`);
-    assert.ok(!sinEvidencia.has(e.target), `afinidad hacia nodo sin evidencia: ${e.target}`);
+test("affinity: a declared relatedIds pair is an edge, without co-occurrence", () => {
+  const plugin: Skill = { ...GHOST, id: "plugin", name: "Plugin", relatedIds: ["react"] };
+  const withRelated: ContentView = {
+    ...view,
+    skills: {
+      ...view.skills,
+      practice: [...(view.skills.practice ?? []), plugin],
+    },
+  };
+  const keys = new Set(skillAffinity(withRelated).map((p) => `${p.a}|${p.b}`));
+  assert.equal(keys.has("plugin|react"), true);
+});
+
+test("affinity: pairs are unique, undirected, and never self", () => {
+  const pairs = skillAffinity(view);
+  for (const p of pairs) {
+    assert.ok(p.weight >= 1, `invalid weight in ${p.a}|${p.b}`);
+    assert.notEqual(p.a, p.b, "a skill cannot have affinity with itself");
+    assert.ok(p.a < p.b, `pair not normalized: ${p.a}|${p.b}`);
+  }
+  const keys = pairs.map((p) => `${p.a}|${p.b}`);
+  assert.equal(new Set(keys).size, keys.length, "duplicated affinity pair");
+});
+
+test("affinity: the live dataset connects Jotai to React and not React to CI/CD", () => {
+  const keys = new Set(skillAffinity(view).map((p) => `${p.a}|${p.b}`));
+  assert.equal(keys.has("jotai|react"), true);
+  assert.equal(keys.has("cicd|react"), false);
+});
+
+test("achievement→skill edges exist for the layout but are marked quiet", () => {
+  const quiet = graph.edges.filter(isQuietEdge);
+  const drawn = graph.edges.filter((e) => !isQuietEdge(e));
+  assert.ok(quiet.length > 0, "expected achievement→skill evidence edges");
+  assert.ok(drawn.length < graph.edges.length, "quieting should hide some edges");
+  for (const e of quiet) {
+    assert.equal(e.source.slice(0, e.source.indexOf(":")), "achievement");
+    assert.equal(e.target.slice(0, e.target.indexOf(":")), "skill");
+  }
+  for (const e of drawn) {
+    const src = e.source.slice(0, e.source.indexOf(":"));
+    const tgt = e.target.slice(0, e.target.indexOf(":"));
+    assert.notEqual(`${src}->${tgt}`, "achievement->skill");
   }
 });
 
-test("el orden de emisión es estable entre corridas", () => {
-  // El layout siembra las posiciones por índice de nodo: otro orden es otro
-  // mapa. Esto es lo que hace que el determinismo del layout sea real.
-  const otra = buildKnowledgeGraph(view);
+test("emission order is stable across runs", () => {
+  // The layout seeds positions by node index: a different order is a different
+  // map. This is what makes the determinism of the layout real.
+  const other = buildKnowledgeGraph(view);
   assert.deepEqual(
-    otra.nodes.map((n) => n.id),
+    other.nodes.map((n) => n.id),
     graph.nodes.map((n) => n.id),
   );
 });
 
-test("el layout es determinista", () => {
+test("the layout is deterministic", () => {
   const a = layoutGraph(buildKnowledgeGraph(view));
   const b = layoutGraph(buildKnowledgeGraph(view));
-  assert.deepEqual(a.nodes, b.nodes, "dos corridas del layout dieron distinto");
-  assert.equal(a.radioEncuadre, b.radioEncuadre);
+  assert.deepEqual(a.nodes, b.nodes, "two layout runs disagreed");
+  assert.equal(a.framingRadius, b.framingRadius);
 });
 
-test("`sinEvidencia` es exactamente \"no tiene evidencia\"", () => {
-  // Lo consume el `<svg>` para dibujar esos nodos distinto. Si se desincroniza
-  // del grado, el mapa miente sobre qué está respaldado.
+test("`withoutEvidence` is exactly \"has no evidence\"", () => {
+  // The `<svg>` consumes it to draw those nodes differently. If it drifts out
+  // of sync with the degree, the map lies about what is backed by evidence.
   const positioned = layoutGraph(graph);
   for (const n of positioned.nodes) {
-    assert.equal(n.sinEvidencia, n.degree === 0, `${n.id} mal clasificado`);
+    assert.equal(n.withoutEvidence, n.degree === 0, `${n.id} misclassified`);
   }
 });
 
-test("el encuadre no depende del tamaño del dataset", () => {
-  // La normalización es lo que impide que sumar un logro cambie el zoom de toda
-  // la página. Se verifica sobre el percentil, que es lo que se normaliza.
+test("the framing does not depend on the size of the dataset", () => {
+  // Normalization is what keeps adding an achievement from changing the zoom
+  // of the whole page. It is checked on the percentile, which is what gets
+  // normalized.
   const { nodes } = layoutGraph(graph);
-  const cuerpo = nodes
-    .filter((n) => !n.sinEvidencia)
+  const body = nodes
+    .filter((n) => !n.withoutEvidence)
     .map((n) => Math.hypot(n.x, n.y, n.z))
     .sort((a, b) => a - b);
-  const p85 = cuerpo[Math.floor(cuerpo.length * 0.85)]!;
-  assert.ok(Math.abs(p85 - 300) < 1, `el cuerpo no quedó normalizado a 300 (dio ${p85.toFixed(1)})`);
+  const p85 = body[Math.floor(body.length * 0.85)]!;
+  assert.ok(Math.abs(p85 - 300) < 1, `the body was not normalized to 300 (got ${p85.toFixed(1)})`);
 });
 
-test("el layout no degenera: los nodos ocupan volumen en los tres ejes", () => {
+test("the cloud is taller than it is wide: it has to fill a portrait canvas", () => {
   const { nodes } = layoutGraph(graph);
-  for (const eje of ["x", "y", "z"] as const) {
-    const vs = nodes.map((n) => n[eje]);
-    const rango = Math.max(...vs) - Math.min(...vs);
-    assert.ok(rango > 100, `el eje ${eje} colapsó (rango ${rango.toFixed(1)})`);
+  const body = nodes.filter((n) => !n.withoutEvidence);
+  const span = (axis: "x" | "y" | "z") => {
+    const vs = body.map((n) => n[axis]);
+    return Math.max(...vs) - Math.min(...vs);
+  };
+  const y = span("y");
+  const x = span("x");
+  assert.ok(
+    y > x * 1.35,
+    `cloud is not portrait enough (Y ${y.toFixed(0)} vs X ${x.toFixed(0)})`,
+  );
+});
+
+test("the layout does not degenerate: nodes occupy volume on all three axes", () => {
+  const { nodes } = layoutGraph(graph);
+  for (const axis of ["x", "y", "z"] as const) {
+    const vs = nodes.map((n) => n[axis]);
+    const range = Math.max(...vs) - Math.min(...vs);
+    assert.ok(range > 100, `axis ${axis} collapsed (range ${range.toFixed(1)})`);
   }
 });
 
-test("la proyección produce perspectiva real", () => {
-  // Sin variación de escala el dibujo es plano y todo el concepto se cae.
-  const proyectado = projectGraph(layoutGraph(graph));
-  const escalas = proyectado.map((p) => p.escala);
-  const min = Math.min(...escalas);
-  const max = Math.max(...escalas);
-  assert.ok(min > 0, "escala no positiva: hay un nodo detrás de la cámara");
-  assert.ok(max / min > 1.3, `perspectiva insuficiente (${(max / min).toFixed(2)}×)`);
+test("the projection produces real perspective", () => {
+  // With no scale variation the drawing is flat and the whole concept falls
+  // apart.
+  const projected = projectGraph(layoutGraph(graph));
+  const scales = projected.map((p) => p.scale);
+  const min = Math.min(...scales);
+  const max = Math.max(...scales);
+  assert.ok(min > 0, "non-positive scale: a node sits behind the camera");
+  assert.ok(max / min > 1.3, `not enough perspective (${(max / min).toFixed(2)}×)`);
 });
 
 // ---------------------------------------------------------------------------
-// TAMAÑO: peso = años × conexiones
+// SIZE: weight = years × connections
 // ---------------------------------------------------------------------------
 
-test("aniosDeSkill: `since` gana sobre el span derivado", () => {
-  const anios = aniosDeSkill(view);
-  // React declara `since: 2022-10`. La evidencia arranca en AdsMovil (2022-06),
-  // así que si el derivado ganara daría MÁS años. El dato declarado manda.
-  const derivado = monthsBetween("2022-06", null) / 12;
-  assert.ok(anios.get("react")! < derivado, "el span derivado le ganó al `since` declarado");
-  assert.ok(Math.abs(anios.get("react")! - monthsBetween("2022-10", null) / 12) < 0.01);
+test("skillYears: declared `periods` are UNIONed with the evidence, not a replacement", () => {
+  const years = skillYears(view);
+  // React declares a period from 2022-10, but the evidence starts earlier:
+  // AdsMovil (2022-06), still open at Dinkum. A declared period ADDS what no
+  // achievement records; it never erases real evidence.
+  const withEvidence = monthsBetween("2022-06", null) / 12;
+  assert.ok(
+    Math.abs(years.get("react")! - withEvidence) < 0.01,
+    `the declared period hid the evidence: ${years.get("react")} vs ${withEvidence}`,
+  );
 });
 
-test("aniosDeSkill: el span cruza roles y se extiende hasta hoy si alguno sigue abierto", () => {
-  const anios = aniosDeSkill(view);
-  // JavaScript aparece en los cuatro roles; el más viejo arranca en 2020-04 y
-  // Dinkum sigue abierto. Sin `since`, eso es todo el span.
-  assert.ok(Math.abs(anios.get("javascript")! - monthsBetween("2020-04", null) / 12) < 0.01);
+test("skillYears: the span crosses roles and reaches today when one is still open", () => {
+  const years = skillYears(view);
+  // JavaScript shows up in all four roles; the oldest starts in 2020-04 and
+  // Dinkum is still open. With no declared `periods`, that is the whole span.
+  assert.ok(Math.abs(years.get("javascript")! - monthsBetween("2020-04", null) / 12) < 0.01);
 });
 
-test("aniosDeSkill: un proyecto sin `roleId` igual aporta su propia fecha", () => {
-  // `jwd-maderas` no tiene rol. Si el span solo mirara roles, Next.js, Tailwind
-  // y Sanity darían 0 años teniendo 5 conexiones cada una — parecería un bug.
-  const anios = aniosDeSkill(view);
-  for (const id of ["nextjs", "tailwind", "sanity"]) {
-    assert.ok(anios.get(id)! > 0, `${id} quedó en 0 años teniendo evidencia con fecha`);
+test("skillYears: a project without a `roleId` still contributes its own date", async () => {
+  // `jwd-maderas` has no role and is unpublished until it ships. The years
+  // still have to come from the project's own dates, not from a role. Inject
+  // it into a copy of the view so hiding it from the portfolio does not
+  // silently drop this path.
+  const dataset = await content.getDataset("es");
+  const jwd = dataset.projects.find((p) => p.id === "jwd-maderas");
+  assert.ok(jwd, "jwd-maderas stays in the dataset");
+  assert.equal(
+    view.projects.some((p) => p.id === "jwd-maderas"),
+    false,
+    "jwd-maderas is hidden from the portfolio until it ships",
+  );
+  const years = skillYears({ ...view, projects: [...view.projects, jwd] });
+  // `sanity` is `only: []` until jwd-maderas ships, so it is not in the
+  // portfolio view. Next.js and Tailwind stay: they have other evidence too,
+  // and jwd still has to contribute its own dates (no `roleId`).
+  for (const id of ["nextjs", "tailwind"]) {
+    assert.ok(years.get(id)! > 0, `${id} came out at 0 years while holding dated evidence`);
   }
 });
 
-test("aniosDeSkill: sin evidencia con fecha y sin `since`, cero", () => {
-  const anios = aniosDeSkill(view);
-  const huerfanas = graph.nodes.filter((n) => n.kind === "skill" && n.degree === 0);
-  assert.ok(huerfanas.length > 0, "el dataset ya no tiene skills sin evidencia: revisar el test");
-  for (const n of huerfanas) {
-    assert.equal(anios.get(n.id.replace("skill:", ""))!, 0, `${n.id} inventó años sin evidencia`);
+test("skillYears: with no dated evidence and no `periods`, zero", () => {
+  const years = skillYears(viewWithGhost(view));
+  assert.equal(years.get(GHOST.id), 0, "an uncited skill with no periods invented years");
+  for (const n of graph.nodes.filter((n) => n.kind === "skill" && n.degree === 0)) {
+    assert.equal(years.get(n.id.replace("skill:", ""))!, 0, `${n.id} invented years with no evidence`);
   }
 });
 
-test("peso = años × grado, y solo para las skills", () => {
+test("weight = years × degree, and only for skills", () => {
   for (const n of graph.nodes) {
-    if (n.kind === "skill") assert.ok(Math.abs(n.peso - n.anios * n.degree) < 1e-9, `peso mal en ${n.id}`);
-    else assert.equal(n.peso, 0, `${n.id} no es skill y tiene peso`);
+    if (n.kind === "skill") assert.ok(Math.abs(n.weight - n.years * n.degree) < 1e-9, `wrong weight in ${n.id}`);
+    else assert.equal(n.weight, 0, `${n.id} is not a skill and carries weight`);
   }
 });
 
-test("escalaRadio vive en su rango, y es exactamente 1 fuera de las skills", () => {
+test("radiusScale stays in range, and is exactly 1 outside skills", () => {
   for (const n of graph.nodes) {
     if (n.kind !== "skill") {
-      assert.equal(n.escalaRadio, 1, `${n.id} no es skill: su radio lo manda el tipo, no la fórmula`);
+      assert.equal(n.radiusScale, 1, `${n.id} is not a skill: its radius is governed by kind, not by the formula`);
       continue;
     }
     assert.ok(
-      n.escalaRadio >= ESCALA_RADIO_MIN && n.escalaRadio <= ESCALA_RADIO_MAX,
-      `${n.id} fuera de rango: ${n.escalaRadio}`,
+      n.radiusScale >= RADIUS_SCALE_MIN && n.radiusScale <= RADIUS_SCALE_MAX,
+      `${n.id} out of range: ${n.radiusScale}`,
     );
   }
 });
 
-test("el radio va por raíz del peso, no lineal", () => {
-  // Es lo que hace que el ÁREA codifique el peso. Con radio lineal, una skill
-  // con 4× el peso ocupa 16× de área y el mapa se vuelve un nodo con satélites.
-  const skills = graph.nodes.filter((n) => n.kind === "skill" && n.peso > 0);
-  const max = skills.reduce((a, b) => (a.peso > b.peso ? a : b));
+test("the radius follows the square root of the weight, not a linear one", () => {
+  // This is what makes the AREA encode the weight. With a linear radius, a
+  // skill with 4× the weight covers 16× the area and the map turns into one
+  // node with satellites.
+  const skills = graph.nodes.filter((n) => n.kind === "skill" && n.weight > 0);
+  const max = skills.reduce((a, b) => (a.weight > b.weight ? a : b));
   const t = (n: (typeof skills)[number]) =>
-    (n.escalaRadio - ESCALA_RADIO_MIN) / (ESCALA_RADIO_MAX - ESCALA_RADIO_MIN);
+    (n.radiusScale - RADIUS_SCALE_MIN) / (RADIUS_SCALE_MAX - RADIUS_SCALE_MIN);
   for (const n of skills) {
-    assert.ok(Math.abs(t(n) - Math.sqrt(n.peso / max.peso)) < 1e-9, `${n.id} no sigue la raíz`);
+    assert.ok(Math.abs(t(n) - Math.sqrt(n.weight / max.weight)) < 1e-9, `${n.id} does not follow the square root`);
   }
-  assert.equal(t(max), 1, "la skill de mayor peso tiene que llegar al techo");
+  assert.equal(t(max), 1, "the heaviest skill has to reach the ceiling");
 });
 
-test("la skill más grande es la de más años × conexiones, no la de más grado", () => {
+test("the largest skill is the one with most years × connections, not most degree", () => {
   const skills = graph.nodes.filter((n) => n.kind === "skill");
-  const porRadio = [...skills].sort((a, b) => b.escalaRadio - a.escalaRadio)[0]!;
-  const porPeso = [...skills].sort((a, b) => b.peso - a.peso)[0]!;
-  assert.equal(porRadio.id, porPeso.id);
+  const byRadius = [...skills].sort((a, b) => b.radiusScale - a.radiusScale)[0]!;
+  const byWeight = [...skills].sort((a, b) => b.weight - a.weight)[0]!;
+  assert.equal(byRadius.id, byWeight.id);
 });
 
 // ---------------------------------------------------------------------------
-// LAYOUT RADIAL: roles afuera, tecnologías al centro
+// CAREER CYLINDER: Y is time, angle is domain, radius is kind
 // ---------------------------------------------------------------------------
 
-test("los roles quedan por fuera de las skills", () => {
+test("earlier roles sit below later ones: Y is the career", () => {
   const { nodes } = layoutGraph(graph);
-  const radio = (k: string) => {
-    const rs = nodes.filter((n) => n.kind === k && !n.sinEvidencia).map((n) => Math.hypot(n.x, n.y, n.z));
+  const roles = nodes
+    .filter((n) => n.kind === "role" && !n.withoutEvidence)
+    .sort((a, b) => a.when - b.when || a.id.localeCompare(b.id));
+  assert.ok(roles.length >= 2, "need at least two roles to test chronology");
+  for (let i = 1; i < roles.length; i++) {
+    assert.ok(
+      roles[i]!.y >= roles[i - 1]!.y - 8,
+      `${roles[i - 1]!.label} (y=${roles[i - 1]!.y.toFixed(0)}) should be below ${roles[i]!.label} (y=${roles[i]!.y.toFixed(0)})`,
+    );
+  }
+});
+
+test("roles sit on a wider ring than skills", () => {
+  const { nodes } = layoutGraph(graph);
+  const ring = (k: string) => {
+    const rs = nodes.filter((n) => n.kind === k && !n.withoutEvidence).map((n) => Math.hypot(n.x, n.z));
     return rs.reduce((a, b) => a + b, 0) / rs.length;
   };
-  const roles = radio("role");
-  const skills = radio("skill");
-  assert.ok(roles > skills, `roles a ${roles.toFixed(0)} y skills a ${skills.toFixed(0)}: no hay corteza`);
-  // Los logros y proyectos son el puente: tienen que quedar en el medio.
-  assert.ok(radio("project") < roles, "los proyectos salieron más afuera que los roles");
-  assert.ok(radio("skill") < radio("achievement"), "las skills no quedaron adentro de los logros");
+  assert.ok(ring("role") > ring("skill"), `roles at ${ring("role").toFixed(0)} and skills at ${ring("skill").toFixed(0)}`);
+  assert.ok(ring("project") < ring("role"), "projects ended up further out than the roles");
+  assert.ok(ring("skill") < ring("project"), "skills did not end up inside the projects");
 });
 
-test("las skills sin evidencia van al núcleo, no al borde", () => {
+test("skills of the same category share an angular sector", () => {
   const { nodes } = layoutGraph(graph);
-  const nucleo = nodes.filter((n) => n.sinEvidencia);
-  assert.ok(nucleo.length > 0, "el dataset ya no tiene huérfanas: revisar el test");
-  const cuerpo = nodes
-    .filter((n) => !n.sinEvidencia)
+  const frontend = nodes.filter((n) => n.kind === "skill" && n.category === "frontend" && !n.withoutEvidence);
+  assert.ok(frontend.length >= 2, "need a frontend pair");
+  const angles = frontend.map((n) => Math.atan2(n.z, n.x));
+  const span = Math.max(...angles) - Math.min(...angles);
+  assert.ok(span < 1.6, `frontend skills are spread over ${span.toFixed(2)} rad, not a sector`);
+});
+
+test("skills without evidence go to the core, not the rim", () => {
+  const { nodes } = layoutGraph(buildKnowledgeGraph(viewWithGhost(view)));
+  const core = nodes.filter((n) => n.withoutEvidence);
+  assert.ok(core.some((n) => n.id === `skill:${GHOST.id}`), "the injected orphan never landed");
+  const body = nodes
+    .filter((n) => !n.withoutEvidence)
     .map((n) => Math.hypot(n.x, n.y, n.z))
     .sort((a, b) => a - b);
-  const mediana = cuerpo[Math.floor(cuerpo.length / 2)]!;
-  for (const n of nucleo) {
+  const median = body[Math.floor(body.length / 2)]!;
+  for (const n of core) {
     assert.ok(
-      Math.hypot(n.x, n.y, n.z) < mediana,
-      `${n.id} sin evidencia quedó por fuera de la mediana del cuerpo`,
+      Math.hypot(n.x, n.y, n.z) < median,
+      `${n.id} has no evidence and landed outside the median of the body`,
     );
   }
 });
 
-test("el encuadre contiene todo el grafo", () => {
-  // La cámara usa `radioEncuadre` para el `dist` inicial y para la niebla. Si
-  // un nodo queda afuera, entra al cuadro recortado o directamente no se ve.
-  const { nodes, radioEncuadre } = layoutGraph(graph);
+test("the framing contains the whole graph", () => {
+  // The camera uses `framingRadius` for the initial `dist` and for the fog. If
+  // a node falls outside, it enters the frame clipped or is not visible at all.
+  const { nodes, framingRadius } = layoutGraph(graph);
   for (const n of nodes) {
-    assert.ok(Math.hypot(n.x, n.y, n.z) <= radioEncuadre, `${n.id} quedó fuera del encuadre`);
+    assert.ok(Math.hypot(n.x, n.y, n.z) <= framingRadius, `${n.id} fell outside the framing`);
   }
 });
 
-test("ningún nodo se dibuja encima de otro", () => {
-  // Es la regresión que trajo el tamaño variable: con radios de 6 a 34, React se
-  // comía enteras a las skills chicas que le caían al lado. La repulsión pasó a
-  // pesar por tamaño y las huérfanas salieron de la simulación por eso.
+test("no node is drawn on top of another", () => {
+  // This is the regression variable sizing brought in: with radii from 6 to 34,
+  // React swallowed whole the small skills landing next to it. Repulsion became
+  // size-weighted, and the orphans left the simulation for the same reason.
   //
-  // Radios del 3D, que son los más grandes de los dos renderers: si acá no se
-  // pisan, en el `<svg>` tampoco.
+  // 3D radii, the larger of the two renderers: if they do not overlap here,
+  // they do not overlap in the `<svg>` either.
   const R: Record<string, number> = { role: 17, project: 14, skill: 10, achievement: 9 };
   const { nodes } = layoutGraph(graph);
-  const radio = (n: (typeof nodes)[number]) => R[n.kind]! * n.escalaRadio;
+  const radius = (n: (typeof nodes)[number]) => R[n.kind]! * n.radiusScale;
 
-  const solapes: string[] = [];
+  const overlaps: string[] = [];
   for (let i = 0; i < nodes.length; i++) {
     for (let k = i + 1; k < nodes.length; k++) {
       const a = nodes[i]!, b = nodes[k]!;
       const d = Math.hypot(a.x - b.x, a.y - b.y, a.z - b.z);
-      const suma = radio(a) + radio(b);
-      if (d < suma) solapes.push(`${a.label}/${b.label} (${(d - suma).toFixed(0)})`);
+      const sum = radius(a) + radius(b);
+      if (d < sum) overlaps.push(`${a.label}/${b.label} (${(d - sum).toFixed(0)})`);
     }
   }
-  assert.deepEqual(solapes, [], `nodos pisados: ${solapes.join(", ")}`);
+  assert.deepEqual(overlaps, [], `overlapping nodes: ${overlaps.join(", ")}`);
 });

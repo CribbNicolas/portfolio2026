@@ -1,36 +1,36 @@
 /**
- * Qué commit está publicado. Existe para un solo consumidor: el smoke.
+ * Which commit is published. It exists for one consumer: the smoke test.
  *
- * `smoke-deploy.yml` corre al pushear a `staging` o `main`, pero el push y el
- * deploy no son el mismo evento: Cloudflare tarda uno o dos minutos. Sin una
- * forma de preguntar "¿ya estás sirviendo ESTE commit?", el smoke tendría que
- * dormir un rato fijo y cruzar los dedos — y verificaría el deploy anterior
- * cada vez que el build tardara de más.
+ * `smoke-deploy.yml` runs on a push to `staging` or `main`, but the push and
+ * the deploy are not the same event: Cloudflare takes a minute or two. With no
+ * way to ask "are you serving THIS commit yet?", the smoke would have to sleep
+ * for a fixed while and cross its fingers — and would verify the previous
+ * deploy every time the build ran long.
  *
- * Por qué hizo falta: la versión original del smoke escuchaba
- * `deployment_status`, asumiendo que Pages creaba GitHub Deployments. No los
- * crea: publica un *check run* llamado "Cloudflare Pages". El evento nunca se
- * disparó y el gate estuvo semanas sin correr ni una vez (deuda técnica §14).
+ * Why it was needed: the original smoke listened for `deployment_status`,
+ * assuming Pages created GitHub Deployments. It does not: it publishes a *check
+ * run* called "Cloudflare Pages". The event never fired and the gate went weeks
+ * without running once (closed #14).
  *
- * `CF_PAGES_COMMIT_SHA` la inyecta Cloudflare en el entorno de build. En local
- * no existe y sale `"local"`, que es exactamente lo que queremos ver si alguien
- * apunta el smoke a un `dist/` servido a mano.
+ * `CF_PAGES_COMMIT_SHA` is injected by Cloudflare into the build environment.
+ * Locally it does not exist and `"local"` comes out, which is exactly what we
+ * want to see if somebody points the smoke at a hand-served `dist/`.
  *
- * NO lleva la versión de `package.json` ni un timestamp. La versión porque
- * docs/08 §3 decidió no exponerla mientras no haya quién la consuma, y el smoke
- * no la necesita. El timestamp porque haría que dos builds del mismo commit
- * produjeran bytes distintos, y la determinismo del build es una propiedad que
- * este repo ya cuida en otros lados (`graph-layout.ts`).
+ * It carries NEITHER the `package.json` version NOR a timestamp. The version
+ * because docs/08 §3 decided not to expose it while nothing consumes it, and
+ * the smoke does not need it. The timestamp because it would make two builds of
+ * the same commit produce different bytes, and build determinism is a property
+ * this repo already protects elsewhere (`graph-layout.ts`).
  */
 
 import type { APIRoute } from "astro";
 
 /**
- * Sin cabecera de caché acá, y no por olvido: con `output: "static"` Astro
- * prerenderiza esto a un archivo y descarta las cabeceras del `Response`. Las
- * pone Pages, que para assets estáticos sirve `max-age=0, must-revalidate`
- * —verificado sobre el sitio publicado—, así que cada pedido revalida. El
- * workflow además le agrega un `?t=<epoch>` para no depender de eso.
+ * No cache header here, and not by oversight: with `output: "static"` Astro
+ * prerenders this to a file and discards the `Response` headers. Pages sets
+ * them, and for static assets it serves `max-age=0, must-revalidate` — verified
+ * against the published site — so every request revalidates. The workflow also
+ * appends a `?t=<epoch>` so it does not depend on that.
  */
 export const GET: APIRoute = () =>
   new Response(JSON.stringify({ commit: process.env.CF_PAGES_COMMIT_SHA ?? "local" }, null, 2), {

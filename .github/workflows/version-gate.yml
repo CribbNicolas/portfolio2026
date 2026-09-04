@@ -1,20 +1,34 @@
-# La versión de package.json sube en cada PR que entra a `develop`.
+# The package.json version rises on every PR entering `develop`.
 #
-# `package.json` es la única fuente de verdad del versionado (docs/08). Esa
-# afirmación es cierta sólo mientras el número cambie cuando cambia el código.
-# Dos cambios con el mismo número no es un detalle de prolijidad: es que la
-# versión dejó de identificar qué hay adentro, o sea que dejó de servir para lo
-# único que sirve.
+# `package.json` is the only source of truth for versioning (docs/08). That claim
+# is true only while the number changes when the code changes. Two changes with
+# the same number is not a tidiness detail: it means the version stopped
+# identifying what is inside, i.e. stopped serving the one purpose it has.
 #
-# Se versiona en `develop` y no más adelante porque ahí es donde entra cada
-# cambio, uno por uno. `develop` → `staging` y `staging` → `main` no vuelven a
-# tocar el número: lo arrastran. Así la versión que se ve en producción es
-# exactamente la que se verificó en preview, y antes en integración.
+# Versioning happens at `develop` and not later because that is where each change
+# enters, one at a time. `develop` → `staging` and `staging` → `main` do not
+# touch the number again: they carry it. That way the version seen in production
+# is exactly the one verified in preview, and before that in integration.
+#
+# The job is called `bump` because that is the status check name the `develop`
+# ruleset requires. Renaming it silently disables the gate.
 name: version-gate
 
 on:
   pull_request:
     branches: [develop]
+    # `edited` is not in the default list (opened, synchronize, reopened), and
+    # without it a stacked PR is stuck forever.
+    #
+    # When PR B is opened against branch A and A then merges, GitHub retargets B
+    # to `develop` — and that retarget fires `edited`. With the defaults this
+    # workflow never runs for B, so `bump` never reports, and `bump` is a
+    # REQUIRED check on `develop`: the PR sits BLOCKED waiting for something
+    # that will never arrive. It is fail-safe rather than a hole, but the only
+    # way out was closing and reopening the PR.
+    #
+    # Measured on PR #18, 2026-08-27.
+    types: [opened, synchronize, reopened, edited]
 
 jobs:
   bump:
@@ -22,10 +36,10 @@ jobs:
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@v4
-      # El checkout de un PR trae sólo la rama del PR. Sin esto,
-      # `git show origin/develop:package.json` falla por una razón que no tiene
-      # nada que ver con la versión, y el error confunde.
-      - name: Traer la rama base
+      # A PR checkout brings only the PR branch. Without this,
+      # `git show origin/develop:package.json` fails for a reason that has
+      # nothing to do with the version, and the error confuses.
+      - name: Fetch the base branch
         run: git fetch --depth=1 origin ${{ github.base_ref }}
       - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v4

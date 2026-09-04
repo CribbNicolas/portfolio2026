@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>content editor</title>
+    <link rel="stylesheet" href="/editor.css" />
+  </head>
+  <body>
+    <header class="bar">
+      <strong>content.es.json</strong>
+      <span id="status" class="bar__status">loading…</span>
+      <button id="save" class="button" type="button" disabled>Save</button>
+    </header>
+
+    <main class="layout">
+      <nav id="nav" class="nav" aria-label="collections"></nav>
+      <section id="detail" class="detail"></section>
+    </main>
+
+    <aside id="problems" class="problems" hidden></aside>
+
+    <script type="module" src="/app.js"></script>
+  </body>
+</html>

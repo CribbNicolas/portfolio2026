@@ -1,20 +1,20 @@
 /**
- * Política de JavaScript de cliente, página por página, sobre TODO `dist/`.
+ * Client JavaScript policy, page by page, over ALL of `dist/`.
  *
- * Reemplaza al criterio viejo (`grep -c "<script" dist/cv/index.html`), que
- * tenía dos problemas: nunca se automatizó —vivía como fila de una tabla en un
- * doc— y contaba lo que no alcanza. Astro puede meter JS en una página sin
- * emitir un `<script src>` que ese grep matchee: `<link rel="modulepreload">`,
- * `prefetch`, o un `<ClientRouter/>` en el layout. Y al revés: el
- * `<script type="application/json">` del grafo en /lab matchearía el grep sin
- * ser código ejecutable.
+ * It replaces the old criterion (`grep -c "<script" dist/cv/index.html`), which
+ * had two problems: it was never automated — it lived as a row in a table in a
+ * doc — and it counted the wrong thing. Astro can put JS in a page without
+ * emitting a `<script src>` that grep would match: `<link rel="modulepreload">`,
+ * `prefetch`, or a `<ClientRouter/>` in the layout. And the other way around:
+ * the graph's `<script type="application/json">` would match the grep without
+ * being executable code.
  *
- * Por qué importa blindar /cv en particular: el PDF se renderiza desde ahí con
- * Playwright esperando `networkidle`. Un script que se cuele cambia el render
- * del PDF en silencio.
+ * Why shielding /cv in particular matters: the PDF is rendered from there with
+ * Playwright waiting on `networkidle`. A script slipping in changes the PDF
+ * render silently.
  *
- * El nombre NO termina en `.test.ts` a propósito: necesita un build previo.
- * Mismo motivo que `pdf-output.check.ts`.
+ * The name does NOT end in `.test.ts` on purpose: it needs a prior build. Same
+ * reason as `pdf-output.check.ts`.
  */
 
 import { test } from "node:test";
@@ -22,112 +22,115 @@ import assert from "node:assert/strict";
 import { readdir, readFile } from "node:fs/promises";
 import { join, relative, sep } from "node:path";
 
+import { PAGES_WITH_JS } from "./pages-with-js";
+
 const DIST = "dist";
 
-/**
- * Las ÚNICAS páginas que pueden enviar JavaScript. Agregar una es una decisión
- * explícita en un diff, no un accidente que nadie nota.
- */
-const PAGINAS_CON_JS = new Set(["index.html"]);
-
-/** Tipos de `<script>` que NO son código: son datos para crawlers y agentes. */
-const TIPOS_DE_DATOS = new Set(["application/ld+json", "application/json"]);
+/** `<script>` types that are NOT code: they are data for crawlers and agents. */
+const DATA_TYPES = new Set(["application/ld+json", "application/json"]);
 
 async function htmls(dir: string): Promise<string[]> {
-  const salida: string[] = [];
-  for (const entrada of await readdir(dir, { withFileTypes: true })) {
-    const p = join(dir, entrada.name);
-    if (entrada.isDirectory()) salida.push(...(await htmls(p)));
-    else if (entrada.name.endsWith(".html")) salida.push(p);
+  const out: string[] = [];
+  for (const entry of await readdir(dir, { withFileTypes: true })) {
+    const p = join(dir, entry.name);
+    if (entry.isDirectory()) out.push(...(await htmls(p)));
+    else if (entry.name.endsWith(".html")) out.push(p);
   }
-  return salida;
+  return out;
 }
 
-const paginas = await htmls(DIST);
+const pages = await htmls(DIST);
 
-test("hay páginas que verificar (el build corrió)", () => {
-  assert.ok(paginas.length > 0, `no se encontró ningún .html en ${DIST}/ — ¿corriste el build?`);
+test("there are pages to verify (the build ran)", () => {
+  assert.ok(pages.length > 0, `no .html found in ${DIST}/ — did you run the build?`);
 });
 
-for (const archivo of paginas) {
-  const ruta = relative(DIST, archivo).split(sep).join("/");
-  const html = await readFile(archivo, "utf8");
-  const permitida = PAGINAS_CON_JS.has(ruta);
+for (const file of pages) {
+  const path = relative(DIST, file).split(sep).join("/");
+  const html = await readFile(file, "utf8");
+  const allowed = PAGES_WITH_JS.has(path);
 
-  test(`${ruta}: todo <script> sin src es de datos, no de código`, () => {
+  test(`${path}: every <script> without src is data, not code`, () => {
     for (const m of html.matchAll(/<script([^>]*)>/g)) {
       const attrs = m[1] ?? "";
       if (/\ssrc=/.test(attrs)) continue;
-      const tipo = /type=["']([^"']+)["']/.exec(attrs)?.[1];
+      const type = /type=["']([^"']+)["']/.exec(attrs)?.[1];
       assert.ok(
-        tipo && TIPOS_DE_DATOS.has(tipo),
-        `${ruta} tiene un <script${attrs}> ejecutable inline. ` +
-        `Solo se admiten ${[...TIPOS_DE_DATOS].join(" y ")}.`,
+        type && DATA_TYPES.has(type),
+        `${path} has an executable inline <script${attrs}>. ` +
+        `Only ${[...DATA_TYPES].join(" and ")} are allowed.`,
       );
     }
   });
 
-  if (permitida) continue;
+  if (allowed) continue;
 
-  test(`${ruta}: no carga ningún script externo`, () => {
-    const externos = [...html.matchAll(/<script[^>]*\ssrc=["']([^"']+)["'][^>]*>/g)].map((m) => m[1]);
+  test(`${path}: loads no external script`, () => {
+    const external = [...html.matchAll(/<script[^>]*\ssrc=["']([^"']+)["'][^>]*>/g)].map((m) => m[1]);
     assert.deepEqual(
-      externos, [],
-      `${ruta} no puede cargar JS. Si es a propósito, agregala a PAGINAS_CON_JS y decí por qué.`,
+      external, [],
+      `${path} cannot load JS. If that is on purpose, add it to PAGES_WITH_JS and say why.`,
     );
   });
 
-  test(`${ruta}: sin modulepreload ni prefetch`, () => {
-    // Son las vías por las que Astro inyecta JS sin emitir un <script src>.
+  test(`${path}: no modulepreload and no prefetch`, () => {
+    // These are the routes through which Astro injects JS without emitting a
+    // <script src>.
     const preloads = [...html.matchAll(/<link[^>]*rel=["'](modulepreload|prefetch)["'][^>]*>/g)];
     assert.equal(
       preloads.length, 0,
-      `${ruta} tiene ${preloads.length} link(s) de precarga de módulos. ` +
-      `Revisá si se activó \`prefetch\` o \`experimental.clientPrerender\` en astro.config.mjs.`,
+      `${path} has ${preloads.length} module preload link(s). ` +
+      `Check whether \`prefetch\` or \`experimental.clientPrerender\` got enabled in astro.config.mjs.`,
     );
   });
 
-  test(`${ruta}: no referencia bundles de /_astro/`, () => {
+  test(`${path}: references no /_astro/ bundles`, () => {
     const refs = [...html.matchAll(/["'](\/_astro\/[^"']+\.js)["']/g)].map((m) => m[1]);
-    assert.deepEqual(refs, [], `${ruta} referencia bundles JS: ${refs.join(", ")}`);
+    assert.deepEqual(refs, [], `${path} references JS bundles: ${refs.join(", ")}`);
   });
 }
 
 /**
- * Las huellas de cada analítica en el HTML servido.
+ * The fingerprint of each analytics provider in the served HTML.
  *
- * Se listan una por una y no con un patrón genérico tipo "analytics": si
- * mañana entra una tercera y nadie la suma acá, conviene que el test quede
- * evidentemente incompleto y no que pase por casualidad.
+ * They are listed one by one and not with a generic pattern like "analytics":
+ * if a third one ever arrives and nobody adds it here, it is better for the
+ * test to be visibly incomplete than to pass by accident.
  */
-const HUELLAS_DE_ANALITICA = [
-  { marca: "clarity", nombre: "Microsoft Clarity" },
-  { marca: "cloudflareinsights", nombre: "Cloudflare Web Analytics" },
-  { marca: "cf-beacon", nombre: "Cloudflare Web Analytics" },
+const ANALYTICS_FINGERPRINTS = [
+  { mark: "clarity", name: "Microsoft Clarity" },
+  { mark: "cloudflareinsights", name: "Cloudflare Web Analytics" },
+  { mark: "cf-beacon", name: "Cloudflare Web Analytics" },
 ];
 
-test("la analítica vive SOLO en la landing", async () => {
-  // Los tests de arriba ya lo cubren de rebote: una analítica en `Base.astro`
-  // haría que `/cv` emitiera un `<script src>` y varios fallarían. Pero
-  // fallarían diciendo "cv/index.html no puede cargar JS", y quien lea eso va
-  // a buscar el problema en el mapa, no en la medición.
+test("analytics live ONLY on the landing", async () => {
+  // The tests above already cover this indirectly: analytics in `Base.astro`
+  // would make `/cv` emit a `<script src>` and several would fail. But they
+  // would fail saying "cv/index.html cannot load JS", and whoever reads that
+  // will go looking for the problem in the map, not in the measurement.
   //
-  // Esto nombra el riesgo: `/cv` es de donde Browser Rendering imprime el PDF,
-  // y un script de terceros ahí cambia el render en producción sin que ningún
-  // test del PDF lo note — el texto extraído sigue siendo el mismo.
-  const culpables: string[] = [];
-  for (const archivo of paginas) {
-    const ruta = relative(DIST, archivo).split(sep).join("/");
-    if (ruta === "index.html") continue;
-    const html = await readFile(archivo, "utf8");
-    for (const { marca, nombre } of HUELLAS_DE_ANALITICA) {
-      if (html.toLowerCase().includes(marca)) culpables.push(`${ruta} (${nombre})`);
+  // This names the risk: `/cv` is where Browser Rendering prints the PDF from,
+  // and a third-party script there changes the production render without any
+  // PDF test noticing — the extracted text stays the same.
+  const offenders: string[] = [];
+  for (const file of pages) {
+    const path = relative(DIST, file).split(sep).join("/");
+    // Both landings run the map's boot script, which calls `startAnalytics()`
+    // first (see `src/pages/index.astro`'s ordering comment) — so both are
+    // expected to carry the fingerprints. `PAGES_WITH_JS` is the same
+    // allowlist for the same reason: shipping JS here is a decision, not an
+    // accident.
+    if (PAGES_WITH_JS.has(path)) continue;
+    const html = await readFile(file, "utf8");
+    for (const { mark, name } of ANALYTICS_FINGERPRINTS) {
+      if (html.toLowerCase().includes(mark)) offenders.push(`${path} (${name})`);
     }
   }
   assert.deepEqual(
-    culpables,
+    offenders,
     [],
-    `la analítica llegó a ${culpables.join(", ")}. Va SOLO en index.astro: si se ` +
-      "movió a Base.astro, /cv dejó de estar en cero JS y el PDF se imprime desde ahí.",
+    `analytics reached ${offenders.join(", ")}. They go ONLY in the landings' own ` +
+      "pages: if they moved to Base.astro, /cv or /en/cv stopped being at zero JS " +
+      "and the PDF is printed from there.",
   );
 });

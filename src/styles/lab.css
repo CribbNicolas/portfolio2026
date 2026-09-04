@@ -1,14 +1,14 @@
 /*
- * /lab — el mapa de conocimiento.
+ * The knowledge map.
  *
- * Dos reglas cargan todo el peso de la promesa "no captura el mouse":
- * los dos canvas son `pointer-events: none`. No es una mitigación, es
- * estructural: clicks y scroll no pueden ser interceptados porque el elemento
- * no recibe eventos de puntero.
+ * Two rules carry the whole weight of the "it does not capture the mouse"
+ * promise: both canvases are `pointer-events: none`. It is not a mitigation, it
+ * is structural: clicks and scroll cannot be intercepted because the element
+ * receives no pointer events.
  *
- * El resaltado cruzado lista↔mapa NO está acá: son reglas `:has()` generadas
- * desde el grafo en `src/lib/lab-hover-css.ts` e inyectadas en el `<head>`.
- * Se generan porque escritas a mano se desincronizarían de los ids del SVG.
+ * The list↔map cross-highlight is NOT here: those are `:has()` rules generated
+ * from the graph in `src/lib/lab-hover-css.ts` and injected into the `<head>`.
+ * They are generated because written by hand they would drift from the SVG ids.
  */
 
 .lab {
@@ -18,127 +18,122 @@
 
 /* --- El campo del fondo (concepto D) ------------------------------------ */
 
-/* `fixed` y no `absolute`: el mapa se dibuja transparente encima, así que el
-   campo tiene que estar detrás en TODA la página. Acotado al hero dejaba media
-   sección del mapa sobre fondo liso y la transparencia no significaba nada. */
-.lab__campo {
+/* `fixed` and not `absolute`: the map is drawn transparent on top, so the field
+   has to sit behind the WHOLE page. Bounded to the hero it left half the map
+   section over a flat background and the transparency meant nothing. */
+.lab__field {
   position: fixed;
   inset: 0;
   width: 100%;
   height: 100%;
   pointer-events: none;
   opacity: 0;
-  /* La transición es cosmética: si `prefers-reduced-motion` la anula (tokens.css
-     lo hace globalmente), el canvas aparece de una y no se rompe nada. */
+  /* The transition is cosmetic: if `prefers-reduced-motion` cancels it
+     (tokens.css does that globally), the canvas appears at once and nothing
+     breaks. */
   transition: opacity 600ms ease;
 }
 
-.lab__campo--activo {
+.lab__field--active {
   opacity: 1;
 }
 
-.lab__contenido {
+.lab__content {
   position: relative;
   z-index: 1;
 }
 
-/* Deja lugar para la píldora, que es `fixed` y arranca pisando el hero. */
-.lab__hero {
-  padding-top: calc(var(--espacio) * 12);
+/* Leaves room for the pill, which is `fixed` and starts out over the hero.
+   Bottom padding is tight: the map is the next thing and should start high.
+   More specific than `.lab__content > section` so these longhands win over
+   the shared `padding-block`. */
+.lab__content > .lab__hero {
+  padding-top: calc(var(--space) * 12);
+  padding-bottom: calc(var(--space) * 2);
 }
 
-/* --- La sección del mapa ------------------------------------------------ */
-
-.lab__mapa-seccion {
-  max-width: var(--ancho);
-  margin: 0 auto;
-  padding: calc(var(--espacio) * 4) calc(var(--espacio) * 2.5) calc(var(--espacio) * 8);
+.lab__content > .lab__map-section {
+  padding-top: calc(var(--space) * 1);
+  padding-bottom: calc(var(--space) * 4);
 }
 
-.lab__titulo {
+/* --- The map section ----------------------------------------------------- */
+
+/* Width and gutter of `.lab__map-section` come from the shared measure in
+   home.css. The canvas fills that column: a 72rem map next to a 45rem CV
+   was four pages glued together. */
+
+.lab__content > .cv {
+  /* cv.css's `.cv` shorthand `padding` would otherwise reset the shared
+     longhands — that file is for `/cv` (the PDF source), this is the
+     landing's copy of the same block. */
+  padding-inline: calc(var(--space) * 2.5);
+  padding-block: calc(var(--space) * 6) calc(var(--space) * 8);
+}
+
+@media (min-width: 40rem) {
+  .lab__content > .cv {
+    padding-inline: calc(var(--space) * 4);
+  }
+}
+
+.lab__title {
   font-size: 1.5rem;
   font-weight: 800;
   letter-spacing: -0.025em;
-  margin: 0 0 calc(var(--espacio) * 1.5);
-}
-
-.lab__bajada {
-  font-size: 1rem;
-  line-height: 1.55;
-  color: var(--tinta-suave);
-  margin: 0 0 calc(var(--espacio) * 3);
-  text-wrap: pretty;
-}
-
-.lab__cifras {
-  display: flex;
-  gap: calc(var(--espacio) * 3);
-  margin: 0 0 calc(var(--espacio) * 3);
-}
-
-.lab__cifras div {
-  display: flex;
-  flex-direction: column-reverse;
-}
-
-.lab__cifras dt {
-  font-size: 0.75rem;
-  font-weight: 600;
-  color: var(--tinta-suave);
-}
-
-.lab__cifras dd {
-  margin: 0;
-  font-size: 1.5rem;
-  font-weight: 800;
-  letter-spacing: -0.02em;
-  font-variant-numeric: tabular-nums;
+  margin: 0 0 calc(var(--space) * 1.5);
 }
 
 /* --- El mapa: SVG abajo, canvas arriba ---------------------------------- */
 
-.lab__mapa {
+.lab__map {
   position: relative;
-  aspect-ratio: 1 / 1;
+  width: 100%;
+  /* One viewport on a phone, so the map is a screen of its own and a single
+     finger can still scroll past it. Desktop gets a fixed taller-than-wide
+     height — not a leftover of the viewport. */
+  height: 100svh;
+  aspect-ratio: auto;
   /* Sin borde y sin radio: el mapa no es una tarjeta, es una capa. */
   overflow: hidden;
-  margin: 0 0 calc(var(--espacio) * 4);
-  /* El SVG SÍ necesita fondo opaco: sus halos de oclusión son discos de
-     --fondo-elevado y sobre un panel transparente se verían como manchas. */
-  background: var(--fondo-elevado);
-  border-radius: var(--radio);
+  margin: 0 0 calc(var(--space) * 4);
+  /* The SVG DOES need an opaque background: its occlusion halos are discs of
+     --bg-raised and over a transparent panel they would read as smudges. */
+  background: var(--bg-raised);
+  border-radius: var(--radius);
   transition: background-color 400ms ease, border-radius 400ms ease;
+  /* The canvas does not take pointer events, so a drag lands on the SVG and
+     selects its labels. Kill selection on the map; the panel is not clickable
+     anyway (`pointer-events: none`). */
+  user-select: none;
+  -webkit-user-select: none;
 }
 
-/* Con el 3D montado el panel desaparece y el campo se ve a través del mapa. Los
-   nodos lejanos se desvanecen a TRANSPARENTE, no a un color de panel: eso lo
-   resuelve el alpha por instancia en `grafo-3d.ts`, no este CSS. */
-.lab__mapa--3d {
+/* With the 3D mounted the panel disappears and the field shows through the map.
+   Distant nodes fade to TRANSPARENT, not to a panel color: that is solved by the
+   per-instance alpha in `graph-3d.ts`, not by this CSS. */
+.lab__map--3d {
   background: transparent;
   border-radius: 0;
   /*
-   * El reparto del gesto táctil lo decide el BROWSER, no nosotros: deslizar
-   * vertical scrollea la página, horizontal rota el mapa. Por eso no hay un
-   * solo `preventDefault` sobre eventos de puntero en `src/scripts/`, y por eso
-   * esto no es el scroll hijacking que prohíbe el spec §3.4.
+   * One finger always belongs to the browser (scroll). Rotation is two
+   * fingers, decided in `interaction.ts` by counting pointers — not by
+   * `preventDefault` on touchmove, which spec §3.4 forbids.
    */
-  touch-action: pan-y;
+  touch-action: pan-x pan-y;
   cursor: grab;
 }
 
-/* La única señal de que un nodo se puede clickear. */
-.lab__mapa--sobre-nodo {
+/* The only signal that a node can be clicked. */
+.lab__map--on-node {
   cursor: pointer;
 }
 
-.lab__mapa--arrastrando {
+.lab__map--dragging {
   cursor: grabbing;
 }
 
-/* Con foco activo las etiquetas estorban: el panel ya dice de qué se trata. */
-.lab__mapa--enfocado .lab__etiquetas {
-  opacity: 0.25;
-}
+/* Non-sticky labels dim in JS when a node is focused. Workplaces stay. */
 
 .lab__svg,
 .lab__canvas {
@@ -146,11 +141,13 @@
   inset: 0;
   width: 100%;
   height: 100%;
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 /* El SVG NUNCA se saca del DOM: si el 3D se apaga —contexto perdido, frames
    fuera de presupuesto— volver es quitar una clase, no reconstruir nada. */
-.lab__mapa--3d .lab__svg {
+.lab__map--3d .lab__svg {
   opacity: 0;
   pointer-events: none;
 }
@@ -160,99 +157,125 @@
 }
 
 .lab__canvas {
-  /* La línea que hace cierta la promesa de no capturar el mouse. */
+  /* The line that makes the "does not capture the mouse" promise true. */
   pointer-events: none;
   opacity: 0;
   transition: opacity 400ms ease;
 }
 
-.lab__mapa--3d .lab__canvas {
+.lab__map--3d .lab__canvas {
   opacity: 1;
 }
 
-.lab__arista {
-  stroke: var(--tinta-suave);
+/* Fade the 3D drawing at every canvas edge so a sphere leaving the frame
+   dissolves instead of being sliced by `overflow: hidden`. Two gradients
+   intersected: one for the left/right, one for top/bottom. The labels sit
+   in the DOM over the canvas and have to fade with it, or a name would
+   survive the sphere it names. The panel, tooltip and hint stay unmasked. */
+.lab__map--3d .lab__canvas,
+.lab__map--3d .lab__labels {
+  --edge-fade: 12%;
+  -webkit-mask-image:
+    linear-gradient(to right, transparent, #000 var(--edge-fade), #000 calc(100% - var(--edge-fade)), transparent),
+    linear-gradient(to bottom, transparent, #000 var(--edge-fade), #000 calc(100% - var(--edge-fade)), transparent);
+  -webkit-mask-composite: source-in;
+  mask-image:
+    linear-gradient(to right, transparent, #000 var(--edge-fade), #000 calc(100% - var(--edge-fade)), transparent),
+    linear-gradient(to bottom, transparent, #000 var(--edge-fade), #000 calc(100% - var(--edge-fade)), transparent);
+  mask-composite: intersect;
 }
 
-.lab__arista--afinidad {
-  stroke: var(--acento);
+.lab__edge {
+  stroke: color-mix(in srgb, var(--line) 72%, var(--accent));
+}
+
+.lab__edge--affinity {
+  /* Same mix as structure. Full accent is reserved for a focused neighbourhood. */
+  stroke: color-mix(in srgb, var(--line) 72%, var(--accent));
 }
 
 .lab__halo {
-  fill: var(--fondo-elevado);
+  fill: var(--bg-raised);
 }
 
-/* El tipo se distingue por VALOR —qué tan oscuro— no por matiz, así el mapa
-   sobrevive en blanco y negro. Son los mismos colores que calcula `colorDe()`
-   en `grafo-3d.ts`: si cambian acá, cambian allá. */
-.lab__nodo--role { fill: var(--tinta); }
-.lab__nodo--project { fill: var(--tinta-suave); }
-.lab__nodo--achievement { fill: var(--acento); }
-/* Relleno, no anillo. Era un anillo cuando todas las skills medían igual y uno
-   chico se lee como punto; con el tamaño por años × conexiones, React dibuja
-   radio 19 y un aro de ese diámetro se lee como un agujero — justo el nodo que
-   tiene que dominar. El 75% espeja el `lerp(fondo, 0.25)` del 3D. */
-.lab__nodo--skill {
-  fill: color-mix(in srgb, var(--tinta-suave) 75%, var(--fondo-elevado));
-  stroke: var(--tinta-suave);
+/* The kind is told apart by VALUE — how dark it is — not by a second hue.
+   These mixes are the same as `colorFor()` in `graph-3d.ts`: terracotta dust
+   on ink, so the map is of this palette and not a cool gray chrome. */
+.lab__node--role { fill: color-mix(in srgb, var(--ink) 90%, var(--accent)); }
+.lab__node--project { fill: color-mix(in srgb, var(--ink-soft) 68%, var(--accent)); }
+.lab__node--achievement { fill: var(--accent); }
+/* Filled, not a ring. It was a ring when every skill measured the same and a
+   small one reads as a dot; with size by years × connections, React draws at
+   radius 19 and a ring of that diameter reads as a hole — exactly the node that
+   has to dominate. */
+.lab__node--skill {
+  fill: color-mix(in srgb, color-mix(in srgb, var(--ink-soft) 80%, var(--accent)) 88%, var(--bg-raised));
+  stroke: color-mix(in srgb, var(--ink-soft) 75%, var(--accent));
 }
 
 /* Sin evidencia: hueco y punteado. La ausencia se dibuja, no se esconde. */
-.lab__nodo--hueco {
+.lab__node--empty {
   fill: none;
-  stroke: var(--tinta-suave);
+  stroke: color-mix(in srgb, var(--ink-soft) 75%, var(--accent));
   stroke-dasharray: 2.4 2.8;
 }
 
-.lab__etiqueta {
-  fill: var(--tinta);
+.lab__label {
+  fill: var(--ink);
   letter-spacing: -0.01em;
-  /* Contorno del color del fondo por debajo del relleno: la etiqueta se lee
-     aunque le pase una arista por atrás. */
+  /* An outline the color of the background beneath the fill: the label reads
+     even with an edge passing behind it. */
   paint-order: stroke;
-  stroke: var(--fondo-elevado);
+  stroke: var(--bg-raised);
   stroke-width: 3.5;
 }
 
-.lab__etiqueta--role { font-weight: 800; }
-.lab__etiqueta--project { font-weight: 600; }
+.lab__label--role { font-weight: 800; }
+.lab__label--project { font-weight: 600; }
+.lab__label--skill { font-weight: 700; }
 
-/* Etiquetas del 3D: DOM sobre el canvas. Texto nítido, sin atlas de fuente. */
-.lab__etiquetas {
+/* 3D labels: DOM over the canvas. Crisp text, no font atlas. */
+.lab__labels {
   position: absolute;
   inset: 0;
   pointer-events: none;
   opacity: 0;
 }
 
-.lab__mapa--3d .lab__etiquetas {
+.lab__map--3d .lab__labels {
   opacity: 1;
 }
 
-.lab__etiqueta-3d {
+.lab__label-3d {
   position: absolute;
   top: 0;
   left: 0;
   white-space: nowrap;
-  color: var(--tinta);
+  color: var(--ink);
   letter-spacing: -0.01em;
   will-change: transform;
-  /* Halo del color del fondo: la etiqueta se lee aunque le pase una arista
-     por atrás. Es el equivalente del `paint-order: stroke` del SVG. */
+  /* A halo the color of the background: the label reads even with an edge
+     passing behind it. It is the equivalent of the SVG's `paint-order: stroke`. */
   text-shadow:
-    0 0 3px var(--fondo-elevado), 0 0 3px var(--fondo-elevado),
-    0 0 6px var(--fondo-elevado);
+    0 0 3px var(--bg-raised), 0 0 3px var(--bg-raised),
+    0 0 6px var(--bg-raised);
 }
 
-.lab__etiqueta-3d--role {
+.lab__label-3d--role {
   font-size: 0.875rem;
   font-weight: 800;
 }
 
-.lab__etiqueta-3d--project {
+.lab__label-3d--project {
   font-size: 0.8125rem;
   font-weight: 600;
-  color: var(--tinta-suave);
+  color: color-mix(in srgb, var(--ink-soft) 70%, var(--accent));
+}
+
+.lab__label-3d--skill {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: color-mix(in srgb, var(--ink-soft) 55%, var(--accent));
 }
 
 .lab__tooltip {
@@ -261,15 +284,15 @@
   left: 0;
   pointer-events: none;
   will-change: transform;
-  padding: calc(var(--espacio) * 0.5) calc(var(--espacio));
+  padding: calc(var(--space) * 0.5) calc(var(--space));
   border-radius: 6px;
-  background: var(--tinta);
-  color: var(--fondo);
+  background: var(--ink);
+  color: var(--bg);
   font-size: 0.75rem;
   font-weight: 600;
   line-height: 1.4;
-  /* Ancho tope y no `nowrap`: el tooltip de un logro es una oración entera, y
-     sin límite se iría de pantalla. */
+  /* A max width and not `nowrap`: an achievement's tooltip is a whole sentence,
+     and with no limit it would run off screen. */
   max-width: 17rem;
   text-wrap: pretty;
   opacity: 0;
@@ -284,23 +307,23 @@
 
 .lab__panel {
   position: absolute;
-  left: calc(var(--espacio) * 2);
-  bottom: calc(var(--espacio) * 2);
-  width: min(20rem, calc(100% - var(--espacio) * 4));
-  /* Tope de alto: un rol con muchos logros llenaba media pantalla y tapaba el
-     mapa que se supone que está explicando. El contenido se limita en JS
-     (MAX_LOGROS) para que nunca llegue a este tope: si lo tocara, cortaría una
-     oración por la mitad y eso se lee como un error, no como un límite. */
+  left: calc(var(--space) * 2);
+  bottom: calc(var(--space) * 2);
+  width: min(20rem, calc(100% - var(--space) * 4));
+  /* Height cap: a role with many achievements filled half the screen and covered
+     the map it is supposed to be explaining. The content is limited in JS
+     (MAX_ACHIEVEMENTS) so it never reaches this cap: if it did, it would cut a
+     sentence in half and that reads as an error, not as a limit. */
   max-height: min(78%, 28rem);
   overflow: hidden;
   box-sizing: border-box;
-  padding: calc(var(--espacio) * 1.75);
-  border: 1px solid var(--linea);
-  border-radius: var(--radio);
-  background: var(--fondo);
-  box-shadow: var(--sombra);
-  /* No captura clicks: si el panel tapara el mapa, arrastrar sobre él no
-     rotaría y el usuario no entendería por qué. */
+  padding: calc(var(--space) * 1.75);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--bg);
+  box-shadow: var(--shadow);
+  /* It does not capture clicks: if the panel covered the map, dragging over it
+     would not rotate and the user would not understand why. */
   pointer-events: none;
   opacity: 0;
   transform: translateY(6px);
@@ -312,60 +335,60 @@
   transform: none;
 }
 
-.lab__panel-titulo {
-  margin: 0 0 calc(var(--espacio) * 0.5);
+.lab__panel-title {
+  margin: 0 0 calc(var(--space) * 0.5);
   font-size: 1rem;
   font-weight: 800;
   letter-spacing: -0.015em;
 }
 
 .lab__panel-meta {
-  margin: 0 0 calc(var(--espacio));
+  margin: 0 0 calc(var(--space));
   font-size: 0.75rem;
   font-weight: 600;
-  color: var(--acento);
+  color: var(--accent);
 }
 
-.lab__panel-texto {
-  margin: 0 0 calc(var(--espacio) * 1.25);
+.lab__panel-text {
+  margin: 0 0 calc(var(--space) * 1.25);
   font-size: 0.8125rem;
   line-height: 1.5;
-  color: var(--tinta-suave);
+  color: var(--ink-soft);
   text-wrap: pretty;
 }
 
-.lab__panel-grupo + .lab__panel-grupo {
-  margin-top: calc(var(--espacio) * 1.5);
+.lab__panel-group + .lab__panel-group {
+  margin-top: calc(var(--space) * 1.5);
 }
 
-.lab__panel-subtitulo {
-  margin: 0 0 calc(var(--espacio) * 0.75);
+.lab__panel-subtitle {
+  margin: 0 0 calc(var(--space) * 0.75);
   font-size: 0.6875rem;
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 0.1em;
-  color: var(--tinta-suave);
+  color: var(--ink-soft);
 }
 
-.lab__panel-logros {
+.lab__panel-achievements {
   list-style: none;
   margin: 0;
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: calc(var(--espacio) * 0.75);
+  gap: calc(var(--space) * 0.75);
 }
 
-.lab__panel-logros li {
+.lab__panel-achievements li {
   position: relative;
-  padding-left: calc(var(--espacio) * 1.5);
+  padding-left: calc(var(--space) * 1.5);
   font-size: 0.8125rem;
   line-height: 1.45;
-  color: var(--tinta);
+  color: var(--ink);
   text-wrap: pretty;
 }
 
-.lab__panel-logros li::before {
+.lab__panel-achievements li::before {
   content: "";
   position: absolute;
   left: 0;
@@ -373,23 +396,23 @@
   width: 5px;
   height: 5px;
   border-radius: 50%;
-  background: var(--acento);
+  background: var(--accent);
 }
 
-.lab__panel-mas {
-  margin: calc(var(--espacio) * 0.75) 0 0;
+.lab__panel-more {
+  margin: calc(var(--space) * 0.75) 0 0;
   font-size: 0.75rem;
   font-weight: 600;
-  color: var(--tinta-suave);
+  color: var(--ink-soft);
 }
 
-.lab__panel-lista {
+.lab__panel-list {
   list-style: none;
   margin: 0;
   padding: 0;
   display: flex;
   flex-wrap: wrap;
-  gap: calc(var(--espacio) * 0.5);
+  gap: calc(var(--space) * 0.5);
 }
 
 .lab__panel-chip {
@@ -397,131 +420,145 @@
   font-weight: 600;
   padding: 2px 7px;
   border-radius: 5px;
-  background: var(--fondo-elevado);
-  border: 1px solid var(--linea);
-  color: var(--tinta-suave);
+  background: var(--bg-raised);
+  border: 1px solid var(--line);
+  color: var(--ink-soft);
 }
 
 .lab__panel-chip--role,
 .lab__panel-chip--project {
-  color: var(--tinta);
+  color: var(--ink);
 }
 
 .lab__panel-chip--achievement {
-  background: var(--acento-tenue);
+  background: var(--accent-faint);
   border-color: transparent;
-  color: var(--acento);
+  color: var(--accent);
 }
 
-.lab__pista {
+.lab__hint {
   position: absolute;
-  right: calc(var(--espacio) * 2);
-  bottom: calc(var(--espacio) * 2);
+  right: calc(var(--space) * 2);
+  bottom: calc(var(--space) * 2);
   margin: 0;
   font-size: 0.6875rem;
   font-weight: 600;
-  color: var(--tinta-suave);
+  color: var(--ink-soft);
   pointer-events: none;
   opacity: 0;
   transition: opacity 300ms ease;
 }
 
-/* La pista solo aparece con el 3D montado: sin él no hay nada que arrastrar. */
-.lab__mapa--3d .lab__pista {
+.lab__hint--coarse {
+  display: none;
+}
+
+@media (pointer: coarse) {
+  .lab__hint--fine {
+    display: none;
+  }
+
+  .lab__hint--coarse {
+    display: inline;
+  }
+}
+
+/* The hint only appears with the 3D mounted: without it there is nothing to drag. */
+.lab__map--3d .lab__hint {
   opacity: 1;
 }
 
-.lab__mapa--enfocado .lab__pista,
-.lab__mapa--arrastrando .lab__pista {
+.lab__map--focused .lab__hint,
+.lab__map--dragging .lab__hint {
   opacity: 0;
 }
 
-/* --- El índice: contenido accesible y lado DOM del puente --------------- */
+/* --- The index: accessible content and the DOM side of the bridge -------- */
 
-.lab__indice-titulo {
+.lab__index-title {
   font-size: 0.75rem;
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 0.12em;
-  color: var(--tinta-suave);
-  margin: 0 0 calc(var(--espacio) * 1.5);
+  color: var(--ink-soft);
+  margin: 0 0 calc(var(--space) * 1.5);
 }
 
-.lab__indice-nota {
+.lab__index-note {
   text-transform: none;
   letter-spacing: 0;
   font-weight: 600;
 }
 
-.lab__lista {
+.lab__list {
   list-style: none;
-  margin: 0 0 calc(var(--espacio) * 2);
+  margin: 0 0 calc(var(--space) * 2);
   padding: 0;
   display: flex;
   flex-wrap: wrap;
-  gap: calc(var(--espacio) * 0.75);
+  gap: calc(var(--space) * 0.75);
 }
 
 .lab__item {
   display: inline-flex;
   align-items: center;
-  gap: calc(var(--espacio) * 0.75);
-  padding: calc(var(--espacio) * 0.75) calc(var(--espacio) * 1.25);
+  gap: calc(var(--space) * 0.75);
+  padding: calc(var(--space) * 0.75) calc(var(--space) * 1.25);
   border-radius: 6px;
   font-size: 0.875rem;
   font-weight: 600;
   cursor: default;
-  background: var(--fondo-elevado);
-  border: 1px solid var(--linea);
+  background: var(--bg-raised);
+  border: 1px solid var(--line);
   transition: border-color 120ms ease, color 120ms ease;
 }
 
-/* La clase la agrega el JS recién cuando el mapa puede recibir el foco: sin 3D
-   montado, un cursor de "clickeable" prometería algo que no pasa. */
-.lab__lista--interactiva .lab__item {
+/* The class is added by the JS only once the map can receive focus: with no 3D
+   mounted, a "clickable" cursor would promise something that does not happen. */
+.lab__list--interactive .lab__item {
   cursor: pointer;
 }
 
-.lab__item--enfocado {
-  border-color: var(--acento);
-  color: var(--acento);
+.lab__item--focused {
+  border-color: var(--accent);
+  color: var(--accent);
 }
 
-.lab__punto {
+.lab__dot {
   width: 7px;
   height: 7px;
   border-radius: 50%;
-  background: var(--tinta-suave);
+  background: var(--ink-soft);
   flex-shrink: 0;
 }
 
-.lab__item--hueco {
-  color: var(--tinta-suave);
+.lab__item--empty {
+  color: var(--ink-soft);
   background: transparent;
 }
 
-.lab__item--hueco .lab__punto {
+.lab__item--empty .lab__dot {
   background: none;
-  border: 1.5px dashed var(--tinta-suave);
+  border: 1.5px dashed var(--ink-soft);
 }
 
-.lab__grado {
+.lab__degree {
   font-size: 0.6875rem;
   font-weight: 800;
-  color: var(--tinta-suave);
+  color: var(--ink-soft);
   font-variant-numeric: tabular-nums;
 }
 
-.lab__nota {
+.lab__note {
   font-size: 0.8125rem;
   line-height: 1.5;
-  color: var(--tinta-suave);
+  color: var(--ink-soft);
   margin: 0;
   text-wrap: pretty;
 }
 
 @media (min-width: 40rem) {
-  .lab__mapa {
-    aspect-ratio: 4 / 3;
+  .lab__map {
+    height: 48rem;
   }
 }

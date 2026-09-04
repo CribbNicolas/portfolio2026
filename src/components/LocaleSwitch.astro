@@ -1,0 +1,42 @@
+---
+/**
+ * The ES/EN switch. A link, not a script: `/cv` ships zero JavaScript and
+ * stays that way, and a switch that needs JS to work would be dead on the page
+ * that matters most.
+ *
+ * It points at the OTHER locale's home — `/` ↔ `/en/` — and nowhere else. It
+ * does not try to preserve the section the reader is on: that needs JS to read
+ * `location.hash`, both landings are single-page layouts the reader can
+ * scroll, and the anchors themselves are not the same word in English
+ * (`src/lib/anchors.ts`), so "keep the current anchor" would mean guessing a
+ * translation instead of linking to a place that exists.
+ *
+ * The current language is a `<span>`, not a link — so the control reads as ONE
+ * stateful switch ("you are here, go there"), not as two independent nav
+ * links. Only the other locale is an `<a>`, and it carries `hreflang` because
+ * that attribute describes the language of the linked document, which is
+ * exactly what the browser and a screen reader need to announce it correctly.
+ */
+import type { Locale } from "@content";
+import { LOCALE_PATHS, OTHER_LOCALE } from "../lib/anchors";
+
+interface Props {
+  locale: Locale;
+}
+
+const { locale } = Astro.props;
+const other: Locale = OTHER_LOCALE[locale];
+const otherHref = LOCALE_PATHS[other].home;
+
+const LABEL: Record<Locale, string> = { es: "ES", en: "EN" };
+const SWITCH_LABEL: Record<Locale, string> = {
+  es: "Cambiar idioma",
+  en: "Change language",
+};
+---
+
+<nav class="locale-switch" aria-label={SWITCH_LABEL[locale]}>
+  <span aria-current="page" lang={locale}>{LABEL[locale]}</span>
+  <span class="locale-switch__sep" aria-hidden="true">/</span>
+  <a href={otherHref} lang={other} hreflang={other}>{LABEL[other]}</a>
+</nav>

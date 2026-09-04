@@ -1,42 +1,30 @@
 ---
 /**
- * Skills agrupadas por categoría, en texto corrido separado por comas.
+ * Skills grouped by category, as running text separated by commas.
  *
- * Sin barras de progreso ni puntos de nivel: ningún parser los lee y a un
- * técnico le generan desconfianza (docs/03 §2 y CONTRATO §4).
+ * No progress bars and no level dots: no parser reads them and they make a
+ * technical reader suspicious (docs/03 §2 and CONTRACT §4).
  *
- * Se imprime `Skill.name` canónico y NUNCA los `aliases`: repetir variantes del
- * mismo término BAJA el score en matchers semánticos (docs/01 §3). Los aliases
- * son dato para el generador por-aviso, no texto del CV.
+ * The canonical `Skill.name` is printed and NEVER the `aliases`: repeating
+ * variants of the same term LOWERS the score in semantic matchers (docs/01 §3).
+ * The aliases are data for the per-posting generator, not CV text.
+ *
+ * The grouping and its order come from `content/schema/skill-groups.ts`, shared
+ * with `/llms.txt`. They used to be two separate lists and they diverged.
  */
-import type { ContentView, SkillCategory } from "@content";
+import type { ContentView, Locale } from "@content";
+import { groupedSkills } from "@content";
 
 interface Props {
   skills: ContentView["skills"];
+  locale: Locale;
 }
 
-const { skills } = Astro.props;
-
-// Orden y etiquetas de las categorías. El orden es editorial: primero lo que
-// más se busca en un aviso. Las categorías vacías no se imprimen.
-const GRUPOS: Array<[SkillCategory, string]> = [
-  ["language", "Lenguajes"],
-  ["frontend", "Frontend"],
-  ["backend", "Backend"],
-  ["data", "Datos"],
-  ["cms", "CMS"],
-  ["testing", "Testing"],
-  ["infra", "Infraestructura"],
-  ["tooling", "Herramientas"],
-  ["practice", "Prácticas"],
-];
-
-const grupos = GRUPOS
-  .map(([key, label]) => [label, skills[key]] as const)
-  .filter(([, list]) => list.length > 0);
+const { skills, locale } = Astro.props;
+const groups = groupedSkills(skills, locale);
 ---
 
-{grupos.map(([label, list]) => (
+{groups.map(({ label, skills: list }) => (
   <p class="skill-group">
     <span class="skill-group__label">{label}:</span>{" "}
     {list.map((s) => s.name).join(", ")}

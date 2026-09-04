@@ -1,23 +1,20 @@
-# Plantilla de las variables que ve `functions/cv.pdf.ts` cuando corre local con
-# `pnpm exec wrangler pages dev dist`. Copiar a `.dev.vars`, que está en
+# Template of the variables `functions/cv.pdf.ts` sees when it runs locally with
+# `pnpm exec wrangler pages dev dist`. Copy to `.dev.vars`, which is in
 # .gitignore.
 #
-# En producción estos MISMOS nombres se configuran en el dashboard de Cloudflare
-# Pages (Settings → Variables and Secrets), no en un archivo. Ver
-# docs/05-deploy-y-analitica.md §2.
+# In production these SAME names are configured in the Cloudflare Pages dashboard
+# (Settings → Variables and Secrets), not in a file. See
+# docs/05-deploy-and-analytics.md §3.
 #
-# Para trabajar en el CV no hacen falta: `pnpm run dev` sirve `/cv` en HTML y
-# `pnpm run pdf:local` imprime el PDF con Playwright, los dos sin tocar la nube.
-# Esto es solo para probar la Function.
+# They are not needed to work on the CV: `pnpm run dev` serves `/cv` in HTML and
+# `pnpm run pdf:local` prints the PDF with Playwright, neither touching the
+# cloud. This is only for testing the Function.
 
-# Dashboard → Workers & Pages → panel derecho. No es secreto.
+# Dashboard → Workers & Pages → right-hand panel. Not a secret.
 BROWSER_RENDERING_ACCOUNT_ID=
 
-# Token con UN permiso: Developer Platform → Browser Run → Edit. Nada más.
-# (Browser Run es el nombre nuevo de Browser Rendering; el path de la API no cambió.)
-# Si aparece en un log o en un commit: revocalo y generá otro. Rotarlo cuesta
-# dos minutos, limpiar el historial de git no.
+# A token with ONE permission: Developer Platform → Browser Run → Edit. Nothing
+# else. (Browser Run is the new name for Browser Rendering; the API path did not
+# change.) If it shows up in a log or a commit: revoke it and generate another.
+# Rotating it takes two minutes, cleaning the git history does not.
 BROWSER_RENDERING_TOKEN=
-
-# Opcional. Con qué nombre guarda el archivo quien lo baja. Default: cv.pdf
-PDF_FILENAME=

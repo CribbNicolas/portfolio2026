@@ -1,63 +1,64 @@
 ---
 /**
- * El mapa en SVG. NO es un placeholder mientras carga el 3D: es el mapa, con
- * las mismas coordenadas que usa la escena de three.js. Si el JS no corre —sin
- * JS, con `prefers-reduced-motion`, sin WebGL, con datos limitados— esto es lo
- * que queda, y es completo.
+ * The map in SVG. NOT a placeholder while the 3D loads: it IS the map, with the
+ * same coordinates the three.js scene uses. If the JS does not run — no JS,
+ * `prefers-reduced-motion`, no WebGL, limited data — this is what is left, and
+ * it is complete.
  *
- * Componente tonto: recibe la lista de dibujo ya calculada por `buildSvgMapa`
- * y escribe atributos. No proyecta, no ordena, no filtra.
+ * Dumb component: it receives the draw list already computed by `buildSvgMap`
+ * and writes attributes. It does not project, sort or filter.
  */
-import type { SvgMapa } from "../../lib/graph-svg";
+import type { SvgMap } from "../../lib/graph-svg";
 
 interface Props {
-  mapa: SvgMapa;
-  totalNodos: number;
-  totalAristas: number;
+  map: SvgMap;
+  /** Already resolved by the caller (`HomeDocument`), from `messages.ts`'s
+   *  `svgMapAriaLabel` — this component stays dumb and computes no copy. */
+  ariaLabel: string;
 }
 
-const { mapa, totalNodos, totalAristas } = Astro.props;
+const { map, ariaLabel } = Astro.props;
 ---
 
 <svg
   class="lab__svg"
-  viewBox={mapa.viewBox}
+  viewBox={map.viewBox}
   role="img"
-  aria-label={`Mapa de conocimiento: ${totalNodos} nodos y ${totalAristas} conexiones entre roles, proyectos, logros y tecnologías.`}
+  aria-label={ariaLabel}
 >
-  {mapa.aristas.map((a) => (
+  {map.edges.map((a) => (
     <line
       x1={a.x1} y1={a.y1} x2={a.x2} y2={a.y2}
-      class={a.afinidad ? "lab__arista lab__arista--afinidad" : "lab__arista"}
-      style={`stroke-width:${a.ancho};opacity:${a.opacidad}`}
+      class={a.affinity ? "lab__edge lab__edge--affinity" : "lab__edge"}
+      style={`stroke-width:${a.width};opacity:${a.opacity}`}
     />
   ))}
 
-  {mapa.nodos.map((n) => (
+  {map.nodes.map((n) => (
     <>
-      {n.conEvidencia && (
+      {n.withEvidence && (
         <circle
-          cx={n.cx} cy={n.cy} r={n.rHalo}
+          cx={n.cx} cy={n.cy} r={n.haloRadius}
           class="lab__halo"
-          style={`opacity:${(n.opacidad * 0.9).toFixed(3)}`}
+          style={`opacity:${(n.opacity * 0.9).toFixed(3)}`}
         />
       )}
       <circle
         id={n.domId}
         cx={n.cx} cy={n.cy} r={n.r}
-        class={`lab__nodo lab__nodo--${n.kind}${n.conEvidencia ? "" : " lab__nodo--hueco"}`}
-        style={`opacity:${n.conEvidencia ? n.opacidad : (n.opacidad * 0.75).toFixed(3)};stroke-width:${n.grosorTrazo}`}
+        class={`lab__node lab__node--${n.kind}${n.withEvidence ? "" : " lab__node--empty"}`}
+        style={`opacity:${n.withEvidence ? n.opacity : (n.opacity * 0.75).toFixed(3)};stroke-width:${n.strokeWidth}`}
       ><title>{n.label}</title></circle>
     </>
   ))}
 
-  {mapa.etiquetas.map((e) => (
+  {map.labels.map((e) => (
     <text
       x={e.x}
       y={e.y}
       text-anchor="middle"
-      class={`lab__etiqueta lab__etiqueta--${e.kind}`}
-      style={`opacity:${e.opacidad};font-size:${e.tamano}px`}
-    >{e.texto}</text>
+      class={`lab__label lab__label--${e.kind}`}
+      style={`opacity:${e.opacity};font-size:${e.size}px`}
+    >{e.text}</text>
   ))}
 </svg>

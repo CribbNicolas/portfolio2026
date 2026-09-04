@@ -1,22 +1,28 @@
-# A `main` solo entra `staging`. A `staging` solo entra `develop`.
+# Only `staging` enters `main`. Only `develop` enters `staging`.
 #
-# Los rulesets de GitHub no saben de dónde VIENE un pull request: miran la rama
-# que se actualiza, no la que aporta los commits. Se puede exigir que haya un
-# PR, y que pasen checks, pero no que el origen sea una rama concreta. Esto es
-# el pedazo que falta.
+# GitHub rulesets do not know where a pull request COMES FROM: they look at the
+# branch being updated, not at the one contributing the commits. You can require
+# a PR, and require checks, but not that the source is a specific branch. This is
+# the missing piece.
 #
-# Sin esto, el flujo de docs/08 es una intención: nada impide abrir un PR de
-# `feature/lo-que-sea` directo a `main` y saltearse, de una sola vez, la
-# preview de staging, el smoke sobre el PDF publicado y el bump de versión.
+# Without it, the flow in docs/08 is an intention: nothing stops opening a PR
+# from `feature/whatever` straight into `main`, skipping in one move the staging
+# preview, the smoke over the published PDF and the version bump.
 #
-# Se requiere como status check `flujo` en los rulesets de `main` y `staging`.
-# No corre sobre PRs a `develop`: ahí entra cualquier rama de trabajo, que es
-# justamente para lo que `develop` existe.
+# ⚠️ THE FILE NAME AND THE JOB ID STAY IN SPANISH ON PURPOSE. `flujo` is the
+# status check name required by the `main` and `staging` rulesets, and those
+# rulesets live in GitHub's settings, not in this repo. Renaming the job here
+# would leave a required check that never reports, and every PR into those two
+# branches would be blocked with no way out from the repo side. To rename it:
+# change the ruleset first, then this file.
 #
-# Escape para un hotfix urgente: no hay, a propósito. Un camino alternativo que
-# nadie usa se pudre sin que nadie lo note. Si algún día hace falta ir directo a
-# `main`, la salida es desactivar el check en el ruleset por un rato y volverlo
-# a activar — dos clicks, y queda registrado en el log de auditoría del repo.
+# It does not run on PRs into `develop`: any working branch enters there, which
+# is exactly what `develop` is for.
+#
+# An escape hatch for an urgent hotfix: there is none, on purpose. An alternative
+# path nobody uses rots without anybody noticing. If going straight to `main` is
+# ever necessary, the way out is disabling the check in the ruleset for a while
+# and re-enabling it — two clicks, and it is recorded in the repo's audit log.
 name: flujo-de-ramas
 
 on:
@@ -28,34 +34,34 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      - name: El PR viene de la rama que corresponde
+      - name: The PR comes from the right branch
         env:
           BASE: ${{ github.base_ref }}
-          ORIGEN: ${{ github.head_ref }}
-          REPO_ORIGEN: ${{ github.event.pull_request.head.repo.full_name }}
-          REPO_BASE: ${{ github.repository }}
+          SOURCE: ${{ github.head_ref }}
+          SOURCE_REPO: ${{ github.event.pull_request.head.repo.full_name }}
+          BASE_REPO: ${{ github.repository }}
         run: |
           case "$BASE" in
-            main)    esperada=staging ;;
-            staging) esperada=develop ;;
+            main)    expected=staging ;;
+            staging) expected=develop ;;
             *)
-              echo "::error::este workflow no deberia correr sobre '$BASE'. Revisa el filtro de ramas del propio workflow."
+              echo "::error::this workflow should not run on '$BASE'. Check the branch filter of the workflow itself."
               exit 1
               ;;
           esac
 
-          # El repo es publico: cualquiera puede forkear y abrir un PR desde una
-          # rama que se llame `staging`. `head_ref` solo trae el NOMBRE, asi que
-          # sin este chequeo un fork pasaria el filtro por llamarse igual.
-          if [ "$REPO_ORIGEN" != "$REPO_BASE" ]; then
-            echo "::error::este PR viene del fork $REPO_ORIGEN. El flujo interno solo admite ramas de $REPO_BASE."
+          # The repo is public: anyone can fork it and open a PR from a branch
+          # named `staging`. `head_ref` carries only the NAME, so without this
+          # check a fork would pass the filter by being named the same.
+          if [ "$SOURCE_REPO" != "$BASE_REPO" ]; then
+            echo "::error::this PR comes from the fork $SOURCE_REPO. The internal flow only accepts branches from $BASE_REPO."
             exit 1
           fi
 
-          if [ "$ORIGEN" = "$esperada" ]; then
-            echo "$ORIGEN -> $BASE: correcto"
+          if [ "$SOURCE" = "$expected" ]; then
+            echo "$SOURCE -> $BASE: correct"
             exit 0
           fi
 
-          echo "::error::'$ORIGEN' no puede mergear a '$BASE'. El flujo es feature/* -> develop -> staging -> main (docs/08 seccion 5): a '$BASE' solo entra '$esperada'."
+          echo "::error::'$SOURCE' cannot merge into '$BASE'. The flow is feature/* -> develop -> staging -> main (docs/08 section 5): only '$expected' enters '$BASE'."
           exit 1

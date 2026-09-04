@@ -1,15 +1,17 @@
 /**
- * Resolución de vistas. LA capa compartida.
+ * View resolution. THE shared layer.
  *
- * Toda la lógica de `visibility` —cutoffs por prioridad, máximo de bullets por
- * rol, filtrado de contacto sensible, agrupado y orden— vive acá y SOLO acá.
+ * All the `visibility` logic — priority cutoffs, maximum bullets per role,
+ * filtering of sensitive contact data, grouping and ordering — lives here and
+ * ONLY here.
  *
- * Las implementaciones de `ContentSource` (json-source, y mañana sanity-source)
- * se reducen a lo único que las diferencia: traer el dataset. Después llaman a
- * `resolveView`. Así la costura de migración es de verdad una línea, y las
- * reglas 7 y 8 no se pueden bifurcar entre backends.
+ * The `ContentSource` implementations (json-source, and sanity-source one day)
+ * are reduced to the only thing that differs between them: fetching the
+ * dataset. Then they call `resolveView`. That is what makes the migration seam
+ * genuinely one line, and what keeps rules 7 and 8 from forking per backend.
  *
- * El frontend NUNCA replica nada de esto. Recibe una `ContentView` ya resuelta.
+ * The frontend NEVER replicates any of this. It receives a resolved
+ * `ContentView`.
  */
 
 import type {
@@ -21,11 +23,15 @@ import type {
   Skill,
   SkillCategory,
   Surface,
+  Viewed,
+  ViewedAchievement,
+  ViewedIdentity,
+  ViewedProject,
   Visibility,
 } from "./content-schema";
 import { monthsBetween, yearsOfExperience } from "./dates";
 
-/** Regla 7: cuántos items entran en cada superficie, por prioridad. */
+/** Rule 7: how many items each surface takes, by priority. */
 const PRIORITY_CUTOFF: Record<Surface, number> = {
   cv: 3,
   "cv-short": 2,
@@ -35,7 +41,7 @@ const PRIORITY_CUTOFF: Record<Surface, number> = {
   "public-api": 5,
 };
 
-/** Regla 7: máximo de bullets por rol. null = sin límite. */
+/** Rule 7: maximum bullets per role. null = no limit. */
 const MAX_ACHIEVEMENTS_PER_ROLE: Record<Surface, number | null> = {
   cv: 5,
   "cv-short": 3,
@@ -51,8 +57,29 @@ function isVisible(v: Visibility, surface: Surface): boolean {
   return v.priority <= PRIORITY_CUTOFF[surface];
 }
 
-function groupSkills(skills: Skill[]): Record<SkillCategory, Skill[]> {
-  const empty: Record<SkillCategory, Skill[]> = {
+/**
+ * Drop a key without mutating the source. `delete` on a spread copy reads
+ * worse than this and tempts somebody into mutating `data`, which is shared
+ * across every call because the dataset is cached.
+ */
+function strip<T extends object, K extends keyof T>(o: T, ...keys: K[]): Omit<T, K> {
+  const out = { ...o };
+  for (const k of keys) delete out[k];
+  return out;
+}
+
+const viewAchievement = (a: Achievement): ViewedAchievement => ({
+  ...strip(a, "visibility"),
+  ...(a.metric ? { metric: strip(a.metric, "source") } : {}),
+});
+
+const viewProject = (p: Project): ViewedProject => ({
+  ...strip(p, "visibility"),
+  ...(p.metrics ? { metrics: p.metrics.map((m) => strip(m, "source")) } : {}),
+});
+
+function groupSkills(skills: Viewed<Skill>[]): Record<SkillCategory, Viewed<Skill>[]> {
+  const empty: Record<SkillCategory, Viewed<Skill>[]> = {
     language: [],
     frontend: [],
     backend: [],
@@ -73,7 +100,7 @@ function byRecency<T extends { start: string; end: string | null }>(a: T, b: T) 
   return b.start.localeCompare(a.start);
 }
 
-/** Un dataset completo → una vista resuelta para una superficie. Pura, sin I/O. */
+/** A full dataset → a view resolved for one surface. Pure, no I/O. */
 export function resolveView(data: ContentDataset, surface: Surface): ContentView {
   const achievementsByRole = new Map<string, Achievement[]>();
   for (const a of data.achievements) {
@@ -93,46 +120,63 @@ export function resolveView(data: ContentDataset, surface: Surface): ContentView
         (a, b) => a.visibility.priority - b.visibility.priority,
       );
       return {
-        ...role,
-        achievements: maxPerRole === null ? all : all.slice(0, maxPerRole),
+        ...strip(role, "visibility"),
+        achievements: (maxPerRole === null ? all : all.slice(0, maxPerRole)).map(
+          viewAchievement,
+        ),
         durationMonths: monthsBetween(role.start, role.end),
       };
     });
 
   const projects = data.projects
     .filter((p: Project) => isVisible(p.visibility, surface))
-    .sort((a, b) => Number(b.featured) - Number(a.featured) || byRecency(a, b));
+    .sort((a, b) => Number(b.featured) - Number(a.featured) || byRecency(a, b))
+    .map(viewProject);
 
-  // Regla 8: los datos de contacto sensibles solo salen donde se autorizó.
-  const identity = {
+  // Rule 8: sensitive contact data only leaves where it was authorised. The
+  // policy itself (`publishPhoneOn`) does not leave at all — it describes a
+  // decision, and the decision has already been applied one line above.
+  const identity: ViewedIdentity = {
     ...data.identity,
-    contact: {
-      ...data.identity.contact,
-      phone: data.identity.contact.publishPhoneOn.includes(surface)
-        ? data.identity.contact.phone
-        : undefined,
-    },
+    contact: strip(
+      {
+        ...data.identity.contact,
+        phone: data.identity.contact.publishPhoneOn.includes(surface)
+          ? data.identity.contact.phone
+          : undefined,
+      },
+      "publishPhoneOn",
+    ),
     location: {
       ...data.identity.location,
-      streetAddress: undefined, // nunca sale en un output público
+      streetAddress: undefined, // never leaves in a public output
     },
   };
 
   return {
     surface,
+    locale: data.locale,
     identity,
     experience,
     projects,
     skills: groupSkills(
-      data.skills.filter((s) => s.active && isVisible(s.visibility, surface)),
+      data.skills
+        .filter((s) => s.active && isVisible(s.visibility, surface))
+        .map((s) => strip(s, "visibility")),
     ),
-    education: data.education.filter((e) => isVisible(e.visibility, surface)),
-    certifications: data.certifications.filter((c) => isVisible(c.visibility, surface)),
+    education: data.education
+      .filter((e) => isVisible(e.visibility, surface))
+      .map((e) => strip(e, "visibility")),
+    certifications: data.certifications
+      .filter((c) => isVisible(c.visibility, surface))
+      .map((c) => strip(c, "visibility")),
     languages: data.languages,
-    services: data.services.filter((s) => isVisible(s.visibility, surface)),
-    testimonials: data.testimonials.filter(
-      (t) => t.approved && isVisible(t.visibility, surface),
-    ),
+    services: data.services
+      .filter((s) => isVisible(s.visibility, surface))
+      .map((s) => strip(s, "visibility")),
+    testimonials: data.testimonials
+      .filter((t) => t.approved && isVisible(t.visibility, surface))
+      .map((t) => strip(t, "visibility")),
     yearsOfExperience: yearsOfExperience(data.identity.careerStart),
   };
 }

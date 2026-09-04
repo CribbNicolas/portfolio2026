@@ -1,13 +1,13 @@
 /**
- * Implementación de `ContentSource` sobre un JSON en el repo.
+ * `ContentSource` implementation over a JSON file in the repo.
  *
- * Esta es la Fase 0. Cuando muevas los datos a Sanity o a un backend propio,
- * escribís otro archivo que implemente la misma interfaz y cambiás una línea
- * en `index.ts`. El frontend no se entera de nada.
+ * This is Phase 0. When the data moves to Sanity or to your own backend, you
+ * write another file implementing the same interface and change one line in
+ * `index.ts`. The frontend never notices.
  *
- * Esta clase NO resuelve visibility. Su única responsabilidad es traer y
- * cachear el dataset; toda la lógica de vista vive en `schema/resolve-view.ts`
- * y es compartida por todos los backends. Ver ese archivo antes de tocar filtros.
+ * This class does NOT resolve visibility. Its only responsibility is fetching
+ * and caching the dataset; all the view logic lives in `schema/resolve-view.ts`
+ * and is shared by every backend. Read that file before touching filters.
  */
 
 import type {
@@ -21,10 +21,12 @@ import type {
 import { validateDataset } from "../schema/validation";
 import { resolveView } from "../schema/resolve-view";
 import datasetEs from "../data/content.es.json";
+import datasetEn from "../data/content.en.json";
 
-/** Datasets disponibles por locale. Agregá content.en.json acá cuando exista. */
+/** Datasets available per locale. One file per language; the map is the index. */
 const DATASETS: Partial<Record<Locale, unknown>> = {
   es: datasetEs,
+  en: datasetEn,
 };
 
 export class JsonContentSource implements ContentSource {
@@ -36,9 +38,10 @@ export class JsonContentSource implements ContentSource {
 
     const raw = DATASETS[locale];
     if (!raw) {
-      // Falla fuerte y temprano. Devolver otro locale en silencio es peor que romper.
+      // Fail hard and early. Silently returning another locale is worse than
+      // breaking.
       throw new Error(
-        `Locale no soportado: "${locale}". Datasets cargados: ${Object.keys(DATASETS).join(", ") || "ninguno"}.`,
+        `Unsupported locale: "${locale}". Loaded datasets: ${Object.keys(DATASETS).join(", ") || "none"}.`,
       );
     }
 

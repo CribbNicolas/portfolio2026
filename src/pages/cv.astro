@@ -1,24 +1,15 @@
 ---
 /**
- * El CV en HTML. De esta misma página sale el PDF (scripts/build-pdf.ts), así
- * que HTML y PDF no se pueden desincronizar: hay un solo layout.
- *
- * Superficie `cv-ats`. Por ahora es la única que se renderiza; agregar un
- * `cv` diseñado más adelante es agregar otra página que pida otra superficie,
- * sin tocar nada de esto.
- *
- * Dos cosas NO se renderizan a propósito:
- *  - `LanguageSkill.note`: hoy contiene un TODO y `resolveView` no filtra
- *    `languages`. Si se imprimiera, el TODO saldría en el PDF.
- *  - `Project.outcome`: dos de los tres proyectos tienen el outcome en TODO, y
- *    los proyectos ya viven en el portfolio. El CV no lleva sección de proyectos.
+ * The CV in HTML. The PDF comes out of this same page (scripts/build-pdf.ts),
+ * so HTML and PDF cannot drift apart: there is one layout — now shared with
+ * `/en/cv` too, via `CvDocument.astro`. This file's only job is the page shell:
+ * `<Base>`, the `noindex` meta and the JSON-LD, all of which have to be direct
+ * children of `<Base>` to land inside `<head>` (see `CvDocument.astro`'s header
+ * comment for why they could not move into the shared component).
  */
 import Base from "../layouts/Base.astro";
-import Header from "../components/cv/Header.astro";
-import Section from "../components/cv/Section.astro";
-import RoleBlock from "../components/cv/RoleBlock.astro";
-import SkillList from "../components/cv/SkillList.astro";
-import { content, formatDateRange, formatYearMonth } from "@content";
+import CvDocument from "../components/cv/CvDocument.astro";
+import { content } from "@content";
 import { buildPersonJsonLd } from "../lib/jsonld";
 
 import "@fontsource/manrope/400.css";
@@ -27,66 +18,31 @@ import "@fontsource/manrope/800.css";
 import "../styles/tokens.css";
 import "../styles/cv.css";
 
-const view = await content.getView("cv-ats", "es");
-const { identity } = view;
+const locale = "es";
 
-// El JSON-LD sale de `public-api`, no de `cv-ats`: son dos superficies
-// distintas cargadas en la misma página.
-const viewPublica = await content.getView("public-api", "es");
-const jsonLd = buildPersonJsonLd(viewPublica, new URL(Astro.site!));
+// `public-api` and not `cv-ats`: this is the surface the JSON-LD is built
+// from, and `identity.fullName`/`searchTitle`/`summary.short` do not vary
+// between surfaces (rule 8 only filters phone/street address), so one fetch
+// covers both the title below and the JSON-LD. `CvDocument` fetches `cv-ats`
+// on its own for the body.
+const view = await content.getView("public-api", locale);
+const { identity } = view;
+const jsonLd = buildPersonJsonLd(view, new URL(Astro.site!));
 ---
 
 <Base
+  locale={locale}
   title={`CV — ${identity.fullName}, ${identity.searchTitle}`}
   description={identity.summary.short}
 >
-  <script type="application/ld+json" slot="head" set:html={JSON.stringify(jsonLd)} />
+  <script type="application/ld+json" is:inline slot="head" set:html={JSON.stringify(jsonLd)} />
 
   {/*
-    `/cv` existe para que `build-pdf.ts` la imprima, no para que la visiten: el
-    lector llega al CV por el ancla `#cv` de la landing. Indexarla partiría en
-    dos la única visita, y el que cayera acá no vería ni el mapa ni los
-    proyectos. `scripts/landing-unica.check.ts` verifica esto.
+    `/cv` exists so `build-pdf.ts` can print it, not to be visited: the reader
+    reaches the CV through the landing's `#cv` anchor. Indexing it would split
+    the single visit in two, and whoever landed here would see neither the map
+    nor the projects. `scripts/single-landing.check.ts` verifies this.
   */}
   <meta name="robots" content="noindex, follow" slot="head" />
-  <main class="cv">
-    <Header identity={identity} />
-
-    <Section title="Perfil">
-      <p class="profile">{identity.summary.short}</p>
-    </Section>
-
-    <Section title="Habilidades técnicas">
-      <SkillList skills={view.skills} />
-    </Section>
-
-    <Section title="Experiencia">
-      {view.experience.map((role) => <RoleBlock role={role} />)}
-    </Section>
-
-    <Section title="Educación">
-      {view.education.map((e) => (
-        <div class="entry">
-          <p class="entry__title">{e.degree}{e.field && <> — {e.field}</>}</p>
-          <p class="entry__meta">
-            {e.institution}
-            {/* Sin `start` no hay rango: formatDateRange(end, end) imprimiría
-                "02/2022 — 02/2022", que se lee como un error de carga. */}
-            {e.end && <> · {e.start ? formatDateRange(e.start, e.end) : formatYearMonth(e.end)}</>}
-            {e.status === "partial" && <> · Cursado parcial</>}
-            {e.status === "in-progress" && <> · En curso</>}
-          </p>
-        </div>
-      ))}
-    </Section>
-
-    <Section title="Idiomas">
-      {view.languages.map((l) => (
-        <p class="skill-group">
-          <span class="skill-group__label">{l.name}:</span>{" "}
-          {l.level === "native" ? "Nativo" : l.level}
-        </p>
-      ))}
-    </Section>
-  </main>
+  <CvDocument locale={locale} />
 </Base>

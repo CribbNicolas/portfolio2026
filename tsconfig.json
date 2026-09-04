@@ -16,6 +16,6 @@
       "@content": ["./content/source/index.ts"]
     }
   },
-  "include": ["content/**/*", "functions/**/*", "scripts/**/*", "src/**/*", ".astro/types.d.ts"],
-  "exclude": ["dist", "node_modules"]
+  "include": ["content/**/*", "editor/**/*", "functions/**/*", "scripts/**/*", "src/**/*", ".astro/types.d.ts"],
+  "exclude": ["dist", "node_modules", "editor/public"]
 }

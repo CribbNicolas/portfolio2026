@@ -1,11 +1,11 @@
 ---
 /**
- * Sección del CV. Los nombres los pone quien la usa, y tienen que ser los
- * estándar de docs/03 §2 (`Perfil`, `Habilidades técnicas`, ...): un parser
- * mapea esos títulos a campos, y "Mi stack" no mapea a nada.
+ * A CV section. The names are supplied by the caller, and they have to be the
+ * standard ones from docs/03 §2 (`Perfil`, `Habilidades técnicas`, ...): a
+ * parser maps those headings to fields, and "Mi stack" maps to nothing.
  *
  * Por eso tampoco se le agregan prefijos decorativos ni marcadores en ::before:
- * el texto extraído del PDF tiene que decir exactamente el nombre estándar.
+ * the text extracted from the PDF has to say exactly the standard name.
  */
 interface Props {
   title: string;

@@ -1,18 +1,18 @@
 /**
  * ContentView → schema.org/Person.
  *
- * Server-rendered en el `<head>`: los crawlers no ejecutan JS, así que un
+ * Server-rendered in the `<head>`: crawlers do not execute JS, so a
  * JSON-LD inyectado por script no existe para ellos (docs/04 §3).
  *
  * Se alimenta de la superficie `public-api`, que ya excluye los datos de
  * contacto privados. Este archivo no filtra nada: si tuviera que filtrar,
- * el filtro estaría en el lugar equivocado.
+ * the filter would be in the wrong place.
  */
 
-// Import relativo y NO por el alias `@content`: este módulo lo cargan tanto Vite
+// Relative import and NOT the `@content` alias: this module is loaded both by Vite
 // (que resuelve el alias) como `tsx` corriendo el test suelto (que puede no
-// resolverlo). Es `import type`, así que no hay costo en runtime. Los `.astro`
-// sí usan el alias, porque siempre pasan por Vite.
+// resolve it). It is an `import type`, so there is no runtime cost. The
+// `.astro` files do use the alias, because they always go through Vite.
 import type { ContentView } from "../../content/source/index";
 
 export function buildPersonJsonLd(view: ContentView, site: URL): Record<string, unknown> {
@@ -22,12 +22,12 @@ export function buildPersonJsonLd(view: ContentView, site: URL): Record<string, 
   return {
     "@context": "https://schema.org",
     "@type": "Person",
-    // `@id` estable: es lo que le permite a un agente unir esta página con los
+    // A stable `@id`: it is what lets an agent join this page with the
     // perfiles de `sameAs` como una sola entidad. Si cambia, se pierde.
     "@id": new URL("/#person", site).toString(),
     name: identity.fullName,
     alternateName: identity.preferredName,
-    // El buscable, no el de marca (CONTRATO §3).
+    // The searchable one, not the brand one (CONTRACT §3).
     jobTitle: identity.searchTitle,
     description: identity.summary.short,
     url: site.toString(),
