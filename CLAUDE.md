@@ -178,6 +178,10 @@ scripts/
                       it produces the dist/cv.pdf the pre-deploy gate runs against.
   build-pdf.ts        Serves dist/ and prints /cv → dist/cv.pdf and /en/cv → dist/en/cv.pdf.
                       Outside `build`: it is `pdf:local`.
+  refresh-pdf.ts      `pdf:refresh`. Forces a re-render of the PUBLISHED PDFs via `?refresh=`. Not a check and
+                      not a test: it CHANGES production. Spaces the two locales (Browser Rendering rate-limits
+                      bursts) and TIMES the response, because a wrong token is ignored by design and answers
+                      200 from cache — fast-and-200 is the silent failure nothing else would catch.
   pdf-output.check.ts Verifies the PDF. With PDF_SOURCE=<url> it runs the SAME assertions against the published
                       PDF. Deliberately not a *.test.ts.
   no-client-js.check.ts  Per-page JS policy over all of dist/. Shields /cv and /en/cv.
@@ -244,6 +248,7 @@ pnpm run dev         # astro dev
 pnpm run editor      # local dataset editor on 127.0.0.1:4322. Page + API; test:editor is its only gate
 pnpm run build       # ONLY astro build. No Chromium: that is why it runs on Cloudflare Pages
 pnpm run pdf:local   # prints dist/cv.pdf with Playwright. Pre-deploy gate, not the deliverable
+pnpm run pdf:refresh # forces a re-render of the PUBLISHED PDFs. Changes production; run by hand
 pnpm run og:local    # writes public/og.jpg + public/og.en.jpg + og.lock.json. They get COMMITTED
 pnpm run test:pdf    # verifies the PDF (needs a prior pdf:local, or PDF_SOURCE=<url>)
 pnpm run test:js     # per-page JS policy over all of dist/ (needs a build)
