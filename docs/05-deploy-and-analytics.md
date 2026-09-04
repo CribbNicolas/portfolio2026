@@ -182,20 +182,34 @@ expiry hands the next visitor a render, and on 2026-09-04, during a day of
 deploys, production `/cv.pdf` answered **429** — the day's Browser Rendering
 budget, gone. The visitor gets `pdfQuotaExceeded` instead of a CV.
 
-**To force a re-render**, with `PDF_REFRESH_TOKEN` configured:
+**To force a re-render:**
 
 ```bash
-curl -sI "https://cribbnicolas.pages.dev/cv.pdf?refresh=$PDF_REFRESH_TOKEN"
-curl -sI "https://cribbnicolas.pages.dev/en/cv.pdf?refresh=$PDF_REFRESH_TOKEN"
+pnpm run pdf:refresh                     # production
+pnpm run pdf:refresh https://staging.…   # anywhere else
 ```
 
-It skips the cache **read**, not the write: the fresh bytes land under the same
-key, so the purge serves the next visitor too and not only whoever asked. With
-a wrong token the parameter is ignored exactly like `utm_source`, so a probe
-cannot tell it from any other unknown parameter.
+It reads `PDF_REFRESH_TOKEN` from `.env` (never committed) and hits
+`?refresh=` on both locales. It skips the cache **read**, not the write: the
+fresh bytes land under the same key, so the purge serves the next visitor too
+and not only whoever asked.
+
+Two things the script does that a bare `curl` does not, both learned on
+2026-09-04:
+
+- **It spaces the two locales apart.** Browser Rendering rate-limits bursts (3
+  concurrent browsers, a new instance every 20 s). Firing both at once answers
+  429 for the second, and a 429 arrives fast enough to look like success to
+  anything that only checks for a 200.
+- **It tells a real re-render from a silent no-op.** A token that does not
+  match the one in the Pages project is ignored exactly like `utm_source` — by
+  design, so a probe cannot tell the parameter exists — which means it answers
+  **200 from cache**. Fast and 200 is the failure here, not the success, and it
+  is the one a person cannot see. The script times the response: under 1.5 s it
+  was a cache hit, and it says so and exits non-zero.
 
 Each call costs one render per locale. It is a repair tool, not something to
-put in a script that runs on a schedule.
+put on a schedule — the deploy already busts the cache on its own.
 
 ---
 
