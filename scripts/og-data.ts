@@ -44,10 +44,10 @@ export async function ogTexts(locale: Locale): Promise<Record<string, string>> {
 /**
  * The fingerprint of everything visible on the card.
  *
- * `public/og.jpg` is a committed artifact: if an input changes and nobody
- * regenerates it, the site says one thing and the image LinkedIn sees says
- * another, with nothing failing. This number is what turns that silence into a
- * red test.
+ * `public/og.jpg` and `public/og.en.jpg` are committed artifacts: if an input
+ * changes and nobody regenerates them, the site says one thing and the image
+ * LinkedIn sees says another, with nothing failing. This number is what turns
+ * that silence into a red test.
  *
  * It includes the template source AND `brand.ts` on purpose: retouching the
  * design, or adjusting a curve of the logo, also invalidates the artifacts —

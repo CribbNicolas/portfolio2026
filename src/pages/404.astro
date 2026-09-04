@@ -3,7 +3,7 @@
  * The page Cloudflare Pages serves when a route does not exist.
  *
  * It exists to fix a soft 404: without a `dist/404.html`, Pages returned
- * `200 text/html` for any made-up route (technical debt §1, measured on
+ * `200 text/html` for any made-up route (closed #1, measured on
  * 2026-08-25). A crawler asking for a broken URL and receiving "all good, there
  * is a page here" treats the site as low quality. Astro emits this page as
  * `dist/404.html` and Pages serves it with the right status, no further config.

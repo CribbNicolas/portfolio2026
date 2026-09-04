@@ -11,10 +11,11 @@
  * `User-agent`, no `Disallow`, no `Sitemap`. It restricted nothing, but it
  * announced nothing either.
  *
- * ⚠️ UNVERIFIED: that this one beats Cloudflare's managed one. It is checked by
- * opening `/robots.txt` on the `staging` preview and seeing whether this shows
- * up or the "content signals" block does. If Cloudflare's wins, the sitemap has
- * to be announced through Search Console and the limitation noted (docs/07 §17).
+ * ⚠️ UNVERIFIED against a live deploy: that this one beats Cloudflare's
+ * managed one. It is checked by opening `/robots.txt` on the `staging`
+ * preview and seeing whether this shows up or the "content signals" block
+ * does. If Cloudflare's wins, the sitemap has to be announced through Search
+ * Console and the limitation noted (`docs/09-seo-and-metadata.md` §3).
  */
 
 import type { APIRoute } from "astro";

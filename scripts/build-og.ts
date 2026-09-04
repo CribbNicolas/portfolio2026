@@ -1,9 +1,10 @@
 /**
- * Generates `public/og.jpg`: the card WhatsApp, LinkedIn, Twitter, Facebook,
- * Slack and Discord show when someone pastes the link.
+ * Generates `public/og.jpg` and `public/og.en.jpg`: the cards WhatsApp,
+ * LinkedIn, Twitter, Facebook, Slack and Discord show when someone pastes
+ * the Spanish or English landing.
  *
  * `pnpm run og:local`. It does NOT run in the build or in CI, and that is the
- * underlying decision (docs/07 §18): rasterizing needs Chromium and the
+ * underlying decision (closed #18): rasterizing needs Chromium and the
  * Cloudflare builder does not have it — the same reason the PDF left the build.
  * So the image is generated here and COMMITTED. Zero runtime cost, zero
  * dependency on the builder, and no crawler waiting for a service to print

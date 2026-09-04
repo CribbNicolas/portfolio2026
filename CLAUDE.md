@@ -67,8 +67,8 @@ functions/              Cloudflare Pages Functions. The ONLY thing in the repo t
 docs/                   See docs/00-index.md. The "why" of every design decision lives there.
                         08-branches-and-versioning.md — feature/* → develop → staging → main, and the bump rule.
                         READ IT before opening a PR: the one into develop fails if you do not raise the version.
-                        07-technical-debt.md — what was found out of scope and not fixed. Look at it BEFORE
-                        "fixing something on the way": it may already be noted with its reason.
+                        07-technical-debt.md — closed ledger of 42 items. New findings append as #43+;
+                        do not reopen a closed number. Product/data pending is 00-index and 06.
                         09-seo-and-metadata.md — what the <head> emits, and above all what it deliberately does NOT
                         and under what condition to reconsider. READ IT before "adding the missing tag":
                         og:site_name, hreflang, profile:*, webmanifest and favicon.ico are DECIDED, not forgotten.
@@ -383,15 +383,15 @@ Chromium APIs — so leaning on step 1 is deciding blind on half the phones.
   characters** (Zod validates it): if the text does not fit, it is not for
   `short`, it goes in `long`.
 
-## Pending / what NOT to do yet
+## Pending / product and data
 
-**Start with `docs/06-next-session.md`:** it is the three-phase work plan, with
-how to proceed on each task and what to verify. The rule that orders everything:
-**whatever touches how the data is CREATED waits for the phase 2 editor**; fixing
-it earlier guarantees it gets redone.
+**Start with `docs/06-next-session.md`:** the three infrastructure phases are
+closed. What remains is product and data only the author can fill (metrics,
+LinkedIn, case studies, `Skill.periods`, designed CV-A). Edit Spanish through
+`pnpm run editor`; English follows the loop in `docs/10-i18n.md`.
 
-Before "fixing something on the way", look at `docs/07-technical-debt.md`: it may
-already be noted with its reason and with the phase it belongs to. Full status in
+`docs/07-technical-debt.md` is a closed archive of 42 items. New findings still
+go there so they are not lost; do not reopen a closed number. Full status in
 `docs/00-index.md`. Operational summary:
 
 - **Frontend:** it exists (static Astro, see `src/` in the file map), bilingual

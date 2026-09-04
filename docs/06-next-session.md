@@ -2,10 +2,12 @@
 
 Rewritten 2026-08-26, after finishing phase 1 and the English migration.
 
-**The infrastructure is closed.** Public site at
+**The infrastructure is closed, and so is the code debt.** Public site at
 `https://cribbnicolas.pages.dev`, PDF on demand, analytics measuring, social
-metadata published, and the `feature/*` → `develop` → `staging` → `main` flow
-enforced by rulesets and by two workflows of our own. Detail in
+metadata published, bilingual surfaces shipped, and the `feature/*` →
+`develop` → `staging` → `main` flow enforced by rulesets and by two workflows
+of our own. [`07`](./07-technical-debt.md) is 42/42. What this document still
+orders is product and data the author has to fill. Detail in
 [`05`](./05-deploy-and-analytics.md) and
 [`08`](./08-branches-and-versioning.md).
 
@@ -19,15 +21,16 @@ Three phases. **The order matters and is not arbitrary.**
 |---|---|---|
 | **1** | Social metadata + the technical debt that does not touch data creation | What moves the needle most per hour. Sharing the link used to give a bare URL. **Done** |
 | **2** | `pnpm run editor` | It needs the schema to be still. Touched earlier, it gets done twice. **Done** |
-| **3** | The debt that does touch data creation, and whatever is left | Resolved with the editor in sight, not before |
+| **3** | The debt that does touch data creation, and whatever is left | Resolved with the editor in sight, not before. **Done** |
 
-**The rule separating phase 1 from phase 3:** anything to do with **how the CV
-data is created or modelled** waits for the editor. Fixing it earlier guarantees
-it gets touched again.
+**The rule that separated phase 1 from phase 3:** anything to do with **how
+the CV data is created or modelled** waited for the editor. Fixing it earlier
+would have guaranteed it got touched again. Both sides of that rule are now
+behind us: the editor exists and the debt that waited for it is closed.
 
 ---
 
-## 1. Phase 1 — done, with a residue
+## 1. Phase 1 — done
 
 Social metadata ([`07`](./07-technical-debt.md) §17 and §18), the 404, robots,
 the sitemap, the favicon and `served.check.ts` are all closed. So is the English
@@ -147,9 +150,10 @@ Editing from a phone. Deliberately discarded — §4.
 
 ---
 
-## 3. Phase 3 — closing
+## 3. Phase 3 — closed
 
-The original two bullets of this phase are done:
+The original two bullets of this phase, and everything that turned up along
+the way, are done:
 
 - **[`07`](./07-technical-debt.md) §7** — closed in 0.20.0. `Viewed<T>` projects
   every surface; `/cv.json` no longer publishes `visibility`, `priority`,
@@ -158,11 +162,12 @@ The original two bullets of this phase are done:
   E2E; a tunnel is not worth it. §28 (the write-queue Map never evicts) was
   accepted in the same pass.
 
-What turned up along the way — editor internals, the bilingual leftovers, the
-i18n walker — is the four remaining waves of
-[`2026-09-03-close-technical-debt`](./superpowers/plans/2026-09-03-close-technical-debt.md).
-Do not start a wave until the previous one has merged: two PRs will fight over
-the same `07` Resolved rows.
+Editor internals, the i18n walker and the bilingual leftovers closed in the
+five waves of
+[`2026-09-03-close-technical-debt`](./superpowers/plans/2026-09-03-close-technical-debt.md)
+(PRs #26–#29, 0.22.0–0.25.0). That plan is finished; do not execute it.
+[`07`](./07-technical-debt.md) is 42/42. New code-debt findings append there
+as #43+. Product and data remaining live in §4 and §5 below.
 
 ---
 
@@ -275,5 +280,6 @@ Consumption against the ceilings: see the table in the
 Technical debt as of 2026-09-03 (`0.25.0`): **42 of 42 resolved.** The five
 waves of
 [`2026-09-03-close-technical-debt`](./superpowers/plans/2026-09-03-close-technical-debt.md)
-are closed. What remains is product and data in [00-index](./00-index.md)
-(LinkedIn blocks, case studies, metrics).
+are closed. The 0.26.0 pass retired leftover "open debt" language from the
+docs; `07` is an archive. What remains is product and data in
+[00-index](./00-index.md) (LinkedIn blocks, case studies, metrics).

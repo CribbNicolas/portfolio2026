@@ -7,15 +7,16 @@ Things found while working on something else. **None of them were fixed on the
 spot, on purpose:** putting unrelated fixes into a deploy PR makes the diff stop
 telling one story, and dilutes the review of what actually mattered.
 
-This file exists so they do not get lost. Each entry says what it is, **how to
-check it** — so the next session does not have to take my word for it — and what
-fixing it would cost.
+This file is the ledger so they do not get lost. **42 of 42 entries are
+closed.** The five waves of
+[2026-09-03-close-technical-debt](./superpowers/plans/2026-09-03-close-technical-debt.md)
+merged to `develop` as 0.22.0–0.25.0 (PRs #26–#29). Do not execute that plan
+again.
 
-**42 of 42 entries are closed.** The original numbers stay: a renumbered list
-breaks every reference from a commit message or another doc. What remains of
-the campaign is Wave 4 — bilingual leftovers in
-[00-index](./00-index.md), not code debt — see
-[2026-09-03-close-technical-debt](./superpowers/plans/2026-09-03-close-technical-debt.md).
+The original numbers stay: a renumbered list breaks every reference from a
+commit message or another doc. New findings append as #43 onwards, each with
+what it is, **how to check it**, and what fixing it would cost. Never reopen a
+closed number.
 
 What does **not** go here: product and data pending items, which live in
 [00-index](./00-index.md) and [06-next-session](./06-next-session.md). This is

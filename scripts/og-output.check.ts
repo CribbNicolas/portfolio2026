@@ -2,9 +2,10 @@
  * The social card: that it exists, that it fits the limits the platforms
  * impose, that it has not gone stale, and that the published HTML points at it.
  *
- * It exists because `public/og.jpg` is a COMMITTED artifact — generated with
- * `pnpm run og:local` and not in the build, because the Cloudflare builder has
- * no Chromium (docs/07 §18). A committed artifact drifts out of sync silently:
+ * It exists because `public/og.jpg` and `public/og.en.jpg` are COMMITTED
+ * artifacts — generated with `pnpm run og:local` and not in the build, because
+ * the Cloudflare builder has no Chromium (closed #18). A committed artifact
+ * drifts out of sync silently:
  * you change the role in the dataset, the site says one thing and the image
  * LinkedIn sees keeps saying the other. Nobody finds out until someone shares
  * the link.
