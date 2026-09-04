@@ -126,7 +126,6 @@
   margin-left: calc(var(--space) * 0.5);
 }
 
-.pill__nav,
 .pill__contact {
   display: flex;
   align-items: center;
@@ -146,10 +145,6 @@
   /* Color and background only: transitioning `all` here would drag the bar's
      `transform` along and fight the offset's rAF. */
   transition: color 0.18s ease, background-color 0.18s ease;
-}
-
-.pill__nav a {
-  color: var(--ink);
 }
 
 .pill a:hover {
@@ -369,31 +364,34 @@
 
 /* --- What drops as it narrows -------------------------------------------- */
 
-/* The full email only when there is room. Below that, the short label. */
-.pill__long {
-  display: none;
-}
-
-@media (min-width: 62rem) {
-  .pill__long {
-    display: inline;
-  }
-
-  .pill__short {
-    display: none;
-  }
-}
-
-/* Contact is the first thing to drop: on small screens the index is what you
-   need to move around, and the email lives in the CV below anyway. */
-@media (max-width: 34rem) {
-  .pill__contact,
+/* On a phone even the trimmed pill and the download button do not fit side by
+   side, so GitHub and LinkedIn drop too: both are repeated in the CV section
+   below, while the mail link is the only thing in the bar that cannot be
+   reached any other way without scrolling. */
+@media (max-width: 36.75rem) {
+  .pill__social,
   .pill__sep {
     display: none;
   }
 
   .download {
     padding: 0 calc(var(--space) * 1.5);
+  }
+}
+
+/* The narrowest phones still in use (320 CSS px) are 4 px short of the full
+   address once the logo, the switch and the download button have taken their
+   share. The address does not shrink and does not become a label, so the
+   padding around it gives way instead: measured, not guessed — at 320 the
+   pill overflowed by exactly 4 px and every width from 360 up had room to
+   spare. */
+@media (max-width: 22.5rem) {
+  .pill a {
+    padding-inline: calc(var(--space) * 0.75);
+  }
+
+  .locale-switch {
+    margin-right: 0;
   }
 }
 
