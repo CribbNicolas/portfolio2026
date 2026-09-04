@@ -10,7 +10,7 @@
  * Why it was needed: the original smoke listened for `deployment_status`,
  * assuming Pages created GitHub Deployments. It does not: it publishes a *check
  * run* called "Cloudflare Pages". The event never fired and the gate went weeks
- * without running once (technical debt §14).
+ * without running once (closed #14).
  *
  * `CF_PAGES_COMMIT_SHA` is injected by Cloudflare into the build environment.
  * Locally it does not exist and `"local"` comes out, which is exactly what we

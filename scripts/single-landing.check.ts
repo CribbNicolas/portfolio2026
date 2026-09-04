@@ -123,8 +123,8 @@ test("NO page links to `/en/cv` either", () => {
 
 test("there is a real 404 page", () => {
   // Without `dist/404.html`, Cloudflare Pages returns 200 with HTML for any
-  // made-up route. That is a soft 404 and crawlers penalise it (technical debt
-  // §1, measured before fixing it). The file is generated from
+  // made-up route. That is a soft 404 and crawlers penalise it (closed #1,
+  // measured before fixing it). The file is generated from
   // `src/pages/404.astro`: if someone deletes that page, this warns.
   const paths = pages.map((a) => relative(DIST, a).split(sep).join("/"));
   assert.ok(

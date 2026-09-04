@@ -7,7 +7,7 @@ missing?"* does not have to research it again. Below is what the site emits,
 **what it deliberately does not and why**, and what would have to happen to
 reconsider each omission.
 
-The debt that does need fixing lives in [`07`](./07-technical-debt.md). What
+[`07`](./07-technical-debt.md) is the closed ledger of code debt (42/42). What
 goes here are decisions **not to do** something, which are different: debt gets
 paid, a decision gets reviewed when the assumption holding it up changes.
 
@@ -21,7 +21,7 @@ Measured over `dist/` on 2026-08-25.
 |---|---|---|
 | `title`, `description`, `canonical`, `lang` (`es`/`en`, from the `locale` prop) | `Base.astro` | — |
 | Open Graph: `type`, `title`, `description`, `url`, `locale` (`es_AR`/`en_US`, from the same `locale` prop) | `Base.astro`, behind the `shareable` prop | `og-output.check.ts` |
-| `og:image` + `type`, `width`, `height`, `alt` | `Base.astro` over `public/og.jpg` | `og-output.check.ts` |
+| `og:image` + `type`, `width`, `height`, `alt` | `Base.astro` over `OG_IMAGE_PATH` (`/og.jpg` / `/og.en.jpg`) | `og-output.check.ts` |
 | Twitter Card `summary_large_image` + `title`, `description`, `image`, `image:alt` | `Base.astro` | `og-output.check.ts` |
 | `hreflang` alternates (`es`, `en`, `x-default`), on the two indexable landings only | `Base.astro`, behind the `hreflang` prop — see §2.3 | `single-landing.check.ts` |
 | JSON-LD `Person` (15 keys, with `sameAs`, `worksFor`, `alumniOf`, `knowsAbout`) | `src/lib/jsonld.ts` | — |
@@ -78,7 +78,8 @@ uses these two properties to render the card.
 
 **When to reconsider.** If the schema gains `givenName` / `familyName` fields —
 which schema.org's `Person` would also make use of — they come for free and with
-no guessing. That is phase 2 editor work, not this document's.
+no guessing. That is a schema change; the editor will pick the new fields up
+from Zod. Not this document's.
 
 ### 2.3 `hreflang`
 

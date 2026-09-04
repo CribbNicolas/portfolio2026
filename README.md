@@ -80,7 +80,7 @@ what was measured on 2026-08-25.
 | **Deferred 3D chunk** (`three`, shared) | 150 KB gzip | **129.8 KB** | idem |
 | **PDF pages** (either locale) | 2 | **2** | `scripts/pdf-output.check.ts` |
 | JS on any page other than the two landings | 0 | 0 | `scripts/no-client-js.check.ts` |
-| **Social card** (`og.jpg`) | 300 KB | **61 KB** | `scripts/og-template.ts` |
+| **Social card** (`og.jpg` / `og.en.jpg`) | 300 KB | **61 KB** | `scripts/og-template.ts` |
 
 The social card ceiling is not tidiness: **WhatsApp does not get as far as
 showing the preview if the image is too heavy**, so going over means the link
@@ -140,7 +140,7 @@ receives lists already resolved by `getView()`.
 ## Where to go next
 
 - **What gets done now and in what order:** [`docs/06`](./docs/06-next-session.md).
-- **Technical debt, with how to check each entry:** [`docs/07`](./docs/07-technical-debt.md).
+- **Closed technical-debt ledger (42/42):** [`docs/07`](./docs/07-technical-debt.md).
 - **Status, decisions and what is missing:** [`docs/00-index.md`](./docs/00-index.md).
 - **How to work in the repo (invariants, conventions, file map):**
   [`CLAUDE.md`](./CLAUDE.md).

@@ -5,18 +5,17 @@ exist.
 
 | Document | What it holds |
 |---|---|
-| [06-next-session.md](./06-next-session.md) | **The three-phase work plan**, with how to proceed on each task. Start here |
-| [2026-09-03-close-technical-debt](./superpowers/plans/2026-09-03-close-technical-debt.md) | The four remaining waves that close `07` to zero, plus the bilingual leftovers |
+| [06-next-session.md](./06-next-session.md) | **The work plan.** The three infrastructure phases are closed; what remains is product and data. Start here |
 | [CONTRACT.md](./CONTRACT.md) | Rules of the content system |
 | [01-filters-and-selection.md](./01-filters-and-selection.md) | How the filters work today, what the evidence says, what raises the score |
 | [02-branding.md](./02-branding.md) | Positioning, headline, About, voice, LinkedIn |
 | [03-cv.md](./03-cv.md) | Format, content, bullets, per-application checklist |
 | [04-portfolio.md](./04-portfolio.md) | Structure, case studies, machine-readable layer |
 | [05-deploy-and-analytics.md](./05-deploy-and-analytics.md) | The free stack (Cloudflare Pages builds and hosts, Browser Rendering prints the PDF, Actions is the gate, Clarity measures) |
-| [07-technical-debt.md](./07-technical-debt.md) | What was found while working on something else and NOT fixed on the spot. With how to check it and what it costs |
+| [07-technical-debt.md](./07-technical-debt.md) | Closed ledger of 42 code-and-infra items. New findings append as #43+; do not reopen a closed number |
 | [08-branches-and-versioning.md](./08-branches-and-versioning.md) | The four branches, which one deploys, and why the version rises on merge |
-| [09-seo-and-metadata.md](./09-seo-and-metadata.md) | What the `<head>` emits and what it deliberately does NOT, with the condition that would make each omission worth reconsidering. Debt gets paid; a decision gets reviewed |
-| [10-i18n.md](./10-i18n.md) | The bilingual workflow: Spanish first always, the lock loop, what is translated and what is not, what is bilingual today and what deliberately is not |
+| [09-seo-and-metadata.md](./09-seo-and-metadata.md) | What the `<head>` emits and what it deliberately does NOT, with the condition that would make each omission worth reconsidering |
+| [10-i18n.md](./10-i18n.md) | The bilingual workflow: Spanish first always, the lock loop, and what is bilingual |
 
 ---
 
@@ -73,7 +72,9 @@ Dated, so we know what to revisit when the context changes.
       still have `links: []`
 - [ ] **Metrics** — two loaded on the RPPL map; the rest of the gap is in [03-cv.md](./03-cv.md)
 - [x] Hogarth `full-time` + `concurrent` (2023-07 → 2024-01) and English **A2**, confirmed 2026-08-31
-- [x] Phase 1 closed: 15 of the 18 debt entries, including the three gates that did not exist (invariants, endpoints, embedded fonts)
+- [x] Technical debt 42/42 closed — campaign
+      [2026-09-03-close-technical-debt](./superpowers/plans/2026-09-03-close-technical-debt.md),
+      PRs #26–#29, versions 0.22.0–0.25.0. Ledger in [07](./07-technical-debt.md)
 - [x] `pnpm run editor` — phase 2 of [06](./06-next-session.md), including the PR 4 affordances (remove, header, prune, 409 latch)
 - [x] Bilingual site: `content.en.json`, `/en/` + `/en/cv`, both CV PDFs, an
       ES/EN switch on both landings. Workflow in [10-i18n.md](./10-i18n.md)

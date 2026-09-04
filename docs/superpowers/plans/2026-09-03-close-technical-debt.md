@@ -1,6 +1,8 @@
 # Close remaining technical debt
 
-> **For agentic workers:** execute one wave at a time. Do not mix waves in a single PR. Each PR into `develop` must raise `package.json.version` (`docs/08-branches-and-versioning.md`). After each wave, move the closed numbers into the Resolved table of `docs/07-technical-debt.md` and keep the original numbers — never renumber.
+> **CLOSED 2026-09-03.** All five waves merged to `develop` (PRs #26–#29, versions 0.22.0–0.25.0). `docs/07-technical-debt.md` is 42/42. Do not execute this plan.
+
+> **For agentic workers (historical):** execute one wave at a time. Do not mix waves in a single PR. Each PR into `develop` must raise `package.json.version` (`docs/08-branches-and-versioning.md`). After each wave, move the closed numbers into the Resolved table of `docs/07-technical-debt.md` and keep the original numbers — never renumber.
 
 **Goal:** `docs/07-technical-debt.md` has zero open entries, the leftover bilingual commit is on `develop`, and the four Spanish-only leftovers named in `docs/00-index.md` (`/en/llms.txt`, `/en/cv.json`, English OG card, bilingual 404) plus a voice pass on `content.en.json` are done.
 
