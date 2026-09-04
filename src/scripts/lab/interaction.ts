@@ -7,10 +7,11 @@
  * are not its own, and makes capturing the scroll impossible by construction.
  *
  * Scrolling stays in the browser's hands: there is not a single
- * `preventDefault` here for the pointer, and on touch it is arbitrated by
- * `touch-action: pan-y` (a vertical swipe scrolls the page, a horizontal one
- * rotates the map). That is the browser deciding, not us intercepting — which
- * is the difference between this and the scroll hijacking spec §3.4 forbids.
+ * `preventDefault` here for the pointer. On touch, `touch-action: pan-x pan-y`
+ * gives every one-finger swipe to the page; rotation only starts when TWO
+ * pointers are down. Mouse drag is unchanged. That is the browser deciding,
+ * not us intercepting — which is the difference from the scroll hijacking
+ * spec §3.4 forbids.
  */
 
 import type { LabData, LabNode, LabStrings } from "./types";
@@ -79,7 +80,7 @@ export function createInteraction({
   }
 
   const state: InteractionState = {
-    camera: { yaw: 0.72, pitch: -0.52 },
+    camera: { yaw: 0.28, pitch: -0.12 },
     hover: null,
     focus: null,
     neighbourhood: new Set(),
@@ -97,6 +98,36 @@ export function createInteraction({
   let prevX = 0;
   let prevY = 0;
   let travelled = 0;
+  /** Active touch pointers. Rotation starts at 2; one finger is scroll. */
+  const touches = new Map<number, { x: number; y: number }>();
+
+  const isTouch = (e: PointerEvent) => e.pointerType === "touch";
+
+  const centroid = (): { x: number; y: number } => {
+    let x = 0, y = 0;
+    for (const p of touches.values()) { x += p.x; y += p.y; }
+    const n = Math.max(1, touches.size);
+    return { x: x / n, y: y / n };
+  };
+
+  const beginDrag = () => {
+    state.dragging = true;
+    container.classList.add("lab__map--dragging");
+    yawVel = pitchVel = 0;
+  };
+
+  const endDrag = () => {
+    state.dragging = false;
+    container.classList.remove("lab__map--dragging");
+  };
+
+  const rotateBy = (dx: number, dy: number) => {
+    yawVel = -dx * 0.006;
+    pitchVel = -dy * 0.006;
+    state.camera.yaw += yawVel;
+    state.camera.pitch += pitchVel;
+    clampPitch();
+  };
 
   // --- Arrastre -----------------------------------------------------------
 
@@ -107,6 +138,26 @@ export function createInteraction({
     // and the browser starts selecting labels. CSS `user-select: none` is the
     // real fix; this clears a selection that already started.
     getSelection()?.removeAllRanges();
+
+    if (isTouch(e)) {
+      touches.set(e.pointerId, { x: e.clientX, y: e.clientY });
+      if (touches.size === 1) {
+        // One finger is a possible tap. It must NOT become a drag: that is
+        // what used to steal the scroll.
+        pointerId = e.pointerId;
+        startX = e.clientX;
+        startY = e.clientY;
+        travelled = 0;
+        state.dragging = false;
+      } else if (touches.size === 2) {
+        const c = centroid();
+        prevX = c.x;
+        prevY = c.y;
+        beginDrag();
+      }
+      return;
+    }
+
     pointerId = e.pointerId;
     startX = prevX = e.clientX;
     startY = prevY = e.clientY;
@@ -120,7 +171,19 @@ export function createInteraction({
     pointerX = e.clientX - r.left;
     pointerY = e.clientY - r.top;
 
-    if (pointerId === e.pointerId) {
+    if (isTouch(e) && touches.has(e.pointerId)) {
+      touches.set(e.pointerId, { x: e.clientX, y: e.clientY });
+      if (touches.size >= 2 && state.dragging) {
+        const c = centroid();
+        rotateBy(c.x - prevX, c.y - prevY);
+        prevX = c.x;
+        prevY = c.y;
+      }
+      wake();
+      return;
+    }
+
+    if (pointerId === e.pointerId && !isTouch(e)) {
       const dx = e.clientX - prevX;
       const dy = e.clientY - prevY;
       prevX = e.clientX;
@@ -130,33 +193,43 @@ export function createInteraction({
       // Only here does it count as a drag. Below the threshold it is still a
       // click in waiting, so a shaky hand does not cancel the click.
       if (!state.dragging && travelled > DRAG_THRESHOLD) {
-        state.dragging = true;
-        container.classList.add("lab__map--dragging");
+        beginDrag();
         // Capturing the pointer keeps the drag working even when the cursor
-        // leaves the map. Released on pointer up.
+        // leaves the map. Released on pointer up. Never on touch: capture
+        // would take the finger away from the browser's scroll.
         try { container.setPointerCapture(e.pointerId); } catch { /* not critical */ }
       }
 
-      if (state.dragging) {
-        yawVel = -dx * 0.006;
-        pitchVel = -dy * 0.006;
-        state.camera.yaw += yawVel;
-        state.camera.pitch += pitchVel;
-        clampPitch();
-      }
+      if (state.dragging) rotateBy(dx, dy);
     }
 
     wake();
   };
 
   const onUp = (e: PointerEvent) => {
+    if (isTouch(e)) {
+      touches.delete(e.pointerId);
+      if (state.dragging && touches.size < 2) {
+        endDrag();
+        pointerId = null;
+        wake();
+        return;
+      }
+      if (touches.size === 0 && pointerId === e.pointerId) {
+        pointerId = null;
+        const total = Math.abs(e.clientX - startX) + Math.abs(e.clientY - startY);
+        if (total <= DRAG_THRESHOLD) focusNode(nodeUnderPointer());
+        wake();
+      }
+      return;
+    }
+
     if (pointerId !== e.pointerId) return;
     pointerId = null;
     try { container.releasePointerCapture(e.pointerId); } catch { /* already released */ }
 
     if (state.dragging) {
-      state.dragging = false;
-      container.classList.remove("lab__map--dragging");
+      endDrag();
       wake();
       return;
     }
@@ -168,10 +241,10 @@ export function createInteraction({
     wake();
   };
 
-  const onCancel = () => {
+  const onCancel = (e: PointerEvent) => {
+    if (isTouch(e)) touches.delete(e.pointerId);
     pointerId = null;
-    state.dragging = false;
-    container.classList.remove("lab__map--dragging");
+    endDrag();
   };
 
   const onLeave = () => {

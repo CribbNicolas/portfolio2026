@@ -13,7 +13,7 @@
  */
 
 import type { ContentView, SkillCategory } from "./content-schema";
-import { monthsFromPeriods } from "./dates";
+import { currentYearMonth, monthsFromPeriods, toMonths } from "./dates";
 
 // ---------------------------------------------------------------------------
 // TYPES
@@ -25,7 +25,7 @@ export type GraphNodeKind = "skill" | "role" | "project" | "achievement";
 export type GraphEdgeKind =
   /** Structure declared in the dataset: achievement→role, achievement→skill, project→skill. */
   | "structure"
-  /** Derived: two skills sharing evidence. See `skillAffinity`. */
+  /** Declared: one skill extends another. See `skillAffinity`. */
   | "affinity";
 
 export interface GraphNode {
@@ -55,6 +55,12 @@ export interface GraphNode {
    * its kind. Both the `<svg>` and the 3D scene consume this.
    */
   radiusScale: number;
+  /**
+   * 0 = career start, 1 = today. Midpoint of the node's dated span.
+   * The layout uses this as the vertical axis: a map you can read as a
+   * career, not as a cloud.
+   */
+  when: number;
 }
 
 export interface GraphEdge {
@@ -62,8 +68,8 @@ export interface GraphEdge {
   target: string;
   kind: GraphEdgeKind;
   /**
-   * How many distinct sources back the edge. Always 1 for `structure`; for
-   * `affinity` it is how many achievements/projects share both skills.
+   * How many distinct sources back the edge. Always 1 for `structure` and
+   * for `affinity` (the pair is declared, not counted).
    */
   weight: number;
 }
@@ -77,12 +83,12 @@ export interface KnowledgeGraph {
  * Range of a skill's radius multiplier.
  *
  * The floor is NOT zero: a skill with no evidence is still a declared skill,
- * and an invisible node cannot be hovered or clicked. The ceiling is 3.4 so the
- * most proven technology sits clearly above a role (fixed radius), which is
- * what makes "this is what I know best" readable at a glance.
+ * and an invisible node cannot be hovered or clicked. The ceiling is 2.5 so the
+ * most proven technology sits above a role without swallowing the centre of
+ * the map.
  */
 export const RADIUS_SCALE_MIN = 0.6;
-export const RADIUS_SCALE_MAX = 3.4;
+export const RADIUS_SCALE_MAX = 2.5;
 
 export const nodeId = (kind: GraphNodeKind, id: string): string => `${kind}:${id}`;
 
@@ -98,6 +104,15 @@ export function buildKnowledgeGraph(view: ContentView): KnowledgeGraph {
 
   const skills = Object.values(view.skills).flat();
   const achievements = view.experience.flatMap((r) => r.achievements);
+  const t0 = toMonths(view.identity.careerStart);
+  const t1 = toMonths(currentYearMonth());
+  const whenOf = (start: string, end: string | null): number => {
+    if (t1 <= t0) return 0.5;
+    const mid = (toMonths(start) + toMonths(end ?? currentYearMonth())) / 2;
+    return Math.max(0, Math.min(1, (mid - t0) / (t1 - t0)));
+  };
+  const skillWhen = skillTimeMidpoint(view, t0, t1);
+  const roleById = new Map(view.experience.map((r) => [r.id, r]));
 
   for (const s of skills) {
     nodes.push({
@@ -110,6 +125,7 @@ export function buildKnowledgeGraph(view: ContentView): KnowledgeGraph {
       years: 0,
       weight: 0,
       radiusScale: 1,
+      when: skillWhen.get(s.id) ?? 0.5,
     });
   }
 
@@ -123,6 +139,7 @@ export function buildKnowledgeGraph(view: ContentView): KnowledgeGraph {
       years: 0,
       weight: 0,
       radiusScale: 1,
+      when: whenOf(r.start, r.end ?? null),
     });
   }
 
@@ -140,10 +157,12 @@ export function buildKnowledgeGraph(view: ContentView): KnowledgeGraph {
       years: 0,
       weight: 0,
       radiusScale: 1,
+      when: whenOf(p.start, p.end ?? null),
     });
   }
 
   for (const a of achievements) {
+    const role = roleById.get(a.roleId);
     nodes.push({
       id: nodeId("achievement", a.id),
       kind: "achievement",
@@ -153,6 +172,7 @@ export function buildKnowledgeGraph(view: ContentView): KnowledgeGraph {
       years: 0,
       weight: 0,
       radiusScale: 1,
+      when: role ? whenOf(role.start, role.end ?? null) : 0.5,
     });
   }
 
@@ -193,7 +213,8 @@ export function buildKnowledgeGraph(view: ContentView): KnowledgeGraph {
   for (const n of nodes) n.degree = degree.get(n.id) ?? 0;
 
   // Size = years × connections. Only here, because `Nc` is the degree of the
-  // FINISHED graph: it depends on the affinity edges, which are derived.
+  // FINISHED graph: it depends on the affinity edges, which come from
+  // `relatedIds`.
   const years = skillYears(view);
   for (const n of nodes) {
     if (n.kind !== "skill") continue;
@@ -235,7 +256,7 @@ export function buildKnowledgeGraph(view: ContentView): KnowledgeGraph {
  * total is the SUM of the merged periods, not an end-to-end span: a three year
  * gap is not experience, and two parallel jobs are not twice the same years.
  */
-export function skillYears(view: ContentView): Map<string, number> {
+function skillPeriods(view: ContentView): Map<string, Array<{ start: string; end: string | null }>> {
   const roles = new Map(view.experience.map((r) => [r.id, r]));
   const periods = new Map<string, Array<{ start: string; end: string | null }>>();
 
@@ -254,49 +275,80 @@ export function skillYears(view: ContentView): Map<string, number> {
   for (const p of view.projects) {
     for (const s of p.skillIds) record(s, p.start, p.end ?? null);
   }
+  for (const s of Object.values(view.skills).flat()) {
+    for (const p of s.periods ?? []) record(s.id, p.start, p.end ?? null);
+  }
+  return periods;
+}
 
+export function skillYears(view: ContentView): Map<string, number> {
+  const periods = skillPeriods(view);
   const out = new Map<string, number>();
   for (const s of Object.values(view.skills).flat()) {
-    // Declared periods go into the same bag as the derived ones: a union, not a
-    // replacement. An incomplete declared period cannot erase real evidence.
-    for (const p of s.periods ?? []) record(s.id, p.start, p.end ?? null);
     out.set(s.id, monthsFromPeriods(periods.get(s.id) ?? []) / 12);
   }
   return out;
 }
 
+/** Midpoint of a skill's dated span, 0 = career start, 1 = today. */
+function skillTimeMidpoint(view: ContentView, t0: number, t1: number): Map<string, number> {
+  const periods = skillPeriods(view);
+  const today = toMonths(currentYearMonth());
+  const span = t1 - t0 || 1;
+  const out = new Map<string, number>();
+  for (const s of Object.values(view.skills).flat()) {
+    const ps = periods.get(s.id) ?? [];
+    if (ps.length === 0) {
+      out.set(s.id, 0.5);
+      continue;
+    }
+    const from = Math.min(...ps.map((p) => toMonths(p.start)));
+    const to = Math.max(...ps.map((p) => (p.end ? toMonths(p.end) : today)));
+    out.set(s.id, Math.max(0, Math.min(1, ((from + to) / 2 - t0) / span)));
+  }
+  return out;
+}
+
 /**
- * skill↔skill edges by co-occurrence.
+ * skill↔skill edges from declared `relatedIds`.
  *
- * Two skills appearing in the SAME achievement or project are related by
- * evidence, not by opinion: the datum is already in the dataset, only
- * implicit. This invents nothing (invariant 4) — if two skills never appeared
- * together in a real fact, there is no edge.
+ * Co-occurrence is not relatedness: React and CI/CD can share a project
+ * without one extending the other, and that pair is already drawn as two
+ * project→skill edges. The skill↔skill edge is an authoring fact — Jotai
+ * extends React — the same kind as any other id list. Invariant 4 still
+ * holds because nothing is inferred from who appeared next to whom.
  *
- * `weight` = how many distinct sources share them. That is what tells "I used
- * them together once" apart from "this is my working combination".
+ * `weight` is always 1: the edge exists or it does not. Counting how many
+ * times the author listed it would invent a ranking they did not write.
  */
 export function skillAffinity(view: ContentView): Array<{ a: string; b: string; weight: number }> {
-  const sources = new Map<string, Set<string>>();
+  const pairs = new Map<string, { a: string; b: string }>();
+  const skills = Object.values(view.skills).flat();
+  const known = new Set(skills.map((s) => s.id));
 
-  const record = (skillIds: readonly string[], source: string) => {
-    for (let i = 0; i < skillIds.length; i++) {
-      for (let k = i + 1; k < skillIds.length; k++) {
-        const [a, b] = skillIds[i]! < skillIds[k]! ? [skillIds[i]!, skillIds[k]!] : [skillIds[k]!, skillIds[i]!];
-        const key = `${a}|${b}`;
-        if (!sources.has(key)) sources.set(key, new Set());
-        sources.get(key)!.add(source);
-      }
+  for (const s of skills) {
+    for (const other of s.relatedIds ?? []) {
+      if (other === s.id || !known.has(other)) continue;
+      const [a, b] = s.id < other ? [s.id, other] : [other, s.id];
+      pairs.set(`${a}|${b}`, { a, b });
     }
-  };
+  }
 
-  for (const r of view.experience) for (const a of r.achievements) record(a.skillIds, a.id);
-  for (const p of view.projects) record(p.skillIds, p.id);
+  return [...pairs.values()].map((p) => ({ ...p, weight: 1 }));
+}
 
-  return [...sources].map(([key, srcs]) => {
-    const [a, b] = key.split("|") as [string, string];
-    return { a, b, weight: srcs.size };
-  });
+/**
+ * Achievement→skill is real evidence and the layout uses it, but drawing
+ * every one is the cobweb: a single achievement with five skills crosses
+ * the whole map. The skill already hangs off the project; the achievement
+ * already hangs off the role. Idle, those lines stay hidden. On focus they
+ * light up, which is when they become an answer instead of noise.
+ */
+export function isQuietEdge(e: GraphEdge): boolean {
+  if (e.kind !== "structure") return false;
+  const src = e.source.slice(0, e.source.indexOf(":"));
+  const tgt = e.target.slice(0, e.target.indexOf(":"));
+  return src === "achievement" && tgt === "skill";
 }
 
 /**

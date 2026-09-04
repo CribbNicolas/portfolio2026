@@ -40,9 +40,14 @@ export interface LabNode {
 export interface LabEdge {
   s: string;
   t: string;
-  /** true = affinity (derived skill↔skill), false = structure from the dataset. */
+  /** true = affinity (declared skill↔skill "extends"), false = structure from the dataset. */
   a: boolean;
   w: number;
+  /**
+   * Quiet: achievement→skill. Idle they are hidden (the cobweb); they only
+   * draw when the edge touches the focused node.
+   */
+  q?: boolean;
 }
 
 /**

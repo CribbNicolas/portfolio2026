@@ -39,6 +39,7 @@ export const HINTS: Record<string, Hint> = {
   "achievements[].skillIds": { widget: "reference-list", source: "skills" },
   "projects[].roleId": { widget: "reference", source: "roles" },
   "projects[].skillIds": { widget: "reference-list", source: "skills" },
+  "skills[].relatedIds": { widget: "reference-list", source: "skills" },
   "testimonials[].projectId": { widget: "reference", source: "projects" },
 
   "identity.tagline.long": { widget: "textarea" },

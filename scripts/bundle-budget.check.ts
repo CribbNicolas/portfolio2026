@@ -206,15 +206,18 @@ test("the SVG fallback has one node per graph node", async () => {
 });
 
 test("the map shares the touch gesture with the browser, it does not intercept it", async () => {
-  // `touch-action: pan-y` is what makes a vertical swipe scroll the page and a
-  // horizontal one rotate the map. Without it, dragging on a phone would hijack
-  // the scroll — exactly what spec §3.4 forbids.
+  // `touch-action: pan-x pan-y` gives every one-finger swipe to the page.
+  // Rotation is two fingers, counted in JS, never via preventDefault on
+  // touchmove — exactly what spec §3.4 forbids.
   const html = await readFile(join(DIST, REPRESENTATIVE_PAGE), "utf8");
   const sheets = (await readdir(ASTRO)).filter((f) => f.endsWith(".css"));
   const sources = [html, ...(await Promise.all(sheets.map((f) => readFile(join(ASTRO, f), "utf8"))))]
     .map((s) => s.replace(/\s+/g, ""));
-  const ok = sources.some((src) => /\.lab__map--3d\{[^}]*touch-action:pan-y/.test(src));
-  assert.ok(ok, "`touch-action: pan-y` is missing on .lab__map--3d: the drag could hijack the scroll");
+  const ok = sources.some((src) =>
+    /\.lab__map--3d\{[^}]*touch-action:pan-xpan-y/.test(src) ||
+    /\.lab__map--3d\{[^}]*touch-action:pan-ypan-x/.test(src),
+  );
+  assert.ok(ok, "`touch-action: pan-x pan-y` is missing on .lab__map--3d: a one-finger drag could hijack the scroll");
 });
 
 test("no client module listens for wheel or touchmove", async () => {

@@ -23,10 +23,10 @@
  * Relative imports, not the `@content` alias, for the same reason
  * `jsonld.ts` and `anchors.ts` use them: only Vite resolves that alias, and a
  * plain `tsx` run of some future check or test over this file would not.
- * Both imports here are `import type`, so there is no runtime cost either way.
  */
 import type { Messages } from "../../content/schema/messages";
-import type { PositionedGraph } from "../../content/source/index";
+import type { PositionedGraph } from "../../content/schema/graph-layout";
+import { isQuietEdge } from "../../content/schema/knowledge-graph";
 import type { LabData } from "../scripts/lab/types";
 
 export function buildLabData(positioned: PositionedGraph, m: Messages): LabData {
@@ -50,6 +50,7 @@ export function buildLabData(positioned: PositionedGraph, m: Messages): LabData 
       t: e.target,
       a: e.kind === "affinity",
       w: e.weight,
+      ...(isQuietEdge(e) ? { q: true } : {}),
     })),
     radius: positioned.framingRadius,
     // Chrome words for the panel/tooltip, built once per page rather than
