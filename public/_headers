@@ -57,12 +57,15 @@
   # the page silently falls back to the system stack. Caught by loading the
   # built site under these exact headers, not by reading them.
   #
-  # The Clarity hosts are three, not one, and all three are needed: the tag
-  # comes from `www.clarity.ms`, the payload from `scripts.clarity.ms`, and the
-  # collection posts and pixels go to `*.clarity.ms` and `c.bing.com`. Miss one
-  # and the analytics fail silently — which is the failure mode this comment
-  # exists to prevent when somebody tightens the list later.
-  Content-Security-Policy: default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'none'; script-src 'self' https://static.cloudflareinsights.com https://www.clarity.ms https://scripts.clarity.ms; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://*.clarity.ms https://c.bing.com; font-src 'self' data:; connect-src 'self' https://*.clarity.ms https://c.bing.com https://cloudflareinsights.com https://static.cloudflareinsights.com; upgrade-insecure-requests
+  # Clarity is a WILDCARD on purpose. A single visit already touched five of
+  # its hosts — `www` for the tag, `scripts` for the payload, `c`, `a` and `f`
+  # for collection — and which subdomain answers is Microsoft's routing
+  # decision, not a contract with us. Pinning the two we happened to observe
+  # is how the analytics die silently three months from now, on a host that
+  # was always allowed to appear. The wildcard is scoped to one vendor's
+  # domain, which is the same trust already granted by loading their tag.
+  # Do NOT narrow it back without a reason better than tidiness.
+  Content-Security-Policy: default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'none'; script-src 'self' https://static.cloudflareinsights.com https://*.clarity.ms; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://*.clarity.ms https://c.bing.com; font-src 'self' data:; connect-src 'self' https://*.clarity.ms https://c.bing.com https://cloudflareinsights.com https://static.cloudflareinsights.com; upgrade-insecure-requests
   # A year, no `preload`: preloading is submitted for a registrable domain and
   # `cribbnicolas.pages.dev` is not one — `pages.dev` is on the public suffix
   # list. `includeSubDomains` is left off for the same reason: there are no
