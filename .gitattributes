@@ -1,0 +1,12 @@
+# Files parsed line by line by something that is not a compiler.
+#
+# Cloudflare Pages reads `_headers` a line at a time, and GitHub Actions reads
+# the workflow YAML the same way. A stray CR at the end of a line already broke
+# `smoke-deploy.yml` for three commits with nobody noticing — that is why
+# `scripts/workflows.check.ts` exists — and on Windows `core.autocrlf=true`
+# puts one back on every fresh checkout, in the working tree the build copies
+# from and `wrangler pages dev` reads.
+#
+# `eol=lf` pins the working copy too, not only what git stores.
+public/_headers text eol=lf
+.github/workflows/*.yml text eol=lf
