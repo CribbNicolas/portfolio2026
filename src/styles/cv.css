@@ -136,6 +136,11 @@
   background: var(--accent-faint);
   padding: 1px 6px;
   border-radius: 6px;
+  /* The pill is a box, not a run of text: split across two lines it shows up
+     as two half-pills with the rounding and the padding cut open. `nowrap`
+     plus `inline-block` moves the whole thing to the next line instead. */
+  display: inline-block;
+  white-space: nowrap;
 }
 
 /* --- Skills, education, languages ---------------------------------------- */
@@ -230,6 +235,10 @@
   .metric {
     background: none;
     padding: 0;
+    /* No pill on paper, so nothing to keep whole — and the two printed pages
+       have no room to push a long metric onto a line of its own. */
+    display: inline;
+    white-space: normal;
   }
 
   /* NO tracking survives printing. Two reasons, both observed:
