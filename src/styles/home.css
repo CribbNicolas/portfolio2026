@@ -384,10 +384,15 @@
   }
 }
 
-/* Contact is the first thing to drop: on small screens the index is what you
-   need to move around, and the email lives in the CV below anyway. */
+/* On a phone the pill and the download button no longer fit side by side, so
+   something has to go. The index goes, not the contact: the three anchors are
+   a convenience over a page that scrolls fine on its own, while the mail link
+   is the only thing in the bar that cannot be done any other way without
+   scrolling to the CV. GitHub and LinkedIn drop with the index for the same
+   reason — they are repeated in the CV section below. */
 @media (max-width: 34rem) {
-  .pill__contact,
+  .pill__nav,
+  .pill__social,
   .pill__sep {
     display: none;
   }

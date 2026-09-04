@@ -143,14 +143,14 @@ const skillNameById = new Map(
       <span class="pill__sep" aria-hidden="true"></span>
 
       <ul class="pill__contact">
-        <li>
+        <li class="pill__mail">
           <a href={`mailto:${identity.contact.email}`}>
             <span class="pill__long">{identity.contact.email}</span>
             <span class="pill__short">{m.emailLabel}</span>
           </a>
         </li>
         {identity.links.map((link) => (
-          <li><a href={link.url} rel="me noopener">{link.label}</a></li>
+          <li class="pill__social"><a href={link.url} rel="me noopener">{link.label}</a></li>
         ))}
       </ul>
 
@@ -287,9 +287,7 @@ const skillNameById = new Map(
       </div>
 
       <div class="lab__indice">
-        <h3 class="lab__index-title">
-          Stack <span class="lab__index-note">{m.stackEvidenceNote(withEvidenceCount, items.length)}</span>
-        </h3>
+        <h3 class="lab__index-title">Stack</h3>
         <ul class="lab__list">
           {items.map((n) => (
             <li>

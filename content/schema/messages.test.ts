@@ -11,7 +11,7 @@ test("both locales define the same keys", () => {
 
 test("no message is empty", () => {
   // A handful of messages are functions (numbers are interpolated, not fixed
-  // copy — `svgMapAriaLabel`, `stackEvidenceNote`, `emptyStackNote`): call
+  // copy — `svgMapAriaLabel`, `emptyStackNote`): call
   // them with representative args and check the *output*, not the function
   // itself.
   for (const [locale, dict] of Object.entries(MESSAGES)) {
