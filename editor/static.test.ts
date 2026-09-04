@@ -7,17 +7,20 @@
  * trick there is.
  */
 
-import { test } from "node:test";
+import { after, test } from "node:test";
 import assert from "node:assert/strict";
-import { mkdtemp, mkdir, writeFile } from "node:fs/promises";
-import { tmpdir } from "node:os";
+import { mkdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
 import { resolveStatic } from "./static";
+import { createTempDirs } from "./temp-dir";
+
+const tmp = createTempDirs();
+after(() => tmp.cleanup());
 
 /** A throwaway public/ with one of each thing we serve, plus a secret outside it. */
 async function fixture(): Promise<{ root: string; parent: string }> {
-  const parent = await mkdtemp(join(tmpdir(), "editor-static-"));
+  const parent = await tmp.dir("editor-static-");
   const root = join(parent, "public");
   await mkdir(root);
   await writeFile(join(root, "index.html"), "<!doctype html><title>editor</title>", "utf8");

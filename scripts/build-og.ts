@@ -1,9 +1,10 @@
 /**
- * Generates `public/og.jpg`: the card WhatsApp, LinkedIn, Twitter, Facebook,
- * Slack and Discord show when someone pastes the link.
+ * Generates `public/og.jpg` and `public/og.en.jpg`: the cards WhatsApp,
+ * LinkedIn, Twitter, Facebook, Slack and Discord show when someone pastes
+ * the Spanish or English landing.
  *
  * `pnpm run og:local`. It does NOT run in the build or in CI, and that is the
- * underlying decision (docs/07 §18): rasterizing needs Chromium and the
+ * underlying decision (closed #18): rasterizing needs Chromium and the
  * Cloudflare builder does not have it — the same reason the PDF left the build.
  * So the image is generated here and COMMITTED. Zero runtime cost, zero
  * dependency on the builder, and no crawler waiting for a service to print
@@ -23,6 +24,7 @@ import { chromium } from "playwright";
 import { brandSvg } from "../src/lib/brand";
 import { PHOTO, fingerprint, ICON, IMAGE, LOCK, BRAND, TEMPLATE, ogTexts } from "./og-data";
 import { buildIconHtml, buildOgHtml, ICON_SIDE, OG_HEIGHT, OG_WIDTH, OG_MAX_BYTES } from "./og-template";
+import type { Locale } from "../content/schema/content-schema";
 
 /**
  * JPEG quality. 84 keeps the photo clean and the file well under WhatsApp's
@@ -46,40 +48,46 @@ async function fontCss(): Promise<string> {
   return faces.join("\n");
 }
 
+const LOCALES: Locale[] = ["es", "en"];
+
 async function main(): Promise<void> {
-  const [texts, photo, template, brandSource] = await Promise.all([
-    ogTexts(),
+  const [photo, template, brandSource, fonts] = await Promise.all([
     readFile(PHOTO),
     readFile(TEMPLATE),
     readFile(BRAND),
+    fontCss(),
   ]);
 
-  const html = buildOgHtml({
-    ...(texts as { name: string; kicker: string; role: string }),
-    photoDataUri: `data:image/jpeg;base64,${photo.toString("base64")}`,
-    fontCss: await fontCss(),
-    brand: brandSvg({ size: 44, accent: "#b0472a", ink: "#17181c" }),
-  });
+  const textsByLocale = {
+    es: await ogTexts("es"),
+    en: await ogTexts("en"),
+  };
 
   const browser = await chromium.launch();
-  let jpeg: Buffer;
+  const jpegs: Record<Locale, Buffer> = { es: Buffer.alloc(0), en: Buffer.alloc(0) };
   let icon: Buffer;
   try {
-    // Scale 1: the viewport IS the final size, so there is no rescaling to
-    // soften the edges of the text.
-    const page = await browser.newPage({ viewport: { width: OG_WIDTH, height: OG_HEIGHT } });
-    await page.setContent(html, { waitUntil: "load" });
+    for (const locale of LOCALES) {
+      const html = buildOgHtml({
+        ...(textsByLocale[locale] as { name: string; kicker: string; role: string }),
+        photoDataUri: `data:image/jpeg;base64,${photo.toString("base64")}`,
+        fontCss: fonts,
+        brand: brandSvg({ size: 44, accent: "#b0472a", ink: "#17181c" }),
+      });
+      const page = await browser.newPage({ viewport: { width: OG_WIDTH, height: OG_HEIGHT } });
+      await page.setContent(html, { waitUntil: "load" });
+      await page.evaluate(() => document.fonts.ready);
+      const jpeg = await page.screenshot({ type: "jpeg", quality: QUALITY });
+      await page.close();
+      if (jpeg.byteLength > OG_MAX_BYTES) {
+        throw new Error(
+          `${IMAGE[locale]} weighs ${(jpeg.byteLength / 1024).toFixed(0)} KB and the ceiling is ${OG_MAX_BYTES / 1024} KB.\n` +
+            `WhatsApp does not show the preview when it goes over. Lower QUALITY in ${import.meta.filename ?? "scripts/build-og.ts"}.`,
+        );
+      }
+      jpegs[locale] = jpeg;
+    }
 
-    // Without this Chromium can rasterize with the fallback font, and the card
-    // comes out different on every machine.
-    await page.evaluate(() => document.fonts.ready);
-
-    jpeg = await page.screenshot({ type: "jpeg", quality: QUALITY });
-
-    // The iOS icon, in the same browser: launching Chromium twice to draw
-    // 180x180 would be paying two startups for a 2 KB file.
-    // PNG and not JPEG: it is four flat colors, and JPEG puts artifacts right
-    // on the edge of the ring, which is all you see at that size.
     const small = await browser.newPage({ viewport: { width: ICON_SIDE, height: ICON_SIDE } });
     await small.setContent(buildIconHtml(brandSvg({ size: 116, accent: "#b0472a", ink: "#17181c" })));
     icon = await small.screenshot({ type: "png" });
@@ -87,24 +95,21 @@ async function main(): Promise<void> {
     await browser.close();
   }
 
-  if (jpeg.byteLength > OG_MAX_BYTES) {
-    throw new Error(
-      `og.jpg weighs ${(jpeg.byteLength / 1024).toFixed(0)} KB and the ceiling is ${OG_MAX_BYTES / 1024} KB.\n` +
-        `WhatsApp does not show the preview when it goes over. Lower QUALITY in ${import.meta.filename ?? "scripts/build-og.ts"}.`,
-    );
+  const fingerprints: Record<Locale, string> = { es: "", en: "" };
+  for (const locale of LOCALES) {
+    await writeFile(IMAGE[locale], jpegs[locale]);
+    fingerprints[locale] = fingerprint(textsByLocale[locale], photo, template, brandSource);
   }
-
-  await writeFile(IMAGE, jpeg);
   await writeFile(ICON, icon);
   await writeFile(
     LOCK,
     JSON.stringify(
       {
         _: "Generated by `pnpm run og:local`. Do NOT edit by hand: og-output.check.ts compares it against the dataset.",
-        fingerprint: fingerprint(texts, photo, template, brandSource),
+        fingerprint: fingerprints,
         width: OG_WIDTH,
         height: OG_HEIGHT,
-        texts,
+        texts: textsByLocale,
       },
       null,
       2,
@@ -112,8 +117,8 @@ async function main(): Promise<void> {
   );
 
   console.log(
-    `og.jpg — ${(jpeg.byteLength / 1024).toFixed(0)} KB of ${OG_MAX_BYTES / 1024} KB · ` +
-      `apple-touch-icon.png — ${(icon.byteLength / 1024).toFixed(1)} KB`,
+    LOCALES.map((locale) => `${IMAGE[locale]} — ${(jpegs[locale].byteLength / 1024).toFixed(0)} KB of ${OG_MAX_BYTES / 1024} KB`).join(" · ") +
+      ` · apple-touch-icon.png — ${(icon.byteLength / 1024).toFixed(1)} KB`,
   );
 }
 

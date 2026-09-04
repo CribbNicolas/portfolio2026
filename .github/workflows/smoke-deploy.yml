@@ -56,6 +56,10 @@ jobs:
           esac
           echo "SITE=$site" >> "$GITHUB_ENV"
           echo "PDF_SOURCE=$site/cv.pdf" >> "$GITHUB_ENV"
+          # `pnpm run test:pdf` derives this one itself from PDF_SOURCE (see
+          # `scripts/pdf-check-locales.ts`); it is exported here too because the
+          # warm and HEAD steps below curl it directly, before that script runs.
+          echo "EN_PDF_SOURCE=$site/en/cv.pdf" >> "$GITHUB_ENV"
           echo "site: $site"
 
       - name: Wait for Cloudflare to publish this commit
@@ -84,7 +88,7 @@ jobs:
           echo "::error::$SITE never got to serve $expected. Either the Pages build failed, or /build.json does not exist in the published deploy."
           exit 1
 
-      - name: Warm the PDF, tolerating Browser Rendering's 429
+      - name: Warm both PDFs, tolerating Browser Rendering's 429
         run: |
           # A 429 means "wait", not "the PDF is broken". The free plan gives 3
           # concurrent browsers and one new instance every 20 seconds, and the
@@ -96,48 +100,67 @@ jobs:
           # Without this step, the gate goes red on quota and trains you to
           # ignore it, which is the worst way to lose a gate.
           #
-          # Besides tolerating the 429, it leaves the PDF in the edge cache of
+          # Besides tolerating the 429, it leaves each PDF in the edge cache of
           # the colo the runner landed on, so the test below hits the cache and
-          # does not spend ANOTHER render.
-          for attempt in $(seq 1 6); do
-            code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 90 "$PDF_SOURCE" || echo 000)
-            echo "  attempt $attempt: HTTP $code"
+          # does not spend ANOTHER render. Both locales are warmed here, one
+          # after the other and not in parallel: two cold renders at once is
+          # exactly the burst that exhausts the 3-concurrent-browser ceiling and
+          # turns a tolerable 429 into a real one.
+          warm() {
+            local url="$1"
+            for attempt in $(seq 1 6); do
+              code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 90 "$url" || echo 000)
+              echo "  attempt $attempt: HTTP $code"
 
-            case "$code" in
-              200) echo "PDF ready and cached"; exit 0 ;;
-              429)
-                # It honours the Retry-After the Function propagates, if it came.
-                wait=$(curl -sI --max-time 30 "$PDF_SOURCE" | sed -n 's/^[Rr]etry-[Aa]fter:[[:space:]]*\([0-9]*\).*/\1/p')
-                wait=${wait:-30}
-                echo "  Browser Rendering quota; retrying in ${wait}s"
-                sleep "$wait"
-                ;;
-              *)
-                # 502, 503, 504 or a dead network: it can be transient, but it is
-                # not quota. Retried fewer times and with less patience.
-                echo "  unexpected response; retrying in 15s"
-                sleep 15
-                ;;
-            esac
-          done
+              case "$code" in
+                200) echo "PDF ready and cached"; return 0 ;;
+                429)
+                  # It honours the Retry-After the Function propagates, if it came.
+                  wait=$(curl -sI --max-time 30 "$url" | sed -n 's/^[Rr]etry-[Aa]fter:[[:space:]]*\([0-9]*\).*/\1/p')
+                  wait=${wait:-30}
+                  echo "  Browser Rendering quota; retrying in ${wait}s"
+                  sleep "$wait"
+                  ;;
+                *)
+                  # 502, 503, 504 or a dead network: it can be transient, but it is
+                  # not quota. Retried fewer times and with less patience.
+                  echo "  unexpected response; retrying in 15s"
+                  sleep 15
+                  ;;
+              esac
+            done
 
-          echo "::error::$PDF_SOURCE did not return 200 after 6 attempts. If the last one was a 429, the daily Browser Rendering quota is used up; any other code is a real Function failure."
-          exit 1
+            echo "::error::$url did not return 200 after 6 attempts. If the last one was a 429, the daily Browser Rendering quota is used up; any other code is a real Function failure."
+            return 1
+          }
 
-      - name: The served PDF passes layer 1 of the funnel
+          echo "warming $PDF_SOURCE"
+          warm "$PDF_SOURCE" || exit 1
+          echo "warming $EN_PDF_SOURCE"
+          warm "$EN_PDF_SOURCE" || exit 1
+
+      - name: The served PDFs pass layer 1 of the funnel, both locales
+        # `test:pdf` runs `pdf-output.check.ts` once per locale and derives the
+        # English URL from `$PDF_SOURCE` itself (`scripts/pdf-check-locales.ts`)
+        # — the same rule the Function uses to pick a source page, so this step
+        # does not carry a second copy of it.
         run: pnpm run test:pdf
 
-      - name: The HEAD declares a PDF, not a page
+      - name: The HEAD declares a PDF, not a page, for both locales
         run: |
           # `-w '%{content_type}'` instead of parsing the header with grep: the
           # header comes terminated with a CR, and stripping it by hand is what
           # once broke this file (a literal CR inside the YAML).
-          type=$(curl -sI -o /dev/null -w '%{content_type}' --max-time 60 "$PDF_SOURCE")
-          echo "HEAD $PDF_SOURCE -> $type"
-          case "$type" in
-            application/pdf*) exit 0 ;;
-            *) echo "::error::HEAD returns '$type' instead of application/pdf: the HEAD handler does not match the Function" ; exit 1 ;;
-          esac
+          check_head() {
+            local url="$1"
+            type=$(curl -sI -o /dev/null -w '%{content_type}' --max-time 60 "$url")
+            echo "HEAD $url -> $type"
+            case "$type" in
+              application/pdf*) return 0 ;;
+              *) echo "::error::HEAD $url returns '$type' instead of application/pdf: the HEAD handler does not match the Function" ; return 1 ;;
+            esac
+          }
+          check_head "$PDF_SOURCE" && check_head "$EN_PDF_SOURCE"
 
       # The only thing that can see what happens AFTER the build: an edge
       # injection, a transform rule, a misplaced _headers.

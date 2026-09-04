@@ -9,6 +9,7 @@
 
 import { test } from "node:test";
 import assert from "node:assert/strict";
+import type { Locale } from "../schema/content-schema";
 import { content } from "./index";
 import { resolveView } from "../schema/resolve-view";
 import { validateDataset } from "../schema/validation";
@@ -100,11 +101,46 @@ test("strict: an unknown key in the dataset throws instead of being dropped", ()
   assert.throws(() => validateDataset(withGarbage), /Unrecognized key|campoInventado/i);
 });
 
+test("the English dataset loads and resolves for every surface", async () => {
+  const data = await content.getDataset("en");
+  assert.equal(data.locale, "en");
+  for (const surface of ["cv-ats", "portfolio", "public-api"] as const) {
+    const view = await content.getView(surface, "en");
+    assert.ok(view.experience.length > 0, `${surface} came out empty in English`);
+  }
+});
+
 test("a locale with no dataset throws instead of silently returning another", async () => {
+  // `es` and `en` both load now, so the loud failure is only reachable through
+  // a locale the type does not admit. The cast is the point: it stands in for
+  // the third language somebody adds to `Locale` without adding a dataset.
   await assert.rejects(
-    () => content.getView("cv", "en"),
+    () => content.getView("cv", "pt" as Locale),
     /Unsupported locale/,
   );
+});
+
+test("the view carries no authoring-only field", async () => {
+  // `/cv.json` serializes the whole view, so anything the view holds is
+  // published — rendered or not. `visibility` and `priority` are the editorial
+  // ranking of your own work; `publishPhoneOn` is a privacy policy; and
+  // `Metric.source` is the evidence note written for you to reread before an
+  // interview, one of which carries the API URL the number came from.
+  const view = await content.getView("public-api", "es");
+  const json = JSON.stringify(view);
+
+  for (const key of ['"visibility"', '"priority"', '"publishPhoneOn"', '"source"']) {
+    assert.equal(json.includes(key), false, `${key} still leaves in the view`);
+  }
+});
+
+test("every surface is projected, not just the public one", async () => {
+  // A projection applied only to `public-api` is one somebody forgets when a
+  // new surface appears. The rule is the view, not the surface.
+  for (const surface of ["cv", "cv-short", "cv-ats", "portfolio", "linkedin"] as const) {
+    const json = JSON.stringify(await content.getView(surface, "es"));
+    assert.equal(json.includes('"visibility"'), false, `${surface} leaks visibility`);
+  }
 });
 
 // Rule 4: an `estimated` Metric renders with "~" or "aprox.".
@@ -112,6 +148,6 @@ test("a locale with no dataset throws instead of silently returning another", as
 // `content/schema/format.test.ts`; the minimal case stays here because this
 // file is the one documenting the rules the schema does not validate.
 test("rule 4: an estimated Metric renders with ~", () => {
-  const out = formatMetric({ label: "tiempo de build", delta: "40%", confidence: "estimated" });
+  const out = formatMetric({ label: "tiempo de build", delta: "40%", confidence: "estimated" }, "es");
   assert.match(String(out), /~|aprox\./);
 });

@@ -11,10 +11,11 @@
  * `User-agent`, no `Disallow`, no `Sitemap`. It restricted nothing, but it
  * announced nothing either.
  *
- * ⚠️ UNVERIFIED: that this one beats Cloudflare's managed one. It is checked by
- * opening `/robots.txt` on the `staging` preview and seeing whether this shows
- * up or the "content signals" block does. If Cloudflare's wins, the sitemap has
- * to be announced through Search Console and the limitation noted (docs/07 §17).
+ * ⚠️ UNVERIFIED against a live deploy: that this one beats Cloudflare's
+ * managed one. It is checked by opening `/robots.txt` on the `staging`
+ * preview and seeing whether this shows up or the "content signals" block
+ * does. If Cloudflare's wins, the sitemap has to be announced through Search
+ * Console and the limitation noted (`docs/09-seo-and-metadata.md` §3).
  */
 
 import type { APIRoute } from "astro";
@@ -29,10 +30,12 @@ export const GET: APIRoute = ({ site }) => {
     "User-agent: *",
     "Allow: /",
     "",
-    "# /cv existe solo para que Browser Rendering imprima el PDF. Va con",
-    "# noindex y sin links entrantes; el destino del lector es el ancla #cv de",
-    "# la landing. Se desalienta el rastreo para que no compita con la home.",
+    "# /cv y /en/cv existen solo para que Browser Rendering imprima cada PDF.",
+    "# Van con noindex y sin links entrantes; el destino del lector es el ancla",
+    "# #cv de la landing correspondiente. Se desalienta el rastreo para que no",
+    "# compita con la home.",
     "Disallow: /cv/",
+    "Disallow: /en/cv/",
     "",
     "# /build.json dice qué commit está publicado. Lo consume el smoke de CI,",
     "# no un lector.",
@@ -42,6 +45,8 @@ export const GET: APIRoute = ({ site }) => {
     "# No hace falta scrapear el HTML.",
     `# ${site ? new URL("llms.txt", site) : "/llms.txt"}`,
     `# ${site ? new URL("cv.json", site) : "/cv.json"}`,
+    `# ${site ? new URL("en/llms.txt", site) : "/en/llms.txt"}`,
+    `# ${site ? new URL("en/cv.json", site) : "/en/cv.json"}`,
     ...(sitemap ? ["", sitemap] : []),
     "",
   ];

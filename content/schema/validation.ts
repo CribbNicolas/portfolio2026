@@ -53,6 +53,7 @@ const prose = z.object({
 }).strict();
 
 const link = z.object({
+  id: z.string(),
   label: z.string(),
   url: z.string().url(),
   kind: z.enum([
@@ -72,6 +73,7 @@ const skillPeriod = z.object({
 }).strict();
 
 const media = z.object({
+  id: z.string(),
   kind: z.enum(["image", "gif", "video"]),
   url: z.string(),
   alt: z.string().min(1, "Rule 5: every media needs an alt"),
@@ -128,6 +130,7 @@ const skill = z.object({
   aliases: z.array(z.string()),
   level: z.enum(["core", "working", "familiar"]),
   periods: z.array(skillPeriod).optional(),
+  relatedIds: z.array(z.string()).optional(),
   active: z.boolean(),
   visibility,
 }).strict();
@@ -174,6 +177,7 @@ const role = z.object({
 }).strict();
 
 const technicalDecision = z.object({
+  id: z.string(),
   decision: z.string(),
   context: z.string(),
   rationale: z.string(),
@@ -386,6 +390,16 @@ export function checkRules(data: ContentDataset): RuleViolation[] {
     for (const sid of a.skillIds) {
       if (!skillIds.has(sid)) {
         violations.push({ rule: 0, message: `Achievement "${a.id}" references a skill that does not exist: ${sid}` });
+      }
+    }
+  }
+
+  for (const s of data.skills) {
+    for (const sid of s.relatedIds ?? []) {
+      if (sid === s.id) {
+        violations.push({ rule: 0, message: `Skill "${s.id}" lists itself in relatedIds.` });
+      } else if (!skillIds.has(sid)) {
+        violations.push({ rule: 0, message: `Skill "${s.id}" relatedIds points at a skill that does not exist: ${sid}` });
       }
     }
   }

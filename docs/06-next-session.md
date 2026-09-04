@@ -2,10 +2,12 @@
 
 Rewritten 2026-08-26, after finishing phase 1 and the English migration.
 
-**The infrastructure is closed.** Public site at
+**The infrastructure is closed, and so is the code debt.** Public site at
 `https://cribbnicolas.pages.dev`, PDF on demand, analytics measuring, social
-metadata published, and the `feature/*` → `develop` → `staging` → `main` flow
-enforced by rulesets and by two workflows of our own. Detail in
+metadata published, bilingual surfaces shipped, and the `feature/*` →
+`develop` → `staging` → `main` flow enforced by rulesets and by two workflows
+of our own. [`07`](./07-technical-debt.md) is 42/42. What this document still
+orders is product and data the author has to fill. Detail in
 [`05`](./05-deploy-and-analytics.md) and
 [`08`](./08-branches-and-versioning.md).
 
@@ -19,15 +21,16 @@ Three phases. **The order matters and is not arbitrary.**
 |---|---|---|
 | **1** | Social metadata + the technical debt that does not touch data creation | What moves the needle most per hour. Sharing the link used to give a bare URL. **Done** |
 | **2** | `pnpm run editor` | It needs the schema to be still. Touched earlier, it gets done twice. **Done** |
-| **3** | The debt that does touch data creation, and whatever is left | Resolved with the editor in sight, not before |
+| **3** | The debt that does touch data creation, and whatever is left | Resolved with the editor in sight, not before. **Done** |
 
-**The rule separating phase 1 from phase 3:** anything to do with **how the CV
-data is created or modelled** waits for the editor. Fixing it earlier guarantees
-it gets touched again.
+**The rule that separated phase 1 from phase 3:** anything to do with **how
+the CV data is created or modelled** waited for the editor. Fixing it earlier
+would have guaranteed it got touched again. Both sides of that rule are now
+behind us: the editor exists and the debt that waited for it is closed.
 
 ---
 
-## 1. Phase 1 — done, with a residue
+## 1. Phase 1 — done
 
 Social metadata ([`07`](./07-technical-debt.md) §17 and §18), the 404, robots,
 the sitemap, the favicon and `served.check.ts` are all closed. So is the English
@@ -147,16 +150,24 @@ Editing from a phone. Deliberately discarded — §4.
 
 ---
 
-## 3. Phase 3 — closing
+## 3. Phase 3 — closed
 
-- **[`07`](./07-technical-debt.md) §7** — `/cv.json` publishes `publishPhoneOn`
-  and 40 `visibility` + 40 `priority`. It is a new projection for the
-  `public-api` surface, not a filter: the output type has to differ from the
-  internal surfaces'. **With the editor done**, because by then it will be clear
-  which fields are really internal.
-- **[`07`](./07-technical-debt.md) §6** — the Function is not tested end to end
-  locally. Decide whether it is worth a tunnel or accept it and close the entry.
-- Whatever turned up along the way.
+The original two bullets of this phase, and everything that turned up along
+the way, are done:
+
+- **[`07`](./07-technical-debt.md) §7** — closed in 0.20.0. `Viewed<T>` projects
+  every surface; `/cv.json` no longer publishes `visibility`, `priority`,
+  `publishPhoneOn` or `Metric.source`.
+- **[`07`](./07-technical-debt.md) §6** — accepted in 0.21.0. The smoke is the
+  E2E; a tunnel is not worth it. §28 (the write-queue Map never evicts) was
+  accepted in the same pass.
+
+Editor internals, the i18n walker and the bilingual leftovers closed in the
+five waves of
+[`2026-09-03-close-technical-debt`](./superpowers/plans/2026-09-03-close-technical-debt.md)
+(PRs #26–#29, 0.22.0–0.25.0). That plan is finished; do not execute it.
+[`07`](./07-technical-debt.md) is 42/42. New code-debt findings append there
+as #43+. Product and data remaining live in §4 and §5 below.
 
 ---
 
@@ -236,8 +247,15 @@ Evaluated 2026-08-25 under the constraint of keeping the stack free.
 **Adopting it later costs the same as today:** writing `sanity-source.ts` and
 changing one line in `content/source/index.ts`. That option does not expire.
 
-**Decided NOT to do:** an English dataset. Translating a CV produces translated
-English, which is worse than written English.
+**Reversed 2026-09-02.** An English dataset now exists (`content.en.json`),
+with `/en/`, `/en/cv` and `/en/cv.pdf` as real, shipped routes. The worry
+behind the original call was real — translating a CV tends to produce
+translated English, worse than written English — but the answer turned out to
+be discipline, not avoidance: Spanish stays canonical, English is drafted by
+hand from it rather than machine-translated, and `translation.lock.json` flags
+every Spanish field that moved since its English counterpart was last edited,
+so a stale translation cannot publish silently. Workflow, and why the lock
+only checks one direction, in [`10-i18n.md`](./10-i18n.md).
 
 ---
 
@@ -259,6 +277,9 @@ audit:todos     9 published TODOs (missing data, not failures)
 Consumption against the ceilings: see the table in the
 [`README`](../README.md#limits-and-ceilings).
 
-Technical debt: **36 entries, 22 resolved.** Phase 3 still holds §6 and §7.
-The rest of the open list is low or negligible editor internals. See
-[`07`](./07-technical-debt.md).
+Technical debt as of 2026-09-03 (`0.25.0`): **42 of 42 resolved.** The five
+waves of
+[`2026-09-03-close-technical-debt`](./superpowers/plans/2026-09-03-close-technical-debt.md)
+are closed. The 0.26.0 pass retired leftover "open debt" language from the
+docs; `07` is an archive. What remains is product and data in
+[00-index](./00-index.md) (LinkedIn blocks, case studies, metrics).

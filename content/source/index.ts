@@ -18,6 +18,9 @@ export * from "../schema/content-schema";
 // `src/` imports EVERYTHING from one place and invariant 2 stays true.
 export * from "../schema/format";
 export * from "../schema/format-metric";
+// Chrome copy — section headings, button labels — keyed by locale. What
+// `format.ts` reads to turn a locale into words.
+export * from "../schema/messages";
 // How the skills are grouped and ordered. Shared by the CV and `/llms.txt`,
 // which used to keep two lists that drifted apart.
 export * from "../schema/skill-groups";
@@ -27,3 +30,7 @@ export * from "../schema/skill-groups";
 // browser.
 export * from "../schema/knowledge-graph";
 export * from "../schema/graph-layout";
+
+// The PDF's file name is text derived from the data, same as a duration.
+// `functions/` imports it directly: a Worker has no `@content` alias.
+export * from "../schema/pdf-filename";

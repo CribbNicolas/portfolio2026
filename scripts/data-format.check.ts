@@ -1,5 +1,5 @@
 /**
- * The committed dataset is in canonical form.
+ * Every committed dataset is in canonical form.
  *
  * Without this the format holds only while the editor is the only writer, and
  * it will not be: the file is still edited by hand, and a merge can resolve a
@@ -20,19 +20,23 @@ import { readFile } from "node:fs/promises";
 
 import type { ContentDataset } from "../content/schema/content-schema";
 import { serializeDataset } from "../editor/serialize";
+import { DATASET_FILES } from "../editor/store";
 
-const FILE = "content/data/content.es.json";
-const raw = (await readFile(FILE, "utf8")).replace(/\r\n/g, "\n");
+// The list comes from `store.ts`, the same one `format:data` writes. Kept apart,
+// a new locale would be a file the gate silently never looks at.
+for (const file of DATASET_FILES) {
+  const raw = (await readFile(file, "utf8")).replace(/\r\n/g, "\n");
 
-test("the dataset parses", () => {
-  assert.doesNotThrow(() => JSON.parse(raw), `${FILE} is not valid JSON`);
-});
+  test(`${file} parses`, () => {
+    assert.doesNotThrow(() => JSON.parse(raw), `${file} is not valid JSON`);
+  });
 
-test("the dataset is written in canonical form", () => {
-  const expected = serializeDataset(JSON.parse(raw) as ContentDataset);
-  assert.equal(
-    raw,
-    expected,
-    `${FILE} is not in canonical form. Run \`pnpm run format:data\` and commit the result.`,
-  );
-});
+  test(`${file} is written in canonical form`, () => {
+    const expected = serializeDataset(JSON.parse(raw) as ContentDataset);
+    assert.equal(
+      raw,
+      expected,
+      `${file} is not in canonical form. Run \`pnpm run format:data\` and commit the result.`,
+    );
+  });
+}

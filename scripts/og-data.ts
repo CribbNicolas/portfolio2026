@@ -14,9 +14,13 @@ import { createHash } from "node:crypto";
 // Invariant 2: the view comes from `content/source/index.ts`, never from the
 // implementation. It is the line that changes the day the backend is another.
 import { content, formatSeniority } from "../content/source/index";
+import type { Locale } from "../content/schema/content-schema";
 
 export const PHOTO = "public/foto.jpeg";
-export const IMAGE = "public/og.jpg";
+export const IMAGE: Record<Locale, string> = {
+  es: "public/og.jpg",
+  en: "public/og.en.jpg",
+};
 export const ICON = "public/apple-touch-icon.png";
 export const TEMPLATE = "scripts/og-template.ts";
 /** The brand geometry. It enters the fingerprint: both artifacts draw it. */
@@ -24,8 +28,8 @@ export const BRAND = "src/lib/brand.ts";
 export const LOCK = "og.lock.json";
 
 /** The card texts, all derived from the dataset. Nothing written by hand. */
-export async function ogTexts(): Promise<Record<string, string>> {
-  const view = await content.getView("portfolio", "es");
+export async function ogTexts(locale: Locale): Promise<Record<string, string>> {
+  const view = await content.getView("portfolio", locale);
   const { identity } = view;
   return {
     name: identity.fullName,
@@ -33,17 +37,17 @@ export async function ogTexts(): Promise<Record<string, string>> {
     // The same line the landing hero builds. Seniority is DERIVED (invariant
     // 3): `formatSeniority` over the years the view already computed, never a
     // number written here.
-    role: `${identity.searchTitle} · ${formatSeniority(view.yearsOfExperience)} · ${identity.location.city}, ${identity.location.country}`,
+    role: `${identity.searchTitle} · ${formatSeniority(view.yearsOfExperience, locale)} · ${identity.location.city}, ${identity.location.country}`,
   };
 }
 
 /**
  * The fingerprint of everything visible on the card.
  *
- * `public/og.jpg` is a committed artifact: if an input changes and nobody
- * regenerates it, the site says one thing and the image LinkedIn sees says
- * another, with nothing failing. This number is what turns that silence into a
- * red test.
+ * `public/og.jpg` and `public/og.en.jpg` are committed artifacts: if an input
+ * changes and nobody regenerates them, the site says one thing and the image
+ * LinkedIn sees says another, with nothing failing. This number is what turns
+ * that silence into a red test.
  *
  * It includes the template source AND `brand.ts` on purpose: retouching the
  * design, or adjusting a curve of the logo, also invalidates the artifacts —

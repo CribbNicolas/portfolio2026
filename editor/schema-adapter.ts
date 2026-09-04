@@ -36,22 +36,32 @@ export class UnsupportedSchemaError extends Error {
 // The `_def` surface. Every access to it lives below this banner.
 // ---------------------------------------------------------------------------
 
-interface ZodDef {
-  typeName: string;
-  [key: string]: unknown;
-}
-
-const defOf = (schema: ZodTypeAny): ZodDef =>
-  (schema as unknown as { _def: ZodDef })._def;
-
 interface StringCheck {
   kind: string;
   value?: number;
   regex?: RegExp;
 }
 
-function readString(def: ZodDef, flags: DescriptorFlags): StringDescriptor {
-  const checks = (def.checks as StringCheck[] | undefined) ?? [];
+type ZodDef =
+  | { typeName: "ZodOptional"; innerType: ZodTypeAny }
+  | { typeName: "ZodNullable"; innerType: ZodTypeAny }
+  | { typeName: "ZodString"; checks?: StringCheck[] }
+  | { typeName: "ZodNumber" }
+  | { typeName: "ZodBoolean" }
+  | { typeName: "ZodEnum"; values: unknown[] }
+  | { typeName: "ZodLiteral"; value: unknown }
+  | { typeName: "ZodUnion"; options: ZodTypeAny[] }
+  | { typeName: "ZodArray"; type: ZodTypeAny }
+  | { typeName: "ZodObject"; unknownKeys: string; shape: () => Record<string, ZodTypeAny> };
+
+const defOf = (schema: ZodTypeAny): ZodDef =>
+  (schema as unknown as { _def: ZodDef })._def;
+
+function readString(
+  def: Extract<ZodDef, { typeName: "ZodString" }>,
+  flags: DescriptorFlags,
+): StringDescriptor {
+  const checks = def.checks ?? [];
   // Typed as StringDescriptor, not Descriptor: the union has no `minLength`,
   // so assigning through it does not compile.
   const descriptor: StringDescriptor = { kind: "string", ...flags };
@@ -76,9 +86,9 @@ function read(schema: ZodTypeAny, flags: DescriptorFlags, path: string): Descrip
 
   switch (def.typeName) {
     case "ZodOptional":
-      return read(def.innerType as ZodTypeAny, { ...flags, optional: true }, path);
+      return read(def.innerType, { ...flags, optional: true }, path);
     case "ZodNullable":
-      return read(def.innerType as ZodTypeAny, { ...flags, nullable: true }, path);
+      return read(def.innerType, { ...flags, nullable: true }, path);
 
     case "ZodString":
       return readString(def, flags);
@@ -96,8 +106,7 @@ function read(schema: ZodTypeAny, flags: DescriptorFlags, path: string): Descrip
       // The dataset writes `visibility.priority` as a union of the literals
       // 1..5, not as an enum: without this branch the most edited field in the
       // whole schema has no descriptor.
-      const options = def.options as ZodTypeAny[];
-      const values = options.map((option) => {
+      const values = def.options.map((option) => {
         const optionDef = defOf(option);
         if (optionDef.typeName !== "ZodLiteral") {
           throw new UnsupportedSchemaError(
@@ -112,7 +121,7 @@ function read(schema: ZodTypeAny, flags: DescriptorFlags, path: string): Descrip
     case "ZodArray":
       return {
         kind: "array",
-        element: read(def.type as ZodTypeAny, { optional: false, nullable: false }, `${path}[]`),
+        element: read(def.type, { optional: false, nullable: false }, `${path}[]`),
         ...flags,
       };
 
@@ -122,7 +131,7 @@ function read(schema: ZodTypeAny, flags: DescriptorFlags, path: string): Descrip
           `${path}: object is not .strict(). Every object in this schema is strict on purpose — an undeclared key must throw, not be dropped.`,
         );
       }
-      const shape = (def.shape as () => Record<string, ZodTypeAny>)();
+      const shape = def.shape();
       const fields: ObjectField[] = Object.entries(shape).map(([key, value]) => ({
         key,
         descriptor: read(value, { optional: false, nullable: false }, path ? `${path}.${key}` : key),
@@ -130,16 +139,33 @@ function read(schema: ZodTypeAny, flags: DescriptorFlags, path: string): Descrip
       return { kind: "object", fields, ...flags };
     }
 
-    default:
+    default: {
+      const unexpected = def as { typeName: string };
       throw new UnsupportedSchemaError(
-        `${path}: ${def.typeName} is not described by the adapter. Add a branch for it, or check whether a zod upgrade renamed it.`,
+        `${path}: ${unexpected.typeName} is not described by the adapter. Add a branch for it, or check whether a zod upgrade renamed it.`,
       );
+    }
   }
 }
 
 /** zod schema → the descriptor tree. The only entry point. */
 export function describe(schema: ZodTypeAny): Descriptor {
   return read(schema, { optional: false, nullable: false }, "$");
+}
+
+/**
+ * `describe`, narrowed to an object. The dataset schema is a `z.object()`,
+ * but `describe` returns the whole `Descriptor` union, and a cast would let
+ * a typo'd top-level kind compile. Throw instead.
+ */
+export function describeObject(schema: ZodTypeAny): ObjectDescriptor {
+  const described = describe(schema);
+  if (described.kind !== "object") {
+    throw new UnsupportedSchemaError(
+      `dataset schema is ${described.kind}, not object`,
+    );
+  }
+  return described;
 }
 
 // ---------------------------------------------------------------------------
@@ -151,4 +177,4 @@ export function describe(schema: ZodTypeAny): Descriptor {
  * and everything downstream (the serializer's key order, `GET /api/schema`)
  * reads the same instance.
  */
-export const datasetDescriptor = describe(datasetSchema) as ObjectDescriptor;
+export const datasetDescriptor = describeObject(datasetSchema);

@@ -2,9 +2,10 @@
  * The social card: that it exists, that it fits the limits the platforms
  * impose, that it has not gone stale, and that the published HTML points at it.
  *
- * It exists because `public/og.jpg` is a COMMITTED artifact — generated with
- * `pnpm run og:local` and not in the build, because the Cloudflare builder has
- * no Chromium (docs/07 §18). A committed artifact drifts out of sync silently:
+ * It exists because `public/og.jpg` and `public/og.en.jpg` are COMMITTED
+ * artifacts — generated with `pnpm run og:local` and not in the build, because
+ * the Cloudflare builder has no Chromium (closed #18). A committed artifact
+ * drifts out of sync silently:
  * you change the role in the dataset, the site says one thing and the image
  * LinkedIn sees keeps saying the other. Nobody finds out until someone shares
  * the link.
@@ -22,15 +23,22 @@ import { join } from "node:path";
 import { RING_PATH } from "../src/lib/brand";
 import { PHOTO, fingerprint, ICON, IMAGE, LOCK, BRAND, TEMPLATE, ogTexts } from "./og-data";
 import { ICON_SIDE, OG_HEIGHT, OG_WIDTH, OG_MAX_BYTES } from "./og-template";
+import type { Locale } from "../content/schema/content-schema";
+import { OG_IMAGE_PATH } from "../src/lib/anchors";
 
-const jpeg = await readFile(IMAGE);
+const LOCALES: Locale[] = ["es", "en"];
+const jpegs: Record<Locale, Buffer> = {
+  es: await readFile(IMAGE.es),
+  en: await readFile(IMAGE.en),
+};
 const lock = JSON.parse(await readFile(LOCK, "utf8")) as {
-  fingerprint: string;
+  fingerprint: Record<Locale, string>;
   width: number;
   height: number;
-  texts: Record<string, string>;
+  texts: Record<Locale, Record<string, string>>;
 };
 const landing = await readFile(join("dist", "index.html"), "utf8");
+const enLanding = await readFile(join("dist", "en", "index.html"), "utf8");
 
 /**
  * The real width and height of the JPEG, read from the SOF marker.
@@ -58,66 +66,69 @@ function measureJpeg(bin: Buffer): { width: number; height: number } {
     }
     i += 2 + bin.readUInt16BE(i + 2);
   }
-  throw new Error(`${IMAGE} does not look like a JPEG: no SOF marker found.`);
+  throw new Error(`JPEG does not look like a JPEG: no SOF marker found.`);
 }
 
-test("the card measures 1200×630", () => {
-  const { width, height } = measureJpeg(jpeg);
-  // 1.91:1 is what Facebook, LinkedIn, WhatsApp, Slack and Discord ask for, and
-  // also Twitter's `summary_large_image`. Outside that ratio each platform crops
-  // on its own and the face ends up cut off in one of them.
-  assert.equal(width, OG_WIDTH, `width ${width}, expected ${OG_WIDTH}`);
-  assert.equal(height, OG_HEIGHT, `height ${height}, expected ${OG_HEIGHT}`);
-});
+for (const locale of LOCALES) {
+  test(`${IMAGE[locale]} measures 1200×630`, () => {
+    const { width, height } = measureJpeg(jpegs[locale]);
+    assert.equal(width, OG_WIDTH, `width ${width}, expected ${OG_WIDTH}`);
+    assert.equal(height, OG_HEIGHT, `height ${height}, expected ${OG_HEIGHT}`);
+  });
 
-test("the card fits WhatsApp's weight ceiling", () => {
-  assert.ok(
-    jpeg.byteLength <= OG_MAX_BYTES,
-    `og.jpg weighs ${(jpeg.byteLength / 1024).toFixed(0)} KB and the ceiling is ${OG_MAX_BYTES / 1024} KB. ` +
-      `Past that point WhatsApp does not show the preview: lower QUALITY in scripts/build-og.ts.`,
-  );
-});
+  test(`${IMAGE[locale]} fits WhatsApp's weight ceiling`, () => {
+    assert.ok(
+      jpegs[locale].byteLength <= OG_MAX_BYTES,
+      `${IMAGE[locale]} weighs ${(jpegs[locale].byteLength / 1024).toFixed(0)} KB and the ceiling is ${OG_MAX_BYTES / 1024} KB. ` +
+        `Past that point WhatsApp does not show the preview: lower QUALITY in scripts/build-og.ts.`,
+    );
+  });
+}
 
-test("the card has not gone stale: the fingerprint matches the dataset", async () => {
-  const texts = await ogTexts();
+test("the cards have not gone stale: the fingerprints match the dataset", async () => {
   const photo = await readFile(PHOTO);
   const template = await readFile(TEMPLATE);
   const brand = await readFile(BRAND);
-
-  assert.equal(
-    fingerprint(texts, photo, template, brand),
-    lock.fingerprint,
-    "The dataset, the photo, the template or the brand changed, and the artifacts are still the old ones.\n" +
-      "Run `pnpm run og:local` and commit og.jpg + apple-touch-icon.png together with og.lock.json.",
-  );
+  for (const locale of LOCALES) {
+    const texts = await ogTexts(locale);
+    assert.equal(
+      fingerprint(texts, photo, template, brand),
+      lock.fingerprint[locale],
+      `${IMAGE[locale]} is stale. Run \`pnpm run og:local\` and commit both JPEGs with og.lock.json.`,
+    );
+  }
 });
 
 test("the card texts come from the dataset", async () => {
-  // The fingerprint matching is not enough: if someone edits the lock by hand
-  // to silence the previous test, this catches it again against the real source.
-  assert.deepEqual(lock.texts, await ogTexts());
+  assert.deepEqual(lock.texts.es, await ogTexts("es"));
+  assert.deepEqual(lock.texts.en, await ogTexts("en"));
 });
 
-test("the landing publishes an absolute og:image with its dimensions", () => {
-  // Absolute and not relative: no scraper resolves relative paths, and an
-  // `og:image` that cannot be fetched is the same as having none.
-  const image = landing.match(/<meta property="og:image" content="([^"]+)"/);
-  assert.ok(image, "og:image missing from the landing");
-  assert.match(image[1], /^https?:\/\/\S+\/og\.jpg$/, `og:image is not absolute: ${image[1]}`);
-
-  // LinkedIn and Slack reserve the space with these two before downloading the
-  // image. Without them the card jumps size once it finishes loading.
-  assert.match(landing, new RegExp(`<meta property="og:image:width" content="${OG_WIDTH}"`));
-  assert.match(landing, new RegExp(`<meta property="og:image:height" content="${OG_HEIGHT}"`));
-  assert.match(landing, /<meta property="og:image:alt" content="[^"]+"/, "og:image with no alt");
+test("each landing publishes its own absolute og:image with dimensions", () => {
+  for (const [name, html, locale] of [
+    ["Spanish", landing, "es"],
+    ["English", enLanding, "en"],
+  ] as const) {
+    const image = html.match(/<meta property="og:image" content="([^"]+)"/);
+    assert.ok(image, `og:image missing from the ${name} landing`);
+    assert.match(image[1], /^https?:\/\//, `${name} og:image is not absolute: ${image[1]}`);
+    assert.ok(image[1].endsWith(OG_IMAGE_PATH[locale]), `${name} og:image is not ${OG_IMAGE_PATH[locale]}: ${image[1]}`);
+    assert.match(html, new RegExp(`<meta property="og:image:width" content="${OG_WIDTH}"`));
+    assert.match(html, new RegExp(`<meta property="og:image:height" content="${OG_HEIGHT}"`));
+    assert.match(html, /<meta property="og:image:alt" content="[^"]+"/, `${name} og:image with no alt`);
+  }
 });
 
 test("Twitter asks for the large card, not the small one", () => {
-  // `summary` reserves a small square beside the text. Now that there is a
-  // 1.91:1 image, the right one is `summary_large_image`: left on `summary`,
-  // Twitter would crop the card into a little square.
-  assert.match(landing, /<meta name="twitter:card" content="summary_large_image"/);
-  assert.match(landing, /<meta name="twitter:image" content="https?:\/\/\S+\/og\.jpg"/);
+  for (const [name, html, locale] of [
+    ["Spanish", landing, "es"],
+    ["English", enLanding, "en"],
+  ] as const) {
+    assert.match(html, /<meta name="twitter:card" content="summary_large_image"/);
+    const twitter = html.match(/<meta name="twitter:image" content="([^"]+)"/);
+    assert.ok(twitter, `${name} twitter:image missing`);
+    assert.ok(twitter[1].endsWith(OG_IMAGE_PATH[locale]), `${name} twitter:image is not ${OG_IMAGE_PATH[locale]}`);
+  }
 });
 
 test("/cv still emits no social tags", async () => {

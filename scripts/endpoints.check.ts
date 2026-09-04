@@ -21,128 +21,133 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 
-import { content, formatRoleTitle, groupedSkills } from "../content/source/index";
+import { content, formatRoleTitle, groupedSkills, MESSAGES } from "../content/source/index";
+import { LOCALE_PATHS } from "../src/lib/anchors";
 
 const DIST = "dist";
-const rawJson = await readFile(join(DIST, "cv.json"), "utf8");
-const llms = await readFile(join(DIST, "llms.txt"), "utf8");
+
+async function readDist(urlPath: string): Promise<string> {
+  // `/cv.json` → `dist/cv.json`; `/en/llms.txt` → `dist/en/llms.txt`.
+  return readFile(join(DIST, ...urlPath.replace(/^\//, "").split("/")), "utf8");
+}
+
+const rawJsonEs = await readDist(LOCALE_PATHS.es.json);
+const rawJsonEn = await readDist(LOCALE_PATHS.en.json);
+const llmsEs = await readDist(LOCALE_PATHS.es.llms);
+const llmsEn = await readDist(LOCALE_PATHS.en.llms);
 
 // ---------------------------------------------------------------------------
 // /cv.json
 // ---------------------------------------------------------------------------
 
-test("/cv.json parses", () => {
-  // First and dumbest: everything below assumes it does.
-  assert.doesNotThrow(() => JSON.parse(rawJson), "dist/cv.json is not valid JSON");
-});
+function parseJson(raw: string, label: string): Record<string, unknown> {
+  assert.doesNotThrow(() => JSON.parse(raw), `${label} is not valid JSON`);
+  return JSON.parse(raw) as Record<string, unknown>;
+}
 
-const cv = JSON.parse(rawJson) as Record<string, unknown>;
+const cvEs = parseJson(rawJsonEs, LOCALE_PATHS.es.json);
+const cvEn = parseJson(rawJsonEn, LOCALE_PATHS.en.json);
 
-test("/cv.json carries the keys the contract promises", () => {
-  // The keys of `ContentView` (CONTRACT §2). If one disappears because a
-  // generator changed, whoever consumes this finds out by getting `undefined`.
-  const expected = [
-    "surface", "identity", "experience", "projects", "skills",
-    "education", "certifications", "languages", "services", "testimonials",
-    "yearsOfExperience",
-  ];
-  const missing = expected.filter((k) => !(k in cv));
-  assert.deepEqual(missing, [], `/cv.json is missing: ${missing.join(", ")}`);
-});
+const CONTRACT_KEYS = [
+  "surface", "locale", "identity", "experience", "projects", "skills",
+  "education", "certifications", "languages", "services", "testimonials",
+  "yearsOfExperience",
+];
 
-test("/cv.json is the public-api surface, not another one", () => {
-  // If it were serving `portfolio`, rule 8 would not have been applied and the
-  // private contact data would be in a public JSON.
-  assert.equal(cv.surface, "public-api", `/cv.json declares surface "${cv.surface}"`);
-});
+for (const [locale, cv, path] of [
+  ["es", cvEs, LOCALE_PATHS.es.json],
+  ["en", cvEn, LOCALE_PATHS.en.json],
+] as const) {
+  test(`${path} carries the keys the contract promises`, () => {
+    const missing = CONTRACT_KEYS.filter((k) => !(k in cv));
+    assert.deepEqual(missing, [], `${path} is missing: ${missing.join(", ")}`);
+  });
 
-test("rule 8: /cv.json publishes neither phone nor street address", async () => {
-  // `resolveView` already filters them. This verifies the filter survived the
-  // trip to `dist/`, which is the part no unit test sees.
-  const identity = cv.identity as Record<string, Record<string, unknown>>;
-  assert.equal(identity.contact.phone, undefined, "the phone number is in /cv.json");
-  assert.equal(identity.location.streetAddress, undefined, "the street address is in /cv.json");
+  test(`${path} is the public-api surface in ${locale}`, () => {
+    assert.equal(cv.surface, "public-api", `${path} declares surface "${cv.surface}"`);
+    assert.equal(cv.locale, locale, `${path} declares locale "${cv.locale}"`);
+  });
 
-  // And that it is not simply empty because the dataset has nothing to hide:
-  // the filter has to be what removes it.
-  const data = await content.getDataset("es");
-  if (data.identity.contact.phone) {
-    assert.notEqual(
-      JSON.stringify(cv).includes(data.identity.contact.phone),
-      true,
-      "the dataset's phone number appears somewhere in /cv.json",
-    );
-  }
-});
+  test(`rule 8: ${path} publishes neither phone nor street address`, async () => {
+    const identity = cv.identity as Record<string, Record<string, unknown>>;
+    assert.equal(identity.contact.phone, undefined, `the phone number is in ${path}`);
+    assert.equal(identity.location.streetAddress, undefined, `the street address is in ${path}`);
 
-test("/cv.json says the same as the view it comes from", async () => {
-  // Not a snapshot: it compares against the derivation. A snapshot would need
-  // updating on every content change and would stop being read.
-  const view = await content.getView("public-api", "es");
-  assert.equal((cv.experience as unknown[]).length, view.experience.length);
-  assert.equal((cv.projects as unknown[]).length, view.projects.length);
-  assert.equal(cv.yearsOfExperience, view.yearsOfExperience);
-});
+    const data = await content.getDataset(locale);
+    if (data.identity.contact.phone) {
+      assert.notEqual(
+        JSON.stringify(cv).includes(data.identity.contact.phone),
+        true,
+        `the dataset's phone number appears somewhere in ${path}`,
+      );
+    }
+  });
+
+  test(`${path} says the same as the view it comes from`, async () => {
+    const view = await content.getView("public-api", locale);
+    assert.equal((cv.experience as unknown[]).length, view.experience.length);
+    assert.equal((cv.projects as unknown[]).length, view.projects.length);
+    assert.equal(cv.yearsOfExperience, view.yearsOfExperience);
+  });
+}
 
 // ---------------------------------------------------------------------------
 // /llms.txt
 // ---------------------------------------------------------------------------
 
-test("/llms.txt has the sections an agent looks for", () => {
-  for (const heading of ["# ", "## Contacto", "## Stack", "## Experiencia", "## Proyectos"]) {
-    assert.ok(llms.includes(heading), `/llms.txt is missing the "${heading.trim()}" section`);
-  }
-});
+for (const [locale, llms, path] of [
+  ["es", llmsEs, LOCALE_PATHS.es.llms],
+  ["en", llmsEn, LOCALE_PATHS.en.llms],
+] as const) {
+  const m = MESSAGES[locale];
 
-test("/llms.txt has no empty fields", () => {
-  // The failure mode: a template that assembles `- Label: ${value}` with an
-  // undefined value. The endpoint still answers 200 and the line reads as if
-  // the datum were empty rather than missing.
-  const offenders = llms
-    .split("\n")
-    .map((line, i) => [i + 1, line] as const)
-    .filter(([, line]) => /^(-|###?)\s*[^:]*:\s*$/.test(line) || /:\s*(undefined|null)\b/.test(line))
-    .map(([n, line]) => `${n}: ${line.trim()}`);
+  test(`${path} has the sections an agent looks for`, () => {
+    for (const heading of [
+      "# ",
+      `## ${m.llmsContact}`,
+      `## ${m.llmsStack}`,
+      `## ${m.llmsExperience}`,
+      `## ${m.llmsProjects}`,
+    ]) {
+      assert.ok(llms.includes(heading), `${path} is missing the "${heading.trim()}" section`);
+    }
+  });
 
-  assert.deepEqual(offenders, [], `/llms.txt has empty or undefined fields:\n  ${offenders.join("\n  ")}`);
-});
+  test(`${path} has no empty fields`, () => {
+    const offenders = llms
+      .split("\n")
+      .map((line, i) => [i + 1, line] as const)
+      .filter(([, line]) => /^(-|###?)\s*[^:]*:\s*$/.test(line) || /:\s*(undefined|null)\b/.test(line))
+      .map(([n, line]) => `${n}: ${line.trim()}`);
 
-test("/llms.txt prints role titles whole", async () => {
-  // This is the bug that already got through: `formatRoleTitle` is what adds
-  // the "(en paralelo)" of rule 2, and building the heading by hand loses it.
-  const view = await content.getView("public-api", "es");
-  for (const role of view.experience) {
-    const title = formatRoleTitle(role);
-    assert.ok(
-      llms.includes(title),
-      `the role title "${title}" does not appear whole in /llms.txt`,
-    );
-  }
-});
+    assert.deepEqual(offenders, [], `${path} has empty or undefined fields:\n  ${offenders.join("\n  ")}`);
+  });
 
-test("/llms.txt groups the skills the same way the CV does", async () => {
-  // Both surfaces read `groupedSkills`. Before that they kept two lists: the CV
-  // printed `Lenguajes:` in editorial order and this one `- language:` in
-  // insertion order, so an agent comparing them saw two taxonomies (§9).
-  const view = await content.getView("public-api", "es");
-  for (const { label, skills } of groupedSkills(view.skills)) {
-    assert.ok(
-      llms.includes(`- ${label}: `),
-      `/llms.txt does not print the "${label}" group`,
-    );
-    assert.ok(
-      llms.includes(skills[0]!.name),
-      `"${skills[0]!.name}" is missing from the "${label}" group`,
-    );
-  }
-});
+  test(`${path} prints role titles whole`, async () => {
+    const view = await content.getView("public-api", locale);
+    for (const role of view.experience) {
+      const title = formatRoleTitle(role, locale);
+      assert.ok(llms.includes(title), `the role title "${title}" does not appear whole in ${path}`);
+    }
+  });
 
-test("no dataset TODO reaches /llms.txt as a bare field", () => {
-  // TODOs in the prose are expected and reported by `audit:todos` without
-  // blocking. What must not happen is a heading or a label whose entire value is
-  // a TODO: that is a structural hole, not missing content.
-  const offenders = llms
-    .split("\n")
-    .filter((line) => /^(###?|-\s*[^:]+:)\s*TODO/.test(line.trim()));
-  assert.deepEqual(offenders, [], `/llms.txt has TODO as a whole field:\n  ${offenders.join("\n  ")}`);
+  test(`${path} groups the skills the same way the CV does`, async () => {
+    const view = await content.getView("public-api", locale);
+    for (const { label, skills } of groupedSkills(view.skills, locale)) {
+      assert.ok(llms.includes(`- ${label}: `), `${path} does not print the "${label}" group`);
+      assert.ok(llms.includes(skills[0]!.name), `"${skills[0]!.name}" is missing from the "${label}" group`);
+    }
+  });
+
+  test(`no dataset TODO reaches ${path} as a bare field`, () => {
+    const offenders = llms
+      .split("\n")
+      .filter((line) => /^(###?|-\s*[^:]+:)\s*TODO/.test(line.trim()));
+    assert.deepEqual(offenders, [], `${path} has TODO as a whole field:\n  ${offenders.join("\n  ")}`);
+  });
+}
+
+test("the English llms.txt is not a Spanish file under an English URL", () => {
+  assert.equal(llmsEn.includes(`## ${MESSAGES.es.llmsExperience}`), false);
+  assert.ok(llmsEn.includes(`## ${MESSAGES.en.llmsExperience}`));
 });

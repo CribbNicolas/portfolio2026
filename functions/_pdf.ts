@@ -1,23 +1,37 @@
 /**
- * The pure pieces of `functions/cv.pdf.ts`.
+ * The pure pieces shared by `functions/cv.pdf.ts` and `functions/en/cv.pdf.ts`.
  *
  * It lives with a leading underscore on purpose: Cloudflare Pages excludes
  * anything starting with `_` from routing, so this file can be imported without
- * showing up as a public URL. The handler keeps the part that touches network
- * and cache; everything decidable without I/O lives here, and that is why it
- * has tests (`_pdf.test.ts`) with no Worker to start.
+ * showing up as a public URL. The handler (`_handler.ts`) keeps the part that
+ * touches network and cache; everything decidable without I/O lives here, and
+ * that is why it has tests (`_pdf.test.ts`) with no Worker to start.
  */
 
+import type { Locale } from "../content/schema/content-schema";
 import { PDF_OPTIONS, LOAD_WAIT } from "../scripts/pdf-options";
+// Relative imports, not `@content`: a Cloudflare Worker build does not resolve
+// that alias, only `astro build` does. Neither `pdf-filename.ts` nor
+// `messages.ts` depends on the rest of the content layer, so importing them
+// directly costs nothing — and both datasets are imported for ONE field each
+// (`updatedAt`), same reasoning as before the split.
+import datasetEs from "../content/data/content.es.json";
+import datasetEn from "../content/data/content.en.json";
+import { pdfFilename } from "../content/schema/pdf-filename";
+import { sourcePath } from "../src/lib/anchors";
+// Re-export so existing callers (`_pdf.test.ts`, `pdf-check-locales.ts`) keep
+// one import. The definition lives next to ANCHORS: a third locale is a
+// compile error in that table, not a ternary that silently returns English.
+export { sourcePath };
 
 /**
- * The page that gets printed. It is the SAME one `scripts/build-pdf.ts` prints
- * locally: one layout, `src/pages/cv.astro`, and both PDFs come out of it.
+ * The name it is saved under, from THAT locale's own dataset — not the
+ * Spanish one for both. The filename is always derived from `updatedAt`
+ * to keep a file's saved name in sync with its content's date: a drift
+ * (name vs content) has to be fixed in the data, not by rotating an env var.
  */
-export const SOURCE_PATH = "/cv";
-
-/** The name it is saved under when `PDF_FILENAME` is not configured. */
-export const DEFAULT_FILENAME = "cv.pdf";
+export const defaultFilename = (locale: Locale): string =>
+  pdfFilename(locale, (locale === "es" ? datasetEs : datasetEn).updatedAt);
 
 /**
  * One hour. The dataset changes per deploy, not per minute, and every miss eats
@@ -42,10 +56,14 @@ export function browserRenderingEndpoint(account: string): string {
  * production when it runs in production, with no per-environment config. A
  * hard-coded `SITE_URL` would make a branch's smoke test main's PDF, which is
  * exactly the bug the smoke exists to catch.
+ *
+ * `pdfOptions`/`gotoOptions` do not vary by locale — that is the whole reason
+ * `pdf-options.ts` exists as a single source, and the two languages must not
+ * drift from each other any more than the tested and served PDFs may.
  */
-export function requestBody(origin: string): string {
+export function requestBody(origin: string, locale: Locale): string {
   return JSON.stringify({
-    url: new URL(SOURCE_PATH, origin).toString(),
+    url: new URL(sourcePath(locale), origin).toString(),
     pdfOptions: PDF_OPTIONS,
     gotoOptions: { waitUntil: LOAD_WAIT },
   });
@@ -56,7 +74,8 @@ export function requestBody(origin: string): string {
  *
  * The query string is dropped: `/cv.pdf?utm_source=linkedin` is the same PDF as
  * `/cv.pdf`, and without normalizing, every campaign with its own parameter
- * would be a miss — that is, a paid render — per visitor.
+ * would be a miss — that is, a paid render — per visitor. The locale already
+ * lives in the path (`/cv.pdf` vs `/en/cv.pdf`), so the two never collide.
  */
 export function cacheKey(requestedUrl: string): Request {
   const url = new URL(requestedUrl);
@@ -66,11 +85,11 @@ export function cacheKey(requestedUrl: string): Request {
 }
 
 /**
- * `attachment` and not `inline`: the landing button is "Descargar CV".
- * `inline` plus the HTML `download` attribute makes Chrome's download
- * manager report the file as missing, and without `download` the click
- * opens `/cv.pdf` in the tab — which looks like `/cv`. The name still
- * travels, so the save is not a nameless `download.pdf`.
+ * `attachment` and not `inline`: the landing button is "Descargar CV" (or its
+ * English counterpart). `inline` plus the HTML `download` attribute makes
+ * Chrome's download manager report the file as missing, and without
+ * `download` the click opens the PDF in the tab — which looks like `/cv`. The
+ * name still travels, so the save is not a nameless `download.pdf`.
  */
 export function pdfHeaders(filename: string): Headers {
   return new Headers({

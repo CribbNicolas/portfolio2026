@@ -12,15 +12,16 @@
  * The grouping and its order come from `content/schema/skill-groups.ts`, shared
  * with `/llms.txt`. They used to be two separate lists and they diverged.
  */
-import type { ContentView } from "@content";
+import type { ContentView, Locale } from "@content";
 import { groupedSkills } from "@content";
 
 interface Props {
   skills: ContentView["skills"];
+  locale: Locale;
 }
 
-const { skills } = Astro.props;
-const groups = groupedSkills(skills);
+const { skills, locale } = Astro.props;
+const groups = groupedSkills(skills, locale);
 ---
 
 {groups.map(({ label, skills: list }) => (

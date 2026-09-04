@@ -15,14 +15,14 @@
 
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { mkdtemp, readFile, writeFile } from "node:fs/promises";
-import { tmpdir } from "node:os";
+import { readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import type { AddressInfo } from "node:net";
 import { chromium } from "playwright";
 
 import { DatasetStore } from "../editor/store";
 import { createEditorServer } from "../editor/server";
+import { createTempDirs } from "../editor/temp-dir";
 
 const canonical = (await readFile("content/data/content.es.json", "utf8")).replace(/\r\n/g, "\n");
 
@@ -40,7 +40,8 @@ const DATA = JSON.parse(canonical) as {
 const NO_METRIC = DATA.achievements.findIndex((a) => !a.metric);
 const NO_PERIODS = DATA.skills.findIndex((s) => !s.periods);
 
-const dir = await mkdtemp(join(tmpdir(), "editor-page-"));
+const tmp = createTempDirs();
+const dir = await tmp.dir("editor-page-");
 const file = join(dir, "content.es.json");
 await writeFile(file, canonical, "utf8");
 
@@ -268,6 +269,29 @@ test('"add" on an absent optional array creates the array instead of throwing', 
   assert.deepEqual(problems, []);
 });
 
+test("editing an item id updates the sidebar label without rebuilding the nav", async () => {
+  const original = DATA.skills.length;
+  await page.getByRole("button", { name: "skills" }).first().click();
+  await page.getByRole("button", { name: "add skills" }).click();
+  const group = page.locator(".nav__group", { hasText: "skills" });
+  await group.locator(".nav__item").filter({ hasText: new RegExp(`^${original}$`) }).click();
+
+  const idField = page.locator(`.field[data-path="skills.${original}.id"] .control`);
+  await idField.waitFor();
+  await idField.fill("wave1-id-test");
+
+  await group.locator(".nav__item").filter({ hasText: "wave1-id-test" }).waitFor();
+  assert.equal(
+    await page.evaluate(() => document.activeElement?.getAttribute("data-path")
+      ?? document.activeElement?.closest("[data-path]")?.getAttribute("data-path")),
+    `skills.${original}.id`,
+    "updating the sidebar must not steal focus from the field being edited",
+  );
+
+  await page.getByRole("button", { name: "remove this item" }).click();
+  assert.deepEqual(problems, []);
+});
+
 test("no page error was raised by any of the interactions above", () => {
   // The first assertion of `problems` runs before a single click. Everything
   // this smoke actually exercises — navigating, typing, adding, saving —
@@ -281,4 +305,5 @@ test.after(async () => {
   await new Promise<void>((resolve, reject) =>
     server.close((err) => (err ? reject(err) : resolve())),
   );
+  await tmp.cleanup();
 });

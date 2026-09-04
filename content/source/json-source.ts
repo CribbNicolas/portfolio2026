@@ -21,10 +21,12 @@ import type {
 import { validateDataset } from "../schema/validation";
 import { resolveView } from "../schema/resolve-view";
 import datasetEs from "../data/content.es.json";
+import datasetEn from "../data/content.en.json";
 
-/** Datasets available per locale. Add content.en.json here once it exists. */
+/** Datasets available per locale. One file per language; the map is the index. */
 const DATASETS: Partial<Record<Locale, unknown>> = {
   es: datasetEs,
+  en: datasetEn,
 };
 
 export class JsonContentSource implements ContentSource {

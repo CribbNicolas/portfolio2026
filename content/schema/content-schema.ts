@@ -63,6 +63,7 @@ export interface Prose {
 }
 
 export interface Link {
+  id: string;
   label: string;
   url: string;
   /** For the JSON-LD `sameAs` and for the contact block. */
@@ -70,6 +71,7 @@ export interface Link {
 }
 
 export interface Media {
+  id: string;
   kind: "image" | "gif" | "video";
   url: string;
   /** Mandatory: descriptive alt. It is accessibility, and it is signal for agents. */
@@ -172,6 +174,14 @@ export interface Skill {
    * records, it never overrides real evidence.
    */
   periods?: SkillPeriod[];
+  /**
+   * Skills this one extends or is a layer on — Jotai on React, Next.js on
+   * React, TypeScript on JavaScript. The knowledge map draws these as
+   * skill↔skill edges. Sharing a project is NOT enough: that is already a
+   * pair of project→skill edges, and drawing a third one between the two
+   * skills invents a relationship the stack does not have (React ↔ CI/CD).
+   */
+  relatedIds?: string[];
   /** When false it appears in no output. For technologies you left behind. */
   active: boolean;
   visibility: Visibility;
@@ -262,6 +272,7 @@ export interface Role {
 
 /** This is what almost no portfolio has. It is your differentiator. */
 export interface TechnicalDecision {
+  id: string;
   /** "Migrar el build de Webpack a Vite" */
   decision: string;
   /** What problem forced the decision. */
@@ -407,19 +418,59 @@ export interface ContentSource {
   getProject(slug: string, locale: Locale): Promise<Project | null>;
 }
 
+/**
+ * An entity as it LEAVES `resolveView`.
+ *
+ * `visibility` is an authoring decision — which surfaces an item is for, and
+ * how highly you rank it. `resolveView` has already spent it by the time a view
+ * exists, and `/cv.json` publishes whatever the view holds. Removing it from
+ * the type makes invariant 1 a compile error instead of a convention: a
+ * component cannot filter by a field that is not there.
+ */
+export type Viewed<T> = Omit<T, "visibility">;
+
+/** A metric as it leaves the view: `source` is the author's note, not output. */
+export type ViewedMetric = Omit<Metric, "source">;
+
+/** An achievement in a view: no `visibility`, and its metric carries no `source`. */
+export type ViewedAchievement = Viewed<Achievement> & { metric?: ViewedMetric };
+
+/**
+ * A project in a view: no `visibility`, and none of its `metrics` carry
+ * `source` — a project holds a LIST of metrics, not one, so `Viewed<Project>`
+ * alone would still leak the field one level down.
+ */
+export type ViewedProject = Viewed<Project> & { metrics?: ViewedMetric[] };
+
+/** Identity in a view: rule 8 already decided the phone; the policy does not ship. */
+export type ViewedIdentity = Omit<Identity, "contact"> & {
+  contact: Omit<Identity["contact"], "publishPhoneOn">;
+};
+
 /** A dataset already resolved for one concrete surface. */
 export interface ContentView {
   surface: Surface;
-  identity: Identity;
+  /**
+   * Which dataset this view was resolved from. `resolveView` sets it straight
+   * from `data.locale` — it is never chosen independently of the content, so
+   * a component that takes both a `locale` prop and a `view` prop cannot end
+   * up rendering one language's chrome over the other's data (see
+   * `HomeDocument.astro`, which derives `locale` from this field instead of
+   * accepting it as a separate prop for exactly that reason).
+   */
+  locale: Locale;
+  identity: ViewedIdentity;
   /** Roles with their achievements already nested, filtered and ordered. */
-  experience: Array<Role & { achievements: Achievement[]; durationMonths: number }>;
-  projects: Project[];
-  skills: Record<SkillCategory, Skill[]>;
-  education: Education[];
-  certifications: Certification[];
+  experience: Array<
+    Viewed<Role> & { achievements: ViewedAchievement[]; durationMonths: number }
+  >;
+  projects: ViewedProject[];
+  skills: Record<SkillCategory, Viewed<Skill>[]>;
+  education: Viewed<Education>[];
+  certifications: Viewed<Certification>[];
   languages: LanguageSkill[];
-  services: Service[];
-  testimonials: Testimonial[];
+  services: Viewed<Service>[];
+  testimonials: Viewed<Testimonial>[];
   /** Derived from identity.careerStart. Never written by hand. */
   yearsOfExperience: number;
 }

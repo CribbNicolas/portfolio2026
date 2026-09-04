@@ -18,6 +18,7 @@ import { readFile } from "node:fs/promises";
 
 import type { ContentDataset } from "../content/schema/content-schema";
 import { serializeDataset } from "./serialize";
+import { inspectDataset } from "./inspect";
 
 const DATA_FILE = "content/data/content.es.json";
 
@@ -84,7 +85,7 @@ test("rule 5: a skill is one inline object per line", () => {
 });
 
 test("rule 5: links print inline too, even though they are not a top-level collection", () => {
-  assert.match(lineWith('"label": "GitHub"'), /^ {6}\{ "label": "GitHub", .*\},?$/);
+  assert.match(lineWith('"id": "github"'), /^ {6}\{ "id": "github", "label": "GitHub", .*\},?$/);
 });
 
 test("rule 5: visibility is inline wherever it appears", () => {
@@ -113,4 +114,59 @@ test("an empty array is `[]`, not two lines", () => {
 
 test("null survives: an open role has end: null, not a missing key", () => {
   assert.ok(lines.some((l) => l.trim() === '"end": null,'));
+});
+
+test("legal-but-absent shapes round-trip: media, certifications, services, testimonials", () => {
+  // The committed dataset leaves these empty (or, for media, always `[]`).
+  // They are legal in the schema; without a fixture the inline-table entries
+  // for `media` and `certifications` are asserted by no committed test.
+  const filled = structuredClone(dataset);
+  filled.certifications = [
+    {
+      id: "fixture-cert",
+      name: "Fixture cert",
+      issuer: "Nobody",
+      issued: "2020-01",
+      visibility: { priority: 5 },
+    },
+  ];
+  filled.services = [
+    {
+      id: "fixture-service",
+      name: "Fixture service",
+      description: { short: "A synthetic service for the serializer." },
+      idealFor: "this test",
+      deliverables: ["nothing"],
+      visibility: { priority: 5 },
+    },
+  ];
+  filled.testimonials = [
+    {
+      id: "fixture-quote",
+      quote: "Synthetic quote.",
+      author: "A reviewer",
+      authorRole: "nobody",
+      approved: true,
+      visibility: { priority: 5 },
+    },
+  ];
+  const project = filled.projects.find((p) => p.id === "mapas-distritos");
+  assert.ok(project);
+  project.media = [
+    {
+      id: "fixture-shot",
+      kind: "image",
+      url: "https://example.com/map.png",
+      alt: "A choropleth of school districts.",
+    },
+  ];
+
+  const report = inspectDataset(filled);
+  assert.equal(report.ok, true, report.violations.map((v) => v.message).join("; "));
+
+  const once = serializeDataset(filled);
+  assert.deepEqual(JSON.parse(once), filled);
+  assert.equal(serializeDataset(JSON.parse(once) as ContentDataset), once);
+  assert.match(once, /^ {8}\{ "id": "fixture-shot",.*\},?$/m);
+  assert.match(once, /^ {4}\{ "id": "fixture-cert",.*\},?$/m);
 });

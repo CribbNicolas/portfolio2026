@@ -3,7 +3,7 @@
  * The page Cloudflare Pages serves when a route does not exist.
  *
  * It exists to fix a soft 404: without a `dist/404.html`, Pages returned
- * `200 text/html` for any made-up route (technical debt §1, measured on
+ * `200 text/html` for any made-up route (closed #1, measured on
  * 2026-08-25). A crawler asking for a broken URL and receiving "all good, there
  * is a page here" treats the site as low quality. Astro emits this page as
  * `dist/404.html` and Pages serves it with the right status, no further config.
@@ -15,28 +15,36 @@
  * Rendering can print the PDF: it carries `noindex` and zero incoming links,
  * and the reader's destination is the landing's `#cv` anchor. A "looking for
  * the CV?" here would break that promise from the one page nobody reviews.
+ *
+ * One page, both languages. Cloudflare Pages only serves root `404.html`, so
+ * a per-prefix 404 would need a Function, and this page stays at zero JS.
+ * Spanish first (`x-default` / the market is LatAm); English below, `lang="en"`.
  */
 import Base from "../layouts/Base.astro";
+import { ANCHORS, LOCALE_PATHS } from "../lib/anchors";
+import { MESSAGES } from "@content";
+import type { Locale } from "@content";
 
 import "@fontsource/manrope/400.css";
 import "@fontsource/manrope/600.css";
 import "@fontsource/manrope/800.css";
 import "../styles/tokens.css";
 
-/**
- * The same destinations as the landing's index, anchor included: whoever ended
- * up here was looking for something, and these are the three things there are.
- */
-const DESTINATIONS = [
-  { href: "/#mapa", label: "El mapa de conocimiento" },
-  { href: "/#proyectos", label: "Los proyectos" },
-  { href: "/#cv", label: "El CV completo" },
-];
+const DESTINATIONS = (locale: Locale) => {
+  const m = MESSAGES[locale];
+  const home = LOCALE_PATHS[locale].home;
+  const anchors = ANCHORS[locale];
+  return [
+    { href: `${home}#${anchors.map}`, label: m.errorDestMap },
+    { href: `${home}#${anchors.projects}`, label: m.errorDestProjects },
+    { href: `${home}#${anchors.cv}`, label: m.errorDestCv },
+  ];
+};
 ---
 
 <Base
-  title="Esta página no existe"
-  description="La dirección que pediste no corresponde a ninguna página de este sitio."
+  title={MESSAGES.es.errorTitle}
+  description={MESSAGES.es.errorDescription}
 >
   {/*
     Redundant with the 404 status Pages returns, and included anyway: if the
@@ -47,21 +55,23 @@ const DESTINATIONS = [
 
   <main class="error">
     <p class="error__code">404</p>
-    <h1 class="error__title">Esta página no existe</h1>
-    <p class="error__text">
-      La dirección que pediste no corresponde a ninguna página del sitio. Puede
-      que el link estuviera mal copiado, o que apuntara a algo que ya no está.
-    </p>
 
-    <nav class="error__destinations" aria-label="Secciones del sitio">
-      <ul>
-        {DESTINATIONS.map((d) => (
-          <li><a href={d.href}>{d.label}</a></li>
-        ))}
-      </ul>
-    </nav>
-
-    <p class="error__back"><a href="/">Volver al inicio</a></p>
+    {(["es", "en"] as const).map((locale) => (
+      <section class="error__locale" lang={locale}>
+        <h1 class="error__title">{MESSAGES[locale].errorTitle}</h1>
+        <p class="error__text">{MESSAGES[locale].errorText}</p>
+        <nav class="error__destinations" aria-label={MESSAGES[locale].errorNavLabel}>
+          <ul>
+            {DESTINATIONS(locale).map((d) => (
+              <li><a href={d.href}>{d.label}</a></li>
+            ))}
+          </ul>
+        </nav>
+        <p class="error__back">
+          <a href={LOCALE_PATHS[locale].home}>{MESSAGES[locale].errorBack}</a>
+        </p>
+      </section>
+    ))}
   </main>
 </Base>
 
@@ -99,6 +109,12 @@ const DESTINATIONS = [
     max-width: 34rem;
     color: var(--ink-soft);
     font-size: 1.0625rem;
+  }
+
+  .error__locale + .error__locale {
+    margin-top: calc(var(--space) * 5);
+    border-top: 1px solid var(--line);
+    padding-top: calc(var(--space) * 3);
   }
 
   .error__destinations {

@@ -7,23 +7,24 @@
  * what declares a
  * rol `concurrent` y evita la bandera roja de la regla 2.
  */
-import type { ContentView } from "@content";
+import type { ContentView, Locale } from "@content";
 import { formatDateRange, formatDuration, formatMetric, formatRoleTitle } from "@content";
 
 interface Props {
   role: ContentView["experience"][number];
+  locale: Locale;
 }
 
-const { role } = Astro.props;
+const { role, locale } = Astro.props;
 const company = role.clientDescription
   ? `${role.company} — ${role.clientDescription}`
   : role.company;
 ---
 
 <article class="role">
-  <h3 class="role__title">{formatRoleTitle(role)} <span class="role__company">· {company}</span></h3>
+  <h3 class="role__title">{formatRoleTitle(role, locale)} <span class="role__company">· {company}</span></h3>
   <p class="role__meta">
-    {formatDateRange(role.start, role.end)} · {formatDuration(role.durationMonths)}
+    {formatDateRange(role.start, role.end, locale)} · {formatDuration(role.durationMonths, locale)}
     {role.location && <> · {role.location}</>}
   </p>
   <p class="role__context">{role.context.short}</p>
@@ -31,7 +32,7 @@ const company = role.clientDescription
   {role.achievements.length > 0 && (
     <ul class="role__bullets">
       {role.achievements.map((a) => {
-        const metric = a.metric ? formatMetric(a.metric) : null;
+        const metric = a.metric ? formatMetric(a.metric, locale) : null;
         return (
           <li>
             {a.text.short}

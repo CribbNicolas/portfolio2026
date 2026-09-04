@@ -26,7 +26,16 @@ import { serializeDataset } from "./serialize";
 import type { ValidationReport } from "./inspect";
 import { inspectDataset } from "./inspect";
 
+/** The dataset the editor writes. Authoring happens in Spanish; see `DATASET_FILES`. */
 export const DATASET_FILE = "content/data/content.es.json";
+
+/**
+ * Every committed dataset. The editor only ever writes the first one — the
+ * English file is a translation, not a second place to author — but the
+ * canonical-form gate and `format:data` cover both, because a file nobody
+ * formats drifts the moment somebody edits it by hand.
+ */
+export const DATASET_FILES = [DATASET_FILE, "content/data/content.en.json"];
 
 /**
  * One queue per resolved file path, not per `DatasetStore` instance. Keying by
@@ -78,8 +87,33 @@ export class SerializationError extends Error {
   }
 }
 
-export class DatasetStore {
-  constructor(private readonly file: string = DATASET_FILE) {}
+/**
+ * What `handleApi` actually needs. Typed structurally so a test can hand in
+ * `{ read, write }` — TypeScript compares classes with private members
+ * nominally, so a plain object would not be accepted as `DatasetStore`.
+ */
+export interface DatasetApi {
+  read(): Promise<DatasetSnapshot>;
+  write(input: unknown, expectedEtag: string): Promise<DatasetSnapshot>;
+}
+
+/** The serializer `DatasetStore` round-trips through. Injected so a test can lie. */
+export type SerializeFn = (data: ContentDataset) => string;
+
+/**
+ * Queue key for concurrent writes. `resolve()` does not case-fold on Windows,
+ * so `C:\…` and `c:\…` would otherwise be two queues over one file.
+ */
+function queueKey(file: string): string {
+  const resolved = resolve(file);
+  return process.platform === "win32" ? resolved.toLowerCase() : resolved;
+}
+
+export class DatasetStore implements DatasetApi {
+  constructor(
+    private readonly file: string = DATASET_FILE,
+    private readonly serialize: SerializeFn = serializeDataset,
+  ) {}
 
   /** Raw text plus its etag. No validation: used for the pre-write etag check. */
   private async readRaw(): Promise<{ raw: string; etag: string }> {
@@ -110,7 +144,7 @@ export class DatasetStore {
    * case is, and has to remain, the etag comparison's job, not the queue's.
    */
   async write(input: unknown, expectedEtag: string): Promise<DatasetSnapshot> {
-    const key = resolve(this.file);
+    const key = queueKey(this.file);
     const queued = writeQueues.get(key) ?? Promise.resolve();
     // Queue this call behind whatever is already in flight on this path.
     const turn = queued.then(() => this.writeExclusive(input, expectedEtag));
@@ -140,7 +174,7 @@ export class DatasetStore {
     if (!report.ok) throw new InvalidDatasetError(report);
 
     const data = input as ContentDataset;
-    const serialized = serializeDataset(data);
+    const serialized = this.serialize(data);
     try {
       assert.deepStrictEqual(JSON.parse(serialized), data);
     } catch (err) {

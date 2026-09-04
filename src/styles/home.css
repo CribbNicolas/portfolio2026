@@ -4,25 +4,6 @@
  * printed.
  */
 
-.home {
-  padding: calc(var(--space) * 6) calc(var(--space) * 2.5);
-  max-width: var(--width);
-  margin: 0 auto;
-}
-
-.home__kicker {
-  display: inline-block;
-  font-size: 0.75rem;
-  font-weight: 800;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  color: var(--accent);
-  background: var(--accent-faint);
-  padding: calc(var(--space) * 0.75) calc(var(--space) * 1.25);
-  border-radius: 99px;
-  margin: 0 0 calc(var(--space) * 3);
-}
-
 .home__name {
   font-size: 2.125rem;
   line-height: 1.08;
@@ -34,31 +15,48 @@
 .home__role {
   font-size: 1.0625rem;
   color: var(--ink-soft);
-  margin: 0 0 calc(var(--space) * 3);
+  margin: 0;
   font-weight: 600;
 }
 
-.home__tagline {
-  font-size: 1.375rem;
-  line-height: 1.4;
-  margin: 0 0 calc(var(--space) * 4.5);
-  font-weight: 700;
-  letter-spacing: -0.02em;
-}
-
 @media (min-width: 40rem) {
-  .home {
-    padding: calc(var(--space) * 11) calc(var(--space) * 4);
-  }
-
   .home__name {
     font-size: 3rem;
   }
+}
 
-  .home__tagline {
-    font-size: 1.625rem;
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* --- Shared measure ------------------------------------------------------
+   Hero, map, projects, CV and footer share one width and one gutter.
+   The map canvas used to sit at 72rem and the rest at `--width`, which is
+   exactly the "four pages glued together" tokens.css warns about. */
+.lab__content > section,
+.lab .footer {
+  max-width: var(--width);
+  margin-inline: auto;
+  padding-inline: calc(var(--space) * 2.5);
+}
+
+.lab__content > section {
+  padding-block: calc(var(--space) * 6) calc(var(--space) * 8);
+}
+
+@media (min-width: 40rem) {
+  .lab__content > section,
+  .lab .footer {
+    padding-inline: calc(var(--space) * 4);
   }
-
 }
 
 /* --- Floating bar: index, contact and download --------------------------- */
@@ -168,16 +166,71 @@
   background: var(--line);
 }
 
+/* --- Language switch -----------------------------------------------------
+   A segmented control, not two nav links. Without its own CSS the `<nav>`
+   was a block inside the flex pill: the current language (a `<span>`) had
+   no padding and the other (an `<a>`) inherited `.pill a`, so the control
+   stretched the bar and read as broken copy. */
+.locale-switch {
+  display: flex;
+  align-items: center;
+  flex: none;
+  gap: 0;
+  margin-right: calc(var(--space) * 0.5);
+  padding: 2px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--ink) 6%, transparent);
+}
+
+.locale-switch__sep {
+  display: none;
+}
+
+.locale-switch [aria-current="page"],
+.locale-switch a {
+  display: grid;
+  place-items: center;
+  min-width: 2.125rem;
+  height: calc(var(--space) * 3.5);
+  padding: 0 calc(var(--space) * 0.75);
+  border-radius: 999px;
+  font-size: 0.6875rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  line-height: 1;
+}
+
+.locale-switch [aria-current="page"] {
+  background: var(--accent);
+  color: var(--bg);
+}
+
+.locale-switch a {
+  color: var(--ink-soft);
+}
+
+.locale-switch a:hover {
+  color: var(--accent);
+  background: var(--accent-faint);
+}
+
 /* --- La download -------------------------------------------------------- */
 
 .download {
   gap: calc(var(--space) * 0.75);
-  padding: 0 calc(var(--space) * 2);
+  padding: 0 calc(var(--space) * 1.75);
   flex: none;
+  border: 0;
+  appearance: none;
+  -webkit-appearance: none;
   background: var(--accent);
   color: var(--bg);
+  font-family: inherit;
+  font-size: inherit;
   font-weight: 700;
+  line-height: inherit;
   text-decoration: none;
+  cursor: pointer;
   /* The second shadow is tinted with the accent: a neutral shadow under a
      colored button leaves it looking dirty. `color-mix` second and a neutral
      fallback first, because if the browser does not support it the whole
@@ -209,6 +262,108 @@
 @media (prefers-reduced-motion: reduce) {
   .download__arrow {
     transition: none;
+  }
+}
+
+/* --- CV download modal ---------------------------------------------------
+   Native `popover`: centered card on desktop, bottom sheet on a phone.
+   The UA stylesheet centers `[popover]` with `inset: 0; margin: auto`; we
+   keep that on wide screens and only override it under 34rem. */
+.download-menu {
+  width: min(22rem, calc(100vw - var(--space) * 4));
+  padding: calc(var(--space) * 2);
+  border: 1px solid var(--line);
+  border-radius: calc(var(--radius) * 1.6);
+  background: var(--bg);
+  color: var(--ink);
+  box-shadow: var(--shadow);
+}
+
+.download-menu::backdrop {
+  background: rgb(23 24 28 / 0.42);
+}
+
+.download-menu__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: calc(var(--space));
+  margin: 0 0 calc(var(--space) * 1.5);
+}
+
+.download-menu__title {
+  margin: 0;
+  font-size: 0.9375rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.download-menu__close {
+  flex: none;
+  width: calc(var(--space) * 4);
+  height: calc(var(--space) * 4);
+  margin: calc(var(--space) * -0.5) calc(var(--space) * -0.5) calc(var(--space) * -0.5) 0;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--ink-soft);
+  font-size: 1.375rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.download-menu__close:hover {
+  background: var(--bg-raised);
+  color: var(--ink);
+}
+
+.download-menu__list {
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--space) * 0.75);
+}
+
+.download-menu__list a {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: calc(var(--space) * 1.5) calc(var(--space) * 1.75);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--bg-raised);
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.download-menu__list a:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.download-menu__lang {
+  font-size: 0.9375rem;
+  font-weight: 800;
+}
+
+.download-menu__file {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  color: var(--ink-soft);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (max-width: 34rem) {
+  .download-menu:popover-open {
+    width: 100%;
+    max-width: none;
+    inset: auto 0 0 0;
+    margin: 0;
+    border-radius: calc(var(--radius) * 2) calc(var(--radius) * 2) 0 0;
+    padding: calc(var(--space) * 2.5) calc(var(--space) * 2)
+      max(calc(var(--space) * 3), env(safe-area-inset-bottom));
   }
 }
 
@@ -245,18 +400,10 @@
 /* The PDF comes from `/cv`, which does not have this bar. The rule is here in
    case someone prints the landing from the browser. */
 @media print {
-  .bar {
+  .bar,
+  .download-menu {
     display: none;
   }
-}
-
-/* The pill is `fixed`: without this, the anchor jump leaves the section title
-   underneath it. It is the pill's height plus its distance from the top, plus
-   some air. */
-#mapa,
-#proyectos,
-#cv {
-  scroll-margin-top: calc(var(--space) * 9);
 }
 
 /* Smooth scrolling is what makes the index read as navigation rather than as a
@@ -278,10 +425,7 @@ html {
    it is read if you get there scrolling, which is all it has to do. It shares
    `--width` with the rest so the common edge is not broken. */
 .footer {
-  max-width: var(--width);
-  margin: 0 auto;
-  padding: calc(var(--space) * 6) calc(var(--space) * 2.5)
-    calc(var(--space) * 5);
+  padding-block: calc(var(--space) * 6) calc(var(--space) * 5);
   border-top: 1px solid var(--line);
 }
 
@@ -307,7 +451,6 @@ html {
 
 @media (min-width: 40rem) {
   .footer {
-    padding: calc(var(--space) * 8) calc(var(--space) * 4)
-      calc(var(--space) * 6);
+    padding-block: calc(var(--space) * 8) calc(var(--space) * 6);
   }
 }

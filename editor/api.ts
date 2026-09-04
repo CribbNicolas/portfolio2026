@@ -14,9 +14,10 @@
 import { datasetDescriptor } from "./schema-adapter";
 import { HINTS } from "./hints";
 import { inspectDataset } from "./inspect";
-// DatasetStore is only ever a parameter type here — the routing never
-// constructs one, which is what keeps it testable against any store.
-import type { DatasetStore } from "./store";
+// DatasetApi is structural: a test can pass `{ read, write }` without
+// constructing a DatasetStore. The class's private members would make that
+// a compile error if this were typed as DatasetStore itself.
+import type { DatasetApi } from "./store";
 import { InvalidDatasetError, StaleEtagError } from "./store";
 
 export interface ApiRequest {
@@ -49,7 +50,7 @@ function readEnvelope(body: unknown): { data: unknown; etag: string } | null {
   return { data: candidate.data, etag: candidate.etag };
 }
 
-export async function handleApi(request: ApiRequest, store: DatasetStore): Promise<ApiResponse> {
+export async function handleApi(request: ApiRequest, store: DatasetApi): Promise<ApiResponse> {
   const { method, path } = request;
 
   if (path === "/api/schema") {

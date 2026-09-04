@@ -10,19 +10,23 @@ freelance clients in LatAm/Spanish. Guiding principle: **the data is the single
 source of truth; the CV, the portfolio and the LinkedIn blocks are derived
 VIEWS.** The backend stores atomic facts (`Achievement`, `Skill`, `Role`,
 `Metric`), never documents. There is a content layer (schema + validation + JSON
-dataset + one `ContentSource` implementation) and a static Astro frontend that is
-**one navigable page**: `/` with hero, anchor index, knowledge map, projects and
-the full CV. `/cv` still exists but is NOT a destination — it is the source the
-PDF is printed from, with `noindex` and no incoming links. Long-form case
-studies, services and the freelance side wait for the next slice. Why the schema
-is the way it is: `docs/CONTRACT.md` and `docs/01`–`04`. Do not rewrite them;
-read them.
+dataset + one `ContentSource` implementation) and a static Astro frontend with
+**one navigable page per language**: `/` (Spanish) and `/en/` (English), each with
+hero, anchor index, knowledge map, projects and the full CV. `/cv` and `/en/cv`
+are NOT destinations — they are the sources from which the PDFs are printed, with
+`noindex` and no incoming links. See `docs/10-i18n.md` for the bilingual system.
+Long-form case studies, services and the freelance side wait for the next slice.
+Why the schema is the way it is: `docs/CONTRACT.md` and `docs/01`–`04`. Do not
+rewrite them; read them.
 
 **Language.** The site content is in Spanish — it is a CV for a Spanish-speaking
-market. Everything else is in English: identifiers, comments, docs, commit
-messages. When you touch a user-visible string it stays Spanish; the code around
-it is English. The URL anchors (`#mapa`, `#proyectos`, `#cv`) are addresses, not
-code: they stay Spanish too.
+market — and, since 2026-09-02, also in English under `/en/`: see
+`docs/10-i18n.md` for the whole bilingual workflow. Identifiers, comments, docs
+and commit messages stay in English always. When you touch a user-visible
+string it stays in the surface's own language. The URL anchors are addresses,
+not code, in EITHER language: `/` uses `#mapa`/`#proyectos`/`#cv`, `/en/` uses
+`#map`/`#projects`/`#cv` (`src/lib/anchors.ts`), and the reasoning is the same
+one in both — an address in a language the reader does not speak is noise.
 
 ## File map
 
@@ -35,7 +39,9 @@ content/
                         a gap is not experience, and two parallel jobs are not twice the same years.
     resolve-view.ts     THE source of visibility logic. resolveView(dataset, surface). Rules 7,8. Shared by every backend.
   data/
-    content.es.json     The real dataset. Phase 0. No EN dataset (getDataset("en") throws on purpose).
+    content.es.json     The real dataset, canonical. Spanish is edited first, always — docs/10-i18n.md.
+    content.en.json     The English CV, translated FROM the Spanish one. Never edited first.
+    translation.lock.json  One hash per Spanish string, stamped by `i18n:lock`. What `test:i18n` checks against.
   source/
     json-source.ts      ContentSource over the JSON. Only fetches/caches the dataset and delegates to resolveView.
     index.ts            ⚠️ The ONE line that changes when migrating to Sanity. The whole frontend imports from here.
@@ -52,14 +58,17 @@ scripts/validate.ts     Entry point of `pnpm run validate`.
                         Only staging enters main; only develop enters staging. Rulesets cannot express this:
                         they look at the target branch, not the source.
 functions/              Cloudflare Pages Functions. The ONLY thing in the repo that runs at runtime.
-  cv.pdf.ts           GET /cv.pdf. Asks Browser Rendering to print our own /cv and caches the result.
-  _pdf.ts             The pure pieces (request body, cache key, headers). The underscore keeps it out of Pages routing.
+  cv.pdf.ts           GET /cv.pdf. Three-line caller of createPdfHandler("es"); the route is this file's OWN path.
+  en/cv.pdf.ts        GET /en/cv.pdf. Same factory, createPdfHandler("en"). No copy-pasted body — see _handler.ts.
+  _handler.ts         The shared implementation both routes call: Browser Rendering, caching, error shapes.
+                      The underscore keeps it out of Pages routing.
+  _pdf.ts             The pure pieces (request body, cache key, headers, sourcePath per locale).
   _pdf.test.ts        Guards that the served PDF asks for the SAME options as the tested PDF.
 docs/                   See docs/00-index.md. The "why" of every design decision lives there.
                         08-branches-and-versioning.md — feature/* → develop → staging → main, and the bump rule.
                         READ IT before opening a PR: the one into develop fails if you do not raise the version.
-                        07-technical-debt.md — what was found out of scope and not fixed. Look at it BEFORE
-                        "fixing something on the way": it may already be noted with its reason.
+                        07-technical-debt.md — closed ledger of 42 items. New findings append as #43+;
+                        do not reopen a closed number. Product/data pending is 00-index and 06.
                         09-seo-and-metadata.md — what the <head> emits, and above all what it deliberately does NOT
                         and under what condition to reconsider. READ IT before "adding the missing tag":
                         og:site_name, hreflang, profile:*, webmanifest and favicon.ico are DECIDED, not forgotten.
@@ -71,7 +80,10 @@ editor/                 The local content editor; `pnpm run editor` serves the p
   inspect.ts          unknown → { ok, zodIssues, violations }. Calls datasetSchema.safeParse and checkRules:
                       it decides nothing itself.
   store.ts            THE only thing that touches the dataset file. Validates, round-trips its own output,
-                      checks the etag, renames a temp file into place.
+                      checks the etag, renames a temp file into place. `DatasetApi` is the structural
+                      type `handleApi` takes, so a test can pass a fake.
+  temp-dir.ts         Per-file temp dirs for editor tests. Each suite registers its own `after`; a
+                      shared Set would let one file delete a directory another is still reading.
   api.ts              The routes, as a pure function. No node:http, so every route is tested without a socket.
   server.ts           createEditorServer(store). Does NOT listen: scripts/editor.ts binds the port.
   hints.ts            Per-path widget overrides. Full paths, NOT field names: a convention would change a widget
@@ -83,12 +95,16 @@ src/
   pages/cv.astro      The CV in HTML. THE source of the layout; the PDF comes from here.
                       NOT a navigable destination: `noindex` and zero incoming links.
                       The reader reaches the CV through the landing's `#cv` anchor.
-  pages/index.astro   The landing: hero + index + #mapa + #proyectos + #cv. The ONLY page with JS.
-  pages/cv.json.ts    public-api endpoint.
+  pages/index.astro   The Spanish landing: hero + index + #mapa + #proyectos + #cv.
+  pages/en/index.astro  The English landing. Same shared HomeDocument, locale="en", content.en.json.
+                      In PAGES_WITH_JS alongside `/`: it renders the same 3D map.
+  pages/en/cv.astro   The English CV in HTML. Same shared CvDocument, locale="en". Zero JS, same as /cv.
+  pages/cv.json.ts    public-api endpoint, Spanish. `/en/cv.json.ts` is the English sibling.
   pages/build.json.ts The published commit (CF_PAGES_COMMIT_SHA). One consumer: the smoke, which uses it to wait
                       for Cloudflare to serve the commit just pushed.
   pages/404.astro     Without this, Pages returns 200 with HTML for any route: a soft 404.
-  pages/llms.txt.ts   Markdown endpoint for agents.
+  pages/llms.txt.ts   Markdown endpoint for agents, Spanish. `en/llms.txt.ts` is the English sibling;
+                      both call `renderLlmsTxt` in `src/lib/llms-txt.ts`.
   components/cv/      Dumb components: they receive resolved props, they filter nothing.
   components/projects/ProjectList.astro  The projects. Each card carries the id `buildHoverCss` expects:
                       the cross-hover with the map works with NO JS.
@@ -103,8 +119,13 @@ src/
   lib/jsonld.ts       ContentView → schema.org Person.
   lib/graph-svg.ts    PositionedGraph → draw list. Fog, paint order, labels.
   lib/lab-hover-css.ts  Graph → `:has()` rules. The cross-hover works with NO JS.
-  scripts/analytics.ts  Clarity. ONLY index.astro calls it; never Base.astro (/cv at zero JS).
-                      The Cloudflare Web Analytics beacon goes in index.astro too, also by hand: enabling it
+  lib/lab-data.ts     PositionedGraph + Messages → the `LabData` JSON both landings embed for the boot
+                      script. One typed `buildLabData()` both pages call, so the two cannot drift into
+                      shipping different-shaped payloads with nothing catching it until a click throws.
+  lib/anchors.ts      Section ids AND locale → URL. `LOCALE_PATHS` is the one table; the switch, hreflang,
+                      PDF buttons and `sourcePath` all read it. `anchorScrollCss()` is emitted from the ids.
+  scripts/analytics.ts  Clarity. Both landing files call it (index.astro and en/index.astro); never Base.astro (/cv and /en/cv at zero JS).
+                      The Cloudflare Web Analytics beacon goes in both landing files too, also by hand: enabling it
                       from the Pages dashboard injects it into the WHOLE site and no-client-js.check.ts would
                       not see it (it looks at dist/, not at what is served).
                       Without PUBLIC_CLARITY_ID the import is tree-shaken and costs nothing.
@@ -120,8 +141,13 @@ src/
   styles/lab.css      The map. Both canvases are pointer-events:none. That is what makes the
                       "it does not capture the mouse" promise true.
 content/schema/
-  format-metric.ts    Rule 4. The "~" of estimates lives here and only here.
-  format.ts           Durations, MM/AAAA ranges, role titles. Rules 1 and 2. Its output strings stay in Spanish.
+  format-metric.ts    Rule 4. The "~" of estimates lives here and only here. Takes a Locale.
+  format.ts           Durations, MM/AAAA ranges, role titles. Rules 1 and 2. Takes a Locale; output stays
+                      in that locale's language, not always Spanish.
+  messages.ts         Chrome copy — the words the SITE says, not the author's — as Record<Locale, Messages>.
+                      A missing translation is a COMPILE error, so this layer needs no gate of its own.
+  pdf-filename.ts     ONE definition of the PDF's name: Cribb_Nicolas_CV_<updatedAt>.pdf, `_EN_` tag for
+                      English. <updatedAt> is the DATASET's, not the clock's — see the file's own comment.
   skill-groups.ts     THE order and labels of the skill groups. Shared by the CV and /llms.txt, which
                       used to keep two lists and print two different taxonomies.
   knowledge-graph.ts  ContentView → graph. Includes the derived skill↔skill affinity.
@@ -132,7 +158,7 @@ scripts/
                       dist/ would have to learn to ignore it.
   og-data.ts          What the generator and its check share: the texts derived from the dataset and the
                       fingerprint. Separate because build-og.ts is an entry point.
-  build-og.ts         Writes public/og.jpg + og.lock.json. `og:local`, outside the build.
+  build-og.ts         Writes public/og.jpg + public/og.en.jpg + og.lock.json. `og:local`, outside the build.
   og-output.check.ts  Dimensions, WhatsApp's weight ceiling, that the image has not gone stale, and that the
                       favicon still draws the ring from lib/brand.ts.
   pdf-options.ts      THE definition of the print options. Shared by render-pdf.ts (Playwright, the gate) and
@@ -140,19 +166,39 @@ scripts/
                       diverge silently.
   render-pdf.ts       renderPdf({ url }). Takes a URL, not a component. It NO LONGER produces the deliverable:
                       it produces the dist/cv.pdf the pre-deploy gate runs against.
-  build-pdf.ts        Serves dist/ and prints /cv → dist/cv.pdf. Outside `build`: it is `pdf:local`.
+  build-pdf.ts        Serves dist/ and prints /cv → dist/cv.pdf and /en/cv → dist/en/cv.pdf.
+                      Outside `build`: it is `pdf:local`.
   pdf-output.check.ts Verifies the PDF. With PDF_SOURCE=<url> it runs the SAME assertions against the published
                       PDF. Deliberately not a *.test.ts.
-  no-client-js.check.ts  Per-page JS policy over all of dist/. Shields /cv.
-  bundle-budget.check.ts The home's budget: three off the critical path.
-  single-landing.check.ts The landing is the only door: /cv without links or indexing, and the landing's CV
-                      section in sync with the PDF. Plus: 404.html exists.
+  no-client-js.check.ts  Per-page JS policy over all of dist/. Shields /cv and /en/cv.
+  bundle-budget.check.ts The two landings' budget: three off the critical path, on both.
+  single-landing.check.ts The two landings are the only doors: /cv and /en/cv without links or indexing, and the
+                      landing sections in sync with the PDFs. Plus: 404.html exists.
   endpoints.check.ts  /cv.json and /llms.txt, the two surfaces agents consume. That the JSON parses and
                       carries the contract keys, and that the markdown has no empty fields.
-  format-data.ts      Writes content.es.json in canonical form. The fix path the gate points at. `format:data`.
+  format-data.ts      Writes both content.es.json and content.en.json in canonical form. The fix path
+                      the gate points at. `format:data`.
+  i18n-fields.ts      The shared walker: `translatableFields(dataset)` → path → Spanish string, `hashOf(s)`,
+                      and `structuralSkeleton(dataset)` → the same dataset with every tracked leaf blanked —
+                      what is left over IS the structure `i18n.check.ts`'s parity test compares. Path is
+                      built from ids, never array indices, so reordering achievements does not invalidate
+                      every translation. `NOT_TEXT` is a DENYLIST of key names — a new prose field is
+                      tracked the day it is added, which is the safe direction to be wrong in.
+  i18n-lock.ts        Writes `content/data/translation.lock.json`: hash of every Spanish string an English
+                      translation was checked against. `i18n:lock`. Same shape as `og.lock.json`: a
+                      committed artifact, a check that recomputes, a regenerate command the failure names.
+  i18n.check.ts       Four failures, four different fixes: tracked-path drift (a translatable path in one
+                      dataset and not the other), structural drift (anything OUTSIDE the tracked set differs
+                      — an id, a date, a `skillIds` entry, a `visibility.priority` — caught by deep-comparing
+                      `structuralSkeleton(es)` against `structuralSkeleton(en)`, the two datasets with every
+                      translatable leaf blanked), missing translation (English still byte-identical to
+                      Spanish AND over 40 chars), stale translation (Spanish hash no longer matches the
+                      lock). Not a *.test.ts: `pnpm test`'s glob would run it against whatever the datasets
+                      happen to be at that point instead of at the deliberate moment `test:i18n` runs it,
+                      same reason as `data-format.check.ts`.
   editor.ts           Entry point of `pnpm run editor`. Loopback only: this process writes to the dataset.
   editor-page.check.ts  The page in a real browser: loads, renders from the schema, saves. Needs Chromium.
-  data-format.check.ts  THE canonical written form of the dataset is committed as such. Not a *.test.ts: it reads a committed artifact.
+  data-format.check.ts  THE canonical written form of both datasets is committed as such. Not a *.test.ts: it reads committed artifacts.
   served.check.ts     The ONLY thing verifying the SERVED response and not dist/. Runs from the smoke. Catches
                       what happens after the build: injections at the edge.
   audit-todos.ts      Non-blocking report of published TODOs.
@@ -187,15 +233,17 @@ pnpm run dev         # astro dev
 pnpm run editor      # local dataset editor on 127.0.0.1:4322. Page + API; test:editor is its only gate
 pnpm run build       # ONLY astro build. No Chromium: that is why it runs on Cloudflare Pages
 pnpm run pdf:local   # prints dist/cv.pdf with Playwright. Pre-deploy gate, not the deliverable
-pnpm run og:local    # writes public/og.jpg (the social card) + og.lock.json. It gets COMMITTED
+pnpm run og:local    # writes public/og.jpg + public/og.en.jpg + og.lock.json. They get COMMITTED
 pnpm run test:pdf    # verifies the PDF (needs a prior pdf:local, or PDF_SOURCE=<url>)
 pnpm run test:js     # per-page JS policy over all of dist/ (needs a build)
 pnpm run test:bundle # byte budget of the home's map (needs a build)
 pnpm run test:landing # /cv isolated + CV section in sync with the PDF (needs a build)
 pnpm run test:endpoints # /cv.json parses and /llms.txt is whole (needs a build)
 pnpm run test:format # the committed dataset is in canonical form (no build needed)
+pnpm run test:i18n   # EN is a current translation of ES: structure, no untranslated copies, no stale hash
 pnpm run test:editor # the editor page end to end in Chromium (needs no build)
 pnpm run format:data # rewrites content.es.json in canonical form. The fix for the above
+pnpm run i18n:lock   # re-stamps translation.lock.json to the current ES text. The fix test:i18n points at
 pnpm run test:og     # the social card has not gone stale + the favicon parses (needs a build)
 pnpm run test:served # verifies the PUBLISHED site. Needs SITE=https://…  (not dist/)
 pnpm run test:version # the PR raises package.json.version. Needs: git fetch origin develop
@@ -205,7 +253,7 @@ pnpm run audit:deps  # pnpm audit --audit-level high
 ```
 
 **Run the full sequence before calling anything done:**
-`pnpm run test:workflows && pnpm run typecheck && pnpm run validate && pnpm test && pnpm run test:format && pnpm run test:editor && pnpm run build && pnpm run pdf:local && pnpm run test:pdf && pnpm run test:js && pnpm run test:bundle && pnpm run test:landing && pnpm run test:endpoints && pnpm run test:og && pnpm run audit:todos`.
+`pnpm run test:workflows && pnpm run typecheck && pnpm run validate && pnpm test && pnpm run test:format && pnpm run test:i18n && pnpm run test:editor && pnpm run build && pnpm run pdf:local && pnpm run test:pdf && pnpm run test:js && pnpm run test:bundle && pnpm run test:landing && pnpm run test:endpoints && pnpm run test:og && pnpm run audit:todos`.
 If `validate` fails, the message says which rule was violated and how to fix it;
 read it, do not skip it. All of that runs in CI on every push
 (`.github/workflows/content-validation.yml`) — `audit:todos` included, but as the
@@ -262,13 +310,14 @@ assuming `validate` covers something, look at this table:
 
 ## Map frontend (the only thing with JavaScript)
 
-**The home is the ONLY page shipping JS.** `/cv` stays at zero and that is NOT
-negotiable: the PDF is rendered from there waiting on `networkidle`, so a script
-slipping in changes the PDF silently. **Since 2026-08-25 that went from breaking
-your build to breaking production:** the PDF is printed by `functions/cv.pdf.ts`
-over the PUBLISHED page, not over your `dist/`. `PAGES_WITH_JS` in
-`no-client-js.check.ts` is the allowlist — adding a page is an explicit decision
-in a diff, not an accident.
+**The two landings (`/` and `/en/`) are the ONLY pages shipping JS.** `/cv` and
+`/en/cv` stay at zero and that is NOT negotiable: the PDF is rendered from there
+waiting on `networkidle`, so a script slipping in changes the PDF silently.
+**Since 2026-08-25 that went from breaking your build to breaking production:**
+the PDF is printed by `functions/_handler.ts` (via `functions/cv.pdf.ts` and
+`functions/en/cv.pdf.ts`) over the PUBLISHED page, not over your `dist/`.
+`PAGES_WITH_JS` in `scripts/pages-with-js.ts` is the allowlist — adding a page
+is an explicit decision in a diff, not an accident.
 
 Rules, all verified in CI by `bundle-budget.check.ts` and
 `no-client-js.check.ts`:
@@ -334,21 +383,21 @@ Chromium APIs — so leaning on step 1 is deciding blind on half the phones.
   characters** (Zod validates it): if the text does not fit, it is not for
   `short`, it goes in `long`.
 
-## Pending / what NOT to do yet
+## Pending / product and data
 
-**Start with `docs/06-next-session.md`:** it is the three-phase work plan, with
-how to proceed on each task and what to verify. The rule that orders everything:
-**whatever touches how the data is CREATED waits for the phase 2 editor**; fixing
-it earlier guarantees it gets redone.
+**Start with `docs/06-next-session.md`:** the three infrastructure phases are
+closed. What remains is product and data only the author can fill (metrics,
+LinkedIn, case studies, `Skill.periods`, designed CV-A). Edit Spanish through
+`pnpm run editor`; English follows the loop in `docs/10-i18n.md`.
 
-Before "fixing something on the way", look at `docs/07-technical-debt.md`: it may
-already be noted with its reason and with the phase it belongs to. Full status in
+`docs/07-technical-debt.md` is a closed archive of 42 items. New findings still
+go there so they are not lost; do not reopen a closed number. Full status in
 `docs/00-index.md`. Operational summary:
 
-- **Frontend:** it exists (static Astro, see `src/` in the file map): `/cv` over
-  `cv-ats` and the home over `portfolio`. The designed CV (CV-A) and the case
-  studies wait. `components/cv/` are dumb: they receive resolved props and filter
-  nothing (invariant 1).
+- **Frontend:** it exists (static Astro, see `src/` in the file map), bilingual
+  since 2026-09-02: `/cv` and `/en/cv` over `cv-ats`, `/` and `/en/` over
+  `portfolio`. The designed CV (CV-A) and the case studies wait. `components/cv/`
+  are dumb: they receive resolved props and filter nothing (invariant 1).
 - **Output generators** (CV PDF, `/cv` HTML, JSON-LD `Person`, `/llms.txt`,
   `/cv.json`): they exist. Rule 4 lives in a single `formatMetric()`. Detail of
   what each one emits: `docs/CONTRACT.md` §2 and `docs/04`.
@@ -360,8 +409,10 @@ already be noted with its reason and with the phase it belongs to. Full status i
   `docs/00-index.md`.
 - **`services` and `testimonials` are empty on purpose** — they are in the schema
   so there is nothing to migrate later. Do not fill them with placeholders.
-- **EN dataset:** do not load or translate it (decision dated in
-  `docs/00-index.md`).
+- **Bilingual workflow: Spanish is edited first, always.** English follows
+  through the loop in `docs/10-i18n.md` — `test:i18n`, translate, `i18n:lock`.
+  Both agent endpoints and the OG card are bilingual (`/en/llms.txt`,
+  `/en/cv.json`, `og.en.jpg`).
 - **Backend: NOT for now.** Evaluated 2026-08-25 (`docs/06`). Keystatic
   discarded — it demands an SSR adapter plus React and Markdoc; Sanity viable but
   postponed, because with the data outside git the content stops passing through

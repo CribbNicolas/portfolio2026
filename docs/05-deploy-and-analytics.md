@@ -146,7 +146,6 @@ Preview):
 |---|---|---|
 | `BROWSER_RENDERING_ACCOUNT_ID` | Plaintext | The Cloudflare Account ID |
 | `BROWSER_RENDERING_TOKEN` | **Secret** | A token with ONE permission: Developer Platform → Browser Run → Edit |
-| `PDF_FILENAME` | Plaintext, optional | The name the file is saved under. Default: `cv.pdf` |
 
 **Analytics variables**, Production only, so a preview does not pollute the data:
 `PUBLIC_CF_BEACON_TOKEN` and `PUBLIC_CLARITY_ID`. Both are public — they travel
@@ -182,7 +181,8 @@ pnpm dlx wrangler pages dev dist   # dlx: wrangler is not a repo dependency
 Browser Rendering will try to print `http://localhost:8788/cv`, which does not
 resolve from Cloudflare's cloud. So locally the Function verifies routing,
 caching and error handling, **not** the render. The render is tested on the
-`staging` preview. See [07](./07-technical-debt.md) §6.
+`staging` preview. Accepted as [07](./07-technical-debt.md) resolved #6: the
+smoke is the E2E; a tunnel is not worth it.
 
 ---
 

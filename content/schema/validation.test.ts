@@ -83,3 +83,23 @@ test("touching periods are fine: an end and a start in the same month do not ove
   );
   assert.deepEqual(violations, []);
 });
+
+test("a relatedIds entry that is not a skill is a violation", () => {
+  const data = dataset();
+  const jotai = data.skills.find((s) => s.id === "jotai");
+  assert.ok(jotai);
+  jotai.relatedIds = ["not-a-skill"];
+  const violations = checkRules(data);
+  assert.equal(violations.length, 1);
+  assert.match(violations[0]!.message, /not-a-skill/);
+});
+
+test("a skill cannot list itself in relatedIds", () => {
+  const data = dataset();
+  const react = data.skills.find((s) => s.id === "react");
+  assert.ok(react);
+  react.relatedIds = ["react"];
+  const violations = checkRules(data);
+  assert.equal(violations.length, 1);
+  assert.match(violations[0]!.message, /itself/);
+});
