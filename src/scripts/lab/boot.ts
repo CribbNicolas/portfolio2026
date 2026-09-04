@@ -40,9 +40,15 @@ export function start(): void {
 
   if (!mayAttempt()) return;
 
-  // Generous `rootMargin`: the chunk starts downloading slightly before the
-  // section enters the viewport, so the pop-in is not visible.
-  observeOnce(graphCanvas, "300px", () => {
+  // Two gates before the 130 KB of three, not one. The observer alone was not
+  // enough: the map sits directly under the hero, so at a 300px margin it is
+  // already intersecting on load and the download fired while the browser was
+  // still settling the first paint — 2.4s of script evaluation and 200ms of
+  // blocking time, measured on a throttled phone, for decoration nobody has
+  // scrolled to yet. `afterLoad` puts it behind the load event, which is the
+  // point where the page is done being a page. Nothing is lost by waiting:
+  // the SVG map is server-rendered and already on screen.
+  afterLoad(() => observeOnce(graphCanvas, "300px", () => {
     whenIdle(async () => {
       try {
         const { mountGraph } = await import("./graph-3d");
@@ -59,10 +65,10 @@ export function start(): void {
         /* No message and no spinner: the SVG is already the right answer. */
       }
     });
-  });
+  }));
 
   if (fieldCanvas) {
-    observeOnce(fieldCanvas, "0px", () => {
+    afterLoad(() => observeOnce(fieldCanvas, "0px", () => {
       whenIdle(async () => {
         try {
           const { mountField } = await import("./field");
@@ -71,7 +77,7 @@ export function start(): void {
           /* The flat `--bg` background is already underneath. */
         }
       });
-    });
+    }));
   }
 }
 
@@ -141,6 +147,20 @@ function observeOnce(el: Element, rootMargin: string, fn: () => void): void {
     fn();
   }, { rootMargin });
   io.observe(el);
+}
+
+/**
+ * Runs after the load event, or right away if it already fired.
+ *
+ * The check is not decoration: this module is imported by a `<script>` that
+ * Astro emits as a deferred module, so on a warm cache `readyState` can
+ * already be `"complete"` before `start()` runs — and a listener added then
+ * would never fire, leaving the map permanently as its SVG with nothing
+ * reporting an error.
+ */
+function afterLoad(fn: () => void): void {
+  if (document.readyState === "complete") fn();
+  else addEventListener("load", fn, { once: true });
 }
 
 /** `requestIdleCallback` does not exist in Safari. The fallback is not optional. */

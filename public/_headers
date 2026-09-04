@@ -1,0 +1,76 @@
+# Response headers for Cloudflare Pages. Copied verbatim into `dist/` by the
+# build, like everything else in `public/`.
+#
+# Two jobs, and they are not the same job:
+#
+#  1. Caching. Everything under `/_astro/` carries a content hash in its file
+#     name, so a change produces a NEW file name — the one thing that makes
+#     `immutable` safe. Without this file Pages was serving those hashed assets
+#     as `public, max-age=0, must-revalidate`: a conditional request per asset
+#     per visit for files that cannot change. Measured on production, 2026-09-04.
+#
+#  2. Security headers. Nothing here defends against an attack this site can
+#     currently suffer — it is static, has no forms, no session and no
+#     credentials. What they do is bound the blast radius of the two scripts
+#     that are NOT ours (Clarity and the Cloudflare beacon, both served from
+#     third parties with no Subresource Integrity, for the reasons written in
+#     `src/scripts/analytics.ts`), and answer the scanners a client runs before
+#     hiring somebody to build their site.
+#
+# `served.check.ts` asserts these against the PUBLISHED response. That is the
+# only gate that can: this file does not exist as behaviour until Pages reads
+# it, so a typo here fails nothing locally.
+
+/_astro/*
+  Cache-Control: public, max-age=31536000, immutable
+
+# Not hashed, so not `immutable`: the file name stays while the bytes change
+# (`og:local` rewrites the cards from the dataset). A day is the compromise —
+# long enough to matter, short enough that a regenerated card is not stale for
+# a week. The social platforms cache these on their own side anyway.
+/favicon.svg
+  Cache-Control: public, max-age=86400
+/apple-touch-icon.png
+  Cache-Control: public, max-age=86400
+/og.jpg
+  Cache-Control: public, max-age=86400
+/og.en.jpg
+  Cache-Control: public, max-age=86400
+/foto.jpeg
+  Cache-Control: public, max-age=86400
+
+/*
+  # `script-src` has no `'unsafe-inline'` and does not need one: every script
+  # this site executes is either a file under `/_astro/` or one of the two
+  # third-party `src`s named below. The inline `<script>` tags in the HTML are
+  # `application/ld+json` and `application/json` — data the browser parses,
+  # never code it runs, so CSP does not gate them.
+  #
+  # `style-src` DOES carry `'unsafe-inline'`, and that is the honest cost of
+  # `inlineStylesheets: "always"` plus the anchor rule `anchors.ts` emits: both
+  # are `<style>` elements written by our own build, but CSP cannot tell them
+  # from an injected one without per-build hashes Astro does not emit.
+  #
+  # `font-src` needs `data:` and it is not sloppiness: Vite inlines any asset
+  # under its 4 KB limit, and the smaller Manrope subsets (greek, cyrillic)
+  # land in the CSS as base64. Without it Chrome refuses six font files and
+  # the page silently falls back to the system stack. Caught by loading the
+  # built site under these exact headers, not by reading them.
+  #
+  # The Clarity hosts are three, not one, and all three are needed: the tag
+  # comes from `www.clarity.ms`, the payload from `scripts.clarity.ms`, and the
+  # collection posts and pixels go to `*.clarity.ms` and `c.bing.com`. Miss one
+  # and the analytics fail silently — which is the failure mode this comment
+  # exists to prevent when somebody tightens the list later.
+  Content-Security-Policy: default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'none'; script-src 'self' https://static.cloudflareinsights.com https://www.clarity.ms https://scripts.clarity.ms; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://*.clarity.ms https://c.bing.com; font-src 'self' data:; connect-src 'self' https://*.clarity.ms https://c.bing.com https://cloudflareinsights.com https://static.cloudflareinsights.com; upgrade-insecure-requests
+  # A year, no `preload`: preloading is submitted for a registrable domain and
+  # `cribbnicolas.pages.dev` is not one — `pages.dev` is on the public suffix
+  # list. `includeSubDomains` is left off for the same reason: there are no
+  # subdomains under this host, and `staging.cribbnicolas.pages.dev` is a
+  # sibling, not a child.
+  Strict-Transport-Security: max-age=31536000
+  # `frame-ancestors 'none'` above already says this to every browser that
+  # reads CSP. This line is for the scanners that still look for the old header.
+  X-Frame-Options: DENY
+  Permissions-Policy: accelerometer=(), camera=(), geolocation=(), gyroscope=(), magnetometer=(), microphone=(), payment=(), usb=()
+  Cross-Origin-Opener-Policy: same-origin

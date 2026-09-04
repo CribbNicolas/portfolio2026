@@ -54,8 +54,16 @@ const CRITICAL_BUDGET_KB = 4;
 const DEFERRED_BUDGET_KB = 150;
 /** The background field: WebGL by hand, no library. Measured: 1.9 KB. */
 const FIELD_BUDGET_KB = 8;
-/** Each landing's HTML carries the graph coordinates inside it. */
-const HTML_BUDGET_KB = 30;
+/**
+ * Each landing's HTML carries the graph coordinates inside it — and, since
+ * `inlineStylesheets: "always"`, its stylesheets too. That move traded two
+ * render-blocking requests (~670 ms before the first paint, measured on the
+ * published page) for ~16 KB gzip of inlined CSS, which is why this ceiling
+ * went from 30 to 34: 29 KB measured, plus margin. It is deliberately NOT
+ * generous. The whole point of a byte budget on a page whose CSS now travels
+ * with every HTML response is that the next thing to cross it gets noticed.
+ */
+const HTML_BUDGET_KB = 34;
 
 /**
  * Prefix of the field chunk. Rollup names the chunk after the module, so this
