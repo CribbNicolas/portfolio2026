@@ -134,20 +134,25 @@ const skillNameById = new Map(
 
       <span class="pill__sep" aria-hidden="true"></span>
 
-      <nav class="pill__nav" aria-label={m.navSectionsLabel}>
-        <a href={`#${anchors.map}`}>{m.navMap}</a>
-        <a href={`#${anchors.projects}`}>{m.navProjects}</a>
-        <a href={`#${anchors.cv}`}>CV</a>
-      </nav>
-
-      <span class="pill__sep" aria-hidden="true"></span>
+      {/*
+        The section index (map / projects / CV) used to sit here. It is out on
+        BOTH sizes, not hidden under a media query: the pill's children do not
+        shrink (`white-space: nowrap`, `flex: none`), so past its own width the
+        bar does not wrap — the download button rides over the mail link and the
+        social links ride under the language switch. Three anchors were the
+        cheapest thing in the bar to give up: the page scrolls in one column and
+        every section is a screen away. `m.navMap`/`navProjects`/
+        `navSectionsLabel` and `anchors` stay defined for whatever replaces it.
+      */}
 
       <ul class="pill__contact">
         <li class="pill__mail">
-          <a href={`mailto:${identity.contact.email}`}>
-            <span class="pill__long">{identity.contact.email}</span>
-            <span class="pill__short">{m.emailLabel}</span>
-          </a>
+          {/* The address itself at every width, never a "Email" label: the
+              address is the thing you can act on — read it off the screen,
+              copy it, tap it — and a label that hides it makes the bar's one
+              piece of contact information depend on tapping to find out what
+              it even is. */}
+          <a href={`mailto:${identity.contact.email}`}>{identity.contact.email}</a>
         </li>
         {identity.links.map((link) => (
           <li class="pill__social"><a href={link.url} rel="me noopener">{link.label}</a></li>

@@ -285,13 +285,18 @@ test("every landing-anchor id has a scroll-margin, emitted from ANCHORS", () => 
 });
 
 test("the Spanish landing has its three anchors, the English landing has its own", () => {
+  // Only that the sections carry the ids. This used to also require a link to
+  // each one from the pill's index, which is why removing that index failed
+  // here: the anchors are ADDRESSES (`src/lib/anchors.ts`) — they are what an
+  // external link, a shared URL or `anchorScrollCss` targets — and they keep
+  // working with nothing on the page pointing at them. Whatever replaces the
+  // index links back to these same ids; the ids are the contract, the index
+  // was one consumer of it.
   for (const id of Object.values(ANCHORS.es)) {
     assert.match(landing, new RegExp(`id="${id}"`), `the Spanish #${id} section is missing`);
-    assert.ok(landing.includes(`href="#${id}"`), `the Spanish index does not point at #${id}`);
   }
   for (const id of Object.values(ANCHORS.en)) {
     assert.match(enLanding, new RegExp(`id="${id}"`), `the English #${id} section is missing`);
-    assert.ok(enLanding.includes(`href="#${id}"`), `the English index does not point at #${id}`);
   }
 });
 
