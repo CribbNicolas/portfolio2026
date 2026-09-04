@@ -41,16 +41,7 @@ test("no English message is a pasted Spanish string", () => {
   // such character — an equality check against `MESSAGES.es` would instead
   // have to special-case each of those by hand.
   const SPANISH_ONLY_CHARS = /[áéíóúñ¿¡]/i;
-  // `downloadCvOtherLocale` is the ONE key that is Spanish BY DESIGN on the
-  // English side: it labels the button that downloads the *Spanish* CV
-  // ("Descargar CV (español)"), named in the language of the file it hands
-  // over rather than the language of the page showing it — the same reason
-  // `MESSAGES.es.downloadCvOtherLocale` is deliberately English
-  // ("Download CV (English)"). A real accidental paste would show up on ANY
-  // other key; this is the only one allowed to fail the character test.
-  const DELIBERATELY_OTHER_LOCALE = new Set(["downloadCvOtherLocale"]);
   for (const [key, raw] of Object.entries(MESSAGES.en)) {
-    if (DELIBERATELY_OTHER_LOCALE.has(key)) continue;
     const value = typeof raw === "function" ? raw(1, 1) : raw;
     assert.doesNotMatch(
       value,
@@ -65,9 +56,8 @@ test("English chrome copy is not a silent paste of the Spanish", () => {
   // Identical short labels are often legitimate ("Email"), so the allowlist
   // is the reviewable decision; every other key must actually differ.
   const MAY_BE_IDENTICAL = new Set<keyof Messages>(["emailLabel", "llmsStack"]);
-  const OTHER_LOCALE_ON_PURPOSE = new Set<keyof Messages>(["downloadCvOtherLocale"]);
   for (const key of Object.keys(MESSAGES.es) as (keyof Messages)[]) {
-    if (MAY_BE_IDENTICAL.has(key) || OTHER_LOCALE_ON_PURPOSE.has(key)) continue;
+    if (MAY_BE_IDENTICAL.has(key)) continue;
     const es = MESSAGES.es[key];
     const en = MESSAGES.en[key];
     const esText = typeof es === "function" ? es(1, 1) : es;

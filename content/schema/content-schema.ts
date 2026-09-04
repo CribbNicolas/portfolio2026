@@ -174,6 +174,14 @@ export interface Skill {
    * records, it never overrides real evidence.
    */
   periods?: SkillPeriod[];
+  /**
+   * Skills this one extends or is a layer on — Jotai on React, Next.js on
+   * React, TypeScript on JavaScript. The knowledge map draws these as
+   * skill↔skill edges. Sharing a project is NOT enough: that is already a
+   * pair of project→skill edges, and drawing a third one between the two
+   * skills invents a relationship the stack does not have (React ↔ CI/CD).
+   */
+  relatedIds?: string[];
   /** When false it appears in no output. For technologies you left behind. */
   active: boolean;
   visibility: Visibility;

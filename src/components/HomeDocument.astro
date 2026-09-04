@@ -80,6 +80,14 @@ const [datasetOwn, datasetOther] = await Promise.all([
   content.getDataset(locale),
   content.getDataset(other),
 ]);
+const datasetOf: Record<Locale, typeof datasetOwn> = {
+  [locale]: datasetOwn,
+  [other]: datasetOther,
+} as Record<Locale, typeof datasetOwn>;
+/** The file's own language, not the page's — same reason LocaleSwitch
+ *  labels the two sides ES/EN rather than translating "Spanish". */
+const PDF_LABEL: Record<Locale, string> = { es: "Español", en: "English" };
+const pdfOrder: Locale[] = [locale, other];
 
 const map = buildSvgMap(positioned);
 
@@ -91,7 +99,6 @@ const items = positioned.nodes
   .sort((a, b) => b.degree - a.degree || a.label.localeCompare(b.label, locale));
 
 const withEvidenceCount = items.filter((n) => n.degree > 0).length;
-const affinityCount = positioned.edges.filter((e) => e.kind === "affinity").length;
 
 // skillId → canonical name, for each project's stack. Built here and not in
 // `ProjectList`: `view.skills` arrives grouped by category, and flattening it
@@ -154,51 +161,81 @@ const skillNameById = new Map(
     </header>
 
     {/*
-      Both PDFs, on both landings — the reader may want either regardless of
-      which page they landed on. The current locale's button keeps the
-      original placement and copy; the second one is the only other addition
-      `dist/index.html`'s diff is allowed to carry (besides the switch above).
+      One button, both PDFs. A native `popover` so opening it needs no JS —
+      the landing already ships a bundle for the map, but the download has
+      to work with that bundle blocked, and `/cv` stays at zero either way.
+      The visible label is always "CV": the language choice lives in the
+      modal, which is the only place both files can sit without crowding
+      the pill on a phone.
     */}
-    <a
+    <button
+      type="button"
       class="download"
-      href={LOCALE_PATHS[locale].pdf}
-      download={pdfFilename(locale, datasetOwn.updatedAt)}
+      popovertarget="cv-download"
+      aria-haspopup="dialog"
+      aria-controls="cv-download"
+      aria-label={m.downloadCv}
     >
       <span class="download__arrow" aria-hidden="true">↓</span>
-      <span class="pill__long">{m.downloadCv}</span>
-      <span class="pill__short">CV</span>
-    </a>
-    <a
-      class="download"
-      href={LOCALE_PATHS[other].pdf}
-      download={pdfFilename(other, datasetOther.updatedAt)}
-    >
-      <span class="download__arrow" aria-hidden="true">↓</span>
-      <span class="pill__long">{m.downloadCvOtherLocale}</span>
-      <span class="pill__short">{other.toUpperCase()}</span>
-    </a>
+      CV
+    </button>
+  </div>
+
+  {/*
+    Lives outside `.bar` on purpose: the bar carries `transform`, which
+    would become the containing block of a `position: fixed` popover in
+    any browser that fails to promote it to the top layer. The button
+    still opens it by id.
+  */}
+  <div
+    id="cv-download"
+    popover
+    class="download-menu"
+    role="dialog"
+    aria-labelledby="cv-download-title"
+  >
+    <div class="download-menu__head">
+      <p id="cv-download-title" class="download-menu__title">{m.downloadCv}</p>
+      <button
+        type="button"
+        class="download-menu__close"
+        popovertarget="cv-download"
+        popovertargetaction="hide"
+        aria-label={m.closeDialog}
+      >
+        ×
+      </button>
+    </div>
+    <div class="download-menu__list">
+      {pdfOrder.map((lang) => (
+        <a
+          href={LOCALE_PATHS[lang].pdf}
+          download={pdfFilename(lang, datasetOf[lang].updatedAt)}
+          lang={lang}
+          hreflang={lang}
+        >
+          <span class="download-menu__lang">{PDF_LABEL[lang]}</span>
+          <span class="download-menu__file">{pdfFilename(lang, datasetOf[lang].updatedAt)}</span>
+        </a>
+      ))}
+    </div>
   </div>
 
   <main class="lab__content">
     <section class="home lab__hero">
-      <p class="home__kicker">{identity.brandTitle}</p>
       <h1 class="home__name">{identity.fullName}</h1>
       <p class="home__role">
         {identity.searchTitle} · {formatSeniority(view.yearsOfExperience, locale)} · {identity.location.city}, {identity.location.country}
       </p>
-      <p class="home__tagline">{identity.tagline.short}</p>
     </section>
 
     <section id={anchors.map} class="lab__map-section">
-      <div class="lab__intro">
-        <h2 class="lab__title">{m.mapTitle}</h2>
-        <p class="lab__lede">{m.mapLede}</p>
-        <dl class="lab__figures">
-          <div><dt>{m.statsNodes}</dt><dd>{positioned.nodes.length}</dd></div>
-          <div><dt>{m.statsConnections}</dt><dd>{positioned.edges.length}</dd></div>
-          <div><dt>{m.statsAffinity}</dt><dd>{affinityCount}</dd></div>
-        </dl>
-      </div>
+      {/*
+        Visible title, lede and counters came out as a second hero on top of
+        the map. The heading stays for the document outline and for the
+        locale-mismatch check; it is not shown.
+      */}
+      <h2 class="visually-hidden">{m.mapTitle}</h2>
 
       {/*
         `tabindex` and `role` go on the CONTAINER, not on the canvas: the
@@ -243,7 +280,10 @@ const skillNameById = new Map(
         */}
         <div class="lab__panel" data-lab-panel role="status" aria-live="polite"></div>
 
-        <p class="lab__hint" aria-hidden="true">{m.mapHint}</p>
+        <p class="lab__hint" aria-hidden="true">
+          <span class="lab__hint--fine">{m.mapHint}</span>
+          <span class="lab__hint--coarse">{m.mapHintTouch}</span>
+        </p>
       </div>
 
       <div class="lab__indice">

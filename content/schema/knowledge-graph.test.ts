@@ -9,7 +9,7 @@ import assert from "node:assert/strict";
 
 import { content } from "../source/index";
 import {
-  buildKnowledgeGraph, nodesWithoutEvidence, skillAffinity, skillYears,
+  buildKnowledgeGraph, skillAffinity, skillYears, isQuietEdge,
   RADIUS_SCALE_MIN, RADIUS_SCALE_MAX,
 } from "./knowledge-graph";
 import { monthsBetween } from "./dates";
@@ -79,24 +79,56 @@ test("degree is computed from the graph, not from the dataset", () => {
   for (const n of graph.nodes) assert.equal(n.degree, expected.get(n.id));
 });
 
-test("affinity: only pairs sharing a real source", () => {
+test("affinity: co-occurrence is not relatedness", () => {
+  // React and CI/CD share projects. That is two project→skill edges, not a
+  // reason to draw React↔CI/CD: one does not extend the other.
+  const keys = new Set(skillAffinity(view).map((p) => `${p.a}|${p.b}`));
+  assert.equal(keys.has("cicd|react"), false);
+});
+
+test("affinity: a declared relatedIds pair is an edge, without co-occurrence", () => {
+  const plugin: Skill = { ...GHOST, id: "plugin", name: "Plugin", relatedIds: ["react"] };
+  const withRelated: ContentView = {
+    ...view,
+    skills: {
+      ...view.skills,
+      practice: [...(view.skills.practice ?? []), plugin],
+    },
+  };
+  const keys = new Set(skillAffinity(withRelated).map((p) => `${p.a}|${p.b}`));
+  assert.equal(keys.has("plugin|react"), true);
+});
+
+test("affinity: pairs are unique, undirected, and never self", () => {
   const pairs = skillAffinity(view);
   for (const p of pairs) {
     assert.ok(p.weight >= 1, `invalid weight in ${p.a}|${p.b}`);
     assert.notEqual(p.a, p.b, "a skill cannot have affinity with itself");
+    assert.ok(p.a < p.b, `pair not normalized: ${p.a}|${p.b}`);
   }
-  // No duplicates: the pair is normalized alphabetically before grouping.
   const keys = pairs.map((p) => `${p.a}|${p.b}`);
   assert.equal(new Set(keys).size, keys.length, "duplicated affinity pair");
 });
 
-test("affinity: every skill on an affinity edge has evidence", () => {
-  // A skill with no achievements cannot co-occur with anything. If it shows up
-  // here, the derivation is reading from the wrong place.
-  const withoutEvidence = new Set(nodesWithoutEvidence(graph).map((n) => n.id));
-  for (const e of graph.edges.filter((x) => x.kind === "affinity")) {
-    assert.ok(!withoutEvidence.has(e.source), `affinity from a node without evidence: ${e.source}`);
-    assert.ok(!withoutEvidence.has(e.target), `affinity toward a node without evidence: ${e.target}`);
+test("affinity: the live dataset connects Jotai to React and not React to CI/CD", () => {
+  const keys = new Set(skillAffinity(view).map((p) => `${p.a}|${p.b}`));
+  assert.equal(keys.has("jotai|react"), true);
+  assert.equal(keys.has("cicd|react"), false);
+});
+
+test("achievement→skill edges exist for the layout but are marked quiet", () => {
+  const quiet = graph.edges.filter(isQuietEdge);
+  const drawn = graph.edges.filter((e) => !isQuietEdge(e));
+  assert.ok(quiet.length > 0, "expected achievement→skill evidence edges");
+  assert.ok(drawn.length < graph.edges.length, "quieting should hide some edges");
+  for (const e of quiet) {
+    assert.equal(e.source.slice(0, e.source.indexOf(":")), "achievement");
+    assert.equal(e.target.slice(0, e.target.indexOf(":")), "skill");
+  }
+  for (const e of drawn) {
+    const src = e.source.slice(0, e.source.indexOf(":"));
+    const tgt = e.target.slice(0, e.target.indexOf(":"));
+    assert.notEqual(`${src}->${tgt}`, "achievement->skill");
   }
 });
 
@@ -137,6 +169,21 @@ test("the framing does not depend on the size of the dataset", () => {
     .sort((a, b) => a - b);
   const p85 = body[Math.floor(body.length * 0.85)]!;
   assert.ok(Math.abs(p85 - 300) < 1, `the body was not normalized to 300 (got ${p85.toFixed(1)})`);
+});
+
+test("the cloud is taller than it is wide: it has to fill a portrait canvas", () => {
+  const { nodes } = layoutGraph(graph);
+  const body = nodes.filter((n) => !n.withoutEvidence);
+  const span = (axis: "x" | "y" | "z") => {
+    const vs = body.map((n) => n[axis]);
+    return Math.max(...vs) - Math.min(...vs);
+  };
+  const y = span("y");
+  const x = span("x");
+  assert.ok(
+    y > x * 1.35,
+    `cloud is not portrait enough (Y ${y.toFixed(0)} vs X ${x.toFixed(0)})`,
+  );
 });
 
 test("the layout does not degenerate: nodes occupy volume on all three axes", () => {
@@ -254,21 +301,41 @@ test("the largest skill is the one with most years × connections, not most degr
 });
 
 // ---------------------------------------------------------------------------
-// RADIAL LAYOUT: roles on the outside, technologies at the center
+// CAREER CYLINDER: Y is time, angle is domain, radius is kind
 // ---------------------------------------------------------------------------
 
-test("roles end up outside the skills", () => {
+test("earlier roles sit below later ones: Y is the career", () => {
   const { nodes } = layoutGraph(graph);
-  const radius = (k: string) => {
-    const rs = nodes.filter((n) => n.kind === k && !n.withoutEvidence).map((n) => Math.hypot(n.x, n.y, n.z));
+  const roles = nodes
+    .filter((n) => n.kind === "role" && !n.withoutEvidence)
+    .sort((a, b) => a.when - b.when || a.id.localeCompare(b.id));
+  assert.ok(roles.length >= 2, "need at least two roles to test chronology");
+  for (let i = 1; i < roles.length; i++) {
+    assert.ok(
+      roles[i]!.y >= roles[i - 1]!.y - 8,
+      `${roles[i - 1]!.label} (y=${roles[i - 1]!.y.toFixed(0)}) should be below ${roles[i]!.label} (y=${roles[i]!.y.toFixed(0)})`,
+    );
+  }
+});
+
+test("roles sit on a wider ring than skills", () => {
+  const { nodes } = layoutGraph(graph);
+  const ring = (k: string) => {
+    const rs = nodes.filter((n) => n.kind === k && !n.withoutEvidence).map((n) => Math.hypot(n.x, n.z));
     return rs.reduce((a, b) => a + b, 0) / rs.length;
   };
-  const roles = radius("role");
-  const skills = radius("skill");
-  assert.ok(roles > skills, `roles at ${roles.toFixed(0)} and skills at ${skills.toFixed(0)}: there is no crust`);
-  // Achievements and projects are the bridge: they have to land in between.
-  assert.ok(radius("project") < roles, "projects ended up further out than the roles");
-  assert.ok(radius("skill") < radius("achievement"), "skills did not end up inside the achievements");
+  assert.ok(ring("role") > ring("skill"), `roles at ${ring("role").toFixed(0)} and skills at ${ring("skill").toFixed(0)}`);
+  assert.ok(ring("project") < ring("role"), "projects ended up further out than the roles");
+  assert.ok(ring("skill") < ring("project"), "skills did not end up inside the projects");
+});
+
+test("skills of the same category share an angular sector", () => {
+  const { nodes } = layoutGraph(graph);
+  const frontend = nodes.filter((n) => n.kind === "skill" && n.category === "frontend" && !n.withoutEvidence);
+  assert.ok(frontend.length >= 2, "need a frontend pair");
+  const angles = frontend.map((n) => Math.atan2(n.z, n.x));
+  const span = Math.max(...angles) - Math.min(...angles);
+  assert.ok(span < 1.6, `frontend skills are spread over ${span.toFixed(2)} rad, not a sector`);
 });
 
 test("skills without evidence go to the core, not the rim", () => {

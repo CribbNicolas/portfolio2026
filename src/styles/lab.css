@@ -43,26 +43,38 @@
   z-index: 1;
 }
 
-/* Leaves room for the pill, which is `fixed` and starts out over the hero. */
-.lab__hero {
+/* Leaves room for the pill, which is `fixed` and starts out over the hero.
+   Bottom padding is tight: the map is the next thing and should start high.
+   More specific than `.lab__content > section` so these longhands win over
+   the shared `padding-block`. */
+.lab__content > .lab__hero {
   padding-top: calc(var(--space) * 12);
+  padding-bottom: calc(var(--space) * 2);
+}
+
+.lab__content > .lab__map-section {
+  padding-top: calc(var(--space) * 1);
+  padding-bottom: calc(var(--space) * 4);
 }
 
 /* --- The map section ----------------------------------------------------- */
 
-.lab__map-section {
-  /* Wider than `--width` on purpose: the graph needs air, and a larger canvas
-     is how the nodes stop sitting in a knot. Copy stays on the reading measure. */
-  max-width: min(72rem, calc(100% - 2rem));
-  margin: 0 auto;
-  padding: calc(var(--space) * 4) calc(var(--space) * 2.5) calc(var(--space) * 8);
+/* Width and gutter of `.lab__map-section` come from the shared measure in
+   home.css. The canvas fills that column: a 72rem map next to a 45rem CV
+   was four pages glued together. */
+
+.lab__content > .cv {
+  /* cv.css's `.cv` shorthand `padding` would otherwise reset the shared
+     longhands — that file is for `/cv` (the PDF source), this is the
+     landing's copy of the same block. */
+  padding-inline: calc(var(--space) * 2.5);
+  padding-block: calc(var(--space) * 6) calc(var(--space) * 8);
 }
 
-.lab__map-section .lab__intro,
-.lab__map-section .lab__indice {
-  max-width: var(--width);
-  margin-left: auto;
-  margin-right: auto;
+@media (min-width: 40rem) {
+  .lab__content > .cv {
+    padding-inline: calc(var(--space) * 4);
+  }
 }
 
 .lab__title {
@@ -72,44 +84,16 @@
   margin: 0 0 calc(var(--space) * 1.5);
 }
 
-.lab__lede {
-  font-size: 1rem;
-  line-height: 1.55;
-  color: var(--ink-soft);
-  margin: 0 0 calc(var(--space) * 3);
-  text-wrap: pretty;
-}
-
-.lab__figures {
-  display: flex;
-  gap: calc(var(--space) * 3);
-  margin: 0 0 calc(var(--space) * 3);
-}
-
-.lab__figures div {
-  display: flex;
-  flex-direction: column-reverse;
-}
-
-.lab__figures dt {
-  font-size: 0.75rem;
-  font-weight: 600;
-  color: var(--ink-soft);
-}
-
-.lab__figures dd {
-  margin: 0;
-  font-size: 1.5rem;
-  font-weight: 800;
-  letter-spacing: -0.02em;
-  font-variant-numeric: tabular-nums;
-}
-
 /* --- El mapa: SVG abajo, canvas arriba ---------------------------------- */
 
 .lab__map {
   position: relative;
-  aspect-ratio: 1 / 1;
+  width: 100%;
+  /* One viewport on a phone, so the map is a screen of its own and a single
+     finger can still scroll past it. Desktop gets a fixed taller-than-wide
+     height — not a leftover of the viewport. */
+  height: 100svh;
+  aspect-ratio: auto;
   /* Sin borde y sin radio: el mapa no es una tarjeta, es una capa. */
   overflow: hidden;
   margin: 0 0 calc(var(--space) * 4);
@@ -132,12 +116,11 @@
   background: transparent;
   border-radius: 0;
   /*
-   * How the touch gesture is shared is decided by the BROWSER, not by us: a
-   * vertical swipe scrolls the page, a horizontal one rotates the map. That is
-   * why there is not a single `preventDefault` on pointer events in
-   * `src/scripts/`, and why this is not the scroll hijacking spec §3.4 forbids.
+   * One finger always belongs to the browser (scroll). Rotation is two
+   * fingers, decided in `interaction.ts` by counting pointers — not by
+   * `preventDefault` on touchmove, which spec §3.4 forbids.
    */
-  touch-action: pan-y;
+  touch-action: pan-x pan-y;
   cursor: grab;
 }
 
@@ -182,6 +165,24 @@
 
 .lab__map--3d .lab__canvas {
   opacity: 1;
+}
+
+/* Fade the 3D drawing at every canvas edge so a sphere leaving the frame
+   dissolves instead of being sliced by `overflow: hidden`. Two gradients
+   intersected: one for the left/right, one for top/bottom. The labels sit
+   in the DOM over the canvas and have to fade with it, or a name would
+   survive the sphere it names. The panel, tooltip and hint stay unmasked. */
+.lab__map--3d .lab__canvas,
+.lab__map--3d .lab__labels {
+  --edge-fade: 12%;
+  -webkit-mask-image:
+    linear-gradient(to right, transparent, #000 var(--edge-fade), #000 calc(100% - var(--edge-fade)), transparent),
+    linear-gradient(to bottom, transparent, #000 var(--edge-fade), #000 calc(100% - var(--edge-fade)), transparent);
+  -webkit-mask-composite: source-in;
+  mask-image:
+    linear-gradient(to right, transparent, #000 var(--edge-fade), #000 calc(100% - var(--edge-fade)), transparent),
+    linear-gradient(to bottom, transparent, #000 var(--edge-fade), #000 calc(100% - var(--edge-fade)), transparent);
+  mask-composite: intersect;
 }
 
 .lab__edge {
@@ -448,6 +449,20 @@
   transition: opacity 300ms ease;
 }
 
+.lab__hint--coarse {
+  display: none;
+}
+
+@media (pointer: coarse) {
+  .lab__hint--fine {
+    display: none;
+  }
+
+  .lab__hint--coarse {
+    display: inline;
+  }
+}
+
 /* The hint only appears with the 3D mounted: without it there is nothing to drag. */
 .lab__map--3d .lab__hint {
   opacity: 1;
@@ -544,6 +559,6 @@
 
 @media (min-width: 40rem) {
   .lab__map {
-    aspect-ratio: 4 / 3;
+    height: 48rem;
   }
 }

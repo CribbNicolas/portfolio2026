@@ -23,7 +23,7 @@ import {
   LineSegments, LineBasicMaterial,
   HemisphereLight, DirectionalLight,
   ACESFilmicToneMapping,
-  Color, Matrix4, Vector3, Quaternion,
+  Color, Matrix4, Vector3, Vector2, Quaternion,
 } from "three";
 
 import { frameMeter } from "./capability";
@@ -36,9 +36,13 @@ import { isStickyMapLabel } from "../../lib/map-labels";
  * Base radii. Larger than the SVG's on purpose: in the SVG a node leans on
  * labels and a crisp outline, and here it competes with the fog.
  */
-const RADIUS: Record<string, number> = { role: 17, project: 14, skill: 10, achievement: 9 };
+const RADIUS: Record<string, number> = { role: 11, project: 9, skill: 6.5, achievement: 5.5 };
 /** Opacity of everything OUTSIDE the focused neighbourhood. */
 const DIMMED = 0.12;
+/** How much of the canvas, as a fraction of its shortest side, fades at each
+ *  edge. WebGL clips a sphere the moment its fragment leaves the viewport;
+ *  this is what turns that clip into a dissolve. */
+const EDGE_FADE = 0.14;
 
 interface Options {
   canvas: HTMLCanvasElement;
@@ -97,6 +101,7 @@ export async function mountGraph({ canvas, data, bus, tooltip, panel, labels }: 
   const hemi = new HemisphereLight();
   const key = new DirectionalLight();
   let uAccent: { value: Color } | null = null;
+  let uResolution: { value: Vector2 } | null = null;
 
   /**
    * Four kinds with ONE accent (spec §4). The kind is told apart by size and by
@@ -145,7 +150,10 @@ export async function mountGraph({ canvas, data, bus, tooltip, panel, labels }: 
   });
   nodeMat.onBeforeCompile = (shader) => {
     shader.uniforms.uAccent = { value: colors.accent.clone() };
+    shader.uniforms.uResolution = { value: new Vector2(1, 1) };
+    shader.uniforms.uEdgeFade = { value: EDGE_FADE };
     uAccent = shader.uniforms.uAccent as { value: Color };
+    uResolution = shader.uniforms.uResolution as { value: Vector2 };
     shader.vertexShader = shader.vertexShader
       .replace(
         "#include <common>",
@@ -158,11 +166,15 @@ export async function mountGraph({ canvas, data, bus, tooltip, panel, labels }: 
     shader.fragmentShader = shader.fragmentShader
       .replace(
         "#include <common>",
-        "#include <common>\nuniform vec3 uAccent;\nvarying float vAlpha;\nvarying float vLift;",
+        "#include <common>\nuniform vec3 uAccent;\nuniform vec2 uResolution;\nuniform float uEdgeFade;\nvarying float vAlpha;\nvarying float vLift;",
       )
       .replace(
         "#include <color_fragment>",
-        "#include <color_fragment>\n  diffuseColor.a *= vAlpha;",
+        `#include <color_fragment>
+  diffuseColor.a *= vAlpha;
+  vec2 uv = gl_FragCoord.xy / max(uResolution, vec2(1.0));
+  float edge = min(min(uv.x, 1.0 - uv.x), min(uv.y, 1.0 - uv.y));
+  diffuseColor.a *= smoothstep(0.0, uEdgeFade, edge);`,
       )
       .replace(
         "vec3 outgoingLight = reflectedLight.directDiffuse + reflectedLight.indirectDiffuse + reflectedLight.directSpecular + reflectedLight.indirectSpecular + totalEmissiveRadiance;",
@@ -226,6 +238,8 @@ export async function mountGraph({ canvas, data, bus, tooltip, panel, labels }: 
   const writeInstances = () => {
     const { hover, focus, neighbourhood } = interaction.state;
     const hasFocus = focus !== null;
+    const lumOf = (c: Color) => 0.2126 * c.r + 0.7152 * c.g + 0.0722 * c.b;
+    const shade = lumOf(colors.ink) < lumOf(colors.background) ? colors.ink : colors.background;
 
     for (let i = 0; i < nodes.length; i++) {
       const n = nodes[i]!;
@@ -248,18 +262,23 @@ export async function mountGraph({ canvas, data, bus, tooltip, panel, labels }: 
       const base = (RADIUS[n.k] ?? 5) * n.r;
       // Far nodes shrink as well as fade: a large ghost sitting on a near
       // sphere is what used to read as overlap, not as depth.
-      const r = base * (isFocus ? 2.1 : highlight ? 1.6 : 1) * (0.72 + 0.28 * depth);
+      const r = base * (isFocus ? 2.1 : highlight ? 1.6 : 1) * (0.62 + 0.38 * depth);
       instPos.set(n.x, n.y, n.z);
       instScale.set(r, r, r);
       m4.compose(instPos, noRot, instScale);
       mesh.setMatrixAt(slot, m4);
 
       const tint = (highlight ? colors.accent : colorFor(n.k, n.d)).clone();
-      if (!highlight) tint.lerp(colors.background, (1 - depth) * 0.38);
+      // Far nodes recede by going DARKER, not paler. Lerping toward the
+      // background washed them out in light mode and made the back of the
+      // cloud as loud as the front. The darker of ink/background is "into
+      // the room" in both themes.
+      if (!highlight) tint.lerp(shade, (1 - depth) * 0.62);
       mesh.setColorAt(slot, tint);
       // Front of the cloud stays nearly solid. The floor used to be 0.14, which
-      // made every layer a veil and they stacked into mud.
-      alphas.array[slot] = highlight ? 1 : Math.max(0.62, depth) * (dimmed ? DIMMED : 1);
+      // made every layer a veil and they stacked into mud. Far nodes stay
+      // visible — just quieter — so the back of the sphere does not vanish.
+      alphas.array[slot] = highlight ? 1 : Math.max(0.48, 0.5 + depth * 0.5) * (dimmed ? DIMMED : 1);
       // Lift is the cheap substitute for bloom: only the thing you pointed at,
       // plus a whisper on achievements (the evidence) and roles (the crust).
       lifts.array[slot] = dimmed
@@ -278,7 +297,7 @@ export async function mountGraph({ canvas, data, bus, tooltip, panel, labels }: 
   // --- Aristas: 1 draw call ------------------------------------------------
   const index = new Map(nodes.map((n, i) => [n.i, i]));
   const positions: number[] = [];
-  const endpoints: Array<[number, number, boolean]> = [];
+  const endpoints: Array<[number, number, boolean, boolean]> = [];
   for (const e of data.edges) {
     const a = index.get(e.s);
     const b = index.get(e.t);
@@ -286,7 +305,7 @@ export async function mountGraph({ canvas, data, bus, tooltip, panel, labels }: 
     const A = nodes[a]!;
     const B = nodes[b]!;
     positions.push(A.x, A.y, A.z, B.x, B.y, B.z);
-    endpoints.push([a, b, e.a]);
+    endpoints.push([a, b, e.a, e.q === true]);
   }
 
   const edgeGeo = new BufferGeometry();
@@ -297,6 +316,7 @@ export async function mountGraph({ canvas, data, bus, tooltip, panel, labels }: 
   const edgeColors = new Float32BufferAttribute(new Float32Array(endpoints.length * 8), 4);
   edgeGeo.setAttribute("color", edgeColors);
 
+  const vEdge = new Vector3();
   const lines = new LineSegments(
     edgeGeo,
     new LineBasicMaterial({
@@ -321,7 +341,7 @@ export async function mountGraph({ canvas, data, bus, tooltip, panel, labels }: 
     const arr = edgeColors.array as Float32Array;
 
     for (let e = 0; e < endpoints.length; e++) {
-      const [a, b, affinity] = endpoints[e]!;
+      const [a, b, affinity, quiet] = endpoints[e]!;
       // An edge belongs to the focus only if it TOUCHES the focused node. "Both
       // endpoints in the neighbourhood" would be enough to sneak in edges between
       // neighbours that do not pass through the focus, and the drawing would stop
@@ -329,15 +349,19 @@ export async function mountGraph({ canvas, data, bus, tooltip, panel, labels }: 
       const ofFocus = hasFocus && (nodes[a]!.i === focus || nodes[b]!.i === focus);
       const dimmedEdge = hasFocus && !ofFocus;
 
-      // Idle edges pick up a dust of accent so they are not a cool gray
-      // against terracotta spheres. Full accent is still focus-only.
-      const c = ofFocus ? colors.accent : colors.line.clone().lerp(colors.accent, 0.28);
-      const base = ofFocus ? 0.95 : affinity ? 0.22 : 0.38;
+      // Idle edges are a whisper: the cobweb is what made the map noisy.
+      // Quiet edges (achievement→skill) stay off until they answer a click.
+      const c = ofFocus ? colors.accent : colors.line.clone().lerp(colors.accent, 0.22);
+      const base = ofFocus ? 0.95 : quiet ? 0 : affinity ? 0.12 : 0.14;
 
       for (const [k, nodeIdx] of [[0, a], [1, b]] as const) {
         const o = e * 8 + k * 4;
+        const node = nodes[nodeIdx]!;
+        vEdge.set(node.x, node.y, node.z).project(camera);
+        const toEdge = 1 - Math.max(Math.abs(vEdge.x), Math.abs(vEdge.y));
+        const edgeFade = Math.max(0, Math.min(1, toEdge / EDGE_FADE));
         arr[o] = c.r; arr[o + 1] = c.g; arr[o + 2] = c.b;
-        arr[o + 3] = fade(distances[nodeIdx]!) * base * (dimmedEdge ? DIMMED : 1);
+        arr[o + 3] = fade(distances[nodeIdx]!) * base * edgeFade * (dimmedEdge ? DIMMED : 1);
       }
     }
     edgeColors.needsUpdate = true;
@@ -347,7 +371,10 @@ export async function mountGraph({ canvas, data, bus, tooltip, panel, labels }: 
   // Framed on the ring, which is the real edge of the drawing. `layoutGraph`
   // normalizes the body to a fixed radius, so this number does not move as the
   // dataset grows.
-  const dist = data.radius / Math.tan((52 * Math.PI) / 360) * 0.7;
+  // k=0.82: the bounding sphere of `data.radius` has to FIT the view.
+  // 0.56 sat inside that sphere and clipped the top and bottom of the
+  // career cylinder. A little less than 1 leaves a margin for the fade.
+  const dist = data.radius / Math.tan((52 * Math.PI) / 360) * 0.82;
   let width = 1, height = 1;
 
   /**
@@ -363,7 +390,7 @@ export async function mountGraph({ canvas, data, bus, tooltip, panel, labels }: 
   function fade(distance: number): number {
     const t = (distance - NEAR) / (FAR - NEAR);
     const clamped = Math.max(0, Math.min(1, t));
-    return 1 - clamped * 0.4;
+    return 1 - clamped * 0.58;
   }
 
   const resize = () => {
@@ -372,8 +399,11 @@ export async function mountGraph({ canvas, data, bus, tooltip, panel, labels }: 
     height = Math.max(1, r.height);
     camera.aspect = width / height;
     camera.updateProjectionMatrix();
-    renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+    const pr = Math.min(devicePixelRatio, 2);
+    renderer.setPixelRatio(pr);
     renderer.setSize(width, height, false);
+    // `gl_FragCoord` is in drawing-buffer pixels, not CSS pixels.
+    if (uResolution) uResolution.value.set(width * pr, height * pr);
   };
   resize();
   // `ResizeObserver` and not `window.resize`: the container can change size
@@ -488,7 +518,9 @@ export async function mountGraph({ canvas, data, bus, tooltip, panel, labels }: 
       const fog = Math.max(0.12, Math.min(1, 1 - t));
       // Sticky names stay readable: workplaces (and the skills that match them
       // in size) do not vanish into the fog or when the panel is open.
-      const opacity = c.sticky ? Math.max(0.9, fog) : focused ? fog * 0.28 : fog;
+      const toEdge = Math.min(c.sx, width - c.sx, c.sy, height - c.sy) / Math.min(width, height);
+      const edgeFade = Math.max(0, Math.min(1, toEdge / EDGE_FADE));
+      const opacity = (c.sticky ? Math.max(0.9, fog) : focused ? fog * 0.28 : fog) * edgeFade;
       c.el.style.opacity = opacity.toFixed(2);
       c.el.style.transform = `translate3d(${c.sx.toFixed(1)}px, ${y.toFixed(1)}px, 0) translateX(-50%)`;
     }

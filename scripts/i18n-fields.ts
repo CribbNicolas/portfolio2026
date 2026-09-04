@@ -19,7 +19,7 @@ import type { ContentDataset } from "../content/schema/content-schema";
 const NOT_TEXT = new Set([
   "id", "slug", "locale", "schemaVersion", "updatedAt",
   "start", "end", "careerStart", "date",
-  "roleId", "projectId", "skillId", "skillIds", "category", "level",
+  "roleId", "projectId", "skillId", "skillIds", "relatedIds", "category", "level",
   "employmentType", "workMode", "status", "confidence", "dimension",
   "priority", "only", "except", "visibility", "publishPhoneOn",
   // `before`/`after` are numbers with a unit baked in: "500 ms" is "500 ms"

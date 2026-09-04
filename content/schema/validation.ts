@@ -130,6 +130,7 @@ const skill = z.object({
   aliases: z.array(z.string()),
   level: z.enum(["core", "working", "familiar"]),
   periods: z.array(skillPeriod).optional(),
+  relatedIds: z.array(z.string()).optional(),
   active: z.boolean(),
   visibility,
 }).strict();
@@ -389,6 +390,16 @@ export function checkRules(data: ContentDataset): RuleViolation[] {
     for (const sid of a.skillIds) {
       if (!skillIds.has(sid)) {
         violations.push({ rule: 0, message: `Achievement "${a.id}" references a skill that does not exist: ${sid}` });
+      }
+    }
+  }
+
+  for (const s of data.skills) {
+    for (const sid of s.relatedIds ?? []) {
+      if (sid === s.id) {
+        violations.push({ rule: 0, message: `Skill "${s.id}" lists itself in relatedIds.` });
+      } else if (!skillIds.has(sid)) {
+        violations.push({ rule: 0, message: `Skill "${s.id}" relatedIds points at a skill that does not exist: ${sid}` });
       }
     }
   }

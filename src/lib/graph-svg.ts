@@ -10,16 +10,17 @@
  */
 
 import type { PositionedGraph, GraphNodeKind } from "../../content/source/index";
+import { isQuietEdge } from "../../content/schema/knowledge-graph";
 import { projectNode } from "../../content/schema/graph-layout";
 import { NODE_ID } from "./lab-hover-css";
 import { isStickyMapLabel, nodeHasMapLabel } from "./map-labels";
 
 /** Base radius per kind. Size distinguishes the kind; color barely does (spec §4). */
 export const RADIUS: Record<GraphNodeKind, number> = {
-  role: 10,
-  project: 8,
-  skill: 5.6,
-  achievement: 5.2,
+  role: 7,
+  project: 5.5,
+  skill: 3.8,
+  achievement: 3.5,
 };
 
 export interface SvgNode {
@@ -83,6 +84,9 @@ export function buildSvgMap(graph: PositionedGraph): SvgMap {
   // Paint order IS the depth: what is behind goes first.
   const edges: SvgEdge[] = graph.edges
     .flatMap((e) => {
+      // Achievement→skill is the cobweb. It stays in the graph for layout
+      // and for the 3D focus, but the SVG has no focus state, so it is omitted.
+      if (isQuietEdge(e)) return [];
       const A = projected.get(e.source);
       const B = projected.get(e.target);
       if (!A || !B) return [];
@@ -92,10 +96,8 @@ export function buildSvgMap(graph: PositionedGraph): SvgMap {
         depth,
         edge: {
           x1: A.p.x, y1: A.p.y, x2: B.p.x, y2: B.p.y,
-          // Affinity edges thicken with the evidence they share: the thickest
-          // is the most proven relationship, not the prettiest.
-          width: round3((affinity ? 0.55 + e.weight * 0.28 : 1.15) * (0.6 + depth * 0.5)),
-          opacity: round3(fog(depth) * (affinity ? 0.32 : 0.78)),
+          width: round3((affinity ? 0.45 + e.weight * 0.2 : 0.9) * (0.55 + depth * 0.4)),
+          opacity: round3(fog(depth) * (affinity ? 0.18 : 0.28)),
           affinity,
         },
       }];

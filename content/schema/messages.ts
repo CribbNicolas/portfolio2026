@@ -45,9 +45,11 @@ export interface Messages {
   /** `formatMetric`. The connectives of a before/after movement, rule 4. */
   metricFrom: string;
   metricTo: string;
-  /** The landing's download buttons. */
+  /** The landing's download control: the button label (also the modal title)
+   *  and the dialog's close action. Language names of the two PDFs live in
+   *  the component — they are the files' own languages, not chrome copy. */
   downloadCv: string;
-  downloadCvOtherLocale: string;
+  closeDialog: string;
   /** The pill nav: its accessible label and the two section links (the CV
    *  one reuses `sectionExperience`'s sibling headings, not a nav string). */
   navSectionsLabel: string;
@@ -65,6 +67,8 @@ export interface Messages {
    *  because the numbers are computed at render time, not fixed copy. */
   svgMapAriaLabel: (nodes: number, edges: number) => string;
   mapHint: string;
+  /** Coarse pointer (a phone): one finger scrolls, two rotate. */
+  mapHintTouch: string;
   /** The stack index heading's note ("Stack N of M with evidence"). A
    *  function for the same reason as `svgMapAriaLabel`. */
   stackEvidenceNote: (withEvidence: number, total: number) => string;
@@ -158,7 +162,7 @@ export const MESSAGES: Record<Locale, Messages> = {
     metricFrom: "de",
     metricTo: "a",
     downloadCv: "Descargar CV",
-    downloadCvOtherLocale: "Download CV (English)",
+    closeDialog: "Cerrar",
     navSectionsLabel: "Secciones",
     navMap: "Mapa",
     navProjects: "Proyectos",
@@ -169,10 +173,11 @@ export const MESSAGES: Record<Locale, Messages> = {
     statsConnections: "Conexiones",
     statsAffinity: "Por afinidad",
     mapAriaLabel:
-      "Mapa de conocimiento. Arrastrá para rotar, hacé click en un nodo para ver qué lo respalda. Las flechas también rotan.",
+      "Mapa de conocimiento. Un dedo desplaza la página, dos dedos rotan el mapa. Hacé click en un nodo para ver qué lo respalda. Las flechas también rotan.",
     svgMapAriaLabel: (nodes, edges) =>
       `Mapa de conocimiento: ${nodes} nodos y ${edges} conexiones entre roles, proyectos, logros y tecnologías.`,
     mapHint: "Arrastrá para rotar · click en un nodo",
+    mapHintTouch: "Dos dedos para rotar · un dedo desplaza",
     stackEvidenceNote: (withEvidence, total) => `${withEvidence} de ${total} con evidencia`,
     emptyStackNote: (count) =>
       `Las ${count} tecnologías sin conexiones son reales: las uso,\n          pero todavía no escribí el logro que lo demuestre. Van huecas y chicas, agrupadas\n          en el núcleo. El mapa muestra el hueco en vez de taparlo.`,
@@ -238,7 +243,7 @@ export const MESSAGES: Record<Locale, Messages> = {
     metricFrom: "from",
     metricTo: "to",
     downloadCv: "Download CV",
-    downloadCvOtherLocale: "Descargar CV (español)",
+    closeDialog: "Close",
     navSectionsLabel: "Sections",
     navMap: "Map",
     navProjects: "Projects",
@@ -249,10 +254,11 @@ export const MESSAGES: Record<Locale, Messages> = {
     statsConnections: "Connections",
     statsAffinity: "By affinity",
     mapAriaLabel:
-      "Knowledge map. Drag to rotate, click a node to see what backs it up. The arrow keys rotate it too.",
+      "Knowledge map. One finger scrolls the page, two fingers rotate the map. Click a node to see what backs it up. The arrow keys rotate it too.",
     svgMapAriaLabel: (nodes, edges) =>
       `Knowledge map: ${nodes} nodes and ${edges} connections across roles, projects, achievements and skills.`,
     mapHint: "Drag to rotate · click a node",
+    mapHintTouch: "Two fingers to rotate · one finger scrolls",
     stackEvidenceNote: (withEvidence, total) => `${withEvidence} of ${total} with evidence`,
     emptyStackNote: (count) =>
       `The ${count} technologies with no connections are real: I use them, but haven't ` +
