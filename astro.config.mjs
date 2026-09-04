@@ -88,7 +88,19 @@ function localCvPdf() {
 export default defineConfig({
   site: SITE,
   output: "static",
-  build: { format: "directory" },
+  build: {
+    format: "directory",
+    // Every stylesheet inlined into the page that uses it, not linked.
+    // Measured on the published landing: two render-blocking requests
+    // (`lab.css` and `tokens.css`) cost ~670 ms before the first paint, and
+    // they are requests the HTML already had to be downloaded to discover.
+    // The trade is real and taken on purpose: inlined CSS is re-sent with
+    // every HTML response instead of being cached once. It is the right side
+    // of the trade for a site of five pages whose HTML is not cached either
+    // (`max-age=0, must-revalidate`), and `bundle-budget.check.ts` keeps the
+    // HTML under its own ceiling so this cannot quietly become a fat page.
+    inlineStylesheets: "always",
+  },
   vite: {
     plugins: [localCvPdf()],
     build: {
@@ -106,6 +118,13 @@ export default defineConfig({
       // warning nobody reads, and the day a critical chunk crosses 500 kB the
       // line would look identical to today's.
       chunkSizeWarningLimit: 600,
+
+      // Published source maps. Lighthouse flags a large first-party bundle
+      // without one (`valid-source-maps`), and the repo is public, so there is
+      // nothing in the map that `git clone` does not already give. The `.map`
+      // files are never requested by a visitor — only by devtools when
+      // somebody opens them — so they cost nothing on the wire.
+      sourcemap: true,
     },
   },
   integrations: [
