@@ -57,6 +57,9 @@ scripts/validate.ts     Entry point of `pnpm run validate`.
                         flujo-de-ramas.yml — PRs into staging/main only: checks which branch they come from.
                         Only staging enters main; only develop enters staging. Rulesets cannot express this:
                         they look at the target branch, not the source.
+public/_headers         Response headers for Pages. `immutable` for the content-hashed /_astro/* (Pages was serving
+                        them `max-age=0, must-revalidate`), plus CSP and the security headers. Inert text until
+                        Pages parses it, which is why served.check.ts — not a local check — is what verifies it.
 functions/              Cloudflare Pages Functions. The ONLY thing in the repo that runs at runtime.
   cv.pdf.ts           GET /cv.pdf. Three-line caller of createPdfHandler("es"); the route is this file's OWN path.
   en/cv.pdf.ts        GET /en/cv.pdf. Same factory, createPdfHandler("en"). No copy-pasted body — see _handler.ts.
@@ -124,7 +127,10 @@ src/
                       shipping different-shaped payloads with nothing catching it until a click throws.
   lib/anchors.ts      Section ids AND locale → URL. `LOCALE_PATHS` is the one table; the switch, hreflang,
                       PDF buttons and `sourcePath` all read it. `anchorScrollCss()` is emitted from the ids.
-  scripts/analytics.ts  Clarity. Both landing files call it (index.astro and en/index.astro); never Base.astro (/cv and /en/cv at zero JS).
+  scripts/analytics.ts  Clarity, started on the visitor's FIRST INTERACTION, not on load: the tag writes eight
+                      third-party cookies and they are the whole gap between the landing's Lighthouse Best
+                      Practices and /cv's 100 — docs/05 §5. Both landing files call it (index.astro and
+                      en/index.astro); never Base.astro (/cv and /en/cv at zero JS).
                       The Cloudflare Web Analytics beacon goes in both landing files too, also by hand: enabling it
                       from the Pages dashboard injects it into the WHOLE site and no-client-js.check.ts would
                       not see it (it looks at dist/, not at what is served).
@@ -200,7 +206,8 @@ scripts/
   editor-page.check.ts  The page in a real browser: loads, renders from the schema, saves. Needs Chromium.
   data-format.check.ts  THE canonical written form of both datasets is committed as such. Not a *.test.ts: it reads committed artifacts.
   served.check.ts     The ONLY thing verifying the SERVED response and not dist/. Runs from the smoke. Catches
-                      what happens after the build: injections at the edge.
+                      what happens after the build: injections at the edge, and whether public/_headers actually
+                      took effect (CSP, immutable assets) — a wrong indent there fails nothing locally.
   audit-todos.ts      Non-blocking report of published TODOs.
   version.ts          Version comparison. Pure, no I/O. Accepts ONLY x.y.z.
   version.test.ts     Tests of the above. Runs in `pnpm test`.

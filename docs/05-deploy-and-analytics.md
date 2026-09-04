@@ -186,7 +186,54 @@ smoke is the E2E; a tunnel is not worth it.
 
 ---
 
+## 4b. Response headers (`public/_headers`)
+
+Added 2026-09-04, after measuring the published site with Lighthouse.
+
+**The caching half fixes something that was wrong.** Pages was serving
+`/_astro/*` — file names that carry a content hash — as
+`public, max-age=0, must-revalidate`: a revalidation request per asset per
+visit, for files that cannot change without changing name. They now go out
+`immutable` for a year.
+
+**The security half does not stop an attack this site can suffer.** It is
+static, has no forms, no session and no credentials. What the headers do is
+bound what the two scripts that are NOT ours (Clarity and the Cloudflare
+beacon, both third-party, both without SRI) are allowed to reach, and answer
+the scanner a client runs before hiring somebody to build their site.
+
+Two directives are looser than they look, and both are honest costs of a
+decision made elsewhere:
+
+- `style-src 'unsafe-inline'` — `inlineStylesheets: "always"` puts every
+  stylesheet in the HTML as a `<style>` element, and `anchors.ts` emits one
+  more. CSP cannot tell those from an injected one without per-build hashes
+  Astro does not emit.
+- `font-src data:` — Vite inlines assets under 4 KB, so the small Manrope
+  subsets land in the CSS as base64. Without it Chrome refuses six font files
+  and the page silently drops to the system stack. That one was found by
+  loading the built site under the real headers, not by reading them.
+
+**Where it is verified:** `served.check.ts`, which runs from the smoke against
+the published response. It is the only place that can — `_headers` is inert
+text in `dist/` and becomes behaviour only when Pages parses it, so a wrong
+indent fails nothing locally.
+
+---
+
 ## 5. Privacy
+
+**Clarity starts on the visitor's first interaction, not on load** (scroll,
+pointer, key or touch — `src/scripts/analytics.ts`). The reason is measured:
+the tag pulls ~26 KB and writes eight third-party cookies, `MUID` and `MR` on
+`bing.com` among them, and those cookies are the entire distance between the
+landing's Lighthouse Best Practices (79) and the 100 that `/cv`, which carries
+no analytics, already scores. Behind an interaction the cost lands only on
+visits that turned into something, and the recordings still cover every session
+where anything happened — a visitor who never scrolls has nothing to record.
+
+It is **not** a consent banner and does not pretend to be one: it changes when
+the measurement starts, not what it collects.
 
 Clarity uses cookies and records sessions; CWA uses none. The site has no forms
 and Clarity masks inputs by default, so the real risk is low — but if EU traffic
@@ -227,6 +274,8 @@ The three questions worth looking at:
 - [x] Rulesets per branch (`main`, `staging`, `develop`) with required checks
 - [x] Custom 404 page
 - [x] Web Analytics and Clarity, landing only, with the privacy line
+- [x] `public/_headers`: `immutable` for the hashed assets, CSP and the rest of
+      the security headers, verified from `served.check.ts`
 - [ ] `BROWSER_RENDERING_*` loaded in **Preview** too — without it a preview's
       `/cv.pdf` returns 503
 - [ ] Domain bought, pointed, and `SITE_URL` updated
