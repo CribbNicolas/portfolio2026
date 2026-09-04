@@ -69,9 +69,6 @@ export interface Messages {
   mapHint: string;
   /** Coarse pointer (a phone): one finger scrolls, two rotate. */
   mapHintTouch: string;
-  /** The stack index heading's note ("Stack N of M with evidence"). A
-   *  function for the same reason as `svgMapAriaLabel`. */
-  stackEvidenceNote: (withEvidence: number, total: number) => string;
   /** The note under the stack list when some skills have zero connections:
    *  real skills, just not backed by a written achievement yet. */
   emptyStackNote: (count: number) => string;
@@ -178,7 +175,6 @@ export const MESSAGES: Record<Locale, Messages> = {
       `Mapa de conocimiento: ${nodes} nodos y ${edges} conexiones entre roles, proyectos, logros y tecnologías.`,
     mapHint: "Arrastrá para rotar · click en un nodo",
     mapHintTouch: "Dos dedos para rotar · un dedo desplaza",
-    stackEvidenceNote: (withEvidence, total) => `${withEvidence} de ${total} con evidencia`,
     emptyStackNote: (count) =>
       `Las ${count} tecnologías sin conexiones son reales: las uso,\n          pero todavía no escribí el logro que lo demuestre. Van huecas y chicas, agrupadas\n          en el núcleo. El mapa muestra el hueco en vez de taparlo.`,
     projectsTitle: "Proyectos",
@@ -259,7 +255,6 @@ export const MESSAGES: Record<Locale, Messages> = {
       `Knowledge map: ${nodes} nodes and ${edges} connections across roles, projects, achievements and skills.`,
     mapHint: "Drag to rotate · click a node",
     mapHintTouch: "Two fingers to rotate · one finger scrolls",
-    stackEvidenceNote: (withEvidence, total) => `${withEvidence} of ${total} with evidence`,
     emptyStackNote: (count) =>
       `The ${count} technologies with no connections are real: I use them, but haven't ` +
       `written the achievement that proves it yet. They render hollow and small, grouped at ` +

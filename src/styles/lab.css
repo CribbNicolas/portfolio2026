@@ -484,12 +484,6 @@
   margin: 0 0 calc(var(--space) * 1.5);
 }
 
-.lab__index-note {
-  text-transform: none;
-  letter-spacing: 0;
-  font-weight: 600;
-}
-
 .lab__list {
   list-style: none;
   margin: 0 0 calc(var(--space) * 2);
