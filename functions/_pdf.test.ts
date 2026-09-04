@@ -20,6 +20,9 @@ import {
   defaultFilename,
   sourcePath,
   CACHE_SECONDS,
+  BROWSER_CACHE_SECONDS,
+  REFRESH_PARAM,
+  isRefreshRequest,
   pdfHeaders,
   cacheKey,
   requestBody,
@@ -93,15 +96,55 @@ test("the endpoint points at the account it is given", () => {
 test("the cache key drops the query string", () => {
   // Without this, every campaign with its own `utm_` is a paid render per
   // visitor and the daily budget goes on traffic asking for the same file.
-  const withQuery = cacheKey("https://example.com/cv.pdf?utm_source=linkedin");
-  const withoutQuery = cacheKey("https://example.com/cv.pdf");
+  const withQuery = cacheKey("https://example.com/cv.pdf?utm_source=linkedin", "abc");
+  const withoutQuery = cacheKey("https://example.com/cv.pdf", "abc");
   assert.equal(withQuery.url, withoutQuery.url);
-  assert.equal(withQuery.url, "https://example.com/cv.pdf");
 });
 
 test("the cache key drops the fragment", () => {
-  const withHash = cacheKey("https://example.com/cv.pdf#page2");
-  assert.equal(withHash.url, "https://example.com/cv.pdf");
+  assert.equal(
+    cacheKey("https://example.com/cv.pdf#page2", "abc").url,
+    cacheKey("https://example.com/cv.pdf", "abc").url,
+  );
+});
+
+test("the cache key changes with the deploy", () => {
+  // THE test that makes a thirty-day TTL defensible. Without a version in the
+  // key, editing the dataset leaves the superseded CV downloadable for a
+  // month and every other test in this file still passes.
+  const before = cacheKey("https://example.com/cv.pdf", "commit-one");
+  const after = cacheKey("https://example.com/cv.pdf", "commit-two");
+  assert.notEqual(before.url, after.url);
+});
+
+test("a missing version is an explicit segment, not an absent one", () => {
+  // A key with no version at all would collide with whatever a previous
+  // deploy had stored under the shorter URL.
+  assert.match(cacheKey("https://example.com/cv.pdf").url, /[?&]v=unknown/);
+});
+
+test("`?refresh` needs the right token", () => {
+  const url = (v: string) => `https://example.com/cv.pdf?${REFRESH_PARAM}=${v}`;
+  assert.equal(isRefreshRequest(url("s3cret"), "s3cret"), true);
+  assert.equal(isRefreshRequest(url("wrong"), "s3cret"), false);
+  assert.equal(isRefreshRequest("https://example.com/cv.pdf", "s3cret"), false);
+});
+
+test("`?refresh` does nothing when no token is configured", () => {
+  // The safe default: an unset secret disables the manual re-render rather
+  // than leaving a billable button open to anybody who guesses the parameter.
+  assert.equal(isRefreshRequest("https://example.com/cv.pdf?refresh=1", undefined), false);
+  assert.equal(isRefreshRequest("https://example.com/cv.pdf?refresh=", ""), false);
+});
+
+test("a refresh request still caches under the same key as a normal one", () => {
+  // `?refresh` skips the read, not the write. If it also changed the key, the
+  // fresh bytes would land somewhere no ordinary visitor ever looks and the
+  // next request would serve the stale copy again.
+  assert.equal(
+    cacheKey(`https://example.com/cv.pdf?${REFRESH_PARAM}=s3cret`, "abc").url,
+    cacheKey("https://example.com/cv.pdf", "abc").url,
+  );
 });
 
 test("the cache key keeps the two locales apart", () => {
@@ -119,7 +162,18 @@ test("the headers declare PDF, filename and TTL", () => {
     /^attachment; filename="Cribb_Nicolas_CV_\d{4}-\d{2}-\d{2}\.pdf"$/,
   );
   assert.equal(h.get("content-type"), "application/pdf");
-  assert.equal(h.get("cache-control"), `public, max-age=${CACHE_SECONDS}`);
+  assert.equal(
+    h.get("cache-control"),
+    `public, max-age=${BROWSER_CACHE_SECONDS}, s-maxage=${CACHE_SECONDS}`,
+  );
+  // The two TTLs must not be collapsed into one. The browser's is short
+  // because a browser cache is keyed by URL and `/cv.pdf` never changes; the
+  // edge's is long because its key carries the deploy.
+  assert.ok(
+    BROWSER_CACHE_SECONDS < CACHE_SECONDS,
+    "the browser TTL has to stay shorter than the edge's, or a returning visitor " +
+      "holds a superseded CV with no way for us to reach it",
+  );
   assert.equal(h.get("x-content-type-options"), "nosniff");
 });
 

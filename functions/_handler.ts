@@ -38,6 +38,7 @@ import {
   TIMEOUT_MS,
   pdfHeaders,
   cacheKey,
+  isRefreshRequest,
   requestBody,
   browserRenderingEndpoint,
 } from "./_pdf";
@@ -47,6 +48,12 @@ interface Env {
   BROWSER_RENDERING_ACCOUNT_ID?: string;
   /** Token with ONE permission: Browser Rendering → Edit. Goes in as a secret. */
   BROWSER_RENDERING_TOKEN?: string;
+  /**
+   * Shared secret for `?refresh=`, the manual re-render. A secret and not a
+   * plain flag because a render is billable: see `REFRESH_PARAM`. Leaving it
+   * unset disables the manual path entirely, which is the safe default.
+   */
+  PDF_REFRESH_TOKEN?: string;
 }
 
 /**
@@ -63,6 +70,31 @@ interface Context {
 
 /** `caches.default` is Cloudflare's and is not in the DOM `CacheStorage`. */
 const edgeCache = (caches as unknown as { default: Cache }).default;
+
+/**
+ * The commit this deploy published, read from our own `/build.json`.
+ *
+ * That endpoint exists already — the smoke uses it to wait for Cloudflare to
+ * serve the commit just pushed — and it is a static asset of the very deploy
+ * running this Function, so the fetch never leaves Cloudflare and costs no
+ * external round trip. It is what makes the cache key deploy-scoped, and with
+ * it a thirty-day TTL that cannot serve a superseded CV.
+ *
+ * Failure is not an error: an unreadable version degrades to a shared
+ * `unknown` key, which caches correctly and simply stops busting per deploy.
+ * Making the PDF fail because a version string could not be read would trade a
+ * stale-cache risk for an outage.
+ */
+async function deployVersion(request: Request): Promise<string> {
+  try {
+    const res = await fetch(new URL("/build.json", request.url).toString());
+    if (!res.ok) return "unknown";
+    const body = (await res.json()) as { commit?: string };
+    return body.commit ?? "unknown";
+  } catch {
+    return "unknown";
+  }
+}
 
 function error(status: number, message: string): Response {
   // No permissive `cache-control`: a failure is not cached. And the body
@@ -94,9 +126,16 @@ export function createPdfHandler(locale: Locale) {
       return error(503, m.pdfUnconfigured);
     }
 
-    const key = cacheKey(request.url);
-    const cached = await edgeCache.match(key);
-    if (cached) return cached;
+    const key = cacheKey(request.url, await deployVersion(request));
+
+    // `?refresh=<token>` skips the READ and not the write: the fresh bytes are
+    // stored under the same key, so the purge serves the next visitor too
+    // rather than only the person who asked for it.
+    const forced = isRefreshRequest(request.url, env.PDF_REFRESH_TOKEN);
+    if (!forced) {
+      const cached = await edgeCache.match(key);
+      if (cached) return cached;
+    }
 
     let response: Response;
     try {

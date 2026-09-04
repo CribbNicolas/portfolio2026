@@ -65,7 +65,11 @@ functions/              Cloudflare Pages Functions. The ONLY thing in the repo t
   en/cv.pdf.ts        GET /en/cv.pdf. Same factory, createPdfHandler("en"). No copy-pasted body — see _handler.ts.
   _handler.ts         The shared implementation both routes call: Browser Rendering, caching, error shapes.
                       The underscore keeps it out of Pages routing.
-  _pdf.ts             The pure pieces (request body, cache key, headers, sourcePath per locale).
+  _pdf.ts             The pure pieces (request body, cache key, headers, sourcePath per locale). The edge caches
+                      a rendered PDF for 30 DAYS and the browser for 1 hour (s-maxage vs max-age). Safe only
+                      because the edge key carries the deployed commit, read from /build.json: a dataset edit
+                      ships as a deploy, a deploy is a new key. `?refresh=<PDF_REFRESH_TOKEN>` forces a
+                      re-render by hand — it skips the cache READ, not the write. docs/05 §3.
   _pdf.test.ts        Guards that the served PDF asks for the SAME options as the tested PDF.
 docs/                   See docs/00-index.md. The "why" of every design decision lives there.
                         08-branches-and-versioning.md — feature/* → develop → staging → main, and the bump rule.

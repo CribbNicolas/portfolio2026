@@ -146,6 +146,7 @@ Preview):
 |---|---|---|
 | `BROWSER_RENDERING_ACCOUNT_ID` | Plaintext | The Cloudflare Account ID |
 | `BROWSER_RENDERING_TOKEN` | **Secret** | A token with ONE permission: Developer Platform → Browser Run → Edit |
+| `PDF_REFRESH_TOKEN` | **Secret** | Any long random string. Enables `GET /cv.pdf?refresh=<token>`, the manual re-render. **Unset, the manual path simply does not exist** — which is the safe default, because a render is billable. |
 
 **Analytics variables**, Production only, so a preview does not pollute the data:
 `PUBLIC_CF_BEACON_TOKEN` and `PUBLIC_CLARITY_ID`. Both are public — they travel
@@ -162,6 +163,39 @@ against the 500/month quota and a public URL nobody asked for.
 > WHOLE site on the next deploy — `/cv` included — and no check would see it,
 > because they all read `dist/`. That is what `served.check.ts` exists to catch,
 > and the reason it exists at all.
+
+### The PDF cache, and how to bust it by hand
+
+The edge keeps a rendered PDF for **thirty days**; the visitor's browser keeps
+it for **one hour** (`s-maxage` and `max-age` in the same header — shared caches
+read the first, browsers the second).
+
+That asymmetry is the whole design. The edge key carries the **deployed commit**,
+read from our own `/build.json`, so a dataset edit ships as a deploy, the deploy
+is a new commit, and the first request after it renders again with nobody
+remembering to purge anything. A browser cache cannot be keyed that way —
+`/cv.pdf` is always `/cv.pdf` — so the browser's hour is what stops a returning
+visitor from holding a superseded CV.
+
+It went from one hour to thirty days because one hour was expensive: every
+expiry hands the next visitor a render, and on 2026-09-04, during a day of
+deploys, production `/cv.pdf` answered **429** — the day's Browser Rendering
+budget, gone. The visitor gets `pdfQuotaExceeded` instead of a CV.
+
+**To force a re-render**, with `PDF_REFRESH_TOKEN` configured:
+
+```bash
+curl -sI "https://cribbnicolas.pages.dev/cv.pdf?refresh=$PDF_REFRESH_TOKEN"
+curl -sI "https://cribbnicolas.pages.dev/en/cv.pdf?refresh=$PDF_REFRESH_TOKEN"
+```
+
+It skips the cache **read**, not the write: the fresh bytes land under the same
+key, so the purge serves the next visitor too and not only whoever asked. With
+a wrong token the parameter is ignored exactly like `utm_source`, so a probe
+cannot tell it from any other unknown parameter.
+
+Each call costs one render per locale. It is a repair tool, not something to
+put in a script that runs on a schedule.
 
 ---
 
@@ -276,6 +310,8 @@ The three questions worth looking at:
 - [x] Web Analytics and Clarity, landing only, with the privacy line
 - [x] `public/_headers`: `immutable` for the hashed assets, CSP and the rest of
       the security headers, verified from `served.check.ts`
-- [ ] `BROWSER_RENDERING_*` loaded in **Preview** too — without it a preview's
-      `/cv.pdf` returns 503
+- [x] `BROWSER_RENDERING_*` loaded in **Preview** too — verified 2026-09-04:
+      `staging.cribbnicolas.pages.dev/cv.pdf` answered 200 with a full PDF, so
+      the 503 this line used to warn about no longer applies
+- [ ] `PDF_REFRESH_TOKEN` set in Production, so the manual re-render exists
 - [ ] Domain bought, pointed, and `SITE_URL` updated
