@@ -76,27 +76,15 @@ Dated, so we know what to revisit when the context changes.
 - [x] Phase 1 closed: 15 of the 18 debt entries, including the three gates that did not exist (invariants, endpoints, embedded fonts)
 - [x] `pnpm run editor` — phase 2 of [06](./06-next-session.md), including the PR 4 affordances (remove, header, prune, 409 latch)
 - [x] Bilingual site: `content.en.json`, `/en/` + `/en/cv`, both CV PDFs, an
-      ES/EN switch on both landings. Workflow and what is still Spanish-only
-      (`/llms.txt`, `/cv.json`, the OG card) in [10-i18n.md](./10-i18n.md)
+      ES/EN switch on both landings. Workflow in [10-i18n.md](./10-i18n.md)
 - [x] `hreflang` on both landings: `es` → `/`, `en` → `/en/`, `x-default` → `/`; absent from `/cv` and `/en/cv`
-- [ ] **`/en/llms.txt` and `/en/cv.json`** — the two surfaces agents consume are
-      Spanish-only (`llms.txt.ts` and `cv.json.ts` both pin `"es"`), and the
-      crawlers that read a CV in English are exactly who they exist for. The
-      section headers of `llms.txt` were never moved into `messages.ts`, so this
-      costs one more file than it looks. The highest-value of the three
-- [ ] **The OG card is Spanish on `/en/`** — one committed `og.jpg` serves both
-      pages, so sharing the English landing on LinkedIn previews in Spanish.
-      `build-og.ts` emits one image and `og.lock.json` fingerprints one
-- [ ] **`/404.html` is Spanish for both locales** — a mistyped URL under `/en/`
-      lands on a Spanish page. Decision locked: bilingual-in-one-page (Cloudflare
-      Pages only serves root `404.html`; a per-prefix 404 needs a Function, and
-      404 stays at zero JS). Wave 4 of
-      [the campaign](./superpowers/plans/2026-09-03-close-technical-debt.md)
-- [ ] **Read the English dataset.** `content.en.json` is a reviewed-for-accuracy
-      draft: a review confirmed it invents no number, client or date, and that
-      every hedge survived. Nothing checks whether it reads as written English
-      rather than translated Spanish — the lock detects stale, not bad. Start
-      with `identity.summary.long`, the Hogarth role, and the `Metric.label`s
+- [x] **`/en/llms.txt` and `/en/cv.json`** — same factory as the Spanish pair;
+      headings in `messages.ts`
+- [x] **OG card per locale** — `public/og.jpg` and `public/og.en.jpg`
+- [x] **Bilingual 404** — one `404.html`, Spanish first, English below
+- [x] **English voice pass** — `identity.summary.long`, Hogarth, metric labels.
+      Author still to read the summary and Hogarth before treating the voice as
+      signed off.
 - [ ] LinkedIn text blocks
 - [ ] Portfolio case studies — the research of [04 §6](./04-portfolio.md) comes first
 - [x] Freelance 2020-04 → 2022-06 connected to WordPress, Docker, Vue, Quasar, SCSS (still one achievement; the stack is now on the map)

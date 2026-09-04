@@ -44,6 +44,8 @@ export const GET: APIRoute = ({ site }) => {
     "# No hace falta scrapear el HTML.",
     `# ${site ? new URL("llms.txt", site) : "/llms.txt"}`,
     `# ${site ? new URL("cv.json", site) : "/cv.json"}`,
+    `# ${site ? new URL("en/llms.txt", site) : "/en/llms.txt"}`,
+    `# ${site ? new URL("en/cv.json", site) : "/en/cv.json"}`,
     ...(sitemap ? ["", sitemap] : []),
     "",
   ];

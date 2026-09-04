@@ -99,11 +99,12 @@ src/
   pages/en/index.astro  The English landing. Same shared HomeDocument, locale="en", content.en.json.
                       In PAGES_WITH_JS alongside `/`: it renders the same 3D map.
   pages/en/cv.astro   The English CV in HTML. Same shared CvDocument, locale="en". Zero JS, same as /cv.
-  pages/cv.json.ts    public-api endpoint. Spanish only — locale is hardcoded, not read from the request.
+  pages/cv.json.ts    public-api endpoint, Spanish. `/en/cv.json.ts` is the English sibling.
   pages/build.json.ts The published commit (CF_PAGES_COMMIT_SHA). One consumer: the smoke, which uses it to wait
                       for Cloudflare to serve the commit just pushed.
   pages/404.astro     Without this, Pages returns 200 with HTML for any route: a soft 404.
-  pages/llms.txt.ts   Markdown endpoint for agents. Spanish only, same reason as cv.json.ts.
+  pages/llms.txt.ts   Markdown endpoint for agents, Spanish. `en/llms.txt.ts` is the English sibling;
+                      both call `renderLlmsTxt` in `src/lib/llms-txt.ts`.
   components/cv/      Dumb components: they receive resolved props, they filter nothing.
   components/projects/ProjectList.astro  The projects. Each card carries the id `buildHoverCss` expects:
                       the cross-hover with the map works with NO JS.
@@ -157,7 +158,7 @@ scripts/
                       dist/ would have to learn to ignore it.
   og-data.ts          What the generator and its check share: the texts derived from the dataset and the
                       fingerprint. Separate because build-og.ts is an entry point.
-  build-og.ts         Writes public/og.jpg + og.lock.json. `og:local`, outside the build.
+  build-og.ts         Writes public/og.jpg + public/og.en.jpg + og.lock.json. `og:local`, outside the build.
   og-output.check.ts  Dimensions, WhatsApp's weight ceiling, that the image has not gone stale, and that the
                       favicon still draws the ring from lib/brand.ts.
   pdf-options.ts      THE definition of the print options. Shared by render-pdf.ts (Playwright, the gate) and
@@ -232,7 +233,7 @@ pnpm run dev         # astro dev
 pnpm run editor      # local dataset editor on 127.0.0.1:4322. Page + API; test:editor is its only gate
 pnpm run build       # ONLY astro build. No Chromium: that is why it runs on Cloudflare Pages
 pnpm run pdf:local   # prints dist/cv.pdf with Playwright. Pre-deploy gate, not the deliverable
-pnpm run og:local    # writes public/og.jpg (the social card) + og.lock.json. It gets COMMITTED
+pnpm run og:local    # writes public/og.jpg + public/og.en.jpg + og.lock.json. They get COMMITTED
 pnpm run test:pdf    # verifies the PDF (needs a prior pdf:local, or PDF_SOURCE=<url>)
 pnpm run test:js     # per-page JS policy over all of dist/ (needs a build)
 pnpm run test:bundle # byte budget of the home's map (needs a build)
@@ -410,8 +411,8 @@ already be noted with its reason and with the phase it belongs to. Full status i
   so there is nothing to migrate later. Do not fill them with placeholders.
 - **Bilingual workflow: Spanish is edited first, always.** English follows
   through the loop in `docs/10-i18n.md` — `test:i18n`, translate, `i18n:lock`.
-  `/llms.txt`, `/cv.json` and the OG social card stay Spanish-only, on purpose;
-  the doc says why and when to reconsider each.
+  Both agent endpoints and the OG card are bilingual (`/en/llms.txt`,
+  `/en/cv.json`, `og.en.jpg`).
 - **Backend: NOT for now.** Evaluated 2026-08-25 (`docs/06`). Keystatic
   discarded — it demands an SSR adapter plus React and Markdoc; Sanity viable but
   postponed, because with the data outside git the content stops passing through

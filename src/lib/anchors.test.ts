@@ -17,12 +17,14 @@ import {
 
 const LOCALES: Locale[] = ["es", "en"];
 
-test("every locale has a home, a CV page and a PDF", () => {
+test("every locale has a home, a CV page, a PDF and the agent endpoints", () => {
   for (const locale of LOCALES) {
     assert.equal(typeof LOCALE_PATHS[locale].home, "string");
     assert.equal(typeof LOCALE_PATHS[locale].cv, "string");
     assert.equal(typeof LOCALE_PATHS[locale].pdf, "string");
     assert.match(LOCALE_PATHS[locale].pdf, /\.pdf$/);
+    assert.match(LOCALE_PATHS[locale].json, /\.json$/);
+    assert.match(LOCALE_PATHS[locale].llms, /llms\.txt$/);
   }
 });
 

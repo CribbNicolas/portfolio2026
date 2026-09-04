@@ -64,7 +64,7 @@ test("English chrome copy is not a silent paste of the Spanish", () => {
   // The accent test above misses bare-ASCII Spanish ("Proyectos", "Contacto").
   // Identical short labels are often legitimate ("Email"), so the allowlist
   // is the reviewable decision; every other key must actually differ.
-  const MAY_BE_IDENTICAL = new Set<keyof Messages>(["emailLabel"]);
+  const MAY_BE_IDENTICAL = new Set<keyof Messages>(["emailLabel", "llmsStack"]);
   const OTHER_LOCALE_ON_PURPOSE = new Set<keyof Messages>(["downloadCvOtherLocale"]);
   for (const key of Object.keys(MESSAGES.es) as (keyof Messages)[]) {
     if (MAY_BE_IDENTICAL.has(key) || OTHER_LOCALE_ON_PURPOSE.has(key)) continue;

@@ -2,7 +2,7 @@
 import type { Locale } from "@content";
 import { MESSAGES } from "@content";
 import { OG_HEIGHT, OG_WIDTH } from "../../scripts/og-template";
-import { HREFLANG } from "../lib/anchors";
+import { HREFLANG, OG_IMAGE_PATH } from "../lib/anchors";
 
 /** OG's own locale codes (BCP-ish, `xx_YY`) — a protocol detail, not chrome
  *  copy, so it lives here and not in `messages.ts`. */
@@ -22,9 +22,7 @@ interface Props {
    * `<html lang>` and, when `shareable`, `og:locale` and the OG/Twitter image
    * alt text. Defaults to `"es"` because every page predates the English ones
    * and none of them pass it explicitly yet outside `/en/*`. The OG image
-   * itself (the JPEG `og:image` points at) stays the one committed artifact
-   * for both locales — regenerating it per language is a separate slice, not
-   * an oversight of this one.
+   * is per locale (`OG_IMAGE_PATH`): sharing `/en/` must not preview in Spanish.
    */
   locale?: Locale;
   /**
@@ -57,7 +55,7 @@ const m = MESSAGES[locale];
 // The dimensions come from the same module that uses them to generate the
 // JPEG: if the card ever changes size, the tags follow on their own instead of
 // lying to LinkedIn about the space it has to reserve.
-const socialImage = new URL("/og.jpg", Astro.site);
+const socialImage = new URL(OG_IMAGE_PATH[locale], Astro.site);
 ---
 
 <!doctype html>

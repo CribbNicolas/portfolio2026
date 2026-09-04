@@ -40,11 +40,19 @@ export interface LocalePaths {
   home: string;
   cv: string;
   pdf: string;
+  json: string;
+  llms: string;
 }
 
 export const LOCALE_PATHS: Record<Locale, LocalePaths> = {
-  es: { home: "/", cv: "/cv", pdf: "/cv.pdf" },
-  en: { home: "/en/", cv: "/en/cv", pdf: "/en/cv.pdf" },
+  es: { home: "/", cv: "/cv", pdf: "/cv.pdf", json: "/cv.json", llms: "/llms.txt" },
+  en: { home: "/en/", cv: "/en/cv", pdf: "/en/cv.pdf", json: "/en/cv.json", llms: "/en/llms.txt" },
+};
+
+/** Social card JPEG, one committed file per locale. */
+export const OG_IMAGE_PATH: Record<Locale, string> = {
+  es: "/og.jpg",
+  en: "/og.en.jpg",
 };
 
 /** The binary switch. A third language is a compile error here, not a guess. */

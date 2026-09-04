@@ -1,16 +1,16 @@
 /**
- * A markdown summary for agents (docs/04 §3). Spanish.
+ * A markdown summary for agents (docs/04 §3). English.
  *
- * Generated from the dataset: writing it by hand guarantees that in three
- * months it says something different from the CV.
+ * Same renderer as `/llms.txt`, different locale. Two URLs, no content
+ * negotiation — the same pair as the PDFs.
  */
 
 import type { APIRoute } from "astro";
 import { content } from "@content";
-import { renderLlmsTxt } from "../lib/llms-txt";
+import { renderLlmsTxt } from "../../lib/llms-txt";
 
 export const GET: APIRoute = async ({ site }) => {
-  const locale = "es" as const;
+  const locale = "en" as const;
   const view = await content.getView("public-api", locale);
   const base = site?.toString().replace(/\/$/, "") ?? "";
 
