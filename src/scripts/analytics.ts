@@ -40,13 +40,43 @@ import Clarity from "@microsoft/clarity";
 const ID: string | undefined = import.meta.env.PUBLIC_CLARITY_ID;
 
 /**
- * Starts Clarity when a project is configured.
+ * Events that count as "somebody is actually here". `scroll` is the one that
+ * fires for almost every real visit, including the reader who never clicks;
+ * the pointer and keyboard ones are what a phone and a keyboard user hit
+ * first. All passive: none of them is being cancelled, and saying so keeps
+ * them off the scroll's critical path.
+ */
+const WAKE_EVENTS = ["scroll", "pointerdown", "keydown", "touchstart"] as const;
+
+/**
+ * Starts Clarity on the visitor's first interaction, not on load.
  *
- * It never throws: the package's `injectScript` wraps everything in a try/catch
- * that returns silently. That is why it can be called before the rest of the
- * boot with no risk of an analytics failure taking the map down with it.
+ * Clarity is not one script: the tag pulls `clarity.js` (~26 KB) and then
+ * writes eight third-party cookies, `MUID` and `MR` on `bing.com` among them.
+ * Paid at load, that is bytes and cookies spent on every bounce — and it is
+ * the whole distance between this page's Lighthouse Best Practices and the
+ * 100 that `/cv`, which has no analytics, already scores. Behind the first
+ * interaction the cost lands only on visits that turned into something, and
+ * the recordings still cover every session where anything happened.
+ *
+ * Not a consent banner, and not pretending to be one: it changes WHEN the
+ * measurement starts, not what it collects. The privacy line in the footer
+ * says what Clarity does either way.
+ *
+ * `init` never throws — the package's `injectScript` wraps everything in its
+ * own try/catch — so this cannot take the map down with it.
  */
 export function startAnalytics(): void {
-  if (!ID) return;
-  Clarity.init(ID);
+  const id = ID;
+  if (!id) return;
+
+  const fire = (): void => {
+    // The fired listener removed itself (`once`); these are the others.
+    for (const type of WAKE_EVENTS) removeEventListener(type, fire);
+    Clarity.init(id);
+  };
+
+  for (const type of WAKE_EVENTS) {
+    addEventListener(type, fire, { passive: true, once: true });
+  }
 }

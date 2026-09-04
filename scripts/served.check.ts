@@ -80,6 +80,55 @@ for (const path of PRINTED_PAGES) {
   });
 }
 
+/**
+ * The headers `public/_headers` promises. This is the ONLY place they can be
+ * verified: that file is inert text in `dist/` — it becomes behaviour when
+ * Pages parses it, and a typo (a missing two-space indent, a rule under the
+ * wrong path) produces no error anywhere, just a header that silently is not
+ * there.
+ */
+test("the hashed assets are served immutable", async () => {
+  // Read off the landing rather than hard-coded: the file name carries a
+  // content hash, so any literal here would rot on the next build.
+  const html = await (await get("/")).text();
+  const asset = html.match(/\/_astro\/[A-Za-z0-9._-]+\.(?:js|css|woff2?)/)?.[0];
+  assert.ok(asset, "the landing references no /_astro/ asset, which cannot be right");
+
+  const cache = (await get(asset)).headers.get("cache-control") ?? "";
+  assert.match(
+    cache,
+    /immutable/,
+    `${asset} came back as \`${cache}\`. Those file names carry a content hash: ` +
+      "served without `immutable` every visit revalidates a file that cannot change. " +
+      "Check that `public/_headers` reached `dist/` and that its `/_astro/*` rule parses.",
+  );
+});
+
+test("the landing carries its security headers", async () => {
+  const res = await get("/");
+  const csp = res.headers.get("content-security-policy") ?? "";
+
+  assert.ok(csp, "no Content-Security-Policy. `public/_headers` did not take effect.");
+  // Not the whole policy string: asserting it byte for byte would turn every
+  // deliberate edit into a failing test. These three are the directives whose
+  // absence changes what an attacker can do, not how the page looks.
+  for (const directive of ["frame-ancestors 'none'", "object-src 'none'", "base-uri 'self'"]) {
+    assert.ok(csp.includes(directive), `the CSP lost \`${directive}\`: ${csp}`);
+  }
+
+  for (const header of ["strict-transport-security", "permissions-policy", "x-content-type-options"]) {
+    assert.ok(res.headers.get(header), `the served landing has no \`${header}\``);
+  }
+});
+
+test("the printed pages are not framed either", async () => {
+  // `/cv` is the page Browser Rendering prints from. It gets the same headers
+  // as everything else — this asserts the `/*` rule really is site-wide and
+  // not something that only matched the landing.
+  const csp = (await get("/cv/")).headers.get("content-security-policy") ?? "";
+  assert.match(csp, /frame-ancestors 'none'/, `/cv/ came back with CSP \`${csp}\``);
+});
+
 test("a non-existent route returns 404, not 200", async () => {
   // The soft 404 we fixed with `src/pages/404.astro`. That the file exists is
   // verified by `single-landing.check.ts`; that Pages serves it with the right
