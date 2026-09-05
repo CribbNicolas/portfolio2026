@@ -129,6 +129,8 @@ src/
   lib/lab-data.ts     PositionedGraph + Messages → the `LabData` JSON both landings embed for the boot
                       script. One typed `buildLabData()` both pages call, so the two cannot drift into
                       shipping different-shaped payloads with nothing catching it until a click throws.
+  lib/llms-txt.ts     The Markdown for agents. Every URL goes out as `[name](url)`, never bare: Lighthouse 13's
+                      `llms-txt` audit reads bare URLs as "no links at all". `endpoints.check.ts` guards it.
   lib/anchors.ts      Section ids AND locale → URL. `LOCALE_PATHS` is the one table; the switch, hreflang,
                       PDF buttons and `sourcePath` all read it. `anchorScrollCss()` is emitted from the ids.
   scripts/analytics.ts  Clarity, started on the visitor's FIRST INTERACTION, not on load: the tag writes eight
@@ -369,10 +371,19 @@ Rules, all verified in CI by `bundle-budget.check.ts` and
 **Whether the device can take it is decided in four steps** (`capability.ts`),
 and only the third one measures: `prefers-reduced-motion`/`saveData`/
 `effectiveType`/`deviceMemory`/WebGL2 before downloading a byte; the context on
-mount; **the median of the first 30 frames against a 20 ms ceiling**; and live
-degradation (first `dpr → 1`, then off). The third is the one that matters: on
-iOS `saveData`, `effectiveType` and `deviceMemory` do not exist — they are
-Chromium APIs — so leaning on step 1 is deciding blind on half the phones.
+mount; **the frame probe**; and live degradation (first `dpr → 1`, then off).
+The third is the one that matters: on iOS `saveData`, `effectiveType` and
+`deviceMemory` do not exist — they are Chromium APIs — so leaning on step 1 is
+deciding blind on half the phones.
+
+**The probe has TWO verdicts and the fast one is not an optimization, it is a
+bug fix.** The median of 30 frames against a 20 ms ceiling is the careful
+answer; on a slow phone those 30 frames cost ~2.4 s of blocked main thread, so
+the measurement was more expensive than the thing measured (PageSpeed on a Moto
+G Power, 2026-09-04: 20 long tasks, all `field.ts`, TBT 1,140 ms). A streak of 3
+frames over 50 ms now answers immediately. On a capable device nothing changes —
+the streak never reaches 3. `src/scripts/lab/capability.test.ts` asserts both
+directions, including that one long frame (a GC, a resize) is NOT a verdict.
 
 ## Conventions (deduced from the code, not from preferences)
 
