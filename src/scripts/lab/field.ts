@@ -91,7 +91,7 @@ export async function mountField(canvas: HTMLCanvasElement): Promise<LabScene | 
     cAccent: gl.getUniformLocation(prog, "cAccent"),
   };
 
-  /** Colors come from the tokens. Dark mode comes for free. */
+  /** Colors come from the tokens: zero hex hardcoded in this shader driver. */
   const rgb = (name: string): [number, number, number] => {
     const v = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
     const m = /^#([0-9a-f]{6})$/i.exec(v);
@@ -169,10 +169,6 @@ export async function mountField(canvas: HTMLCanvasElement): Promise<LabScene | 
   });
   io.observe(canvas);
 
-  const mq = matchMedia("(prefers-color-scheme: dark)");
-  const onThemeChange = () => uploadColors();
-  mq.addEventListener("change", onThemeChange);
-
   const onContextLost = (e: Event) => { e.preventDefault(); shutDown(); };
   canvas.addEventListener("webglcontextlost", onContextLost);
 
@@ -184,7 +180,6 @@ export async function mountField(canvas: HTMLCanvasElement): Promise<LabScene | 
     removeEventListener("pointermove", onMove);
     document.removeEventListener("visibilitychange", onVisibilityChange);
     canvas.removeEventListener("webglcontextlost", onContextLost);
-    mq.removeEventListener("change", onThemeChange);
     io.disconnect();
     ro.disconnect();
     gl.deleteBuffer(buf);

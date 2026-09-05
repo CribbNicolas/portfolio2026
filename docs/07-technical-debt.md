@@ -24,6 +24,14 @@ only code and infrastructure debt.
 
 ---
 
+## Open
+
+| # | What it is | How to check it | Cost to fix |
+|---|---|---|---|
+| 43 | `field.ts`'s panic-then-degrade step (`mountField`) reuses the SAME `frameMeter()` closure after dropping `dpr` to 1: `panicStreak` is already at `PANIC_STREAK` when the degrade fires, so the very next slow frame (often the same burst that tripped it) reads `panicStreak >= PANIC_STREAK` again and shuts the field down anyway — the degrade step runs but rarely gets to matter. `graph-3d.ts`'s equivalent step, added alongside the mobile Safari fixes in this PR, calls `measure = frameMeter()` after degrading for exactly this reason; `field.ts` predates that fix and was left alone to keep the diff to one story. | Force three consecutive frames over `PANIC_FRAME_MS` right after `mountField` degrades (same shape as `capability.test.ts`'s panic cases, against a small harness around `mountField`'s inner logic) and see it call `shutDown()` on the frame immediately after the degrade. | One line: `measure = frameMeter();` next to `degraded = true; dpr = 1; resize();`. Needs `measure` to become `let`. |
+
+---
+
 ## Resolved
 
 Kept as a one-line record. The reasoning is in the commit that closed each one.
