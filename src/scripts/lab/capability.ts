@@ -15,6 +15,22 @@ export const FRAME_BUDGET_MS = 20;
 /** How many frames get measured before deciding. At 60 fps, half a second. */
 export const PROBE_FRAMES = 30;
 
+/**
+ * A frame this slow is not a hiccup, it is an answer. 50 ms is 2.5x the budget
+ * and under 20 fps.
+ */
+export const PANIC_FRAME_MS = 50;
+
+/**
+ * How many consecutive panic frames end the probe early.
+ *
+ * Three and not one: a single frame that long is a garbage collection, a
+ * `resize`, or the tab coming back from the background, and shutting the
+ * animation down over one of those would misjudge a device that is perfectly
+ * capable. Three in a row is the device.
+ */
+export const PANIC_STREAK = 3;
+
 interface ExtendedNavigator extends Navigator {
   deviceMemory?: number;
   connection?: { saveData?: boolean; effectiveType?: string };
@@ -58,10 +74,30 @@ export function mayAttempt(): boolean {
  * returns `null`; once done it returns `true` (keep going) or `false` (shut
  * down). Shutting down is invisible: the SVG has been painted underneath since
  * the first byte.
+ *
+ * TWO verdicts, not one, and the second one exists because the first was
+ * expensive on exactly the devices it was written to protect.
+ *
+ * The median over `PROBE_FRAMES` is the careful answer: it needs 30 samples,
+ * which on a capable device is half a second and costs nothing. On a slow one
+ * each of those frames is 70-100 ms, so the probe spent ~2.4 s of main thread
+ * to conclude the device could not afford the animation — measured on a Moto G
+ * Power through PageSpeed Insights on 2026-09-04: twenty long tasks, all of
+ * them this loop, and 1,140 ms of total blocking time. The measurement cost
+ * more than what it was measuring.
+ *
+ * So a streak of `PANIC_STREAK` frames over `PANIC_FRAME_MS` answers
+ * immediately. It is deliberately a streak and a high threshold: one long
+ * frame is a GC, a resize, or a tab returning from the background, and a
+ * device that produces three of those in a row is not having a bad moment.
+ *
+ * On a device that keeps up, nothing about this changes — the streak never
+ * reaches three and the median decides exactly as before.
  */
 export function frameMeter(): (now: number) => boolean | null {
   const samples: number[] = [];
   let previous = 0;
+  let panicStreak = 0;
 
   return (now: number) => {
     if (previous === 0) { previous = now; return null; }
@@ -73,6 +109,11 @@ export function frameMeter(): (now: number) => boolean | null {
     if (samples.length === 0 && delta > 100) return null;
 
     samples.push(delta);
+
+    // Checked BEFORE the sample count: the whole point is not waiting for 30.
+    panicStreak = delta > PANIC_FRAME_MS ? panicStreak + 1 : 0;
+    if (panicStreak >= PANIC_STREAK) return false;
+
     if (samples.length < PROBE_FRAMES) return null;
 
     const sorted = [...samples].sort((a, b) => a - b);

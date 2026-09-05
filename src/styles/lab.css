@@ -97,11 +97,9 @@
   /* Sin borde y sin radio: el mapa no es una tarjeta, es una capa. */
   overflow: hidden;
   margin: 0 0 calc(var(--space) * 4);
-  /* The SVG DOES need an opaque background: its occlusion halos are discs of
-     --bg-raised and over a transparent panel they would read as smudges. */
-  background: var(--bg-raised);
-  border-radius: var(--radius);
-  transition: background-color 400ms ease, border-radius 400ms ease;
+  /* The panel is drawn by `::before`, NOT by this element's own background.
+     See that rule for why. */
+  background: transparent;
   /* The canvas does not take pointer events, so a drag lands on the SVG and
      selects its labels. Kill selection on the map; the panel is not clickable
      anyway (`pointer-events: none`). */
@@ -112,9 +110,40 @@
 /* With the 3D mounted the panel disappears and the field shows through the map.
    Distant nodes fade to TRANSPARENT, not to a panel color: that is solved by the
    per-instance alpha in `graph-3d.ts`, not by this CSS. */
+/*
+ * The panel behind the SVG, as its own layer.
+ *
+ * The SVG DOES need an opaque background: its occlusion halos are discs of
+ * --bg-raised and over a transparent panel they would read as smudges. When
+ * the 3D mounts, that panel has to go.
+ *
+ * It used to be this element's own `background-color` and `border-radius`,
+ * transitioned. Both are painted properties: the browser cannot hand them to
+ * the compositor, so every frame of that 400 ms re-painted a full-viewport
+ * box, and Lighthouse flagged it as a non-composited animation. Moving the
+ * panel to a pseudo-element and fading its `opacity` is the same picture with
+ * work the compositor can do on its own thread.
+ *
+ * `z-index: 0` and not `-1`: at -1 it would paint behind `.lab__map`'s own
+ * background — there is none now, so it would land behind the section instead
+ * of behind the SVG.
+ */
+.lab__map::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background: var(--bg-raised);
+  border-radius: var(--radius);
+  pointer-events: none;
+  transition: opacity 400ms ease;
+}
+
+.lab__map--3d::before {
+  opacity: 0;
+}
+
 .lab__map--3d {
-  background: transparent;
-  border-radius: 0;
   /*
    * One finger always belongs to the browser (scroll). Rotation is two
    * fingers, decided in `interaction.ts` by counting pointers — not by
@@ -139,6 +168,8 @@
 .lab__canvas {
   position: absolute;
   inset: 0;
+  /* Above `::before`, which is the panel they are drawn on. */
+  z-index: 1;
   width: 100%;
   height: 100%;
   user-select: none;
