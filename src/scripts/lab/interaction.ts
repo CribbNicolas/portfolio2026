@@ -166,10 +166,15 @@ export function createInteraction({
     state.dragging = false;
   };
 
-  const onMove = (e: PointerEvent) => {
+  /** Updates the hit-test position from an event's own coordinates. */
+  const trackPointer = (e: PointerEvent) => {
     const r = container.getBoundingClientRect();
     pointerX = e.clientX - r.left;
     pointerY = e.clientY - r.top;
+  };
+
+  const onMove = (e: PointerEvent) => {
+    trackPointer(e);
 
     if (isTouch(e) && touches.has(e.pointerId)) {
       touches.set(e.pointerId, { x: e.clientX, y: e.clientY });
@@ -218,7 +223,15 @@ export function createInteraction({
       if (touches.size === 0 && pointerId === e.pointerId) {
         pointerId = null;
         const total = Math.abs(e.clientX - startX) + Math.abs(e.clientY - startY);
-        if (total <= DRAG_THRESHOLD) focusNode(nodeUnderPointer());
+        // A tap that never moved may never have produced a `pointermove`
+        // (Safari does not guarantee one for a stationary touch), leaving
+        // `pointerX`/`pointerY` at their sentinel value. Read the up event's
+        // own coordinates so the hit-test lands on where the finger actually
+        // is, not on stale (or absent) move data.
+        if (total <= DRAG_THRESHOLD) {
+          trackPointer(e);
+          focusNode(nodeUnderPointer());
+        }
         wake();
       }
       return;
@@ -237,7 +250,10 @@ export function createInteraction({
     // There was no drag: it is a click. It only acts when it landed on a node;
     // otherwise it clears the focus — which is what clicking empty space should do.
     const total = Math.abs(e.clientX - startX) + Math.abs(e.clientY - startY);
-    if (total <= DRAG_THRESHOLD) focusNode(nodeUnderPointer());
+    if (total <= DRAG_THRESHOLD) {
+      trackPointer(e);
+      focusNode(nodeUnderPointer());
+    }
     wake();
   };
 
