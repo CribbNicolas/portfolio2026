@@ -4,28 +4,28 @@
  * docs/superpowers/specs/2026-08-14-sistema-visual-design.md §6.
  *
  * Color is declared by ROLE (--ink, --accent), never by color name: that way
- * dark mode and print mode redefine the same tokens without touching a single
- * selector.
+ * print mode redefines the same tokens without touching a single selector.
  *
- * The SCREEN tokens (light and dark) live here. `cv.css` redefines them
- * separately, in its own `@media print`, for the print variant: this file is
- * not the only place a color lives, it is the only place the screen tokens
- * live.
+ * Screen is dark ALWAYS, by decision, not by `prefers-color-scheme`: the site
+ * does not follow the visitor's OS setting and never offered a toggle. `cv.css`
+ * redefines these tokens separately, in its own `@media print`, for the print
+ * variant: this file is not the only place a color lives, it is the only place
+ * the screen tokens live.
  */
 
 :root {
-  --bg: #ffffff;
-  --bg-raised: #f7f6f4;
-  --ink: #17181c;
-  --ink-soft: #5f636e;
+  --bg: #131417;
+  --bg-raised: #1c1e23;
+  --ink: #f0eeea;
+  --ink-soft: #a1a5b0;
   /* Terracotta and not violet/indigo on purpose: the violet gradient is the
      default of a thousand templates and fails the voice test of spec §5. */
-  --accent: #b0472a;
-  --accent-faint: #fbeee9;
-  --line: #e5e3df;
+  --accent: #e2825f;
+  --accent-faint: #2c1c16;
+  --line: #2c2f36;
   /* Translucent on purpose: the pill carries `backdrop-filter`, and with an
      opaque background the blur would not show. */
-  --bg-pill: rgb(255 255 255 / 0.82);
+  --bg-pill: rgb(19 20 23 / 0.78);
 
   --font: "Manrope", system-ui, -apple-system, sans-serif;
 
@@ -37,24 +37,6 @@
   --width: 45rem;
   --radius: 10px;
   --shadow: 0 1px 2px rgb(23 24 28 / 0.04), 0 8px 24px rgb(23 24 28 / 0.06);
-}
-
-/* Dark mode on screen only. Print always reverts it.
-   `screen and` is necessary, not cosmetic: without it this media query has more
-   specificity (0,2,0) than cv.css's `@media print { :root { ... } }` (0,1,0),
-   and on a Ctrl+P with the system in dark mode, dark wins over white paper no
-   matter what the cascade order does. */
-@media screen and (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    --bg: #131417;
-    --bg-raised: #1c1e23;
-    --ink: #f0eeea;
-    --ink-soft: #a1a5b0;
-    --accent: #e2825f;
-    --accent-faint: #2c1c16;
-    --line: #2c2f36;
-    --bg-pill: rgb(19 20 23 / 0.78);
-  }
 }
 
 *,
