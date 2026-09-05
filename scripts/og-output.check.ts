@@ -161,10 +161,8 @@ test("every page declares the iOS icon and the chrome color", async () => {
 
   for (const [name, html] of pages) {
     assert.match(html, /rel="apple-touch-icon" href="\/apple-touch-icon\.png"/, `${name}: no apple-touch-icon`);
-    // Two tags and not one: the site has a dark mode, and with a single value
-    // the system bar ends up light over a dark page or the other way around.
-    assert.match(html, /name="theme-color" content="#ffffff"/, `${name}: no light theme-color`);
-    assert.match(html, /name="theme-color" content="#131417"/, `${name}: no dark theme-color`);
+    // One tag, not two: the site is dark always, not tied to the OS setting.
+    assert.match(html, /name="theme-color" content="#131417"/, `${name}: no theme-color`);
   }
 });
 
