@@ -93,17 +93,14 @@ const socialImage = new URL(OG_IMAGE_PATH[locale], Astro.site);
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
 
     {/*
-      Tints the browser chrome on Android and the status bar on iOS. Two tags
-      and not one because the site has a dark mode: with a single value the bar
-      ends up light over a dark page, or the other way around.
+      Tints the browser chrome on Android and the status bar on iOS. One tag,
+      not two: the site is dark always, not tied to the visitor's OS setting.
 
-      The values are the `--bg` token from `tokens.css` in each mode. This is
-      the second — and last — copy of a color outside that file: no `var()`
-      works here, because what reads this is the operating system and not the
-      cascade.
+      The value is the `--bg` token from `tokens.css`. This is the second —
+      and last — copy of a color outside that file: no `var()` works here,
+      because what reads this is the operating system and not the cascade.
     */}
-    <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
-    <meta name="theme-color" content="#131417" media="(prefers-color-scheme: dark)" />
+    <meta name="theme-color" content="#131417" />
 
     {
       shareable && (

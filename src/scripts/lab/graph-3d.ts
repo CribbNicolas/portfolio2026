@@ -393,13 +393,18 @@ export async function mountGraph({ canvas, data, bus, tooltip, panel, labels }: 
     return 1 - clamped * 0.58;
   }
 
+  // Set once by the panic path below: one step down before giving up on the
+  // scene entirely, same as `field.ts`. `resize()` reads it live, so flipping
+  // it and calling `resize()` again is the whole degrade step.
+  let degradedDpr = false;
+
   const resize = () => {
     const r = container.getBoundingClientRect();
     width = Math.max(1, r.width);
     height = Math.max(1, r.height);
     camera.aspect = width / height;
     camera.updateProjectionMatrix();
-    const pr = Math.min(devicePixelRatio, 2);
+    const pr = degradedDpr ? 1 : Math.min(devicePixelRatio, 2);
     renderer.setPixelRatio(pr);
     renderer.setSize(width, height, false);
     // `gl_FragCoord` is in drawing-buffer pixels, not CSS pixels.
@@ -537,7 +542,12 @@ export async function mountGraph({ canvas, data, bus, tooltip, panel, labels }: 
   // --- A loop that switches itself off -------------------------------------
   // A still map draws 0 frames per second. It is the largest battery win in all
   // of this, more than any shader optimization.
-  const measure = frameMeter();
+  // Reassigned once, by the panic branch below: a fresh meter for the
+  // degraded resolution, not the same one carrying the panic streak that
+  // just tripped. Without this, the very next frame inherits a streak
+  // already at its threshold and shuts the scene down anyway — the degrade
+  // step would exist in name only.
+  let measure = frameMeter();
   let alive = true;
   let visible = true;
   let rafId = 0;
@@ -548,7 +558,14 @@ export async function mountGraph({ canvas, data, bus, tooltip, panel, labels }: 
     if (!alive || !visible) return;
 
     const verdict = measure(now);
-    if (verdict === false) { shutDown(); return; }
+    if (verdict === false) {
+      // A panic right after a drag (heavy hit-testing every frame) followed
+      // by a scroll (the browser's own compositing on top) does not mean the
+      // device can never run this: one attempt at half resolution first, and
+      // only shut down for good if THAT is still too slow.
+      if (!degradedDpr) { degradedDpr = true; resize(); measure = frameMeter(); }
+      else { shutDown(); return; }
+    }
 
     const withInertia = interaction.advance();
     const busy =
@@ -624,14 +641,6 @@ export async function mountGraph({ canvas, data, bus, tooltip, panel, labels }: 
   });
   visibilityIo.observe(container);
 
-  const themeMq = matchMedia("(prefers-color-scheme: dark)");
-  const onThemeChange = () => {
-    colors = readColors();
-    placeLights();
-    wake(); // the frame rewrites colors and alphas with the new palette
-  };
-  themeMq.addEventListener("change", onThemeChange);
-
   const onContextLost = (e: Event) => { e.preventDefault(); shutDown(); };
   canvas.addEventListener("webglcontextlost", onContextLost);
 
@@ -646,7 +655,6 @@ export async function mountGraph({ canvas, data, bus, tooltip, panel, labels }: 
     removeEventListener("scroll", onScroll);
     document.removeEventListener("visibilitychange", onVisibilityChange);
     canvas.removeEventListener("webglcontextlost", onContextLost);
-    themeMq.removeEventListener("change", onThemeChange);
     visibilityIo.disconnect();
     ro.disconnect();
     releaseBus();
