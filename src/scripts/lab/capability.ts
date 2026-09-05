@@ -31,6 +31,13 @@ export const PANIC_FRAME_MS = 50;
  */
 export const PANIC_STREAK = 3;
 
+/**
+ * A first frame longer than this is startup — shader compilation and buffer
+ * uploads — and is discarded rather than measured. Exactly one frame is ever
+ * discarded this way.
+ */
+export const STARTUP_FRAME_MS = 100;
+
 interface ExtendedNavigator extends Navigator {
   deviceMemory?: number;
   connection?: { saveData?: boolean; effectiveType?: string };
@@ -98,6 +105,7 @@ export function frameMeter(): (now: number) => boolean | null {
   const samples: number[] = [];
   let previous = 0;
   let panicStreak = 0;
+  let startupFrameSeen = false;
 
   return (now: number) => {
     if (previous === 0) { previous = now; return null; }
@@ -106,7 +114,18 @@ export function frameMeter(): (now: number) => boolean | null {
 
     // The first frame after mounting includes shader compilation and buffer
     // uploads. Measuring it would measure the startup, not the steady state.
-    if (samples.length === 0 && delta > 100) return null;
+    //
+    // Consumed ONCE, tracked by its own flag. The condition used to be
+    // `samples.length === 0`, which is the same thing only while frames are
+    // fast: on a device where EVERY frame is over the startup threshold, no
+    // sample was ever recorded, so the exemption never expired and the meter
+    // never returned a verdict at all. The animation ran forever on exactly
+    // the hardware this whole file exists to protect. Found by the test below,
+    // not in production.
+    if (!startupFrameSeen) {
+      startupFrameSeen = true;
+      if (delta > STARTUP_FRAME_MS) return null;
+    }
 
     samples.push(delta);
 
