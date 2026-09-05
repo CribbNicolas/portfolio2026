@@ -105,6 +105,10 @@
      anyway (`pointer-events: none`). */
   user-select: none;
   -webkit-user-select: none;
+  /* `role="application"` + `tabindex` reads as clickable to WebKit/Chromium's
+     touch heuristics: without this, every tap flashes the default gray
+     highlight box over the whole map before the JS click even runs. */
+  -webkit-tap-highlight-color: transparent;
 }
 
 /* With the 3D mounted the panel disappears and the field shows through the map.
@@ -536,6 +540,9 @@
   background: var(--bg-raised);
   border: 1px solid var(--line);
   transition: border-color 120ms ease, color 120ms ease;
+  /* Same reason as `.lab__map`: a `tabindex` span with a click handler, not a
+     native control, so WebKit/Chromium paint their own tap highlight over it. */
+  -webkit-tap-highlight-color: transparent;
 }
 
 /* The class is added by the JS only once the map can receive focus: with no 3D
