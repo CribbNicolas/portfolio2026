@@ -101,6 +101,25 @@ test("panic needs the frames to be CONSECUTIVE", () => {
   );
 });
 
+test("the startup exemption is consumed once, not while samples is empty", () => {
+  // The bug this pins: the exemption used to be `samples.length === 0`, which
+  // on a device where EVERY frame is over the startup threshold never expired
+  // — no sample was ever recorded, so no verdict was ever returned and the
+  // animation ran forever on the worst hardware there is.
+  const measure = frameMeter();
+  let now = 0;
+  measure(now);
+  const verdicts: (boolean | null)[] = [];
+  for (let i = 0; i < 8; i++) {
+    now += 400; // every frame is "startup-shaped"
+    verdicts.push(measure(now));
+  }
+  assert.ok(
+    verdicts.includes(false),
+    "a device at 400 ms per frame was never judged: the startup exemption never expired",
+  );
+});
+
 test("the first frame is still exempt", () => {
   // Shader compilation and buffer uploads land in frame one. Measuring it
   // measures the startup, and at 300 ms it would otherwise start a panic
