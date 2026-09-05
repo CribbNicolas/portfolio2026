@@ -113,6 +113,26 @@ for (const [locale, llms, path] of [
     }
   });
 
+  test(`${path} carries its URLs as Markdown links`, () => {
+    // Lighthouse 13's `llms-txt` audit failed this file with "File does not
+    // appear to contain any links" while it happily emitted
+    // `- GitHub: https://github.com/…`. A human reads that fine; a parser
+    // looking for `[name](url)` reads nothing at all. This asserts the shape
+    // the convention asks for, and that no bare URL sneaks back into a list
+    // item — which is how the regression would look.
+    const links = llms.match(/\[[^\]]+\]\((https?:\/\/|mailto:)[^)]+\)/g) ?? [];
+    assert.ok(
+      links.length >= 5,
+      `${path} has ${links.length} Markdown links. The contact block alone should ` +
+        "carry the mail, both profiles, the HTML CV, the PDF and the JSON.",
+    );
+
+    const bare = llms
+      .split(/\r?\n/)
+      .filter((line) => /^-\s/.test(line) && /https?:\/\//.test(line) && !/\]\(/.test(line));
+    assert.deepEqual(bare, [], `${path} lists a bare URL instead of a Markdown link: ${bare.join(" | ")}`);
+  });
+
   test(`${path} has no empty fields`, () => {
     const offenders = llms
       .split("\n")
