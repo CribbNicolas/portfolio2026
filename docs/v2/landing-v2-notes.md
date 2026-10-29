@@ -479,7 +479,7 @@ the surfaces; the about stack still crowds the manifesto on small screens.
 
 ## 10. Open questions
 
-- (to fill as they come up)
+- What is left before shipping: `docs/v2/TODO.md`.
 
 ### Map chapter polish (2026-10-28)
 
