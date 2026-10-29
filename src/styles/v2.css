@@ -369,8 +369,10 @@ body::after {
 }
 .stack__iso {
   position: relative;
-  /* Room for Interfaz's 11 chips, each with its icon. */
-  width: min(40vw, 540px);
+  /* Room for Interfaz's 11 chips, each with its icon — and capped by the
+     height: the three cards stack to ~1.12× this width, and on a 768px-tall
+     laptop the first one rose under the dock. */
+  width: min(40vw, 540px, calc((100svh - 230px) * 0.88));
   aspect-ratio: 2.9;
   transform-style: preserve-3d;
 }
@@ -799,6 +801,9 @@ body::after {
   left: 0;
   top: -22px;
   color: var(--accent-ink);
+  /* One line, always: on a phone "Store API · 4 pedidos a la vez" wrapped
+     into the lane. */
+  white-space: nowrap;
 }
 .token {
   position: absolute;
@@ -1055,7 +1060,10 @@ html.is-held body {
 }
 .ddm__name {
   margin: 18px 0 22px;
-  font-size: clamp(3.6rem, 12.5vw, 14rem);
+  /* No floor above the viewport: "DeltaDictum." must stay one line, and on a
+     375px phone a 3.6rem floor pushed the "." onto a line of its own. */
+  font-size: clamp(2.4rem, 12.5vw, 14rem);
+  white-space: nowrap;
   font-weight: 800;
   line-height: 0.86;
   letter-spacing: -0.06em;
@@ -1687,6 +1695,9 @@ html.is-held body {
   border-color: var(--accent-ink);
   background: var(--accent-ink) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='m6 12 4 4 8-9' fill='none' stroke='%23131417' stroke-width='3.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / 10px no-repeat;
 }
+.pipeline__now {
+  display: none;
+}
 .pipeline__deploy {
   margin: 16px 0 0;
   padding-top: 14px;
@@ -1911,7 +1922,11 @@ html.is-held body {
 }
 
 /* --- small screens ------------------------------------------------------ */
-@media (max-width: 760px) {
+/* Phones, and tablets held upright: a portrait iPad (768×1024) is a tall
+   narrow screen, and the side-by-side desktop layout put the C over the
+   name, the map in a corner and the journey and CI in thin columns. Keep in
+   step with NARROW in util.ts. */
+@media (max-width: 760px), (max-width: 1100px) and (orientation: portrait) {
   .hero {
     align-items: start;
     align-content: start;
@@ -1939,7 +1954,10 @@ html.is-held body {
     margin-top: 0;
   }
   .about {
-    grid-template-columns: 1fr;
+    /* minmax(0, …): a bare 1fr grows to its widest child's min-content, and
+       the career row's four names pushed the manifesto past the screen's
+       right edge. */
+    grid-template-columns: minmax(0, 1fr);
     grid-template-rows: auto 1fr auto;
     align-content: start;
     gap: 8px;
@@ -1961,8 +1979,9 @@ html.is-held body {
   .stack__iso {
     width: 88vw;
     /* Taller than before the icons: at 3.6 Interfaz's third row touched the
-       bottom edge. */
-    aspect-ratio: 3.1;
+       bottom edge, and at 3.1 its fourth row did once the column stopped
+       overflowing the screen (narrower, more rows). */
+    aspect-ratio: 2.8;
   }
   .plate__face {
     padding: 8px 10px;
@@ -1979,12 +1998,25 @@ html.is-held body {
     gap: 4px;
   }
   .plate__chips li {
-    padding: 1px 6px;
+    gap: 4px;
+    padding: 1px 6px 1px 5px;
     font-size: 0.6rem;
   }
+  .plate__chips .chip__icon {
+    width: 10px;
+    height: 10px;
+  }
+  /* Four stops do not fit across a phone: two by two, each with room for
+     its year and company. */
   .career {
-    gap: 6px;
-    font-size: 0.7rem;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px 16px;
+    padding-top: 14px;
+    font-size: 0.78rem;
+  }
+  .career__stop strong {
+    font-size: 0.92rem;
+    line-height: 1.15;
   }
   .career__stop small {
     display: none;
@@ -2033,6 +2065,10 @@ html.is-held body {
      beside it (dd.ts does not slide it on one column). */
   .ddrace {
     grid-template-columns: 1fr;
+    /* Each row as tall as what it holds: in a fixed-height stage, auto rows
+       shrank the two sessions (overflow: hidden lets them) and cut their
+       last lines off. */
+    grid-template-rows: repeat(4, max-content);
     align-content: start;
     padding-top: 84px;
     gap: 12px;
@@ -2054,9 +2090,52 @@ html.is-held body {
   .ddnote p {
     display: none;
   }
+  .ddnote h3 {
+    margin: 0;
+    font-size: 0.95rem;
+  }
+  .ddnote__n {
+    top: 9px;
+  }
+  /* Two sessions stacked have to fit one phone screen: no window chrome,
+     a smaller face, half the indent, a shorter verdict. */
+  .ddterm__chrome {
+    display: none;
+  }
+  .ddterm__cap {
+    padding: 8px 12px 4px;
+    font-size: 0.8rem;
+  }
   .ddterm__screen {
-    padding: 10px 12px 12px;
-    font-size: 10px;
+    padding: 4px 10px 8px;
+    font-size: 9.5px;
+    line-height: 1.55;
+  }
+  .ddterm .nest {
+    margin-left: 14px;
+  }
+  .ddterm .gap {
+    margin-top: 6px;
+  }
+  .ddterm__verdict {
+    padding: 8px 12px 10px;
+    font-size: 1.15rem;
+  }
+  .ddrace__ask {
+    font-size: 0.66rem;
+  }
+  .ddlinks {
+    display: none;
+  }
+  /* The stacked sessions reach the bottom of the screen; the rail sat on
+     the second one's footer. */
+  [data-dd-stage] .rail {
+    display: none;
+  }
+  /* On one line and inside the lane, short of the cart beside it. */
+  .lane__label {
+    font-size: 0.6rem;
+    letter-spacing: 0.03em;
   }
   .ddx {
     font-size: 12px;
@@ -2072,6 +2151,19 @@ html.is-held body {
     position: sticky;
     top: 72px;
     z-index: 3;
+  }
+  /* A band of page colour from the top of the screen down to the sticky
+     strip: without it the text scrolling under the strip showed in the gap
+     between the dock and the strip, cut in half. */
+  .pipeline::before,
+  .toolbox::before {
+    content: "";
+    position: absolute;
+    left: calc(-1 * var(--gutter));
+    right: calc(-1 * var(--gutter));
+    bottom: 100%;
+    height: 80px;
+    background: var(--bg);
   }
   .pipeline__sticky {
     position: static;
@@ -2092,6 +2184,18 @@ html.is-held body {
   .gate code,
   .gate > span:not(.gate__mark) {
     display: none;
+  }
+  .pipeline__now {
+    display: block;
+    min-height: 2.6em;
+    margin: 10px 0 0;
+    color: var(--ink-soft);
+    font-size: 0.78rem;
+    line-height: 1.3;
+  }
+  .pipeline__now code {
+    color: var(--accent-ink);
+    font: 600 0.78rem ui-monospace, "SF Mono", "Cascadia Code", Menlo, monospace;
   }
   .pipeline__deploy {
     margin-top: 10px;
@@ -2214,6 +2318,78 @@ html.is-held body {
   }
   .stage {
     min-height: 64svh;
+  }
+}
+
+/* Short phones (iPhone SE and the like): "Quién soy" has to fit a
+   manifesto, three cards and the career in ~667px. Tighter edges, a smaller
+   manifesto and a slightly narrower stack buy the room. */
+@media (max-width: 760px) and (max-height: 720px) {
+  .about {
+    padding-top: 68px;
+    padding-bottom: 14px;
+    gap: 4px;
+  }
+  .about__manifesto {
+    font-size: 1.08rem;
+    margin: 6px 0 4px;
+  }
+  .stack {
+    height: 330px;
+  }
+  .stack__iso {
+    width: 80vw;
+  }
+  .career {
+    gap: 6px 16px;
+    padding-top: 10px;
+  }
+}
+
+/* Short phones: the hero's C smaller and further into the corner, so it
+   stays clear of the buttons and the guided/simple note. */
+@media (max-width: 760px) and (max-height: 720px) {
+  .hero__ringwrap {
+    width: 64vw;
+    height: 64vw;
+    bottom: -28vw;
+    right: -28vw;
+  }
+}
+
+/* Tablets held upright get the phone layout (see the big block), but at
+   phone sizes its stack was huge (88vw cards) and covered the manifesto:
+   capped cards, chips one size up, a stack tall enough for the list. */
+@media (min-width: 600px) and (max-width: 1100px) and (orientation: portrait) {
+  .about__manifesto {
+    font-size: 2rem;
+  }
+  .stack {
+    height: 600px;
+  }
+  .stack__iso {
+    width: min(78vw, 540px);
+    aspect-ratio: 3;
+  }
+  .plate__face {
+    padding: 14px 16px;
+  }
+  .plate__label {
+    font-size: 1rem;
+  }
+  .plate__chips {
+    gap: 6px;
+  }
+  .plate__chips li {
+    padding: 3px 9px 3px 7px;
+    font-size: 0.78rem;
+  }
+  .plate__chips .chip__icon {
+    width: 12px;
+    height: 12px;
+  }
+  .career__stop small {
+    display: block;
   }
 }
 

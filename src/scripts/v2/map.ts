@@ -2,10 +2,11 @@
 // ~13,000 Voronoi cells inside a made-up landmass, painted once into
 // offscreen layers so each frame is a handful of drawImage calls.
 import { Delaunay } from "d3-delaunay";
+import { NARROW } from "./util";
 
 /** Fewer on a phone: a smaller canvas, a slower CPU, and the cells are
  *  illustrative (the counter shows the dataset's figure either way). */
-export const CELL_COUNT = matchMedia("(max-width: 760px)").matches ? 6000 : 13000;
+export const CELL_COUNT = matchMedia(NARROW).matches ? 6000 : 13000;
 
 const W = 1600;
 const H = 1000;

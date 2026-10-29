@@ -777,3 +777,68 @@ Runtime smoothness, scrolling the whole page top to bottom at a steady rate:
 - Phone emulation at 4x CPU (headless, 60 Hz): p50 16.7 ms everywhere;
   ~1% of frames at 33 ms in the map and the seats, none elsewhere; no long
   tasks.
+
+### Mobile: "Quién soy" (2026-10-28)
+
+- **The manifesto ran past the right edge.** The phone grid was `1fr`, which
+  grows to its widest child's min-content — the career row's four company
+  names — so the whole column was ~30px wider than the screen. Now
+  `minmax(0, 1fr)`: the text keeps the gutter on both sides.
+- **The mini timeline was cramped**: four stops across a phone. Now two by
+  two, each with its year and company at a readable size.
+- With the narrower column the Interfaz card grew a fourth chip row and
+  overflowed: phone cards 3.1 → 2.8 aspect, chip icons 10px.
+- Short phones (≤720px tall, e.g. 375×667): tighter padding, a smaller
+  manifesto and a slightly narrower stack, so manifesto, cards and career
+  all fit. Measured at 375×667, 360×740 and 390×844: nothing past the edges,
+  no overlap, no card overflowing.
+
+### Mobile at 375px (2026-10-28)
+
+- **Seats lane label** ("Store API · 4 pedidos a la vez") wrapped: now
+  `nowrap`, and on phones 0.6rem so it ends inside the lane, short of the
+  cart (measured at 375 and 360).
+- **"DeltaDictum."** broke before its "." — the name's 3.6rem floor was wider
+  than a phone. Floor 2.4rem, `nowrap`: one line, edge to edge within the
+  gutter.
+- **The race on a phone.** Both sessions are stacked; in the fixed-height
+  stage the auto grid rows shrank them (overflow: hidden lets a grid item
+  shrink) and cut their last lines. Rows are now `max-content`, the window
+  chrome is hidden, the face is 9.5px with half the indent, and the verdict
+  is shorter: both sessions read whole, verdicts included, at 375×667 and
+  375×812. The rail, which sat on the second session's footer, is hidden.
+- **The notes on a phone** looked odd: one column, with the hung session
+  fading out of a gap and dashed wires crossing the text. Now the hung
+  session folds away (height → 0), the DD one rises into its place, the
+  notes sit right under it (number + title), and no wires.
+- **"Cada push de este sitio pasa por"** counted with nothing to say what:
+  on phones the list collapses to marks, so a line under them now spells
+  out the check running ("▸ pdf:local imprime el CV"), and "✓ …" once all
+  fifteen have passed.
+
+### Compatibility pass: six resolutions (2026-10-28)
+
+375×667 (iPhone SE/8), 390×844 (iPhone 12–15), 412×915 (Android), 768×1024
+(iPad portrait), 1366×768 (laptop), 1920×1080 (desktop). Playwright, 16
+moments per resolution (hero, about, three map beats, hand-off, two seats
+beats, interception, DD name, DD notes, DD CTA, journey, work, close, CV
+overlay), screenshots reviewed by eye plus an automatic check for sideways
+scroll and visible text past an edge (none found in any).
+
+Fixed on the way:
+- **Portrait tablets** got the desktop layout: the C over the name, the map
+  tiny in a corner, journey and CI in thin columns. The phone layout now
+  also applies to `(max-width: 1100px) and (orientation: portrait)` (CSS and
+  `NARROW` in util.ts, used for the map's cell count and the stack spread),
+  with a tablet tweak for "Quién soy" (capped cards, chips one size up).
+- **Short phones**: the hero's C covered "Escribime" and the guided/simple
+  note — smaller and further into the corner below 720px tall.
+- **Sticky strips on phones** (journey toolbox, CI): the text scrolling under
+  them showed in the gap below the dock — a band of page colour now fills it.
+- **Laptop (1366×768)**: the "Quién soy" cards rose under the dock — the stack
+  width is now also capped by the screen height.
+- **Coming back up into the interception** showed it black: its fade was a
+  fromTo that did not restore on the way back; it is now read straight off
+  the playhead.
+- **After DD's pin**, "Seguí bajando" and the rail rode along at the top of
+  the screen as the stage scrolled away — they fade out as the pin ends.

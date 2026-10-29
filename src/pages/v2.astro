@@ -771,6 +771,10 @@ const cvLinks = [
                 ))
               }
             </ol>
+            {/* Phones only: the list collapses to marks, so the check being run
+                is spelled out here — otherwise the count climbs with nothing
+                to say what it counts. */}
+            <p class="pipeline__now" data-gate-now aria-hidden="true"></p>
             <p class="pipeline__deploy mono" data-deploy><span aria-hidden="true">●</span> listo para publicar</p>
           </div>
         </aside>

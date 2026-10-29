@@ -19,6 +19,12 @@ export function work() {
   const gates = $$("[data-gate]");
   const deploy = $("[data-deploy]");
   const count = $("[data-gate-count]");
+  const now = $("[data-gate-now]");
+  const say = (g: HTMLElement, mark: string) => {
+    const code = document.createElement("code");
+    code.textContent = g.querySelector("code")?.textContent ?? "";
+    now.replaceChildren(`${mark} `, code, ` ${g.querySelector("span:not(.gate__mark)")?.textContent ?? ""}`);
+  };
   let done = -1;
   const paint = (n: number) => {
     if (n === done) return;
@@ -29,6 +35,11 @@ export function work() {
     });
     deploy.classList.toggle("is-done", n >= gates.length);
     count.textContent = String(Math.max(0, Math.min(n, gates.length)));
+    // The check running now (or the last one, once all have passed).
+    const g = gates[Math.min(Math.max(n, 0), gates.length - 1)];
+    if (n < 0) now.replaceChildren();
+    else say(g, n >= gates.length ? "✓" : "▸");
+    gsap.fromTo(now, { autoAlpha: 0, y: 4 }, { autoAlpha: 1, y: 0, duration: 0.25, overwrite: true });
   };
   // The whole chapter is one pipeline run: by the time the limits are read,
   // every check has passed.

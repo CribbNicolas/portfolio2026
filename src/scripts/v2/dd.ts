@@ -79,6 +79,7 @@ export function dd() {
     tl.call(() => line(term, l).classList.add("on"), [], at);
 
   const twoColumns = () => getComputedStyle(race).gridTemplateColumns.split(" ").length > 1;
+  const gap = () => parseFloat(getComputedStyle(race).rowGap) || 0;
   // From layout, not rects: the left session may already be sliding away.
   const shift = () => (twoColumns() ? -(on.offsetLeft - off.offsetLeft) : 0);
   const wire = () => {
@@ -117,7 +118,7 @@ export function dd() {
       $$(".is-lit", race).forEach((x) => x.classList.remove("is-lit"));
       links.innerHTML = "";
     }, [], 0);
-    s.set(off, { autoAlpha: 1, x: 0 }, 0);
+    s.set(off, { autoAlpha: 1, x: 0, clearProps: "height,marginBottom" }, 0);
     s.set(on, { autoAlpha: 1, x: 0 }, 0);
     s.set(notes, { autoAlpha: 0, x: 20 }, 0);
     s.set(go, { autoAlpha: 0 }, 0);
@@ -160,8 +161,15 @@ export function dd() {
     // Well before the clock gets to ten minutes (around the one-minute mark)
     // the hung session starts to leave, still counting; the other takes its
     // place and the notes explain it, each wired to its line.
-    s.to(off, { autoAlpha: 0, x: -40, duration: 1.6, ease: "power1.in" }, 7.9);
-    s.call(() => void (wiring = true), [], 9.0);
+    if (twoColumns()) {
+      s.to(off, { autoAlpha: 0, x: -40, duration: 1.6, ease: "power1.in" }, 7.9);
+      s.call(() => void (wiring = true), [], 9.0);
+    } else {
+      // One column (phones): the hung session folds away, so the other one
+      // rises into its place and the notes sit right under it — no wires,
+      // which across one column only crossed the text.
+      s.to(off, { autoAlpha: 0, height: 0, marginBottom: () => -gap(), duration: 1.1, ease: "power2.inOut" }, 7.9);
+    }
     s.fromTo(on, { x: 0 }, { x: shift, duration: 0.8, ease: "power3.inOut" }, 9.2);
     notes.forEach((n, i) => {
       const t = 10.1 + i * 0.6;
@@ -179,12 +187,12 @@ export function dd() {
     clock.s = 600;
     tick();
     showAll(on, true);
-    gsap.set(off, { autoAlpha: 0 });
+    gsap.set(off, twoColumns() ? { autoAlpha: 0 } : { autoAlpha: 0, height: 0, marginBottom: -gap() });
     gsap.set(on, { autoAlpha: 1, y: 0, x: shift() });
     gsap.set(notes, { autoAlpha: 1, x: 0 });
     notes.forEach((n) => $(`[data-note-anchor='${n.dataset.note}']`, on).classList.add("is-lit"));
     gsap.set(go, { autoAlpha: 1 });
-    wiring = true;
+    wiring = twoColumns();
   };
 
   // --- where the scroll is (decided once a frame, never mid-refresh) -----
@@ -250,6 +258,19 @@ export function dd() {
       scrollTrigger: { trigger: "[data-dd]", start: "top top", end: () => `+=${innerHeight * 0.3}`, scrub: true },
     },
   );
+
+  // "Seguí bajando" belongs to the pinned stage; once the reader goes on and
+  // the stage scrolls away, it must not ride along at the top of the screen.
+  ScrollTrigger.create({
+    trigger: "[data-dd]",
+    start: () => pin.end - innerHeight * 0.4,
+    end: () => pin.end + innerHeight,
+    onEnter: () => gsap.to([go, ...rail], { autoAlpha: 0, duration: 0.3, overwrite: true }),
+    onLeaveBack: () => {
+      gsap.to(rail, { autoAlpha: 1, duration: 0.3, overwrite: true });
+      if (active) gsap.to(go, { autoAlpha: 1, duration: 0.3, overwrite: true });
+    },
+  });
 
   // After the pin: plain reveals.
   $$("[data-dd-reveal]").forEach((el) =>

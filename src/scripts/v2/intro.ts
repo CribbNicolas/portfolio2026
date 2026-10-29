@@ -5,7 +5,7 @@
 // Entrega and the plates turn to face the reader.
 import gsap from "gsap";
 import { SplitText } from "gsap/SplitText";
-import { $, $$, paced, pinPaced } from "./util";
+import { $, $$, NARROW, paced, pinPaced } from "./util";
 
 /** Length of the cover, in timeline units. Everything after it is "Quién soy". */
 const C = 1.1;
@@ -78,7 +78,7 @@ export function intro() {
   const plates = $$("[data-plate]");
   const stops = $$(".career__stop");
   // Phones get the same pile at less than half the spacing.
-  const k = innerWidth < 760 ? 0.45 : 1;
+  const k = matchMedia(NARROW).matches ? 0.45 : 1;
 
   gsap.set("[data-about]", { autoAlpha: 0 });
   gsap.set("[data-stack-iso]", { rotateX: 58, rotateZ: -32 });

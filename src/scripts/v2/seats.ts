@@ -439,8 +439,9 @@ export function seats() {
 
   // The screen after it: the text steps away as the reader scrolls on and
   // the DD chapter rises beneath the black.
+  // Read straight off the playhead (switchedOff), not a tween: a fromTo
+  // here did not restore the text when the reader came back up into it.
   const afterOff = gsap.timeline();
-  afterOff.fromTo(ddx, { autoAlpha: 1, y: 0 }, { autoAlpha: 0, y: -24, duration: 0.25, ease: "power1.in", immediateRender: false }, 0.6);
   afterOff.to({}, { duration: 1 }, 0);
 
   const master = gsap.timeline({ onUpdate: () => (whereAmI(), switchedOff()) }).add(descent).add(tl).add(afterOff);
@@ -453,7 +454,13 @@ export function seats() {
   let isOff = false;
   let wantOff = false;
   function switchedOff() {
-    wantOff = master.time() >= offAt;
+    const t = master.time() - offAt;
+    wantOff = t >= 0;
+    // Past the interception, the text steps away as the reader scrolls on.
+    if (wantOff && !hook?.isActive()) {
+      const k = Math.min(1, Math.max(0, (t - 0.6) / 0.25));
+      gsap.set(ddx, { autoAlpha: 1 - k, y: -24 * k });
+    }
   }
   gsap.ticker.add(() => {
     if (refreshing.now || wantOff === isOff) return;
