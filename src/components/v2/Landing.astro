@@ -382,9 +382,16 @@ const cvLinks = (["es", "en"] as const).map((lang) => ({
                 <span>{String(i + 1).padStart(2, "0")}</span> {b.kicker}
               </p>
               <h2 class="beat__title">
-                {b.counter ? <span data-counter data-target={counterTarget}>0</span> : b.title}
+                {/* The counter starts at 0 and peak.ts runs it up: a screen
+                    reader would announce "0". It reads the metric instead. */}
+                {b.counter ? (
+                  <>
+                    <span data-counter data-target={counterTarget} aria-hidden="true">0</span>
+                    <span class="visually-hidden">{b.title}</span>
+                  </>
+                ) : b.title}
               </h2>
-              {b.counter && <p class="beat__label mono">{b.title}</p>}
+              {b.counter && <p class="beat__label mono" aria-hidden="true">{b.title}</p>}
               <p class="beat__body">{b.body}</p>
               {b.bars && (
                 <div class="bars" aria-hidden="true">

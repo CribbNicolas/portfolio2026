@@ -57,12 +57,18 @@ export async function mountField(canvas: HTMLCanvasElement): Promise<FieldScene 
   // TS loses the narrowing from the `if` above.
   const gl: WebGL2RenderingContext = ctx;
 
+  // Compile and link WITHOUT asking for the result yet: reading
+  // COMPILE_STATUS or LINK_STATUS blocks the main thread until the driver is
+  // done, and that was the brief view's one long task on a throttled phone
+  // (Lighthouse, 2026-10-29: 300–870 ms). With KHR_parallel_shader_compile
+  // the link finishes off the main thread and is polled once per frame; the
+  // first status read happens only when it is ready.
   const compile = (kind: number, src: string): WebGLShader | null => {
     const s = gl.createShader(kind);
     if (!s) return null;
     gl.shaderSource(s, src);
     gl.compileShader(s);
-    return gl.getShaderParameter(s, gl.COMPILE_STATUS) ? s : null;
+    return s;
   };
 
   const vs = compile(gl.VERTEX_SHADER, VS);
@@ -74,6 +80,12 @@ export async function mountField(canvas: HTMLCanvasElement): Promise<FieldScene 
   gl.attachShader(prog, vs);
   gl.attachShader(prog, fs);
   gl.linkProgram(prog);
+  const parallel = gl.getExtension("KHR_parallel_shader_compile") as { COMPLETION_STATUS_KHR: number } | null;
+  if (parallel) {
+    while (!gl.getProgramParameter(prog, parallel.COMPLETION_STATUS_KHR)) {
+      await new Promise((r) => requestAnimationFrame(r));
+    }
+  }
   if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) return null;
   gl.useProgram(prog);
 

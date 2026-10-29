@@ -52,6 +52,20 @@
   background: var(--bg-raised);
 }
 
+/* Read by a screen reader, not drawn: text that stands in for a visual
+   (the landing's animated counter). */
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 /* --- buttons ------------------------------------------------------------ */
 .btn {
   display: inline-flex;

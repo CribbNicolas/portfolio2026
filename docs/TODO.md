@@ -35,15 +35,36 @@ Redirecting bots to the brief view was considered and rejected: serving
 crawlers a different page than people is cloaking, and `/` already carries
 every fact as HTML.
 
-### 3. Performance and accessibility
+### 3. Performance and accessibility — done (2026-10-29)
 
-- [ ] Lighthouse, mobile and desktop, on v2 (ES and EN) and the brief
-      view.
-- [ ] Core Web Vitals: LCP with the loader in front, CLS from the held scenes,
-      INP while Lenis runs.
-- [ ] Measure v2's JS chunk; the number becomes its byte ceiling in stage 4.
-- [ ] Accessibility: keyboard through the held scenes, visible focus,
-      screen-reader order, contrast with the final palette.
+Measured on the production build served locally (`astro preview`, no
+Cloudflare compression, so byte figures run high), Lighthouse 13.6, first
+visit (loader on):
+
+| Page | Mobile P / A / BP / SEO | LCP | CLS | TBT | Desktop P |
+|---|---|---|---|---|---|
+| `/` | 97 / 100 / 100 / 100 | 2.2 s | 0 | 120 ms | 99 |
+| `/en/` | 95 / 100 / 100 / 100 | 2.3 s | 0 | 220 ms | 99 |
+| `/brief` | 94–100 / 100 / 100 / 100 | 0.9 s | 0.001 | 0–290 ms | 100 |
+| `/en/brief` | 99–100 / 100 / 100 / 100 | 0.8 s | 0.001 | 90–110 ms | 100 |
+
+- Fixed: the brief view's field compiled its shader synchronously (a
+  300–870 ms long task on a throttled phone); it now links with
+  KHR_parallel_shader_compile and polls (~150 ms left, software GL).
+- Fixed: the map counter's heading read "0" to a screen reader; it reads
+  the metric now.
+- INP with Lenis running (412 px, CPU ×4): worst interaction 56 ms.
+- Keyboard: 42 stops on `/`, 43 on `/brief`, every one on screen with a
+  focus ring. Headings: one H1, no skipped levels, on both.
+- Contrast, final palette: all text ≥ 5.5:1 (ink on the violet buttons is
+  the lowest). The violet itself on the dark ground is 2.9:1: surfaces and
+  marks only, never text.
+- JS, gzip: the landing's critical chunk 71.6 KB (GSAP, ScrollTrigger,
+  SplitText, Lenis, d3-delaunay, the chapters); the brief view 1.5 KB
+  critical + 2 KB deferred (the field). HTML with inlined CSS: 49 KB on
+  the landing, 19 KB on the brief view. Lighthouse flags ~25 KB of unused
+  JS on the landing and ~1.1 s of style and layout on a throttled phone,
+  both under the loader on a first visit.
 
 ### 4. CI/CD under the new directives
 
@@ -52,7 +73,8 @@ every fact as HTML.
       the checks it touches. Explicit, not a silent allowlist.
 - [ ] `test:js` and `test:bundle`: the landing in `PAGES_WITH_JS` (Lenis and
       the held scenes listen for `wheel`/`touchmove`), its chunk with the
-      ceiling measured in stage 3.
+      ceiling measured in stage 3 (71.6 KB gzip critical; the HTML 49 KB),
+      plus margin. The brief view: 1.5 KB critical, the field 2 KB deferred.
 - [ ] `test:js`: the brief views ship the analytics script, and the
       landings an inline head script (`document.documentElement.classList
       .add("js")`) that the "every <script> without src is data" rule
