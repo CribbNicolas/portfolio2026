@@ -21,9 +21,20 @@ is the brief view at `/brief` and `/en/brief` (canonical → its landing,
 out of the sitemap), without the 3D map. The author's read of the copy is
 in stage 5.
 
-- [ ] The changes the author has in mind for the brief view.
-- [ ] Revalidate the ATS approach (one-column `cv-ats`, standard headings,
-      keywords): is the CV passing filters, or does the formula need to change?
+ATS approach revalidated 2026-10-29: the layout holds (one column, contact
+in the body, standard headings, text PDF, MM/YYYY; Greenhouse and Lever docs).
+What the review found is in the content:
+
+- [ ] The ~13.000 metric prints with no label in the PDF ("…y estados. —
+      ~13.000"): `formatMetric` drops `metric.label` on delta-only metrics.
+      Print the label (`content/schema/format-metric.ts`, `RoleBlock.astro`).
+      Changes the published PDF.
+- [ ] Keep the job-title text clean for ATS autofill: "(en paralelo)" and
+      the client description move out of the `<h3>` to the meta line
+      (`RoleBlock.astro`; rule 2 still declared). Changes the published PDF.
+- [ ] Outside the repo: keep the Computrabajo and Bumeran profiles in sync
+      with the dataset, as `linkedin-copy` does for LinkedIn. Those portals
+      match on the profile, not the attached PDF.
 
 ### 2. Design and identity
 
@@ -84,6 +95,8 @@ the checks again).
 - [ ] Confirm the DeltaDictum project as written into the dataset (problem,
       solution, outcome; from its README and CHANGELOG only, no `decisions`:
       a trade-off would have been invented).
+- [ ] English CV bullets open with "I built…"; English CVs usually drop
+      the pronoun (human readers, not the ATS).
 - [ ] Read and sign off, as prose, the English: `summary.long`, Hogarth, the
       DeltaDictum project and every `en` line of `landing-copy.ts`.
 - [ ] English CV chapter: the kicker "CV" sits over the heading "CV"
@@ -93,8 +106,10 @@ the checks again).
 - [ ] The six resolutions: 375×667, 390×844, 412×915, 768×1024, 1366×768,
       1920×1080 (DevTools device mode, scroll the whole page), in both
       locales and on the brief view.
-- [ ] The new CV chapter (`.cvx`, before the close) and the brief view's
-      link back to the guided landing.
+- [ ] The new CV chapter (`.cvx`, before the close).
+- [ ] The brief view redesign: raised panels over the animated field, the
+      reveal as you scroll, figures and metrics in the accent, `core` skills
+      set apart, the contact in the header (on phones, its only place).
 - [ ] At 1366×768 the dock overlaps the close's last line while it scrolls
       under it (seen in a screenshot, 2026-10-29).
 - [ ] The reduced-motion ("still") page once more after the layout changes.
