@@ -1,14 +1,21 @@
 ---
 /**
- * Un rol con sus bullets.
+ * A role with its bullets.
  *
  * Neither the dates nor the duration are written here: they come from
- * `format.ts` (rule 1). The title goes through `formatRoleTitle` because that is
- * what declares a
- * rol `concurrent` y evita la bandera roja de la regla 2.
+ * `format.ts` (rule 1).
+ *
+ * The heading line is the title and the company, nothing else: an ATS
+ * autofills its job-title and company fields from it, and "(en paralelo)" or
+ * a client description glued to either lands in the form as part of the
+ * title or the employer (ATS review, 2026-10-29). Both move to the meta line,
+ * where rule 2 still declares the concurrency (`formatRoleTitleParts`).
+ *
+ * A metric prints with its label (`formatMetricLabeled`): a bare "~13.000"
+ * after a sentence reads as a broken number.
  */
 import type { ContentView, Locale } from "@content";
-import { formatDateRange, formatDuration, formatMetric, formatRoleTitle } from "@content";
+import { formatDateRange, formatDuration, formatMetricLabeled, formatRoleTitleParts } from "@content";
 
 interface Props {
   role: ContentView["experience"][number];
@@ -16,23 +23,23 @@ interface Props {
 }
 
 const { role, locale } = Astro.props;
-const company = role.clientDescription
-  ? `${role.company} — ${role.clientDescription}`
-  : role.company;
+const { title, concurrent } = formatRoleTitleParts(role, locale);
 ---
 
 <article class="role">
-  <h3 class="role__title">{formatRoleTitle(role, locale)} <span class="role__company">· {company}</span></h3>
+  <h3 class="role__title">{title} <span class="role__company">· {role.company}</span></h3>
   <p class="role__meta">
     {formatDateRange(role.start, role.end, locale)} · {formatDuration(role.durationMonths, locale)}
     {role.location && <> · {role.location}</>}
+    {concurrent && <> · {concurrent}</>}
+    {role.clientDescription && <> · {role.clientDescription}</>}
   </p>
   <p class="role__context">{role.context.short}</p>
 
   {role.achievements.length > 0 && (
     <ul class="role__bullets">
       {role.achievements.map((a) => {
-        const metric = a.metric ? formatMetric(a.metric, locale) : null;
+        const metric = a.metric ? formatMetricLabeled(a.metric, locale) : null;
         return (
           <li>
             {a.text.short}

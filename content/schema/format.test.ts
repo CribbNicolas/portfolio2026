@@ -10,11 +10,12 @@
 
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { formatMetric, formatMetricEnds } from "./format-metric";
+import { formatMetric, formatMetricEnds, formatMetricLabeled } from "./format-metric";
 import {
   formatDateRange,
   formatDuration,
   formatRoleTitle,
+  formatRoleTitleParts,
   formatSeniority,
   formatYearMonth,
 } from "./format";
@@ -74,6 +75,24 @@ test("what formatMetric emits stays inside the loaded font subset", () => {
     const outside = [...out].filter((c) => c.codePointAt(0)! > 0xff);
     assert.deepEqual(outside, [], `outside the latin subset (${locale}): ${outside.join(" ")}`);
   }
+});
+
+test("a labeled metric says what it counts, after a delta or before a movement", () => {
+  assert.equal(
+    formatMetricLabeled({ label: "distritos escolares", delta: "13.000", confidence: "estimated" }, "es"),
+    "~13.000 distritos escolares",
+  );
+  assert.equal(
+    formatMetricLabeled({ label: "indexing time", before: "5 s", after: "500 ms", confidence: "estimated" }, "en"),
+    "indexing time: from ~5 s to ~500 ms",
+  );
+  assert.equal(formatMetricLabeled({ label: "algo", confidence: "measured" }, "es"), null);
+});
+
+test("rule 2 on the CV: the concurrency comes apart from the title", () => {
+  const role = { title: "Dev", concurrent: true } as Parameters<typeof formatRoleTitleParts>[0];
+  assert.deepEqual(formatRoleTitleParts(role, "es"), { title: "Dev", concurrent: "en paralelo" });
+  assert.deepEqual(formatRoleTitleParts({ title: "Dev" }, "en"), { title: "Dev", concurrent: null });
 });
 
 test("a metric with no numbers returns null, not an empty string", () => {

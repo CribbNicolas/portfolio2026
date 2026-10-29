@@ -75,9 +75,24 @@ export function formatRoleTitle(
   role: Pick<Role, "title" | "displayTitle" | "concurrent">,
   locale: Locale,
 ): string {
-  const m = MESSAGES[locale];
-  const title = role.displayTitle ?? role.title;
-  return role.concurrent ? `${title} (${m.concurrentSuffix})` : title;
+  const { title, concurrent } = formatRoleTitleParts(role, locale);
+  return concurrent ? `${title} (${concurrent})` : title;
+}
+
+/**
+ * The same two pieces apart, for the CV: an ATS autofills its job-title field
+ * from the heading line, so "(en paralelo)" glued to it lands in the form as
+ * part of the title. The CV prints the title alone in the heading and the
+ * concurrency on the meta line, where rule 2 still declares it.
+ */
+export function formatRoleTitleParts(
+  role: Pick<Role, "title" | "displayTitle" | "concurrent">,
+  locale: Locale,
+): { title: string; concurrent: string | null } {
+  return {
+    title: role.displayTitle ?? role.title,
+    concurrent: role.concurrent ? MESSAGES[locale].concurrentSuffix : null,
+  };
 }
 
 /**

@@ -27,8 +27,8 @@ import {
   content,
   formatDateRange,
   formatDuration,
-  formatMetric,
-  formatRoleTitle,
+  formatMetricLabeled,
+  formatRoleTitleParts,
   formatSeniority,
   formatYearMonth,
   groupedSkills,
@@ -190,9 +190,10 @@ const statusLabel: Partial<Record<string, string>> = {
         <article class="brief__role" data-reveal>
           <p class="brief__when">
             {formatDateRange(role.start, role.end, locale)} · {formatDuration(role.durationMonths, locale)}
+            {formatRoleTitleParts(role, locale).concurrent && <> · {formatRoleTitleParts(role, locale).concurrent}</>}
           </p>
           <h3 class="brief__role-title">
-            {formatRoleTitle(role, locale)}
+            {formatRoleTitleParts(role, locale).title}
             <span class="brief__company">{role.company}</span>
             {role.clientDescription && <span class="brief__client">{role.clientDescription}</span>}
           </h3>
@@ -201,7 +202,7 @@ const statusLabel: Partial<Record<string, string>> = {
             {role.achievements.map((a) => (
               <li>
                 {splitFigures(a.text.short).map((p) => (p.figure ? <strong class="brief__fig">{p.text}</strong> : p.text))}
-                {a.metric && <span class="brief__metric">{formatMetric(a.metric, locale)}</span>}
+                {a.metric && <span class="brief__metric">{formatMetricLabeled(a.metric, locale)}</span>}
               </li>
             ))}
           </ul>

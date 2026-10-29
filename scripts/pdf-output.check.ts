@@ -16,7 +16,7 @@ import { readFile } from "node:fs/promises";
 // APIs Node 20 does not have). That subpath exposes no types of its own.
 // @ts-ignore
 import { getDocument } from "pdfjs-dist/legacy/build/pdf.mjs";
-import { content, formatRoleTitle } from "../content/source/index";
+import { content, formatMetricLabeled, formatRoleTitleParts } from "../content/source/index";
 import type { Locale } from "../content/schema/content-schema";
 import { MESSAGES } from "../content/schema/messages";
 
@@ -196,18 +196,25 @@ test("layer 1: the standard section names extract whole", async () => {
 });
 
 test("layer 1: role titles and bullets extract whole", async () => {
-  // formatRoleTitle y text.short son el textContent que de verdad se lee. Si el
-  // CSS los parte en glifos sueltos, el PDF se ve bien y no dice nada.
+  // The role heading and text.short are the textContent that is actually
+  // read. If the CSS splits them into loose glyphs, the PDF looks fine and
+  // says nothing. The heading carries the title and company alone — an ATS
+  // autofills its job-title field from it — and rule 2's "(en paralelo)"
+  // lives on the meta line, so both are checked.
   const { text } = await extract();
   const view = await content.getView("cv-ats", LOCALE);
   const normal = text.replace(/\s+/g, " ");
 
   for (const role of view.experience) {
-    const title = formatRoleTitle(role, LOCALE);
+    const { title, concurrent } = formatRoleTitleParts(role, LOCALE);
+    const heading = `${title} · ${role.company}`;
     assert.ok(
-      normal.includes(title),
-      `the role title "${title}" does not appear contiguous in the extracted text`,
+      normal.includes(heading),
+      `the heading "${heading}" does not appear contiguous in the extracted text`,
     );
+    if (concurrent) {
+      assert.ok(normal.includes(concurrent), `rule 2: "${concurrent}" is missing for ${role.company}`);
+    }
     for (const a of role.achievements) {
       // The first 40 characters are enough: if the bullet split, it fails there.
       const start = a.text.short.slice(0, 40);
@@ -215,6 +222,9 @@ test("layer 1: role titles and bullets extract whole", async () => {
         normal.includes(start),
         `the bullet "${start}..." does not appear contiguous in the extracted text`,
       );
+      // A metric reads with what it counts, never as a bare number.
+      const metric = a.metric ? formatMetricLabeled(a.metric, LOCALE) : null;
+      if (metric) assert.ok(normal.includes(metric), `the metric "${metric}" is not in the PDF whole`);
     }
   }
 });

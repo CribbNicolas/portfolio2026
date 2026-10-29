@@ -13,28 +13,15 @@ before the Spanish is final, or reviewing before the identity is, means doing
 it twice). CI is adapted to the shape the site ends up with, and the
 author's manual review (stage 5) closes it before the PR.
 
-### 1. Core — v2 with no debt, v1 as the brief view, translations
+### 1. Core — done (2026-10-29)
 
-Done on 2026-10-29: v2 serves `/` and `/en/` from one component
+v2 serves `/` and `/en/` from one component
 (`src/components/v2/Landing.astro`, copy in `src/lib/landing-copy.ts`); v1
-is the brief view at `/brief` and `/en/brief` (canonical → its landing,
-out of the sitemap), without the 3D map. The author's read of the copy is
-in stage 5.
-
-ATS approach revalidated 2026-10-29: the layout holds (one column, contact
-in the body, standard headings, text PDF, MM/YYYY; Greenhouse and Lever docs).
-What the review found is in the content:
-
-- [ ] The ~13.000 metric prints with no label in the PDF ("…y estados. —
-      ~13.000"): `formatMetric` drops `metric.label` on delta-only metrics.
-      Print the label (`content/schema/format-metric.ts`, `RoleBlock.astro`).
-      Changes the published PDF.
-- [ ] Keep the job-title text clean for ATS autofill: "(en paralelo)" and
-      the client description move out of the `<h3>` to the meta line
-      (`RoleBlock.astro`; rule 2 still declared). Changes the published PDF.
-- [ ] Outside the repo: keep the Computrabajo and Bumeran profiles in sync
-      with the dataset, as `linkedin-copy` does for LinkedIn. Those portals
-      match on the profile, not the attached PDF.
+is the brief view at `/brief` and `/en/brief` (the cv-ats CV on screen,
+canonical → its landing, out of the sitemap), without the 3D map. The ATS
+approach was revalidated: the layout holds, and the two content fixes it
+found (metrics print with their label, the role heading carries only title
+and company) are in. The author's read of the copy is in stage 5.
 
 ### 2. Design and identity
 

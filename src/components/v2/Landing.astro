@@ -30,6 +30,7 @@ import {
   formatDateRange,
   formatDuration,
   formatMetric,
+  formatMetricLabeled,
   formatMetricEnds,
   formatRoleTitle,
   formatSeniority,
@@ -90,7 +91,7 @@ const counterTarget = Number((map.metric?.delta ?? "0").replace(/\D/g, ""));
 const [kBrief, kScale, kBroke, kDecision, kResult] = t.peakKickers;
 const beats = [
   { kicker: kBrief, title: t.peakTitles.brief, body: map.text.short },
-  { kicker: kScale, title: map.metric ? formatMetric(map.metric, locale) : "", body: t.peakBodies.scale, counter: true },
+  { kicker: kScale, title: map.metric ? formatMetricLabeled(map.metric, locale) : "", body: t.peakBodies.scale, counter: true },
   { kicker: kBroke, title: t.peakTitles.broke, body: fix.text.short },
   { kicker: kDecision, title: t.peakTitles.decision, body: index.text.short },
   {
