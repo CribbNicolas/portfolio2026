@@ -1,0 +1,66 @@
+{
+  "schema_version": 8,
+  "id": "82f17365-8f94-4a06-9692-6f20b58db6f0",
+  "project_id": "portfolio2026",
+  "topic": "content/validation",
+  "kind": "fact",
+  "status": "active",
+  "title": "Know that `pnpm run validate` does not cover contract rules 4, 7 and 8: they only run in `pnpm test`",
+  "body": "The 8 contract rules and where each one is enforced:\n1 No hand-written duration or seniority in any Prose: `checkRules` in content/schema/validation.ts (`collectProse` walks short AND long). validate.\n2 No two overlapping full-time roles unless one has `concurrent: true`: `checkRules` (`overlaps`). validate.\n3 A `core` skill needs evidence (an achievement citing it): `checkRules`. validate.\n4 A Metric with `confidence: \"estimated\"` renders with \"~\"/\"aprox.\": `formatMetric` in content/schema/format-metric.ts, the ONLY place a Metric becomes text. pnpm test.\n5 Every Media has a non-empty `alt`: Zod `media.alt.min(1)`. validate.\n6 `approved: false` is never rendered: `resolveView` filters `t.approved` AND `checkRules` warns. validate + runtime.\n7 `cv-short` cuts by priority: `PRIORITY_CUTOFF` / `MAX_ACHIEVEMENTS_PER_ROLE` in content/schema/resolve-view.ts. pnpm test (content/source/content-source.test.ts).\n8 `streetAddress`/`phone` only leave on surfaces listed in `publishPhoneOn`: identity filtering in resolve-view.ts. pnpm test.\nAlso in `checkRules` (rule 0): referential integrity of roleId/projectId/skillId, and Skill.periods coherence (end after start, no overlap).\nSo a green `validate` says nothing about 4, 7, 8: run `pnpm test` too. If a rule fails, fix the DATA, not the rule — the rules are CI gates, not suggestions.",
+  "not_derivable": "The rule list lived in docs/CONTRACT.md, which is being deleted; no single file maps rule numbers to the command that checks them, and validate's green output implies coverage it does not have.",
+  "triggers": [
+    {
+      "on": [
+        "edit",
+        "write"
+      ],
+      "paths": [
+        "content/schema/validation.ts",
+        "content/schema/resolve-view.ts",
+        "content/schema/format-metric.ts",
+        "content/source/content-source.test.ts",
+        "scripts/validate.ts"
+      ]
+    },
+    {
+      "on": [
+        "run"
+      ],
+      "commands": [
+        "pnpm run validate"
+      ]
+    }
+  ],
+  "evidence": [
+    {
+      "type": "file",
+      "path": "content/schema/validation.ts",
+      "sha256": "459a658f9a982a8ba4fbb2aca2f163a7517c9d44759461fde59c4162ff26bfa8",
+      "summary": "checkRules carries `// Rule 1/2/3/6` blocks (lines ~320-422); Zod media.alt carries Rule 5 (line 79)."
+    },
+    {
+      "type": "file",
+      "path": "content/schema/resolve-view.ts",
+      "sha256": "5ed9f16291c19d9b728f72c92c75567ec0591b65ab1010d2c17738f1944bd0de",
+      "summary": "Rule 7 constants PRIORITY_CUTOFF/MAX_ACHIEVEMENTS_PER_ROLE (lines 34-45); Rule 8 identity filtering (line 136); approved filter (line 178)."
+    },
+    {
+      "type": "file",
+      "path": "content/schema/format-metric.ts",
+      "sha256": "80e77d32af8714c7ac523f4c6da88d992b09cdb42bac0d5a7e0e34478c2da05e",
+      "summary": "Header: the only place a Metric becomes text; rule 4."
+    }
+  ],
+  "origin": "user_explicit",
+  "replaces": null,
+  "revisit_when": [],
+  "review": {
+    "issues": [],
+    "accepted": {
+      "by": "dd",
+      "at": "2026-10-29T17:11:37.644Z"
+    }
+  },
+  "created": "2026-10-29T17:11:37.644Z",
+  "updated": "2026-10-29T17:11:37.754Z"
+}

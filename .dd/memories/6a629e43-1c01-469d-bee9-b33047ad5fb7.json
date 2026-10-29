@@ -1,0 +1,53 @@
+{
+  "schema_version": 8,
+  "id": "6a629e43-1c01-469d-bee9-b33047ad5fb7",
+  "project_id": "portfolio2026",
+  "topic": "git/branches",
+  "kind": "decision",
+  "status": "active",
+  "title": "Branch from develop and PR into develop; only develop enters staging and only staging enters main",
+  "body": "Flow: feature/* -> develop (integration, no deploy, version bump here) -> staging (Pages preview with the Function running, smoke) -> main (production, cribbnicolas.pages.dev). `develop` exists to batch: without it every small PR fires a preview deploy (a Cloudflare build and, once someone opens /cv.pdf, a Browser Rendering render). The budget copes; the point is noise — twenty deploys a week make the deploy history meaningless. Open develop->staging only when what accumulated is worth publishing; watch smoke-deploy.yml pass on staging, then staging->main. Promotion PRs do not touch the version. There is no hotfix path straight to main on purpose (flujo-de-ramas.yml); if ever needed, disable the check in the ruleset and re-enable it.",
+  "not_derivable": "Why develop exists (deploy noise, not budget) and the publish cadence are not in code.",
+  "triggers": [
+    {
+      "on": [
+        "edit",
+        "write"
+      ],
+      "paths": [
+        ".github/workflows/flujo-de-ramas.yml",
+        ".github/workflows/version-gate.yml"
+      ]
+    },
+    {
+      "on": [
+        "run"
+      ],
+      "commands": [
+        "gh pr create",
+        "git checkout -b",
+        "git switch -c"
+      ]
+    }
+  ],
+  "evidence": [
+    {
+      "type": "file",
+      "path": ".github/workflows/flujo-de-ramas.yml",
+      "sha256": "2257cafd858b3dc40c8bbe6a786d57828edf5d7f8b37061d797c5c4dd8ddcbe3",
+      "summary": "Rejects PRs into staging/main from the wrong source branch or a fork."
+    }
+  ],
+  "origin": "user_explicit",
+  "replaces": null,
+  "revisit_when": [],
+  "review": {
+    "issues": [],
+    "accepted": {
+      "by": "dd",
+      "at": "2026-10-29T17:11:40.951Z"
+    }
+  },
+  "created": "2026-10-29T17:11:40.951Z",
+  "updated": "2026-10-29T17:11:41.051Z"
+}

@@ -1,0 +1,46 @@
+{
+  "schema_version": 8,
+  "id": "f07044a2-b00b-4621-a1fd-b4a305036fc3",
+  "project_id": "portfolio2026",
+  "topic": "landing-v2/about-stack",
+  "kind": "failed_approach",
+  "status": "active",
+  "title": "Keep the Quién soy cards rising into a spaced pile in reading order; the no-pile variant was rejected by the author",
+  "body": "In `src/scripts/v2/intro.ts` the three skill cards rise into a SPACED pile (PILE, z in px, scaled down on phones) in reading order, Interfaz → Servidor → Entrega, and then turn to face the reader. Tried and rejected on 2026-10-28: a version with no pile, each card in its own slot from the start (the author prefers the pile); a first spacing of 260/80/-100 ('still too far apart'); and the earlier behaviour where the cards sat flush on one another and arrived 3 → 2 → 1.",
+  "not_derivable": "intro.ts shows the pile, not that the no-pile variant and the wider spacing were tried and turned down by the author.",
+  "triggers": [
+    {
+      "on": [
+        "edit",
+        "write"
+      ],
+      "paths": [
+        "src/scripts/v2/intro.ts"
+      ]
+    }
+  ],
+  "evidence": [
+    {
+      "type": "file",
+      "path": "src/scripts/v2/intro.ts",
+      "sha256": "b0fdcff6434d171e7911a1a54ba75871ab08c71bec38b4a684e576f0b5f615a4",
+      "summary": "PILE constant and the reading-order rise"
+    },
+    {
+      "type": "note",
+      "summary": "Spike notes 2026-10-28: author review of the card stack."
+    }
+  ],
+  "origin": "user_explicit",
+  "replaces": null,
+  "revisit_when": [],
+  "review": {
+    "issues": [],
+    "accepted": {
+      "by": "dd",
+      "at": "2026-10-29T17:12:19.067Z"
+    }
+  },
+  "created": "2026-10-29T17:12:19.067Z",
+  "updated": "2026-10-29T17:12:19.166Z"
+}

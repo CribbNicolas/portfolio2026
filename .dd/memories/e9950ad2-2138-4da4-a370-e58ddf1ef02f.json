@@ -1,0 +1,58 @@
+{
+  "schema_version": 8,
+  "id": "e9950ad2-2138-4da4-a370-e58ddf1ef02f",
+  "project_id": "portfolio2026",
+  "topic": "pdf/zero-js",
+  "kind": "decision",
+  "status": "active",
+  "title": "Keep /cv and /en/cv at zero client JavaScript: production PDFs are printed from the PUBLISHED pages",
+  "body": "functions/cv.pdf.ts and functions/en/cv.pdf.ts call functions/_handler.ts, which asks Cloudflare Browser Rendering to print the live /cv or /en/cv and waits for network idle (`LOAD_WAIT` in scripts/pdf-options.ts: networkidle0 on Browser Rendering, networkidle on Playwright). Any script on those pages — a component with a <script>, an island, analytics added to src/layouts/Base.astro, a ClientRouter — changes the downloaded PDF silently in production, not just your local build. Only the two landings (index.html, en/index.html) may ship JS; the allowlist is `PAGES_WITH_JS` in scripts/pages-with-js.ts, and adding a page there is an explicit decision that must show up in a diff, never a fix for a failing `pnpm run test:js`. Put landing-only scripts in src/pages/index.astro / src/pages/en/index.astro, never in Base.astro or src/components/cv/** (shared with the CV pages).",
+  "not_derivable": "The link between 'a script in Base.astro' and 'a different PDF in production' spans the layout, the Pages Function and the print options; nothing in Base.astro or the CV components warns about it.",
+  "triggers": [
+    {
+      "on": [
+        "edit",
+        "write"
+      ],
+      "paths": [
+        "src/pages/cv.astro",
+        "src/pages/en/cv.astro",
+        "src/layouts/Base.astro",
+        "src/components/cv/**",
+        "scripts/pages-with-js.ts"
+      ]
+    }
+  ],
+  "evidence": [
+    {
+      "type": "file",
+      "path": "functions/_handler.ts",
+      "sha256": "134bf15465e2e7c106f58b1218bfac3ad9c0ba906c69a0d9937afae27535f9f4",
+      "summary": "Header: source page must stay at zero JS in either locale; a script now breaks the PDF in production."
+    },
+    {
+      "type": "file",
+      "path": "scripts/pages-with-js.ts",
+      "sha256": "b414f62a1fd48ed03660b0b56446765091912d8ea2f11ca4103670dbf6650530",
+      "summary": "PAGES_WITH_JS = index.html, en/index.html; shared by no-client-js and bundle-budget checks."
+    },
+    {
+      "type": "file",
+      "path": "scripts/pdf-options.ts",
+      "sha256": "d2339793ba817c3971844212ba5a37e326eccdd0a815a010b07560f5143dbe48",
+      "summary": "LOAD_WAIT: networkidle0 vs networkidle, shared by local render and the Function."
+    }
+  ],
+  "origin": "user_explicit",
+  "replaces": null,
+  "revisit_when": [],
+  "review": {
+    "issues": [],
+    "accepted": {
+      "by": "dd",
+      "at": "2026-10-29T17:11:47.864Z"
+    }
+  },
+  "created": "2026-10-29T17:11:47.864Z",
+  "updated": "2026-10-29T17:11:47.964Z"
+}

@@ -1,0 +1,51 @@
+{
+  "schema_version": 8,
+  "id": "255a80ce-48bc-4f6e-bf7f-ded6205f0f11",
+  "project_id": "portfolio2026",
+  "topic": "deploy/limits",
+  "kind": "fact",
+  "status": "active",
+  "title": "Free-plan ceilings: Browser Rendering's burst rate is the one that bites; Pages 500 builds/month; Actions unlimited only while the repo is public",
+  "body": "- Cloudflare Pages: 500 builds/month, unlimited bandwidth/requests. Every extra preview branch spends builds.\n- Browser Rendering: 10 browser minutes/day, 3 concurrent browsers, one new instance every 20 s; a render takes 3-5 s. The RATE is what gets hit: on 2026-09-04, a day of deploys, production /cv.pdf answered 429 and the visitor got `pdfQuotaExceeded`. That is why the edge caches a PDF for 30 DAYS keyed by deployed commit (functions/_pdf.ts; README's '1 h edge cache' is outdated — 1 h is the browser max-age), why smoke-deploy.yml and `pdf:refresh` warm the two locales sequentially, never in parallel, and why the Function propagates 429 + Retry-After instead of a broken PDF. A develop->staging->main chain is two deploys = four cold renders.\n- GitHub Actions: no minute cap because the repo is public (private repos get 2,000/month). Making the repo private would cap CI and also lose rulesets on the Free plan.\n- Microsoft Clarity and Cloudflare Web Analytics: free, no cap.\nAnything that adds renders per deploy or per visit must be weighed against the Browser Rendering rate.",
+  "not_derivable": "Plan limits and the 2026-09-04 incident are external facts; README's table is partly stale (1 h edge cache).",
+  "triggers": [
+    {
+      "on": [
+        "edit",
+        "write"
+      ],
+      "paths": [
+        "functions/**",
+        ".github/workflows/smoke-deploy.yml",
+        "scripts/refresh-pdf.ts",
+        "README.md"
+      ]
+    }
+  ],
+  "evidence": [
+    {
+      "type": "file",
+      "path": "functions/_pdf.ts",
+      "sha256": "3d6672c74c504358ab84cb577747d2caa6426cd584d8b495db54b9c7e053187f",
+      "summary": "CACHE_SECONDS thirty days, 429 incident 2026-09-04 in comment."
+    },
+    {
+      "type": "file",
+      "path": "README.md",
+      "sha256": "c499f05bec954511144dc6b3b599c6cd2c812ca96adcb2b6925787116dccbe85",
+      "summary": "External services table; says 1 h edge cache (stale)."
+    }
+  ],
+  "origin": "user_explicit",
+  "replaces": null,
+  "revisit_when": [],
+  "review": {
+    "issues": [],
+    "accepted": {
+      "by": "dd",
+      "at": "2026-10-29T17:11:38.646Z"
+    }
+  },
+  "created": "2026-10-29T17:11:38.646Z",
+  "updated": "2026-10-29T17:11:38.744Z"
+}

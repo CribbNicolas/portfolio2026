@@ -1,0 +1,52 @@
+{
+  "schema_version": 8,
+  "id": "72399edf-8765-4762-b160-465429947b2f",
+  "project_id": "portfolio2026",
+  "topic": "analytics/beacon-trap",
+  "kind": "trap",
+  "status": "active",
+  "title": "Never enable Cloudflare Web Analytics from the Pages dashboard; add the beacon by hand in BOTH landing files",
+  "body": "Enabling Web Analytics in the Pages dashboard injects the beacon into the WHOLE site on the next deploy, `/cv` and `/en/cv` included. Those pages must stay at zero JS because Browser Rendering prints the published page for the PDF (waits on networkidle), so a script there silently changes production PDFs. `no-client-js.check.ts` cannot see it: it reads `dist/`, and the injection happens at the edge. Only `scripts/served.check.ts` (from smoke-deploy.yml) would catch it, after the fact.\nInstead, the beacon (`PUBLIC_CF_BEACON_TOKEN`) and Clarity (`PUBLIC_CLARITY_ID`) are wired by hand in `src/pages/index.astro` AND `src/pages/en/index.astro` — never in `src/layouts/Base.astro`, which /cv uses. Any new analytics/tag goes into both landing files, and the CSP in `public/_headers` must allow its origins.",
+  "not_derivable": "The dashboard toggle is outside the repo; the code only shows the manual wiring, not why the toggle must stay off.",
+  "triggers": [
+    {
+      "on": [
+        "edit",
+        "write"
+      ],
+      "paths": [
+        "src/pages/index.astro",
+        "src/pages/en/index.astro",
+        "src/layouts/Base.astro",
+        "src/scripts/analytics.ts",
+        "public/_headers"
+      ]
+    }
+  ],
+  "evidence": [
+    {
+      "type": "file",
+      "path": "scripts/served.check.ts",
+      "sha256": "ffaa784181cfa27abd6686800962ba08df34dc2e3081405ec288530e942b275f",
+      "summary": "Header comment: dashboard Web Analytics injects into the whole site; ANALYTICS_FINGERPRINTS."
+    },
+    {
+      "type": "file",
+      "path": "src/pages/en/index.astro",
+      "sha256": "158e980ca889e37a4e636fdf7acabd44ffbc6c6f925cbed6723512e0e6d13dc4",
+      "summary": "Second hand-wired beacon."
+    }
+  ],
+  "origin": "user_explicit",
+  "replaces": null,
+  "revisit_when": [],
+  "review": {
+    "issues": [],
+    "accepted": {
+      "by": "dd",
+      "at": "2026-10-29T17:11:33.400Z"
+    }
+  },
+  "created": "2026-10-29T17:11:33.400Z",
+  "updated": "2026-10-29T17:11:33.501Z"
+}

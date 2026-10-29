@@ -1,0 +1,54 @@
+{
+  "schema_version": 8,
+  "id": "8eaea3d5-0a4e-48b2-9d59-2fd490869a6a",
+  "project_id": "portfolio2026",
+  "topic": "design/visual-direction",
+  "kind": "decision",
+  "status": "active",
+  "title": "Treat the «Producto» visual direction as chosen over «Documento» and «Consola»; do not re-propose those two without new reasons",
+  "body": "On 2026-08-14 three directions were mocked up with real data and C «Producto» was chosen; it is what src/styles/tokens.css implements (one sans, Manrope, weights doing the hierarchy; neutral base plus ONE warm accent, terracotta; medium density; micro-transitions only; no shadows on /cv). Rejected: A «Documento» (serif, paper white, hairlines, near-zero color) because it reads academic or dated and does not say 'builds products'; the freelance client (e.g. a timber yard owner on a phone) sees it as not modern. B «Consola» (mono + dark default, saturated terminal accent, dense) because it is the most common developer-portfolio cliché, so it fails the voice test (CLAUDE.md invariant 6), and terminal aesthetics lose the non-technical client. C's known risk: drifting into a generic SaaS template (violet gradient, shadowed cards, 'I build digital experiences'); character depends on the type and accent being choices, not defaults. Caveat: the choice predates any reference-portfolio research, so it was a hypothesis, not a conclusion. The mockups were deleted; this is the only record. The v2 spike (src/pages/v2.astro, src/styles/v2.css) keeps C as its base but goes further on /v2 only: muted violet accent instead of terracotta, a monospace face, film grain and Lenis smooth scroll. Whether that palette reaches / is an open TODO item.",
+  "not_derivable": "The code shows only the winner. The rejected directions, why they lost, and that the pick predates portfolio research existed only in the deleted spec and the deleted docs/design mockups.",
+  "triggers": [
+    {
+      "on": [
+        "edit",
+        "write"
+      ],
+      "paths": [
+        "src/styles/tokens.css",
+        "src/styles/v2.css",
+        "src/pages/v2.astro"
+      ]
+    }
+  ],
+  "evidence": [
+    {
+      "type": "file",
+      "path": "src/styles/tokens.css",
+      "sha256": "557fbdee78ba18613e260d2103aced442bed1b1e33a18b2b9b3b06bf64defab9",
+      "summary": "Implements direction C: Manrope, one accent token, dark screen tokens with a light print override."
+    },
+    {
+      "type": "file",
+      "path": "src/styles/v2.css",
+      "sha256": "832abaec9015b311db4b32c08cd2b18f5a4354becaebfe79af326cf29e714615",
+      "summary": "Spike-only accent: a muted violet in place of the terracotta."
+    },
+    {
+      "type": "note",
+      "summary": "Rationale from the deleted docs/superpowers/specs/2026-08-14-sistema-visual-design.md §0, §2, §6 and the deleted docs/design/{a-documento,b-consola,c-producto} mockups."
+    }
+  ],
+  "origin": "user_explicit",
+  "replaces": null,
+  "revisit_when": [],
+  "review": {
+    "issues": [],
+    "accepted": {
+      "by": "dd",
+      "at": "2026-10-29T17:11:39.650Z"
+    }
+  },
+  "created": "2026-10-29T17:11:39.650Z",
+  "updated": "2026-10-29T17:11:39.714Z"
+}

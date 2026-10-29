@@ -1,0 +1,48 @@
+{
+  "schema_version": 8,
+  "id": "72c6c656-ad0e-4b0b-9bdd-93b175d6b01d",
+  "project_id": "portfolio2026",
+  "topic": "frontend/3d-budget",
+  "kind": "trap",
+  "status": "active",
+  "title": "The deferred 3D chunk (three + graph-3d.ts) is ~88% of its 150 KB gzip ceiling: bumping three or importing more of it can fail test:bundle",
+  "body": "scripts/bundle-budget.check.ts caps the deferred chunk at `DEFERRED_BUDGET_KB = 150` (gzip). The built dist/_astro/graph-3d.*.js measured ~131.6 KB gzip on 2026-10-29 (129.8 KB on 2026-08-25), so there is under 20 KB of headroom. A `three` version bump, one more three class (e.g. a new geometry, loader, or material), or a heavy dependency pulled into graph-3d.ts can push it over. The ceiling exists to make that an explicit decision, not to forbid it: measure after `pnpm run build` with `pnpm run test:bundle`, and if going over is justified, raise the constant in the same diff with the reason. Do not dodge it by splitting three across chunks or by static-importing pieces into the critical path (that breaks the separate critical-JS budget, 4 KB).",
+  "not_derivable": "The check knows the ceiling, not the current size; how close the chunk already is only appears after a build.",
+  "triggers": [
+    {
+      "on": [
+        "edit",
+        "write"
+      ],
+      "paths": [
+        "src/scripts/lab/graph-3d.ts",
+        "package.json",
+        "scripts/bundle-budget.check.ts"
+      ]
+    }
+  ],
+  "evidence": [
+    {
+      "type": "file",
+      "path": "scripts/bundle-budget.check.ts",
+      "sha256": "ade6a9ad8b62c3279c89fd736e24ec6a5700c69edf7456ee63a9489adf55c4ec",
+      "summary": "DEFERRED_BUDGET_KB = 150, CRITICAL_BUDGET_KB = 4, FIELD_BUDGET_KB = 8 (lines 52-56)."
+    },
+    {
+      "type": "note",
+      "summary": "gzip of dist/_astro/graph-3d.DuPzAgjJ.js = 134,725 bytes (~131.6 KB) measured 2026-10-29 on branch spike/landing-v2."
+    }
+  ],
+  "origin": "user_explicit",
+  "replaces": null,
+  "revisit_when": [],
+  "review": {
+    "issues": [],
+    "accepted": {
+      "by": "dd",
+      "at": "2026-10-29T17:11:40.282Z"
+    }
+  },
+  "created": "2026-10-29T17:11:40.282Z",
+  "updated": "2026-10-29T17:11:40.381Z"
+}

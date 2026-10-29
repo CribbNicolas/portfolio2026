@@ -1,0 +1,44 @@
+{
+  "schema_version": 8,
+  "id": "a6860194-bb60-4672-96dd-888c4f9271ff",
+  "project_id": "portfolio2026",
+  "topic": "analytics/privacy",
+  "kind": "decision",
+  "status": "active",
+  "title": "Keep the Clarity privacy line next to the analytics in the landing (HomeDocument.astro), never in Base.astro",
+  "body": "Clarity uses cookies and records sessions (it masks inputs; the site has no forms), CWA uses none. If EU traffic arrives, consent is technically required; the minimum adopted is a footer line saying usage is measured with Clarity, linking Microsoft's privacy statement (`footerPrivacy*` keys in content/schema/messages.ts, rendered in src/components/HomeDocument.astro). It sits with the analytics, not in src/layouts/Base.astro: if analytics are removed the line goes with them instead of being orphaned on /cv. Starting Clarity on first interaction (src/scripts/analytics.ts) is NOT a consent banner and must not be described as one — it changes when measurement starts, not what is collected. A real consent mechanism is still open if EU traffic shows up.",
+  "not_derivable": "The EU-consent threshold and that the line is a deliberate minimum, not a consent solution, are not recorded in code.",
+  "triggers": [
+    {
+      "on": [
+        "edit",
+        "write"
+      ],
+      "paths": [
+        "src/layouts/Base.astro",
+        "src/components/HomeDocument.astro",
+        "src/scripts/analytics.ts"
+      ]
+    }
+  ],
+  "evidence": [
+    {
+      "type": "file",
+      "path": "src/components/HomeDocument.astro",
+      "sha256": "c34b3b501c77d4fd2e9d0b35edfc76f4eb228d74f2e3b87ccbdaee92206d1d5a",
+      "summary": "Footer privacy line and its placement comment."
+    }
+  ],
+  "origin": "user_explicit",
+  "replaces": null,
+  "revisit_when": [],
+  "review": {
+    "issues": [],
+    "accepted": {
+      "by": "dd",
+      "at": "2026-10-29T17:11:33.720Z"
+    }
+  },
+  "created": "2026-10-29T17:11:33.720Z",
+  "updated": "2026-10-29T17:11:33.813Z"
+}

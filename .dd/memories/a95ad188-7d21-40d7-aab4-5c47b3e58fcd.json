@@ -1,0 +1,52 @@
+{
+  "schema_version": 8,
+  "id": "a95ad188-7d21-40d7-aab4-5c47b3e58fcd",
+  "project_id": "portfolio2026",
+  "topic": "deploy/pdf",
+  "kind": "decision",
+  "status": "active",
+  "title": "Print the CV PDF with Browser Rendering from the published /cv page; never build it with pdf-lib or put it back in the build",
+  "body": "`pnpm run build` is `astro build` and nothing else. The served PDF is printed at runtime by `functions/_handler.ts` (via `functions/cv.pdf.ts` / `functions/en/cv.pdf.ts`) with Cloudflare Browser Rendering over the PUBLISHED `/cv` / `/en/cv`. Two reasons: (1) the build runs anywhere, Pages included, with no Chromium (it used to start Playwright and had to build in Actions and upload `dist/`); (2) the PDF is not a build artifact, so the day data comes from an API instead of `content.es.json` the PDF is current with nobody regenerating a file. Only `/cv` has to be current. Rejected: building the PDF with `pdf-lib` or similar — that writes the layout twice (CSS for `/cv`, coordinates for the PDF) and the copies drift; `src/pages/cv.astro` is the single layout. `scripts/render-pdf.ts` / `pdf:local` only produce the pre-deploy gate's copy, not the deliverable.",
+  "not_derivable": "The pdf-lib rejection and the 'PDF must not be a build artifact' rationale are not stated in code comments.",
+  "triggers": [
+    {
+      "on": [
+        "edit",
+        "write"
+      ],
+      "paths": [
+        "functions/**",
+        "scripts/render-pdf.ts",
+        "scripts/build-pdf.ts",
+        "scripts/pdf-options.ts",
+        "package.json"
+      ]
+    }
+  ],
+  "evidence": [
+    {
+      "type": "file",
+      "path": "functions/_handler.ts",
+      "sha256": "134bf15465e2e7c106f58b1218bfac3ad9c0ba906c69a0d9937afae27535f9f4",
+      "summary": "Shared Browser Rendering implementation for both PDF routes."
+    },
+    {
+      "type": "file",
+      "path": "scripts/pdf-options.ts",
+      "sha256": "d2339793ba817c3971844212ba5a37e326eccdd0a815a010b07560f5143dbe48",
+      "summary": "Print options shared by the tested and the served PDF."
+    }
+  ],
+  "origin": "user_explicit",
+  "replaces": null,
+  "revisit_when": [],
+  "review": {
+    "issues": [],
+    "accepted": {
+      "by": "dd",
+      "at": "2026-10-29T17:11:39.311Z"
+    }
+  },
+  "created": "2026-10-29T17:11:39.311Z",
+  "updated": "2026-10-29T17:11:39.417Z"
+}
