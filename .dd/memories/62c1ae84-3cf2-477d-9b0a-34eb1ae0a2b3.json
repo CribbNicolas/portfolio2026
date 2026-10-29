@@ -4,7 +4,7 @@
   "project_id": "portfolio2026",
   "topic": "analytics/tools",
   "kind": "decision",
-  "status": "active",
+  "status": "superseded",
   "title": "Keep both Clarity and Cloudflare Web Analytics on the landings; they measure different things and neither replaces the other",
   "body": "Cloudflare Web Analytics gives pageviews, referrers, country, browser and Core Web Vitals, with no cookies — but no heatmaps. The question worth answering (which parts of the CV get read) needs Microsoft Clarity: click, scroll and area heatmaps plus session recordings. Both are free, so both stay. Do not remove Clarity 'because CWA already covers analytics', and do not swap CWA for Clarity's pageview data. Both live only on `/` and `/en/` (src/pages/index.astro, src/pages/en/index.astro); `/cv` and `/en/cv` stay at zero JS. Clarity starts on first interaction (src/scripts/analytics.ts).",
   "not_derivable": "Why two analytics tools coexist (heatmaps vs CWA's vitals) is not explained in code.",
@@ -46,5 +46,5 @@
     }
   },
   "created": "2026-10-29T17:11:34.033Z",
-  "updated": "2026-10-29T17:11:34.189Z"
+  "updated": "2026-10-29T20:58:04.583Z"
 }

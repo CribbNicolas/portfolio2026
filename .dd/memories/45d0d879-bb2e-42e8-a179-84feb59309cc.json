@@ -1,0 +1,52 @@
+{
+  "schema_version": 8,
+  "id": "45d0d879-bb2e-42e8-a179-84feb59309cc",
+  "project_id": "portfolio2026",
+  "topic": "landing/brief-view",
+  "kind": "decision",
+  "status": "superseded",
+  "title": "The old landing is the brief view at /brief and /en/brief: English paths, canonical to its landing, no 3D map",
+  "body": "Decided by the author 2026-10-29 when v2 took / and /en/. The previous landing (src/components/HomeDocument.astro) lives on as the 'vista breve' / 'brief view' at /brief and /en/brief (src/pages/brief.astro, src/pages/en/brief.astro; LOCALE_PATHS.*.brief in src/lib/anchors.ts). Paths are English in BOTH locales (author's rule, also in CLAUDE.md); anchors still follow the page language. It repeats the landing's facts, so Base.astro gets canonicalPath = that locale's home, astro.config.mjs's sitemap filter drops /brief/, and it is NOT in HREFLANG and has no Open Graph: one page competes in search. Do not make it self-canonical or add it to the sitemap without the author. The 3D knowledge map (three, src/scripts/lab, GraphSvg, knowledge-graph/graph-layout) was removed with it, not kept: do not restore it. LocaleSwitch (only used here) links to the other locale's brief view, and the hero links back to the guided landing; the landing's hero links to the brief view.",
+  "not_derivable": "The naming, the English-path rule and the canonical/sitemap choice were the author's calls between listed alternatives; the code only shows the result.",
+  "triggers": [
+    {
+      "on": [
+        "edit"
+      ],
+      "paths": [
+        "src/pages/brief.astro",
+        "src/pages/en/brief.astro",
+        "src/components/HomeDocument.astro",
+        "src/components/LocaleSwitch.astro",
+        "src/lib/anchors.ts",
+        "astro.config.mjs"
+      ]
+    }
+  ],
+  "evidence": [
+    {
+      "type": "file",
+      "path": "src/pages/brief.astro",
+      "sha256": "a936fc83d1244c9d447a425327e5a19d2e9f4223b59978982f47eb9dc0853f1d",
+      "summary": "Cited when this memory was saved."
+    },
+    {
+      "type": "file",
+      "path": "astro.config.mjs",
+      "sha256": "262c3112adcf17a198776093acf30033d2347c128c3315a5e9aa4eafee751e62",
+      "summary": "Cited when this memory was saved."
+    }
+  ],
+  "origin": "user_explicit",
+  "replaces": null,
+  "revisit_when": [],
+  "review": {
+    "issues": [],
+    "accepted": {
+      "by": "dd",
+      "at": "2026-10-29T20:09:52.051Z"
+    }
+  },
+  "created": "2026-10-29T20:09:52.051Z",
+  "updated": "2026-10-29T22:00:14.061Z"
+}

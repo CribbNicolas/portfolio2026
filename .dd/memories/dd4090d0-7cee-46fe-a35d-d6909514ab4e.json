@@ -1,0 +1,48 @@
+{
+  "schema_version": 8,
+  "id": "dd4090d0-7cee-46fe-a35d-d6909514ab4e",
+  "project_id": "portfolio2026",
+  "topic": "analytics/consent",
+  "kind": "decision",
+  "status": "active",
+  "title": "Run Clarity cookieless for every visitor (consentV2 denied) instead of a consent banner",
+  "body": "Decided by the author 2026-10-29 for EU visitors. src/scripts/analytics.ts calls Clarity.consentV2({ ad_Storage: 'denied', analytics_Storage: 'denied' }) right after Clarity.init: per learn.microsoft.com/clarity/consent-mode Clarity then writes no cookies (_clck, _clsk, nor the bing.com ad ones) and still records heatmaps and sessions over /collect. That is why there is no consent banner and no geolocation: do not add one, and do not flip consent to granted, without the author. The footer privacy line (footerPrivacy* in content/schema/messages.ts) says 'sin cookies'; keep it true. Still unverified against production (needs PUBLIC_CLARITY_ID): docs/TODO.md 'After the merge' lists the cookie check.",
+  "not_derivable": "The code shows the consent call, not that it replaces a banner the author considered and rejected, nor that its behaviour is still unverified live.",
+  "triggers": [
+    {
+      "on": [
+        "edit"
+      ],
+      "paths": [
+        "src/scripts/analytics.ts",
+        "src/components/Analytics.astro"
+      ]
+    }
+  ],
+  "evidence": [
+    {
+      "type": "file",
+      "path": "src/scripts/analytics.ts",
+      "sha256": "54074ac86ed3fdd945ceefca260ea393b8154ed7d49361e3d50ce212f22e7890",
+      "summary": "Cited when this memory was saved."
+    },
+    {
+      "type": "file",
+      "path": "src/components/Analytics.astro",
+      "sha256": "f3994b856215b099a998f76a3c0bd26a3245f3fffcd231a31a0e4161c42f4167",
+      "summary": "Cited when this memory was saved."
+    }
+  ],
+  "origin": "user_explicit",
+  "replaces": null,
+  "revisit_when": [],
+  "review": {
+    "issues": [],
+    "accepted": {
+      "by": "dd",
+      "at": "2026-10-29T20:09:57.373Z"
+    }
+  },
+  "created": "2026-10-29T20:09:57.373Z",
+  "updated": "2026-10-29T20:09:57.485Z"
+}

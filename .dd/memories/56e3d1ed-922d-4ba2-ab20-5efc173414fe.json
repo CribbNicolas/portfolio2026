@@ -4,7 +4,7 @@
   "project_id": "portfolio2026",
   "topic": "map/evidence-gap",
   "kind": "decision",
-  "status": "active",
+  "status": "archived",
   "title": "Keep skills without evidence visible, small and hollow on the knowledge map: never hide them, enlarge them or give them estimated years",
   "body": "The map replaces a grid of logos on purpose: a grid asserts, the graph shows evidence. A node is large only because dated achievements back it, and it can be clicked to see which. Position: jobs in the crust, technologies in the core. Skills declared in content/data/content.*.json with no achievement or project citing them are drawn small and hollow, grouped at the centre. That is the map showing the gap instead of covering it, and it is deliberate. Do not \"fix\" it by filtering those nodes out, giving them a minimum size or opacity that matches evidenced skills, assigning years without `periods` or dated evidence (invariant 4), or adding achievements or projects just to light a node up. The fix for a hollow node is real content in the dataset, or dropping the skill.",
   "not_derivable": "Comments call it 'not a bug', but nothing states the product reason (evidence over a logo grid) or forbids the cosmetic fixes an agent would try on a node that looks empty.",
@@ -42,12 +42,14 @@
   "replaces": null,
   "revisit_when": [],
   "review": {
-    "issues": [],
+    "issues": [
+      "archived_by_person: The 3D knowledge map (src/scripts/lab, graph-3d.ts, three, GraphSvg, knowledge-graph) was removed on 2026-10-29 when the brief view replaced the old landing; these memories describe code that no longe"
+    ],
     "accepted": {
       "by": "dd",
       "at": "2026-10-29T17:11:46.841Z"
     }
   },
   "created": "2026-10-29T17:11:46.841Z",
-  "updated": "2026-10-29T17:11:46.941Z"
+  "updated": "2026-10-29T20:46:20.083Z"
 }

@@ -1,0 +1,49 @@
+{
+  "schema_version": 8,
+  "id": "99755c62-f603-4c0a-8057-4c87077c1e62",
+  "project_id": "portfolio2026",
+  "topic": "landing-v2/cv-chapter",
+  "kind": "decision",
+  "status": "active",
+  "title": "The landing's CV chapter holds every published fact and the #cv/#proyectos anchors; it sits before the close, not in the Audiences slot",
+  "body": "Decided 2026-10-29 (author chose the compact CV chapter). In src/components/v2/Landing.astro, chapter 8 (.cvx) renders the portfolio surface as plain HTML with no motion: every role and achievement, the projects, skills, education, languages. It is where `/` keeps every fact the dataset publishes (crawlers, agents, readers in a hurry) and it carries the ANCHORS ids: #cv on the section, #proyectos on its projects heading; #mapa is the RPPL map chapter. Keep the ids: shared links, llms.txt, the 404 and robots point at them, and losing one is a major bump. It goes BEFORE the close and not in the slot the dropped Audiences chapter left between Seats and DeltaDictum: that seam is the CRT switch-off and interception, one continuous scene. That closes the Audiences slot. Same day, the mini career line in 'Quién soy' was removed (redundant with Recorrido and this chapter). It shows the portfolio surface, so it has MORE achievements than the cv-ats PDF on purpose.",
+  "not_derivable": "Placement and scope were chosen by the author against listed alternatives; the reason it is not in the Audiences slot is the CRT scene, which the markup does not explain.",
+  "triggers": [
+    {
+      "on": [
+        "edit"
+      ],
+      "paths": [
+        "src/components/v2/Landing.astro",
+        "src/scripts/v2/intro.ts",
+        "scripts/single-landing.check.ts"
+      ]
+    }
+  ],
+  "evidence": [
+    {
+      "type": "file",
+      "path": "src/components/v2/Landing.astro",
+      "sha256": "7f90cf76b6c1e644ac8e7a3c289cfef61d2b232b6a8f72ea549ecb72f8c7c6a2",
+      "summary": "Cited when this memory was saved."
+    },
+    {
+      "type": "file",
+      "path": "src/scripts/v2/intro.ts",
+      "sha256": "78a712c0a7de32806278bed2962d66d8283e788aabe8d3d19346de2ebe828c36",
+      "summary": "Cited when this memory was saved."
+    }
+  ],
+  "origin": "user_explicit",
+  "replaces": null,
+  "revisit_when": [],
+  "review": {
+    "issues": [],
+    "accepted": {
+      "by": "dd",
+      "at": "2026-10-29T20:10:11.885Z"
+    }
+  },
+  "created": "2026-10-29T20:10:11.885Z",
+  "updated": "2026-10-29T20:10:11.995Z"
+}

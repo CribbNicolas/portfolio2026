@@ -4,7 +4,7 @@
   "project_id": "portfolio2026",
   "topic": "frontend/3d-budget",
   "kind": "trap",
-  "status": "active",
+  "status": "archived",
   "title": "The deferred 3D chunk (three + graph-3d.ts) is ~88% of its 150 KB gzip ceiling: bumping three or importing more of it can fail test:bundle",
   "body": "scripts/bundle-budget.check.ts caps the deferred chunk at `DEFERRED_BUDGET_KB = 150` (gzip). The built dist/_astro/graph-3d.*.js measured ~131.6 KB gzip on 2026-10-29 (129.8 KB on 2026-08-25), so there is under 20 KB of headroom. A `three` version bump, one more three class (e.g. a new geometry, loader, or material), or a heavy dependency pulled into graph-3d.ts can push it over. The ceiling exists to make that an explicit decision, not to forbid it: measure after `pnpm run build` with `pnpm run test:bundle`, and if going over is justified, raise the constant in the same diff with the reason. Do not dodge it by splitting three across chunks or by static-importing pieces into the critical path (that breaks the separate critical-JS budget, 4 KB).",
   "not_derivable": "The check knows the ceiling, not the current size; how close the chunk already is only appears after a build.",
@@ -37,12 +37,14 @@
   "replaces": null,
   "revisit_when": [],
   "review": {
-    "issues": [],
+    "issues": [
+      "archived_by_person: The 3D knowledge map (src/scripts/lab, graph-3d.ts, three, GraphSvg, knowledge-graph) was removed on 2026-10-29 when the brief view replaced the old landing; these memories describe code that no longe"
+    ],
     "accepted": {
       "by": "dd",
       "at": "2026-10-29T17:11:40.282Z"
     }
   },
   "created": "2026-10-29T17:11:40.282Z",
-  "updated": "2026-10-29T17:11:40.381Z"
+  "updated": "2026-10-29T20:46:20.190Z"
 }

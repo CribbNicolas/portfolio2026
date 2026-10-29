@@ -4,7 +4,7 @@
   "project_id": "portfolio2026",
   "topic": "landing-v2/direction",
   "kind": "decision",
-  "status": "active",
+  "status": "superseded",
   "title": "Treat /v2 as a scroll-driven experience on purpose: do not strip Lenis, pins or held scenes to satisfy the v1 no-wheel/no-hijack rules",
   "body": "Author's direction for landing v2 (2026-10-26): the landing IS the experience, not a widget inside a page. One continuous scroll that ends in the CV download. A 'wow' effect now outranks performance (performance is kept where possible, it is no longer the priority). Scroll hijacking is ACCEPTED on the landing only: it reverses the anti-checklist of the 2026-08-14 visual-system spec (section 3.4) and CLAUDE.md map rule 5 (no wheel/touchmove listeners). So Lenis's wheel listener (main.ts) and holdScroll/releaseScroll in util.ts (wheel/touchmove/keys prevented, html.is-held) are deliberate. When test:js/test:bundle fail on /v2, the fix is an explicit exception written into CLAUDE.md and the checks (scripts/pages-with-js.ts, bundle budget), never deleting the behaviour and never a silent allowlist. Also decided: v2 has no 3D node map and no three.js. There is no photo, video or 3D portrait: the person is inferred from the work and the voice. The ring-with-N logo and the dark tone are the anchors; palette and type are open. v2 does not reuse the CV components: it builds from getView(\"portfolio\"). /cv and /en/cv stay unchanged at zero JS. Positioning: a web developer who adapts to new technology, which the page must demonstrate, not claim. Tone: sells through subtlety, never an old-fashioned pitch.",
   "not_derivable": "CLAUDE.md and the v1 spec say the opposite (no wheel listeners, no hijacking), so an agent fixing the failing gates would remove the core of v2.",
@@ -53,5 +53,5 @@
     }
   },
   "created": "2026-10-29T17:11:45.218Z",
-  "updated": "2026-10-29T17:11:45.318Z"
+  "updated": "2026-10-29T20:58:04.421Z"
 }
