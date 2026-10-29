@@ -34,7 +34,7 @@
     },
     "summary": {
       "short": "Full-stack developer with a product focus: React, Next.js and TypeScript, plus the Node, Docker and CI/CD to take a project from the repo to production.",
-      "long": "If a checkout or a map with thousands of features is not allowed to go down, that's where I'm useful. The stack is whatever the problem asks for: React or Vue, Next or WordPress, Node or PHP or a rake task in Ruby. I don't collect frameworks.\n\nBefore Rosario I worked remotely from Misiones. Landing pages, on a team, with Vue, Quasar, Django and WordPress: I don't remember the clients and I'm not going to invent them. In adtech I built the front end of an audience builder on my own — AND, OR, XOR and NOT queries over age, business category and location — plus a POI map with Mapbox, Next and Node. At an agency we adapted sites from a home market to other countries: not translation. A service that exists in one country often doesn't exist in the other. I don't name the client.\n\nAt Dinkum I ship both ends. The map in the RPPL report (~13,000 school districts; indexing went from ~5 s to ~500 ms in a Web Worker) and the plugin that hooks a seat map into the WooCommerce cart and the reservation APIs. At Muse the front end lives in a Vite/Turbo monorepo; I work on the CRM — orders, events, Algolia — and the rake task that cleans the global index when a delete wasn't propagating.\n\nI use Claude and Cursor every day. I review everything that lands in the repo.\n\nI'm looking for remote or hybrid work from Rosario, with my hours set to the team's. I take any web development work, as an employee or freelance. What I want most is work that pushes me into something I haven't touched yet, or a product people recognize outside the team, like the RPPL map."
+      "long": "If a checkout or a map with thousands of features is not allowed to go down, that's where I'm useful. The stack is whatever the problem asks for: React or Vue, Next or WordPress, Node or PHP or a rake task in Ruby. I don't collect frameworks.\n\nBefore Rosario I worked remotely from Misiones. Landing pages, on a team, with Vue, Quasar, Django and WordPress: I don't remember the clients and I'm not going to invent them. In adtech I built the front end of an audience builder on my own — AND, OR, XOR and NOT queries over age, business category and location — plus a POI map with Mapbox, Next and Node. At an agency we adapted sites from a home market to other countries: not translation. A service that exists in one country often doesn't exist in the other. I don't name the client.\n\nAt Dinkum I shipped both ends. The map in the RPPL report (~13,000 school districts; indexing went from ~5 s to ~500 ms in a Web Worker) and the plugin that hooks a seat map into the WooCommerce cart and the reservation APIs. At Muse the front end lives in a Vite/Turbo monorepo; I worked on the CRM — orders, events, Algolia — and the rake task that cleans the global index when a delete wasn't propagating. Today I support what I shipped there.\n\nI use Claude and Cursor every day. I review everything that lands in the repo.\n\nI'm looking for remote or hybrid work from Rosario, with my hours set to the team's. I take any web development work, as an employee or freelance. What I want most is work that pushes me into something I haven't touched yet, or a product people recognize outside the team, like the RPPL map."
     }
   },
 
@@ -43,6 +43,7 @@
     { "id": "javascript", "name": "JavaScript", "category": "language", "aliases": ["JS", "ECMAScript"], "level": "core", "periods": [{ "start": "2020-04", "end": "2023-07" }, { "start": "2024-01" }], "active": true, "visibility": { "priority": 1 } },
     { "id": "react", "name": "React", "category": "frontend", "aliases": ["ReactJS", "React.js"], "level": "core", "periods": [{ "start": "2022-10", "end": "2023-07" }, { "start": "2024-01" }], "active": true, "visibility": { "priority": 1 } },
     { "id": "nextjs", "name": "Next.js", "category": "frontend", "aliases": ["NextJS", "Next"], "level": "core", "relatedIds": ["react"], "active": true, "visibility": { "priority": 1 } },
+    { "id": "astro", "name": "Astro", "category": "frontend", "aliases": ["Astro.js", "AstroJS"], "level": "working", "active": true, "visibility": { "priority": 3 } },
     { "id": "mapbox", "name": "Mapbox GL JS", "category": "data", "aliases": ["Mapbox", "Mapbox GL"], "level": "core", "periods": [{ "start": "2024-01", "end": "2025-07" }, { "start": "2025-09", "end": "2025-11" }], "active": true, "visibility": { "priority": 2 } },
     { "id": "wordpress", "name": "WordPress", "category": "cms", "aliases": ["WordPress plugin development", "WooCommerce", "WordPress page builder"], "level": "core", "periods": [{ "start": "2021-07", "end": "2023-07" }, { "start": "2025-02" }], "relatedIds": ["php"], "active": true, "visibility": { "priority": 3 } },
     { "id": "vite", "name": "Vite", "category": "tooling", "aliases": [], "level": "working", "periods": [{ "start": "2022-09", "end": "2023-07" }, { "start": "2024-01" }], "active": true, "visibility": { "priority": 3 } },
@@ -595,6 +596,31 @@
       "featured": true,
       "slug": "muse-api-algolia",
       "visibility": { "priority": 3 }
+    },
+    {
+      "id": "deltadictum",
+      "name": "DeltaDictum",
+      "status": "shipped",
+      "start": "2026-09",
+      "end": null,
+      "problem": {
+        "short": "A coding agent does not know what the code does not say: why something was decided, which trap the team already fell into, which step nothing enforces. It repeats it or undoes it."
+      },
+      "solution": {
+        "short": "A plugin for coding agents that keeps decisions, traps and unwritten steps as memories in git, and delivers each one right before the action it applies to.",
+        "long": "Each memory says when it applies, what to do, and why the code alone would not tell the agent. Before every read, edit or command, a hook matches the action against the memories' triggers: a rule applies or it does not, no semantic search. It arrives once per session and stays silent when nothing applies. Memories are JSON files in the repository, shared through git; everything else stays on the machine. No account, no model calls, no background process, no dependencies."
+      },
+      "outcome": {
+        "short": "Published on npm: from the first commit (2026-09-10) to 1.0 (2026-10-22). Runs on Claude Code, Codex and OpenCode; Cursor and Grok Build in preview."
+      },
+      "skillIds": ["node", "javascript", "ai-assisted"],
+      "links": [
+        { "id": "repo", "label": "GitHub", "url": "https://github.com/CribbNicolas/deltadictum", "kind": "repo" },
+        { "id": "docs", "label": "Documentation", "url": "https://cribbnicolas.github.io/deltadictum/", "kind": "website" }
+      ],
+      "media": [],
+      "featured": false,
+      "visibility": { "priority": 2 }
     }
   ],
 
