@@ -34,7 +34,7 @@
     },
     "summary": {
       "short": "Full-stack developer with a product focus: React, Next.js and TypeScript, plus the Node, Docker and CI/CD to take a project from the repo to production.",
-      "long": "If a checkout or a map with thousands of features is not allowed to go down, that's where I'm useful. The stack is whatever the problem asks for: React or Vue, Next or WordPress, Node or PHP or a rake task in Ruby. I don't collect frameworks.\n\nBefore Rosario I worked remotely from Misiones. Landing pages, on a team, with Vue, Quasar, Django and WordPress: I don't remember the clients and I'm not going to invent them. In adtech I built the front end of an audience builder on my own — AND, OR, XOR and NOT queries over age, business category and location — plus a POI map with Mapbox, Next and Node. At an agency we adapted sites from a home market to other countries: not translation. A service that exists in one country often doesn't exist in the other. I don't name the client.\n\nAt Dinkum I ship both ends. The map in the RPPL report (~13,000 school districts; indexing went from ~5 s to ~500 ms in a Web Worker) and the plugin that hooks a seat map into the WooCommerce cart and the reservation APIs. At Muse the front end lives in a Vite/Turbo monorepo; I work on the CRM — orders, events, Algolia — and the rake task that cleans the global index when a delete wasn't propagating.\n\nI use Claude and Cursor every day. I review everything that lands in the repo. I'm looking for full-stack work, and freelance when there's a product behind it — not one more landing page."
+      "long": "If a checkout or a map with thousands of features is not allowed to go down, that's where I'm useful. The stack is whatever the problem asks for: React or Vue, Next or WordPress, Node or PHP or a rake task in Ruby. I don't collect frameworks.\n\nBefore Rosario I worked remotely from Misiones. Landing pages, on a team, with Vue, Quasar, Django and WordPress: I don't remember the clients and I'm not going to invent them. In adtech I built the front end of an audience builder on my own — AND, OR, XOR and NOT queries over age, business category and location — plus a POI map with Mapbox, Next and Node. At an agency we adapted sites from a home market to other countries: not translation. A service that exists in one country often doesn't exist in the other. I don't name the client.\n\nAt Dinkum I ship both ends. The map in the RPPL report (~13,000 school districts; indexing went from ~5 s to ~500 ms in a Web Worker) and the plugin that hooks a seat map into the WooCommerce cart and the reservation APIs. At Muse the front end lives in a Vite/Turbo monorepo; I work on the CRM — orders, events, Algolia — and the rake task that cleans the global index when a delete wasn't propagating.\n\nI use Claude and Cursor every day. I review everything that lands in the repo.\n\nI'm looking for remote or hybrid work from Rosario, with my hours set to the team's. I take any web development work, as an employee or freelance. What I want most is work that pushes me into something I haven't touched yet, or a product people recognize outside the team, like the RPPL map."
     }
   },
 
@@ -79,7 +79,7 @@
       "start": "2024-09",
       "end": null,
       "context": {
-        "short": "WordPress plugins, interactive maps and back office, on a team and as the sole owner."
+        "short": "Two projects: Muse CRM (WooCommerce plugin, CRM admin and seat map) and the RPPL report map, on a team and as the sole owner. Now, support."
       },
       "visibility": { "priority": 1 }
     },
@@ -420,7 +420,7 @@
       "roleId": "dinkum",
       "status": "shipped",
       "start": "2024-10",
-      "end": null,
+      "end": "2026-02",
       "problem": {
         "short": "Selling numbered seats in WooCommerce without double booking: the map is on S3, the cart is in WordPress and availability is in external APIs.",
         "long": "A WooCommerce store does not know which seat is free. The visual map lives on S3 (with no backend of its own), the real reservation in Elixir/Ruby services, and the money in the WordPress checkout. If those three fall out of step, two people pay for the same seat."
@@ -434,6 +434,23 @@
         "long": "Main author of the repo (~380 of 558 commits, 2024-10 → 2026-07). In production against WooCommerce 10: a rotating nonce, the session visible in a toast, and the map no longer fighting the minicart."
       },
       "decisions": [
+        {
+          "id": "woo-extension-not-standalone",
+          "decision": "Build the seat map as a WooCommerce extension, not as a checkout of our own",
+          "context": "A standalone checkout was simpler, fit our APIs and would have shipped sooner. But it sat apart from the rest of the store.",
+          "rationale": "Seated tickets and regular products share one cart, and the payment gateway gets WooCommerce's security updates without us maintaining them.",
+          "tradeoff": "A more complex build, tied to WooCommerce's hooks and release pace, instead of a flow cut to our own APIs that would have deployed faster.",
+          "alternatives": [
+            "A checkout of our own outside WooCommerce: simpler and tailored, but a separate cart and payment security on us."
+          ]
+        },
+        {
+          "id": "react-over-vanilla",
+          "decision": "Move the plugin's front end from vanilla JS to WordPress's React, early",
+          "context": "Vanilla was enough at first. As development went on, the plugin came to hold features of the whole system, back and front, and the requirements grew.",
+          "rationale": "Room to move inside WordPress and native integration with its newer model. Catching the gap early kept the migration cheap.",
+          "tradeoff": "Some performance, and a more complex plugin."
+        },
         {
           "id": "embed-muse-renderer",
           "decision": "Do not draw the map in the plugin: embed Muse's renderer",
@@ -480,10 +497,10 @@
       "roleId": "dinkum",
       "status": "shipped",
       "start": "2024-09",
-      "end": null,
+      "end": "2026-03",
       "problem": {
         "short": "A ticketing CRM for performing arts organizations: selling seats, donations and profiles on a visual map, not an Excel grid.",
-        "long": "Muse is used by orgs like Marlboro Music and PCMS. The staff needs to design the venue, open an event, sell seats, take payment, take donations and search profiles. The buyer sees the same map in the shop. Without a modern front end, that lived in old screens and in a map disconnected from the CRM."
+        "long": "Muse is used by orgs like Marlboro Music and PCMS. The staff needs to design the venue, open an event, sell seats, take payment, take donations and search profiles. The buyer sees the same map in the shop. Without a modern front end, that lived in old screens and in a map disconnected from the CRM. The previous admin was Angular 1.x, discontinued: unpatched vulnerabilities and performance problems."
       },
       "solution": {
         "short": "A Turborepo monorepo with Vite: admin (CRM), shop, a venue designer in Konva and an embeddable renderer the WooCommerce plugin also uses.",
@@ -491,13 +508,20 @@
       },
       "outcome": {
         "short": "Admin and shop at app-next.musecrm.com. The renderer is published to S3 and the WordPress plugin consumes it.",
-        "long": "A live product: musecrm.com (marketing) and app-next.musecrm.com (the app). My commits run from 2024-09 to 2026-08. The same renderer feeds WooCommerce Seat Map, so a contract change is felt in both sales channels."
+        "long": "A live product: musecrm.com (marketing) and app-next.musecrm.com (the app). My commits run from 2024-09 to 2026-08. The same renderer feeds WooCommerce Seat Map, so a contract change is felt in both sales channels. Customers have fully moved off the old Angular admin."
       },
       "decisions": [
         {
+          "id": "rewrite-angular-admin",
+          "decision": "Rewrite the Angular 1.x admin from scratch, on libraries with long-term support",
+          "context": "The Muse admin was Angular 1.x, discontinued: vulnerabilities, performance problems, and no footing to add new features. I was hired, along with others, to rebuild it.",
+          "rationale": "React and libraries with LTS, unlikely to make an abrupt turn like Angular's: updates keep coming. It also closed what the old admin left half done: the full analytics and reports view, the interactive seat map in the shop and the admin wired to the API, and webhooks that keep views in sync through React's global state.",
+          "tradeoff": "Rewriting the whole system from zero, with no library in common with the old one — only the Ruby API stayed —, the cost carried by the client, and customers on the old admin until the new one was nearly done."
+        },
+        {
           "id": "turbo-monorepo",
           "decision": "One monorepo (Turbo + pnpm) instead of separate repos for admin, shop and renderer",
-          "context": "The map has to look the same in the CRM, in the shop and inside WordPress. Three repos let the event contract drift apart.",
+          "context": "It was not planned from the start. Once the pieces showed up — the shop the buyer sees inside the plugin, the Muse admin, the Konva seat map both of them draw, and the bridge between the WooCommerce plugin and the shop — it was clear they shared code and an event contract.",
           "rationale": "One versioned @muse/seat-renderer package; the Woo plugin consumes it through postinstall.",
           "tradeoff": "A breaking change in the renderer breaks admin, shop and Woo at once; the release has to be coordinated."
         },

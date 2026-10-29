@@ -34,6 +34,8 @@ Dated, so we know what to revisit when the context changes.
 | 2026-08 | No English dataset for now | Translating a CV produces translated English, which is worse than written English |
 | 2026-08 | Frontend in **static Astro**, PDF printed from the same `/cv` page | One layout for HTML and PDF: they cannot drift apart |
 | 2026-08 | Only `cv-ats` is rendered; the designed CV (CV-A) waits | One artifact = never wondering which to send. The surface machinery already supports adding the other |
+| 2026-10-29 | CV-A dropped: `cv-ats` is the only CV | The author does not need a second one. `cv`/`cv-short` stay in the schema, unrendered |
+| 2026-10-29 | No `services` catalogue: open availability for any web work, stated in `summary.long` | The author takes any web development job. A list of three services would turn away the fourth |
 | 2026-08 | `cv-ats` is out of `publishPhoneOn` | `/cv` HTML and the PDF share a surface: publishing it there put it on the open web |
 | 2026-08 | The **knowledge map is the front page**; `/lab` was deleted | It was a separate route while the home was a placeholder. Two pages with the same hero was duplication with no reader |
 | 2026-08 | The map came **before** the design research of [04 §6](./04-portfolio.md) | The map is the only surface showing the data graph; postponing it for typography was postponing what makes the site different. The research is still pending for the case studies |
@@ -70,7 +72,7 @@ Dated, so we know what to revisit when the context changes.
 - [x] **RPPL map** (`mapas-distritos`) — live link, problem/outcome, FastIndex
       metric and ~13.000 districts. Loaded 2026-09-01. The other two projects
       still have `links: []`
-- [ ] **Metrics** — two loaded on the RPPL map; the rest of the gap is in [03-cv.md](./03-cv.md)
+- [x] **Metrics** — closed 2026-10-29 with the two on the RPPL map: no access to the older roles' figures. [03-cv.md](./03-cv.md) §5
 - [x] Hogarth `full-time` + `concurrent` (2023-07 → 2024-01) and English **A2**, confirmed 2026-08-31
 - [x] Technical debt 42/42 closed — campaign
       [2026-09-03-close-technical-debt](./superpowers/plans/2026-09-03-close-technical-debt.md),

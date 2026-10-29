@@ -75,6 +75,11 @@ All three are in the dataset with `featured: true` and their `slug`. The RPPL
 map has problem, outcome, decisions and a live link (2026-09-01). JWD and
 `wp-plugins` still miss outcome numbers, and all three miss visual material.
 
+**No screenshots for Seat Map or Muse (2026-10-29):** both are private client
+software and the author cannot publish captures. Their evidence is the
+decisions block and, for Muse, the public app link. Anything visual for them
+has to be drawn by us (an architecture diagram), never a capture.
+
 **Private projects:** they can be shown without links. `links: []` and
 `clientDescription` instead of `client`. Worth it when the technical case is
 strong.
@@ -108,9 +113,10 @@ architecture: they look at whether you solved a problem like theirs. For that
 visitor:
 
 - **Services** (`Service` in the schema): what you do, for whom, what you
-  deliver. The `idealFor` field filters bad leads before they write.
-- **Price range**: publishing it filters enquiries; not publishing it generates
-  more volume of worse quality. Still open.
+  deliver. **Decided 2026-10-29: no catalogue.** The author takes any web
+  development work, and says so in `summary.long`; a list of three services
+  would turn away the fourth. `services` stays empty, which also settles the
+  price range — there is no service to price.
 - **Testimonials** (`Testimonial`): only with `approved: true`. Rule 6 validates
   it.
 - **JWD Maderas is the main case for this audience**, not the maps.

@@ -177,21 +177,12 @@ None of this can be done without you (invariant 4: data is not invented). **It i
 exactly the work the phase 2 editor exists to make bearable**, so it is worth
 attacking with the tool built.
 
-### Metrics: two loaded (RPPL map); the rest still empty
+### Metrics: closed 2026-10-29
 
-`dinkum-mapbox` and `dinkum-mapbox-index` carry `metric` as of 2026-09-01.
-Candidates still open in [`03-cv.md`](./03-cv.md):
-
-| Achievement | What to measure |
-|---|---|
-| `dinkum-vite` | Closed as a Webpack→Vite claim: the Woo plugin is still wp-scripts. The Vite work is Muse. |
-| `adsmovil-datos` | Time, volume or error rate in the collection |
-| `adsmovil-react` | Team size, products migrated |
-| `freelance-landings` | Closed as a named case: landings in a team, stack only |
-| `hogarth-i18n` | Markets or languages |
-
-An honest range with `confidence: "estimated"` works — it renders with "~"
-(rule 4). An invented number collapses in the interview.
+`dinkum-mapbox` and `dinkum-mapbox-index` carry `metric` as of 2026-09-01, and
+that is the whole set. The author has no access to the Adsmovil, Hogarth or
+freelance systems and does not remember their figures, so those achievements
+stay without a number (invariant 4). Detail in [`03-cv.md`](./03-cv.md) §5.
 
 ### The published TODOs
 
@@ -207,12 +198,17 @@ English level closed 2026-08-31 (**A2**). The rest are still data, not code.
 
 - [x] **RPPL map** (`mapas-distritos`): live demo link, problem/outcome, three
       decisions, ~13.000 districts. Loaded 2026-09-01.
-- [ ] Links for the other two projects: `jwd-maderas` and `wp-plugins` still
-      have `links: []`.
+- [ ] **`jwd-maderas`: deferred 2026-10-29** until the author finishes it. It
+      stays unpublished (`except` every surface); links, outcome and metric
+      come with the launch, not before.
+- [ ] `wp-plugins` still has `links: []` (private plugin; may stay that way).
 - [x] **Hogarth**: `full-time` + `concurrent: true`, `start: 2023-07` → `end: 2024-01`. Confirmed 2026-08-31.
 - [x] **Freelance role (2020-04 → 2022-06)**: `skillIds` now include WordPress, Docker, Vue, Quasar, SCSS. Still one achievement.
-- [ ] **`Skill.periods`**: only `react` is migrated, and with the span it already
-      had. The real history per technology is yours to load.
+- [x] **`Skill.periods`: closed 2026-10-29.** 13 skills declare `periods`; the
+      rest derive their years from the roles and projects citing them, and the
+      author confirmed the derived figures (Git 2.6, Node 2.3, Next.js 2.3,
+      Playwright 2.0, …). Reopen only for a skill used before its first
+      achievement.
 
 ---
 
@@ -220,13 +216,16 @@ English level closed 2026-08-31 (**A2**). The rest are still data, not code.
 
 - [ ] **Long-form case studies** ([`04`](./04-portfolio.md) §2: problem →
       decision → outcome). Blocked on `problem.short` and `outcome.short`.
-- [ ] **Services section** (the freelance side). `services` is empty on purpose —
-      do not fill it with placeholders.
-- [ ] **About section.**
+- [x] **Services: decided 2026-10-29, no catalogue.** The author takes any web
+      development work; that availability, plus location, remote/hybrid and
+      what they look for, lives in the last paragraph of `summary.long`.
+      `services` stays empty — do not fill it with placeholders.
+- [ ] **About section.** The data exists now (`summary.long`, last paragraph
+      added 2026-10-29); what is missing is where it renders.
 - [ ] **Portfolio pattern research** ([`04`](./04-portfolio.md) §6). Worth doing
       **before** designing the case studies, not after.
-- [ ] **Designed CV (CV-A).** The machinery already supports it: the dataset
-      declares `cv` and `cv-short`, and today only `cv-ats` is rendered.
+- [x] **Designed CV (CV-A): dropped 2026-10-29.** `cv-ats` is the only CV.
+      Reasoning in [`03-cv.md`](./03-cv.md) §1.
 
 ### Why there is no backend
 

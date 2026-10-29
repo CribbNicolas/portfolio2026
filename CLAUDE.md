@@ -413,8 +413,8 @@ directions, including that one long frame (a GC, a resize) is NOT a verdict.
 ## Pending / product and data
 
 **Start with `docs/06-next-session.md`:** the three infrastructure phases are
-closed. What remains is product and data only the author can fill (metrics,
-LinkedIn, case studies, `Skill.periods`, designed CV-A). Edit Spanish through
+closed. What remains is product and data only the author can fill (LinkedIn,
+case studies). Metrics, `Skill.periods` and CV-A all closed 2026-10-29. Edit Spanish through
 `pnpm run editor`; English follows the loop in `docs/10-i18n.md`.
 
 `docs/07-technical-debt.md` is a closed archive of 42 items. New findings still
@@ -423,19 +423,22 @@ go there so they are not lost; do not reopen a closed number. Full status in
 
 - **Frontend:** it exists (static Astro, see `src/` in the file map), bilingual
   since 2026-09-02: `/cv` and `/en/cv` over `cv-ats`, `/` and `/en/` over
-  `portfolio`. The designed CV (CV-A) and the case studies wait. `components/cv/`
-  are dumb: they receive resolved props and filter nothing (invariant 1).
+  `portfolio`. `cv-ats` is the only CV (CV-A dropped 2026-10-29); the case
+  studies wait. `components/cv/` are dumb: they receive resolved props and
+  filter nothing (invariant 1).
 - **Output generators** (CV PDF, `/cv` HTML, JSON-LD `Person`, `/llms.txt`,
   `/cv.json`): they exist. Rule 4 lives in a single `formatMetric()`. Detail of
   what each one emits: `docs/CONTRACT.md` §2 and `docs/04`.
-- **Metrics:** two loaded on the RPPL map (`dinkum-mapbox`, `dinkum-mapbox-index`).
-  The rest of the gap is still open — candidates in `docs/03-cv.md`. An honest
-  range with `confidence: "estimated"` works; an invented number does not.
+- **Metrics: closed 2026-10-29.** Two on the RPPL map (`dinkum-mapbox`,
+  `dinkum-mapbox-index`) and no more: the author has no access to the older
+  roles' figures. Do not reconstruct them (invariant 4). `docs/03-cv.md` §5.
 - **Data confirmed 2026-08-31:** Hogarth `full-time` + `concurrent` (2023-07 →
   2024-01), English **A2**. `careerStart` remains 2020-04. Single source:
   `docs/00-index.md`.
 - **`services` and `testimonials` are empty on purpose** — they are in the schema
   so there is nothing to migrate later. Do not fill them with placeholders.
+  `services` is a decision since 2026-10-29: open availability for any web
+  work, stated in `summary.long`, not a catalogue.
 - **Bilingual workflow: Spanish is edited first, always.** English follows
   through the loop in `docs/10-i18n.md` — `test:i18n`, translate, `i18n:lock`.
   Both agent endpoints and the OG card are bilingual (`/en/llms.txt`,
