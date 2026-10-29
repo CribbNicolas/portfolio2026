@@ -4,7 +4,7 @@
   "project_id": "portfolio2026",
   "topic": "design/visual-direction",
   "kind": "decision",
-  "status": "active",
+  "status": "superseded",
   "title": "Treat the «Producto» visual direction as chosen over «Documento» and «Consola»; do not re-propose those two without new reasons",
   "body": "On 2026-08-14 three directions were mocked up with real data and C «Producto» was chosen; it is what src/styles/tokens.css implements (one sans, Manrope, weights doing the hierarchy; neutral base plus ONE warm accent, terracotta; medium density; micro-transitions only; no shadows on /cv). Rejected: A «Documento» (serif, paper white, hairlines, near-zero color) because it reads academic or dated and does not say 'builds products'; the freelance client (e.g. a timber yard owner on a phone) sees it as not modern. B «Consola» (mono + dark default, saturated terminal accent, dense) because it is the most common developer-portfolio cliché, so it fails the voice test (CLAUDE.md invariant 6), and terminal aesthetics lose the non-technical client. C's known risk: drifting into a generic SaaS template (violet gradient, shadowed cards, 'I build digital experiences'); character depends on the type and accent being choices, not defaults. Caveat: the choice predates any reference-portfolio research, so it was a hypothesis, not a conclusion. The mockups were deleted; this is the only record. The v2 spike (src/pages/v2.astro, src/styles/v2.css) keeps C as its base but goes further on /v2 only: muted violet accent instead of terracotta, a monospace face, film grain and Lenis smooth scroll. Whether that palette reaches / is an open TODO item.",
   "not_derivable": "The code shows only the winner. The rejected directions, why they lost, and that the pick predates portfolio research existed only in the deleted spec and the deleted docs/design mockups.",
@@ -50,5 +50,5 @@
     }
   },
   "created": "2026-10-29T17:11:39.650Z",
-  "updated": "2026-10-29T17:11:39.714Z"
+  "updated": "2026-10-29T22:46:24.403Z"
 }

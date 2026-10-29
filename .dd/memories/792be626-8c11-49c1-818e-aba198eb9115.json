@@ -4,7 +4,7 @@
   "project_id": "portfolio2026",
   "topic": "landing-v2/loader",
   "kind": "decision",
-  "status": "active",
+  "status": "superseded",
   "title": "Keep v2's loader honest and short: only while real loading happens, under ~3 s, the ring drawing over already-painted HTML",
   "body": "Author's rule (2026-10-26): a loader is allowed ONLY if loading needs it, and kept under ~3 s. The research caveat behind it: a percentage loader that blocks the page becomes the visit's remembered negative peak. So in main.ts loader() the percentage is REAL progress: fonts, the page load event (capped at 5 s), each chapter's init one frame apart, ScrollTrigger.refresh(), two painted frames. There is no minimum time and no fake timer. The ring outline draws with the progress, then fills, the N strokes in and the mark zooms out. The hero's entrance is built paused and plays as the mark leaves. It is skipped on reduced motion, and ?nointro skips it for testing. How often it plays per visitor is an open item for the author: do not change that on your own.",
   "not_derivable": "The code shows how the loader works, not the author's ceiling (~3 s, only when needed) or why a timer/minimum duration is off the table.",
@@ -43,5 +43,5 @@
     }
   },
   "created": "2026-10-29T17:11:46.232Z",
-  "updated": "2026-10-29T17:11:46.298Z"
+  "updated": "2026-10-29T22:46:24.562Z"
 }

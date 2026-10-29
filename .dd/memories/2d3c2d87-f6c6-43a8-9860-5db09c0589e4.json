@@ -1,0 +1,54 @@
+{
+  "schema_version": 8,
+  "id": "2d3c2d87-f6c6-43a8-9860-5db09c0589e4",
+  "project_id": "portfolio2026",
+  "topic": "design/visual-direction",
+  "kind": "decision",
+  "status": "active",
+  "title": "Direction C «Producto» with the landing's violet as the site's one accent; the printed CV keeps its own light palette",
+  "body": "On 2026-08-14 three directions were mocked up with real data and C «Producto» was chosen: one sans (Manrope, weights doing the hierarchy), a neutral dark base plus ONE accent, medium density, micro-transitions only, no shadows on /cv. Rejected: A «Documento» (serif, paper white, near-zero color: reads academic, does not say 'builds products', the freelance client sees it as not modern) and B «Consola» (mono + saturated terminal accent: the developer-portfolio cliché, fails the voice test, loses the non-technical client). Its known risk is drifting into a generic SaaS template, so type and accent must be choices, not defaults.\nThe accent changed on 2026-10-29 (author): the landing's muted deep violet is the whole site's, in src/styles/tokens.css: --accent #5e4bc4 for SURFACES and --accent-ink #a99bf0 for TEXT on dark (the deep violet is 3.6:1 there). Flat, never a gradient. Hand-copied where no cascade reaches: public/favicon.svg, scripts/og-template.ts, scripts/build-og.ts (then og:local). The printed CV is the exception: src/styles/cv.css @media print keeps its own light, standard palette; do not violet it. Terracotta is gone; do not bring it back.",
+  "not_derivable": "Why C over A and B, and that the CV print palette is deliberately left out of the violet, are decisions the token values do not explain.",
+  "triggers": [
+    {
+      "on": [
+        "edit",
+        "write"
+      ],
+      "paths": [
+        "src/styles/tokens.css",
+        "src/styles/v2.css",
+        "src/styles/brief.css",
+        "src/styles/cv.css",
+        "public/favicon.svg",
+        "scripts/og-template.ts"
+      ]
+    }
+  ],
+  "evidence": [
+    {
+      "type": "file",
+      "path": "src/styles/tokens.css",
+      "sha256": "233f03b4e05ec15b76c2e07a7c834fbcf00de6509884164168b0d80ac0bc33ca",
+      "summary": "Cited when this memory was saved."
+    },
+    {
+      "type": "file",
+      "path": "scripts/og-template.ts",
+      "sha256": "c2e75fe2f6c7b29fdc7022ec3f13ea88f6a8610be510906461f9551cac9bb57f",
+      "summary": "Cited when this memory was saved."
+    }
+  ],
+  "origin": "user_explicit",
+  "replaces": "8eaea3d5-0a4e-48b2-9d59-2fd490869a6a",
+  "revisit_when": [],
+  "review": {
+    "issues": [],
+    "batch": "landing-v2-stage-2",
+    "accepted": {
+      "by": "person",
+      "at": "2026-10-29T22:46:24.346Z"
+    }
+  },
+  "created": "2026-10-29T22:42:10.543Z",
+  "updated": "2026-10-29T22:46:24.403Z"
+}
