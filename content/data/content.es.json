@@ -1,7 +1,7 @@
 {
   "schemaVersion": "1.0.0",
   "locale": "es",
-  "updatedAt": "2026-09-01T18:23:48.650Z",
+  "updatedAt": "2026-10-28T12:00:00.000Z",
 
   "identity": {
     "fullName": "Nicolás Agustín Cribb Barbaro",
@@ -34,7 +34,7 @@
     },
     "summary": {
       "short": "Desarrollador full stack con foco en producto: React, Next.js y TypeScript, con base sólida en Node, Docker y CI/CD para llevar un proyecto del repo a producción.",
-      "long": "Si el producto no puede fallar en un checkout o en un mapa con miles de features, ahí me siento cómodo. El stack es el que el problema pide: React o Vue, Next o WordPress, Node o PHP o un rake en Ruby. No colecciono frameworks.\n\nAntes de Rosario laburé remoto desde Misiones. Landings en equipo con Vue, Quasar, Django y WordPress: no me acuerdo los clientes y no los invento. En adtech armé solo el frontend de un constructor de audiencias — queries con AND, OR, XOR y NOT sobre edad, rubro y localidad — y un mapa de POIs con Mapbox, Next y Node. En agencia adaptábamos sitios de un mercado de origen a otros países: no era traducir, era que el servicio que en un país existe en el otro no. Del cliente no hablo.\n\nEn Dinkum entrego las dos puntas. El mapa del informe de RPPL (~13.000 distritos escolares; el índice bajó de 3–5 s a ~500 ms en un Web Worker) y el plugin que conecta un mapa de asientos con el carrito de WooCommerce y las APIs de reserva. En Muse el front vive en un monorepo Vite/Turbo; toco el CRM — órdenes, eventos, Algolia — y el rake que limpia el índice global cuando un delete no se propagaba.\n\nUso Claude y Cursor todos los días. Lo que entra al repo lo reviso yo. Busco trabajo de full stack y freelance cuando hay un producto atrás, no una landing más."
+      "long": "Si el producto no puede fallar en un checkout o en un mapa con miles de features, ahí me siento cómodo. El stack es el que el problema pide: React o Vue, Next o WordPress, Node o PHP o un rake en Ruby. No colecciono frameworks.\n\nAntes de Rosario laburé remoto desde Misiones. Landings en equipo con Vue, Quasar, Django y WordPress: no me acuerdo los clientes y no los invento. En adtech armé solo el frontend de un constructor de audiencias — queries con AND, OR, XOR y NOT sobre edad, rubro y localidad — y un mapa de POIs con Mapbox, Next y Node. En agencia adaptábamos sitios de un mercado de origen a otros países: no era traducir, era que el servicio que en un país existe en el otro no. Del cliente no hablo.\n\nEn Dinkum entrego las dos puntas. El mapa del informe de RPPL (~13.000 distritos escolares; el índice bajó de ~5 s a ~500 ms en un Web Worker) y el plugin que conecta un mapa de asientos con el carrito de WooCommerce y las APIs de reserva. En Muse el front vive en un monorepo Vite/Turbo; toco el CRM — órdenes, eventos, Algolia — y el rake que limpia el índice global cuando un delete no se propagaba.\n\nUso Claude y Cursor todos los días. Lo que entra al repo lo reviso yo. Busco trabajo de full stack y freelance cuando hay un producto atrás, no una landing más."
     }
   },
 
@@ -167,11 +167,11 @@
       "projectId": "mapas-distritos",
       "text": {
         "short": "Reemplacé el merge en feature-state por un índice hash en un Web Worker.",
-        "long": "La primera versión mergeaba los ~13.000 registros en feature-state: tardaba 3-5 s, duplicaba memoria y crasheaba. Lo reemplacé por un índice hash FNV-1a armado en un Web Worker, con transferencia zero-copy del ArrayBuffer. El JSON de distritos pesa 7 MB; el hilo de UI no se bloquea mientras indexa. Los IDs se normalizan aparte: GEOID de distrito a 7 dígitos, FIPS de estado a 2. El color se pinta con una expresión Mapbox GEOID→color, no con feature-state."
+        "long": "La primera versión mergeaba los ~13.000 registros en feature-state: tardaba ~5 s, duplicaba memoria y crasheaba. Lo reemplacé por un índice hash FNV-1a armado en un Web Worker, con transferencia zero-copy del ArrayBuffer. El JSON de distritos pesa 7 MB; el hilo de UI no se bloquea mientras indexa. Los IDs se normalizan aparte: GEOID de distrito a 7 dígitos, FIPS de estado a 2. El color se pinta con una expresión Mapbox GEOID→color, no con feature-state."
       },
       "metric": {
         "label": "tiempo de indexado",
-        "before": "3-5 s",
+        "before": "5 s",
         "after": "500 ms",
         "confidence": "estimated",
         "source": "Medición interna al migrar de merge en feature-state a FastIndex (Web Worker FNV-1a), octubre 2025."
@@ -375,7 +375,7 @@
         {
           "id": "hash-index-worker",
           "decision": "Índice hash en Web Worker en lugar de mergear los datos en feature-state",
-          "context": "El dataset son ~13.000 polígonos más 7 MB de JSON analítico. Mergear todo en feature-state duplicaba memoria, tardaba 3-5 s y crasheaba.",
+          "context": "El dataset son ~13.000 polígonos más 7 MB de JSON analítico. Mergear todo en feature-state duplicaba memoria, tardaba ~5 s y crasheaba.",
           "rationale": "Búsquedas O(1) on-demand, UI libre durante el indexado, transferencia zero-copy del ArrayBuffer.",
           "tradeoff": "Hay que normalizar GEOID/FIPS a mano (7 dígitos vs 2) y el hover visual sigue en feature-state, separado de los datos."
         },

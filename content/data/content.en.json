@@ -1,7 +1,7 @@
 {
   "schemaVersion": "1.0.0",
   "locale": "en",
-  "updatedAt": "2026-09-01T18:23:48.650Z",
+  "updatedAt": "2026-10-28T12:00:00.000Z",
 
   "identity": {
     "fullName": "Nicolás Agustín Cribb Barbaro",
@@ -34,7 +34,7 @@
     },
     "summary": {
       "short": "Full-stack developer with a product focus: React, Next.js and TypeScript, plus the Node, Docker and CI/CD to take a project from the repo to production.",
-      "long": "If a checkout or a map with thousands of features is not allowed to go down, that's where I'm useful. The stack is whatever the problem asks for: React or Vue, Next or WordPress, Node or PHP or a rake task in Ruby. I don't collect frameworks.\n\nBefore Rosario I worked remotely from Misiones. Landing pages, on a team, with Vue, Quasar, Django and WordPress: I don't remember the clients and I'm not going to invent them. In adtech I built the front end of an audience builder on my own — AND, OR, XOR and NOT queries over age, business category and location — plus a POI map with Mapbox, Next and Node. At an agency we adapted sites from a home market to other countries: not translation. A service that exists in one country often doesn't exist in the other. I don't name the client.\n\nAt Dinkum I ship both ends. The map in the RPPL report (~13,000 school districts; indexing went from 3–5 s to ~500 ms in a Web Worker) and the plugin that hooks a seat map into the WooCommerce cart and the reservation APIs. At Muse the front end lives in a Vite/Turbo monorepo; I work on the CRM — orders, events, Algolia — and the rake task that cleans the global index when a delete wasn't propagating.\n\nI use Claude and Cursor every day. I review everything that lands in the repo. I'm looking for full-stack work, and freelance when there's a product behind it — not one more landing page."
+      "long": "If a checkout or a map with thousands of features is not allowed to go down, that's where I'm useful. The stack is whatever the problem asks for: React or Vue, Next or WordPress, Node or PHP or a rake task in Ruby. I don't collect frameworks.\n\nBefore Rosario I worked remotely from Misiones. Landing pages, on a team, with Vue, Quasar, Django and WordPress: I don't remember the clients and I'm not going to invent them. In adtech I built the front end of an audience builder on my own — AND, OR, XOR and NOT queries over age, business category and location — plus a POI map with Mapbox, Next and Node. At an agency we adapted sites from a home market to other countries: not translation. A service that exists in one country often doesn't exist in the other. I don't name the client.\n\nAt Dinkum I ship both ends. The map in the RPPL report (~13,000 school districts; indexing went from ~5 s to ~500 ms in a Web Worker) and the plugin that hooks a seat map into the WooCommerce cart and the reservation APIs. At Muse the front end lives in a Vite/Turbo monorepo; I work on the CRM — orders, events, Algolia — and the rake task that cleans the global index when a delete wasn't propagating.\n\nI use Claude and Cursor every day. I review everything that lands in the repo. I'm looking for full-stack work, and freelance when there's a product behind it — not one more landing page."
     }
   },
 
@@ -167,11 +167,11 @@
       "projectId": "mapas-distritos",
       "text": {
         "short": "I replaced the feature-state merge with a hash index built in a Web Worker.",
-        "long": "The first version merged the ~13,000 records into feature-state: it took 3-5 s, doubled memory use and crashed. I replaced it with an FNV-1a hash index built in a Web Worker, with a zero-copy transfer of the ArrayBuffer. The district JSON weighs 7 MB; the UI thread does not block while it indexes. The IDs are normalized separately: district GEOID to 7 digits, state FIPS to 2. The color is painted with a Mapbox GEOID→color expression, not with feature-state."
+        "long": "The first version merged the ~13,000 records into feature-state: it took ~5 s, doubled memory use and crashed. I replaced it with an FNV-1a hash index built in a Web Worker, with a zero-copy transfer of the ArrayBuffer. The district JSON weighs 7 MB; the UI thread does not block while it indexes. The IDs are normalized separately: district GEOID to 7 digits, state FIPS to 2. The color is painted with a Mapbox GEOID→color expression, not with feature-state."
       },
       "metric": {
         "label": "indexing time",
-        "before": "3-5 s",
+        "before": "5 s",
         "after": "500 ms",
         "confidence": "estimated",
         "source": "Medición interna al migrar de merge en feature-state a FastIndex (Web Worker FNV-1a), octubre 2025."
@@ -375,7 +375,7 @@
         {
           "id": "hash-index-worker",
           "decision": "A hash index in a Web Worker instead of merging the data into feature-state",
-          "context": "The dataset is ~13,000 polygons plus 7 MB of analytics JSON. Merging all of it into feature-state doubled memory use, took 3-5 s and crashed.",
+          "context": "The dataset is ~13,000 polygons plus 7 MB of analytics JSON. Merging all of it into feature-state doubled memory use, took ~5 s and crashed.",
           "rationale": "O(1) lookups on demand, a free UI while the indexing runs, a zero-copy transfer of the ArrayBuffer.",
           "tradeoff": "GEOID/FIPS have to be normalized by hand (7 digits vs 2), and the visual hover stays in feature-state, separate from the data."
         },

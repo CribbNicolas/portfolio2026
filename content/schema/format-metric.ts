@@ -31,11 +31,21 @@ const APPROX = "~";
  * stays inside the subset, in every locale.
  */
 export function formatMetric(m: Metric, locale: Locale): string | null {
-  const approx = m.confidence === "estimated" ? APPROX : "";
   const { metricFrom, metricTo } = MESSAGES[locale];
-
-  if (m.before && m.after)
-    return `${metricFrom} ${approx}${m.before} ${metricTo} ${approx}${m.after}`;
-  if (m.delta) return `${approx}${m.delta}`;
+  const ends = formatMetricEnds(m);
+  if (ends) return `${metricFrom} ${ends.before} ${metricTo} ${ends.after}`;
+  if (m.delta) return `${approx(m)}${m.delta}`;
   return null;
 }
+
+/**
+ * The two ends of a before/after `Metric`, each already marked, for a surface
+ * that shows them apart (a bar per end). Lives here so the "~" still has one
+ * home: a caller printing `m.before` itself would fork rule 4.
+ */
+export function formatMetricEnds(m: Metric): { before: string; after: string } | null {
+  if (!m.before || !m.after) return null;
+  return { before: `${approx(m)}${m.before}`, after: `${approx(m)}${m.after}` };
+}
+
+const approx = (m: Metric) => (m.confidence === "estimated" ? APPROX : "");

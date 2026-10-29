@@ -10,7 +10,7 @@
 
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { formatMetric } from "./format-metric";
+import { formatMetric, formatMetricEnds } from "./format-metric";
 import {
   formatDateRange,
   formatDuration,
@@ -151,4 +151,14 @@ test("rule 2: a concurrent role declares it in both languages", () => {
   const role = { title: "Dev", concurrent: true } as Parameters<typeof formatRoleTitle>[0];
   assert.equal(formatRoleTitle(role, "es"), "Dev (en paralelo)");
   assert.equal(formatRoleTitle(role, "en"), "Dev (concurrent)");
+});
+
+test("rule 4: the ends of an estimated before/after are each marked", () => {
+  const ends = formatMetricEnds({ label: "x", before: "90 s", after: "12 s", confidence: "estimated" });
+  assert.deepEqual(ends, { before: "~90 s", after: "~12 s" });
+  assert.deepEqual(formatMetricEnds({ label: "x", before: "90 s", after: "12 s", confidence: "measured" }), {
+    before: "90 s",
+    after: "12 s",
+  });
+  assert.equal(formatMetricEnds({ label: "x", delta: "40%", confidence: "estimated" }), null);
 });
