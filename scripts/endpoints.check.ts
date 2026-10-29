@@ -4,7 +4,7 @@
  * `/cv` has eleven tests over the PDF, the landing has nine checks, the bundle
  * has a budget. `/cv.json` and `/llms.txt` had nothing — and a real
  * `formatRoleTitle` bug already got through into `llms.txt` once, recorded in
- * PR #1 (`07-technical-debt.md` §8).
+ * PR #1.
  *
  * What is verified here is what breaks silently: JSON that stops parsing, a
  * contract key that disappears, and text assembled from a field that came back

@@ -2,11 +2,10 @@
 /**
  * The home: identity + the knowledge map.
  *
- * The map is the view that delivers on the promise of CONTRACT §3 —
+ * The map is the view that delivers on the schema's promise —
  * `Achievement`s live loose so they can be cross-referenced, and no other
  * surface cross-references them. It lived at `/lab` while the home was a
- * placeholder; now it is the front page. Decision dated in `docs/00-index.md`
- * and structure in `docs/04` §1.
+ * placeholder; now it is the front page.
  *
  * It is the ONLY page on the site that ships JavaScript, which is why it is in
  * `PAGES_WITH_JS` in `scripts/no-client-js.check.ts`. `/cv` stays at zero: the
@@ -80,7 +79,7 @@ const graphData = JSON.stringify(buildLabData(positioned, m));
 
   `hreflang` is the same shape of opt-in, for the same reason: this and
   `/en/` are the two indexable landings `HREFLANG` in `src/lib/anchors.ts`
-  point at each other, and `/cv` must never carry it (docs/09 §2.3).
+  point at each other, and `/cv` must never carry it.
 */}
 <Base
   locale={locale}
@@ -102,10 +101,10 @@ const graphData = JSON.stringify(buildLabData(positioned, m));
     metería JavaScript en `/cv` — que es de donde Browser Rendering imprime el
     PDF. Peor: la inyección pasa en el borde, después del build, así que
     `no-client-js.check.ts` no la vería. El invariante se rompería en producción
-    con todos los checks en verde. Ver docs/05 §3 paso 8.
+    con todos los checks en verde.
 
     `is:inline` explícito: Astro lo trataría así igual por tener atributos, pero
-    declararlo evita un hint más de `astro(4000)` (cerrada #4).
+    declararlo evita un hint más de `astro(4000)`.
 
     Sin Subresource Integrity, por lo mismo que el tag de Clarity: el beacon lo
     actualiza Cloudflare del lado del servidor y un hash fijo lo rompería en la

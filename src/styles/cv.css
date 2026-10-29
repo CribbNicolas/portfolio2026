@@ -1,13 +1,13 @@
 /*
  * CV layout. ONE SINGLE COLUMN.
  *
- * DOM order is the order the parser extracts the text in (docs/01 §1, layer 1:
- * "if parsing fails, nothing that follows matters"). That is why there is no
+ * DOM order is the order the parser extracts the text in ("if parsing fails,
+ * nothing that follows matters"). That is why there is no
  * flex here, no grid, no tables and no position: absolute. The aesthetic is
  * made of typography, color and spacing, none of which move the reading order.
  *
- * docs/01 §3 dismantles the myth that design breaks parsing: what breaks it is
- * the structure. This file respects the structure and takes the aesthetic.
+ * That design breaks parsing is a myth: what breaks it is the structure. This
+ * file respects the structure and takes the aesthetic.
  *
  * There are no shadows and no cards either: that lives on the home. Here the
  * hierarchy has to survive printed in black and white.

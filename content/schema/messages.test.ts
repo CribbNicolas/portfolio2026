@@ -22,7 +22,7 @@ test("no message is empty", () => {
   }
 });
 
-test("the CV section names are the standard ones docs/03 §2 asks for", () => {
+test("the CV section names are the standard ones a parser maps to fields", () => {
   // A parser maps these headings to fields. "Mi stack" maps to nothing.
   assert.equal(MESSAGES.es.sectionSkills, "Habilidades técnicas");
   assert.equal(MESSAGES.en.sectionSkills, "Technical skills");

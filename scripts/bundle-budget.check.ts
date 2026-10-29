@@ -10,7 +10,7 @@
  * list `no-client-js.check.ts` uses to decide which pages may ship a script at
  * all. Before this shared list existed, the byte ceiling read `dist/index.html`
  * by path: when `/en/` shipped a second landing with the same map, it got no
- * budget at all, silently (docs/07-technical-debt.md #37).
+ * budget at all, silently.
  *
  * The "critical path" for each page is not just its `<script src>`: Rollup
  * shares the boot logic between the two landings, so that tag can point at a
@@ -216,7 +216,7 @@ test("the SVG fallback has one node per graph node", async () => {
 test("the map shares the touch gesture with the browser, it does not intercept it", async () => {
   // `touch-action: pan-x pan-y` gives every one-finger swipe to the page.
   // Rotation is two fingers, counted in JS, never via preventDefault on
-  // touchmove — exactly what spec §3.4 forbids.
+  // touchmove — exactly what CLAUDE.md invariant 7 forbids.
   const html = await readFile(join(DIST, REPRESENTATIVE_PAGE), "utf8");
   const sheets = (await readdir(ASTRO)).filter((f) => f.endsWith(".css"));
   const sources = [html, ...(await Promise.all(sheets.map((f) => readFile(join(ASTRO, f), "utf8"))))]

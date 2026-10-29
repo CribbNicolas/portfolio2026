@@ -15,7 +15,7 @@ import { projectNode } from "../../content/schema/graph-layout";
 import { NODE_ID } from "./lab-hover-css";
 import { isStickyMapLabel, nodeHasMapLabel } from "./map-labels";
 
-/** Base radius per kind. Size distinguishes the kind; color barely does (spec §4). */
+/** Base radius per kind. Size distinguishes the kind; color barely does (one accent, not a palette). */
 export const RADIUS: Record<GraphNodeKind, number> = {
   role: 7,
   project: 5.5,

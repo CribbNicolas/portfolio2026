@@ -10,14 +10,14 @@
  * Why it was needed: the original smoke listened for `deployment_status`,
  * assuming Pages created GitHub Deployments. It does not: it publishes a *check
  * run* called "Cloudflare Pages". The event never fired and the gate went weeks
- * without running once (closed #14).
+ * without running once.
  *
  * `CF_PAGES_COMMIT_SHA` is injected by Cloudflare into the build environment.
  * Locally it does not exist and `"local"` comes out, which is exactly what we
  * want to see if somebody points the smoke at a hand-served `dist/`.
  *
  * It carries NEITHER the `package.json` version NOR a timestamp. The version
- * because docs/08 §3 decided not to expose it while nothing consumes it, and
+ * because it was decided not to expose it while nothing consumes it, and
  * the smoke does not need it. The timestamp because it would make two builds of
  * the same commit produce different bytes, and build determinism is a property
  * this repo already protects elsewhere (`graph-layout.ts`).

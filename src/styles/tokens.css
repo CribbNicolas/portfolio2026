@@ -1,7 +1,7 @@
 /*
  * Visual system — direction C, «Producto».
- * Chosen on 2026-08-14 out of the three in
- * docs/superpowers/specs/2026-08-14-sistema-visual-design.md §6.
+ * Chosen on 2026-08-14 out of three; the rationale is in DeltaDictum topic
+ * design/visual-direction.
  *
  * Color is declared by ROLE (--ink, --accent), never by color name: that way
  * print mode redefines the same tokens without touching a single selector.
@@ -19,7 +19,8 @@
   --ink: #f0eeea;
   --ink-soft: #a1a5b0;
   /* Terracotta and not violet/indigo on purpose: the violet gradient is the
-     default of a thousand templates and fails the voice test of spec §5. */
+     default of a thousand templates and fails the voice test (CLAUDE.md
+     invariant 6). */
   --accent: #e2825f;
   --accent-faint: #2c1c16;
   --line: #2c2f36;

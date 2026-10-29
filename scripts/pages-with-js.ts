@@ -6,7 +6,7 @@
  * ceiling" are the same question asked from two angles, and until this file
  * existed they had two separate answers: the byte check hard-coded
  * `dist/index.html` and never learned about `/en/`, so the second landing
- * shipped with no ceiling at all (docs/07-technical-debt.md #37). A plain
+ * shipped with no ceiling at all. A plain
  * constant module, not a `.check.ts`: importing a file that calls `test()` at
  * the top level would register its tests a second time in whichever check
  * imports it.

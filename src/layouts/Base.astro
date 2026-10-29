@@ -12,8 +12,7 @@ const OG_LOCALE: Record<Locale, string> = { es: "es_AR", en: "en_US" };
  * Base layout. Its only responsibility is the `<head>`.
  *
  * The `head` slot exists so each page can inject its server-rendered JSON-LD:
- * crawlers do not execute JS, so it has to be in the server HTML
- * (docs/04 §3).
+ * crawlers do not execute JS, so it has to be in the server HTML.
  */
 interface Props {
   title: string;

@@ -1,5 +1,5 @@
 /**
- * A markdown summary for agents (docs/04 §3). English.
+ * A markdown summary for agents. English.
  *
  * Same renderer as `/llms.txt`, different locale. Two URLs, no content
  * negotiation — the same pair as the PDFs.

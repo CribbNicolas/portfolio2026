@@ -83,7 +83,7 @@ test("a metric with no numbers returns null, not an empty string", () => {
   assert.equal(out, null);
 });
 
-test("formatYearMonth uses MM/AAAA (docs/03 §2)", () => {
+test("formatYearMonth uses MM/AAAA", () => {
   assert.equal(formatYearMonth("2023-07", "es"), "07/2023");
 });
 

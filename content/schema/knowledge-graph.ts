@@ -1,7 +1,7 @@
 /**
  * ContentView → KnowledgeGraph.
  *
- * This is the view that delivers on the promise of CONTRACT §3: `Achievement`s
+ * This is the view that delivers on the schema's promise: `Achievement`s
  * live loose rather than nested inside `Role`, "so you can query them by skill,
  * by dimension, or by project". The CV flattens that graph into a list; here it
  * is shown for what it is.
@@ -38,7 +38,7 @@ export interface GraphNode {
    * field does not work, another field is picked, the long one is not cut.
    */
   detail: string;
-  /** The skill category. Goes in the tooltip, NEVER in the color (spec §4). */
+  /** The skill category. Goes in the tooltip, NEVER in the color (one accent, not a palette). */
   category?: SkillCategory;
   /** Degree in the finished graph. This is the `Nc` of the size formula. */
   degree: number;
@@ -148,7 +148,7 @@ export function buildKnowledgeGraph(view: ContentView): KnowledgeGraph {
       id: nodeId("project", p.id),
       kind: "project",
       // `problem.short` and `outcome.short` still carry a TODO in 2 of 3
-      // projects (docs/00 §pendientes). `solution.short` is clean in all three,
+      // projects. `solution.short` is clean in all three,
       // and a test asserts no `detail` starts with TODO: if the other fields
       // ever get filled in, revisit the choice here.
       label: p.name,

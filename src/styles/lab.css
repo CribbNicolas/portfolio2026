@@ -151,7 +151,7 @@
   /*
    * One finger always belongs to the browser (scroll). Rotation is two
    * fingers, decided in `interaction.ts` by counting pointers — not by
-   * `preventDefault` on touchmove, which spec §3.4 forbids.
+   * `preventDefault` on touchmove, which CLAUDE.md invariant 7 forbids.
    */
   touch-action: pan-x pan-y;
   cursor: grab;

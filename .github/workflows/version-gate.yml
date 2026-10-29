@@ -1,6 +1,6 @@
 # The package.json version rises on every PR entering `develop`.
 #
-# `package.json` is the only source of truth for versioning (docs/08). That claim
+# `package.json` is the only source of truth for versioning. That claim
 # is true only while the number changes when the code changes. Two changes with
 # the same number is not a tidiness detail: it means the version stopped
 # identifying what is inside, i.e. stopped serving the one purpose it has.

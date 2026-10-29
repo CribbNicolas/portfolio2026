@@ -1,5 +1,5 @@
 /**
- * Markdown summary for agents (docs/04 §3). Shared by `/llms.txt` and
+ * Markdown summary for agents. Shared by `/llms.txt` and
  * `/en/llms.txt` so the two cannot grow different headings.
  *
  * Every URL goes out as a Markdown link — `[name](url)` — and not as bare

@@ -11,7 +11,7 @@
  * gives every one-finger swipe to the page; rotation only starts when TWO
  * pointers are down. Mouse drag is unchanged. That is the browser deciding,
  * not us intercepting — which is the difference from the scroll hijacking
- * spec §3.4 forbids.
+ * CLAUDE.md invariant 7 forbids.
  */
 
 import type { LabData, LabNode, LabStrings } from "./types";

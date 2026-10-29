@@ -1,8 +1,8 @@
 /**
  * Graph → CSS rules for cross-highlighting.
  *
- * The list↔map bridge works WITHOUT JavaScript. That is the point: spec §3.3
- * requires a proposal needing JS to degrade into something usable without it —
+ * The list↔map bridge works WITHOUT JavaScript. That is the point: a proposal
+ * needing JS has to degrade into something usable without it —
  * and here the full interaction, not a poorer version, lives in CSS.
  *
  * These are generated from the graph rather than written by hand so they cannot

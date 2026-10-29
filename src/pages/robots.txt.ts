@@ -15,7 +15,7 @@
  * managed one. It is checked by opening `/robots.txt` on the `staging`
  * preview and seeing whether this shows up or the "content signals" block
  * does. If Cloudflare's wins, the sitemap has to be announced through Search
- * Console and the limitation noted (`docs/09-seo-and-metadata.md` §3).
+ * Console and the limitation noted in this header.
  */
 
 import type { APIRoute } from "astro";

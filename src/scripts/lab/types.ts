@@ -33,7 +33,7 @@ export interface LabNode {
   n: string;
   /** Real tooltip text: the achievement, the role context, the solution. */
   t: string;
-  /** The skill category. Goes in the panel, never in the color (spec §4). */
+  /** The skill category. Goes in the panel, never in the color (one accent, not a palette). */
   c?: string;
 }
 

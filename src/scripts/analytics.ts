@@ -11,7 +11,8 @@
  * ships types, and `init()` checks `getElementById("clarity-script")` before
  * injecting, so calling it twice does not duplicate the tag.
  *
- * It is called ONLY from `src/pages/index.astro`. Never from `Base.astro`:
+ * It is called ONLY from the two landing files, `src/pages/index.astro` and
+ * `src/pages/en/index.astro`. Never from `Base.astro`:
  * `/cv` has to stay at zero JavaScript because Browser Rendering prints the PDF
  * from there, and a third-party script would change the render with nobody
  * noticing. `no-client-js.check.ts` verifies that across all of `dist/`.

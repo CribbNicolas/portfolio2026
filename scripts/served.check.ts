@@ -10,7 +10,7 @@
  * Analytics from the Pages dashboard injects its beacon into the WHOLE site on
  * the next deploy. That would put JavaScript on `/cv`, which is where Browser
  * Rendering prints the PDF from, and all five checks would stay green because
- * `dist/` did not change (docs/05 §3 step 8).
+ * `dist/` did not change.
  *
  * It runs from `smoke-deploy.yml`, after every deploy, against the real URL.
  *
@@ -63,7 +63,7 @@ for (const path of PRINTED_PAGES) {
       [],
       `the served ${path} loads JS: ${external.join(", ")}. The dist/ can be clean and ` +
         "this still happen: something injected it after the build. Suspect Web " +
-        "Analytics enabled from the Pages dashboard (docs/05 §3 step 8).",
+        "Analytics enabled from the Pages dashboard.",
     );
   });
 

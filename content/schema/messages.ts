@@ -9,15 +9,14 @@
  * so this layer needs no gate of its own — while the dataset, which the type
  * system cannot check, gets `translation.lock.json`.
  *
- * The CV headings are the standard ones of `docs/03-cv.md` §2 in both
- * languages: a parser maps them to fields, and an invented heading maps to
+ * The CV headings are the standard ones in both languages: a parser maps them to fields, and an invented heading maps to
  * nothing.
  */
 
 import type { Locale } from "./content-schema";
 
 export interface Messages {
-  /** CV sections. docs/03 §2. */
+  /** CV sections. Standard headings, so a parser maps them. */
   sectionProfile: string;
   sectionSkills: string;
   sectionExperience: string;

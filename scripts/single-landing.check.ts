@@ -123,8 +123,8 @@ test("NO page links to `/en/cv` either", () => {
 
 test("there is a real 404 page", () => {
   // Without `dist/404.html`, Cloudflare Pages returns 200 with HTML for any
-  // made-up route. That is a soft 404 and crawlers penalise it (closed #1,
-  // measured before fixing it). The file is generated from
+  // made-up route. That is a soft 404 and crawlers penalise it (measured
+  // before fixing it). The file is generated from
   // `src/pages/404.astro`: if someone deletes that page, this warns.
   const paths = pages.map((a) => relative(DIST, a).split(sep).join("/"));
   assert.ok(
@@ -212,7 +212,7 @@ test("`/en/` exists and is indexable", () => {
 test("both landings declare hreflang for each other, with Spanish as x-default", () => {
   // Reciprocity matters as much as presence: a crawler that finds `/`
   // pointing at `/en/` but not the other way around treats the pair as
-  // unconfirmed (docs/09 §2.3), so this checks BOTH pages for ALL THREE tags,
+  // unconfirmed, so this checks BOTH pages for ALL THREE tags,
   // not just one page for one.
   const ALTERNATES: [string, RegExp][] = [
     ["es", /^https?:\/\/[^"]*\/$/],
@@ -237,7 +237,7 @@ test("neither `/cv` nor `/en/cv` carries hreflang", () => {
   // already guards for `noindex`: `hreflang` tells a crawler "here is the
   // equivalent of this page in another language", and pointing that at a
   // page marked `noindex` is an error crawlers report, not a courtesy they
-  // ignore (docs/09 §2.3).
+  // ignore.
   for (const [name, html] of [["/cv", cv], ["/en/cv", enCv]] as const) {
     assert.doesNotMatch(
       html,

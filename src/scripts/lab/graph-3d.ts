@@ -6,7 +6,7 @@
  *
  * What is NOT imported, and why:
  * - `OrbitControls`: registers `wheel` and calls `preventDefault`. That is
- *   scroll hijacking, forbidden by spec §3.4. Rejected on behaviour.
+ *   scroll hijacking, forbidden by CLAUDE.md invariant 7. Rejected on behaviour.
  * - postprocessing / `EffectComposer`: full-screen render targets per frame. On
  *   a mid-range phone that is pure fill rate. Roundness is Phong + fresnel on
  *   the same draw call, not a bloom pass.
@@ -104,7 +104,7 @@ export async function mountGraph({ canvas, data, bus, tooltip, panel, labels }: 
   let uResolution: { value: Vector2 } | null = null;
 
   /**
-   * Four kinds with ONE accent (spec §4). The kind is told apart by size and by
+   * Four kinds with ONE accent. The kind is told apart by size and by
    * value — how dark it is — not by a second hue. Achievements keep the accent
    * pure (they are the evidence). Everyone else is ink mixed with a little
    * terracotta, so the "grays" are of this palette and not a cool UI chrome.

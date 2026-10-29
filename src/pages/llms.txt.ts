@@ -1,5 +1,5 @@
 /**
- * A markdown summary for agents (docs/04 §3). Spanish.
+ * A markdown summary for agents. Spanish.
  *
  * Generated from the dataset: writing it by hand guarantees that in three
  * months it says something different from the CV.

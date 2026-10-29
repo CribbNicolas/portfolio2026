@@ -15,8 +15,8 @@ import { join } from "node:path";
 const DIST = "dist";
 const EXTENSIONS = [".html", ".json", ".txt"];
 
-// The dataset's form for a missing datum is `TODO — ...` (CLAUDE.md,
-// Conventions). Matching that form and not the bare word is what lets copy
+// The dataset's form for a missing datum is `TODO — ...` (CLAUDE.md
+// invariant 3). Matching that form and not the bare word is what lets copy
 // that talks ABOUT the convention ("queda como TODO, no como un número
 // lindo", /v2) pass. The separator class also accepts `TODO:` and `TODO -`,
 // so a TODO typed in a slightly different form still gets reported.

@@ -8,10 +8,9 @@
  * NOTE: the words this module emits come from `messages.ts`, in the locale the
  * caller asks for. Only the code around them is in English.
  *
- * The date format is `MM/AAAA` because `docs/03-cv.md` §2 asks for it:
- * consistent, with no month names that shift between surfaces. It stays
- * numeric in both locales — "09/2025" reads the same in English, so there is
- * nothing to translate.
+ * The date format is `MM/AAAA`: consistent, with no month names that shift
+ * between surfaces. It stays numeric in both locales — "09/2025" reads the
+ * same in English, so there is nothing to translate.
  */
 
 import type { Locale, Role, YearMonth } from "./content-schema";
@@ -23,8 +22,8 @@ import { MESSAGES } from "./messages";
 
 /**
  * "2023-07" → "07/2023". Takes `locale` for a uniform signature across this
- * module, but the format itself does not change with it: `docs/03-cv.md` §2
- * asks for MM/AAAA precisely so it does not shift between surfaces, and
+ * module, but the format itself does not change with it: MM/AAAA
+ * exists precisely so it does not shift between surfaces, and
  * "09/2025" reads the same in English.
  */
 export function formatYearMonth(ym: YearMonth, _locale: Locale): string {

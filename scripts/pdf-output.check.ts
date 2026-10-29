@@ -158,7 +158,7 @@ test("layer 1: the extraction order is sane (name before the first role)", async
 
 test("the CV does not exceed 2 pages", async () => {
   const { pages } = await extract();
-  assert.ok(pages <= 2, `the PDF has ${pages} pages; the maximum is 2 (docs/03 §2)`);
+  assert.ok(pages <= 2, `the PDF has ${pages} pages; the maximum is 2`);
 });
 
 test("no dataset TODO reached the PDF", async () => {
