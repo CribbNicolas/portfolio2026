@@ -12,7 +12,8 @@
     is exactly what a favicon is — cannot pull a webfont. Manrope would not load
     and the letter would render in the system font, different on every machine.
 
-    The colors are the accent token from `tokens.css`, written by hand because a
+    The colors are the accent tokens from `tokens.css` (the violet on a light
+    tab bar, its light tint on a dark one), written by hand because a
     favicon does not inherit the page CSS. If the palette changes, this file has
     to be touched too: it is the only copy of those values outside `tokens.css`,
     and it is here out of necessity, not oversight. The header logo does NOT
@@ -32,9 +33,9 @@
     mode, which reads fine over the tab bar anyway.
   -->
   <style>
-    .ring { fill: #b0472a; }
+    .ring { fill: #5e4bc4; }
     @media (prefers-color-scheme: dark) {
-      .ring { fill: #e2825f; }
+      .ring { fill: #a99bf0; }
     }
   </style>
 

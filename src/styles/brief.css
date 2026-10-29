@@ -17,13 +17,6 @@
   min-height: 100vh;
 }
 
-/* The C's halves (chrome.css) read --accent-ink, which only the landing's
-   palette defines. Here: the terracotta, lightened, so the halves stand out
-   from the ring. Goes when stage 2 settles one palette. */
-:root {
-  --accent-ink: color-mix(in srgb, var(--accent) 45%, white);
-}
-
 /* --- The background --------------------------------------------------------- */
 
 /* `fixed`, behind the whole page. Fades in once field.ts has a frame. */
@@ -59,7 +52,7 @@
 }
 .brief__kicker {
   margin: 0 0 calc(var(--space) * 1.5);
-  color: var(--accent);
+  color: var(--accent-ink);
   font-size: 0.78rem;
   font-weight: 700;
   letter-spacing: 0.12em;
@@ -97,7 +90,7 @@
   font-size: 0.9rem;
 }
 .brief__facts strong {
-  color: var(--accent);
+  color: var(--accent-ink);
   font-weight: 800;
 }
 .brief__contact {
@@ -113,8 +106,8 @@
   border-bottom: 1px solid var(--line);
 }
 .brief__contact a:hover {
-  color: var(--accent);
-  border-color: var(--accent);
+  color: var(--accent-ink);
+  border-color: var(--accent-ink);
 }
 /* Download and back to the guided landing: under the header and at the end. */
 .brief__actions {
@@ -312,7 +305,7 @@
 }
 .brief__company {
   margin-left: 8px;
-  color: var(--accent);
+  color: var(--accent-ink);
 }
 .brief__company::before {
   content: "· ";
@@ -353,7 +346,7 @@
 
 /* The figures inside a sentence and the metric after it: where the eye lands. */
 .brief__fig {
-  color: var(--accent);
+  color: var(--accent-ink);
   font-weight: 800;
   white-space: nowrap;
 }
@@ -416,7 +409,7 @@
 }
 .brief__status {
   margin-left: 8px;
-  color: var(--accent);
+  color: var(--accent-ink);
   font-size: 0.75rem;
   font-weight: 700;
   vertical-align: middle;
@@ -427,7 +420,7 @@
   gap: 14px;
 }
 .brief__links a {
-  color: var(--accent);
+  color: var(--accent-ink);
   font-weight: 600;
   text-underline-offset: 3px;
 }
@@ -531,7 +524,7 @@ html {
 }
 
 .footer a:hover {
-  color: var(--accent);
+  color: var(--accent-ink);
 }
 
 @media (min-width: 40rem) {

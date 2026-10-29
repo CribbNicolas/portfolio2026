@@ -14,6 +14,7 @@ import { journey, journeyStill } from "./journey";
 import { work, workStill } from "./work";
 import { close, closeStill } from "./close";
 import { cvModal } from "./cvmodal";
+import { LOADER_KEY } from "../../lib/landing-head";
 
 gsap.registerPlugin(ScrollTrigger, SplitText);
 
@@ -129,10 +130,15 @@ export async function start() {
     anchorTarget()?.scrollIntoView();
     return;
   }
-  // Plays on EVERY load while the opening is being polished (author,
-  // 2026-10-28). `?nointro` still skips it.
-  const skip = new URLSearchParams(location.search).has("nointro");
-  if (skip) $("[data-loader]").remove();
+  // Once per deploy (author, 2026-10-29: "cuanto menos aparezca mejor"). The
+  // head script marks <html class="seen"> before the first paint when this
+  // browser already saw the loader for THIS build, so it never flashes; a new
+  // deploy carries a new build id and shows it once more. The assets
+  // themselves are cached by the browser under hashed names, so a return
+  // visit downloads only what changed. `?nointro` still skips it.
+  const html = document.documentElement;
+  const skip = html.classList.contains("seen") || new URLSearchParams(location.search).has("nointro");
+  if (skip) $("[data-loader]")?.remove();
   const progress = skip ? { add: () => {}, finish: () => Promise.resolve() } : loader();
 
   const lenis = startLenis();
@@ -194,6 +200,7 @@ export async function start() {
 
   scrollTo(0, 0);
   await progress.finish();
+  rememberLoader(html.dataset.build);
   lenis.start();
   entrance?.play();
   // A shared link with an anchor (`/#cv`) lands on its section once the
@@ -204,6 +211,21 @@ export async function start() {
   if (anchored) {
     lenis.resize();
     lenis.scrollTo(anchored, { immediate: true });
+  }
+}
+
+/**
+ * Marks this build's loader as seen. The key and its reading live in the
+ * head script (src/lib/landing-head.ts); storage can be off
+ * (private mode, blocked site data), and then the loader simply shows again.
+ * A flag with the build id: no personal data, not a cookie.
+ */
+function rememberLoader(build: string | undefined) {
+  if (!build) return;
+  try {
+    localStorage.setItem(LOADER_KEY, build);
+  } catch {
+    /* No storage: the loader shows next time too. */
   }
 }
 

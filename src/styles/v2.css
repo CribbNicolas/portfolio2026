@@ -3,19 +3,6 @@
 :root {
   /* The switch-off black: deeper than --bg, the DD chapter opens on it. */
   --void: #060608;
-  /* A muted violet in place of the terracotta (author, 2026-10-26: "violeta
-     o púrpura, no tan chillón", then "más oscuro y profundo"). Overrides
-     tokens.css on the landing only; the favicon, OG card, the brief view and
-     /cv keep the terracotta until the palette is decided (docs/TODO.md,
-     stage 2). */
-  --accent: #5e4bc4;
-  --accent-faint: #1a1630;
-  /* The deep violet cannot carry small text on the dark background (3.6:1),
-     so the accent splits in two: --accent for SURFACES (the C, "Quién soy",
-     buttons, which carry light ink at 5.5:1) and --accent-ink for TEXT and
-     thin marks on dark (7.6:1). */
-  --accent-ink: #a99bf0;
-  --accent-rgb: 169 155 240;
   /* The failure color of the seats chapter. Not a token yet (stage 2). */
   --danger: #e5484d;
   --gutter: clamp(16px, 6vw, 96px);
@@ -61,7 +48,11 @@ body::after {
 .loader {
   display: none;
 }
-.js .loader {
+/* Already seen for this build (src/lib/landing-head.ts): never shown. */
+.js.seen .loader {
+  display: none;
+}
+.js:not(.seen) .loader {
   position: fixed;
   inset: 0;
   z-index: 50;

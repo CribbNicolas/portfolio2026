@@ -475,7 +475,9 @@ export function seats() {
     else switchOff();
   });
   const outer = paced(master, [
-    [E, 0.9], // 00 the hall glides right
+    // 00 the hall glides right. 0.9 until 2026-10-29: almost nothing moved for
+    // most of that screen (author: halve the still stretches).
+    [E, 0.45],
     [E + 2.2, 0.7], // 01 the brief
     [E + 4.8, 1.0], // 02 what broke
     [E + 7.4, 1.1], // 03 the decision

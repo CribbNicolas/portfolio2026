@@ -23,15 +23,17 @@ approach was revalidated: the layout holds, and the two content fixes it
 found (metrics print with their label, the role heading carries only title
 and company) are in. The author's read of the copy is in stage 5.
 
-### 2. Design and identity
+### 2. Design and identity — done (2026-10-29)
 
-- [ ] Palette: violet lives only on the landing; favicon, OG card, `Logo`, `/cv`
-      and `404` are terracotta. One identity across v2, the brief view and
-      the PDFs (`/cv` never prints dark). `theme-color` in `Base.astro`
-      (`#131417`) follows the final `--bg`. Then `og:local`.
-- [ ] Loader: once per session, or on every load (today every load, while the
-      opening is polished).
-- [ ] The two ~1-screen holds where nothing moves (intro→map, map→seats).
+The landing's violet is the site's palette (`tokens.css`: `--accent` for
+surfaces, `--accent-ink` for text on dark), on the brief view, the 404,
+the favicon, the OG card and the iOS icon; the printed CV keeps its own
+light, standard palette (`cv.css` `@media print`). The loader shows once
+per deploy (`src/lib/landing-head.ts`). The two still stretches (the
+summary before the map, the hall before the seats beats) are halved.
+Redirecting bots to the brief view was considered and rejected: serving
+crawlers a different page than people is cloaking, and `/` already carries
+every fact as HTML.
 
 ### 3. Performance and accessibility
 
@@ -99,6 +101,9 @@ the checks again).
       set apart, the contact in the header (on phones, its only place).
 - [ ] At 1366×768 the dock overlaps the close's last line while it scrolls
       under it (seen in a screenshot, 2026-10-29).
+- [ ] The violet across the site: the brief view, the 404, the favicon in a
+      light and a dark tab bar, the OG card, the iOS home-screen icon.
+- [ ] The two halved still stretches feel right on a real wheel and a phone.
 - [ ] The reduced-motion ("still") page once more after the layout changes.
 - [ ] The page with JavaScript off (DevTools → disable JavaScript): it now
       reuses the still layout; nothing should be hidden or stacked.
@@ -122,6 +127,8 @@ the checks again).
       `_clck`, `_clsk` or `MUID` cookie after interacting with `/`, and
       that Clarity still records (`/collect` requests): consent is declared
       denied on purpose (`src/scripts/analytics.ts`).
+- [ ] The loader shows on the first visit after a deploy and not on the next
+      one (`CF_PAGES_COMMIT_SHA` is the build id; locally it is "local").
 - [ ] Verify on staging that our `robots.txt` wins over Cloudflare's managed
       one; if not, use Search Console.
 

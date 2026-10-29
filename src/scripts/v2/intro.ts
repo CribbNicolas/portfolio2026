@@ -131,8 +131,9 @@ export function intro() {
 
   tl.to("[data-about-summary]", { autoAlpha: 1, y: 0, duration: 0.3 }, F + 1.0);
 
-  // A beat to read the summary before the hand-off.
-  tl.to({}, { duration: 0.35 });
+  // A short beat to read the summary before the hand-off: halved on
+  // 2026-10-29 (author: the stretches where nothing moves ran too long).
+  tl.to({}, { duration: 0.15 });
 
   // The hand-off: everything on the violet lifts away until the screen is
   // nothing but the C's color again — exactly what the map chapter opens on,
@@ -147,7 +148,9 @@ export function intro() {
   // like one push. "Quién soy" gets the most, because there is reading in it.
   const outer = paced(tl, [
     [C, 0.85], // the C floods the screen
-    [H, 1.9], // manifesto + the stack breaking apart and turning, then the summary
+    // Manifesto + the stack breaking apart and turning, then the summary. 1.9
+    // until 2026-10-29: the cards then sat still for ~0.5 screen; halved.
+    [H, 1.7],
     [tl.duration(), 1.0], // the content lifts off while the map chapter slides over it
   ]);
   pinPaced("[data-intro]", "[data-intro-stage]", outer);

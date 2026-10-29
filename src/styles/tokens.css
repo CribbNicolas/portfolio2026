@@ -18,11 +18,19 @@
   --bg-raised: #1c1e23;
   --ink: #f0eeea;
   --ink-soft: #a1a5b0;
-  /* Terracotta and not violet/indigo on purpose: the violet gradient is the
-     default of a thousand templates and fails the voice test (CLAUDE.md
-     invariant 6). */
-  --accent: #e2825f;
-  --accent-faint: #2c1c16;
+  /* A muted, deep violet (author, 2026-10-26 on the landing: "violeta o
+     púrpura, no tan chillón", then "más oscuro y profundo"; the whole site
+     since 2026-10-29). Flat, never a gradient: the violet gradient is the
+     template default the voice test rejects.
+     It cannot carry small text on the dark background (3.6:1), so it splits
+     in two: --accent for SURFACES (the C, buttons, marks; light ink on it
+     reads at 5.5:1) and --accent-ink for TEXT and thin marks on dark (7.6:1).
+     The printed CV does not use these: cv.css's `@media print` keeps its own
+     light, standard palette. */
+  --accent: #5e4bc4;
+  --accent-faint: #1a1630;
+  --accent-ink: #a99bf0;
+  --accent-rgb: 169 155 240;
   --line: #2c2f36;
   /* Translucent on purpose: the pill carries `backdrop-filter`, and with an
      opaque background the blur would not show. */
