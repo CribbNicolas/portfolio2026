@@ -60,7 +60,9 @@ export const mapSites = (n: number) => map?.sites(n) ?? [];
 
 export function peak() {
   const canvas = $<HTMLCanvasElement>("[data-peak-canvas]");
-  const m = createMap(canvas);
+  // The layers paint a frame apart under the loader (map.ts buildLazy): the
+  // pins and timelines below need none of them, only the geometry.
+  const m = createMap(canvas, { defer: true });
   map = m;
   const state: MapState = { reveal: 0, glitch: 0, scan: 0, heal: 0, dim: 0 };
   const counter = $("[data-counter]");
@@ -190,7 +192,8 @@ export function peak() {
   // Repaint while the section is anywhere in view — before the pin too, when
   // the ring and the mesh in its hole are already on screen.
   new IntersectionObserver(([e]) => (live = e.isIntersecting)).observe($("[data-peak]"));
-  draw();
+  const frame = () => new Promise<void>((r) => requestAnimationFrame(() => r()));
+  return m.buildLazy(frame).then(draw);
 }
 
 export function peakStill() {

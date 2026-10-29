@@ -133,7 +133,6 @@ export async function start() {
   if (skip) $("[data-loader]").remove();
   const progress = skip ? { add: () => {}, finish: () => Promise.resolve() } : loader();
 
-  overlap(["[data-peak]", "[data-seats]", "[data-dd]"]);
   const lenis = startLenis();
   lenis.stop();
 
@@ -153,7 +152,14 @@ export async function start() {
   // between them, so the number repaints instead of jumping at the end.
   let entrance: gsap.core.Timeline | undefined;
   const chapters: [() => unknown, number][] = [
-    [() => (entrance = intro()), 10],
+    // Braces, not an expression: a GSAP timeline is a thenable that resolves
+    // when it completes, and this one is paused — awaited, it never would.
+    [
+      () => {
+        entrance = intro();
+      },
+      10,
+    ],
     [peak, 16], // the map: the Voronoi and its layers are the heaviest step
     [seats, 10],
     [dd, 6],
@@ -163,11 +169,19 @@ export async function start() {
     [cvModal, 0], // after close(): it copies the close's C
   ];
   for (const [init, weight] of chapters) {
-    init();
+    // A chapter may return a promise (the map paints its layers over several
+    // frames); the loader waits for it.
+    await init();
     progress.add(weight);
     await frame();
   }
 
+  // The overlap goes on only now, with every pin in place. Applied first, it
+  // stacked the overlapping chapters at the very top of the page (each one a
+  // screen tall with a minus-one-screen margin) until the pins pushed them
+  // down: under the loader, invisible, but a layout shift all the same —
+  // CLS 2 on a throttled phone in Lighthouse.
+  overlap(["[data-peak]", "[data-seats]", "[data-dd]"]);
   await assets;
   ScrollTrigger.refresh();
   progress.add(5);

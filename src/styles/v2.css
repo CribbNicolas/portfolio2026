@@ -1657,7 +1657,9 @@ html.is-held body {
 }
 .gate code {
   font: 600 0.8rem ui-monospace, "SF Mono", "Cascadia Code", Menlo, monospace;
-  color: #6b7079;
+  /* A gate still pending: quieter than a passed one, but at 4.5:1 or more on
+     the panel (#6b7079 was 3.82, under the minimum). */
+  color: #8a8f98;
   transition: color 250ms ease-out;
 }
 .gate__mark {

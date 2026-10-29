@@ -299,8 +299,10 @@ const cvLinks = [
         <div class="hero" data-hero>
           <div class="hero__copy">
             <p class="hero__meta mono" data-hero-fade>{identity.searchTitle} · {identity.brandTitle}</p>
-            <h1 class="hero__name" data-hero-name>
-              {displayName.map((part) => <span class="hero__line">{part}</span>)}
+            {/* The name is read once, from the heading's label: the lines are split
+                into letters for the entrance (SplitText, aria: "none"). */}
+            <h1 class="hero__name" data-hero-name aria-label={displayName.join(" ")}>
+              {displayName.map((part) => <span class="hero__line" aria-hidden="true">{part}</span>)}
             </h1>
             <p class="hero__hook" data-hero-fade>{hook}</p>
             <p class="hero__facts mono" data-hero-fade>

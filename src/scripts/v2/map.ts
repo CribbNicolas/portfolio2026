@@ -3,7 +3,9 @@
 // offscreen layers so each frame is a handful of drawImage calls.
 import { Delaunay } from "d3-delaunay";
 
-export const CELL_COUNT = 13000;
+/** Fewer on a phone: a smaller canvas, a slower CPU, and the cells are
+ *  illustrative (the counter shows the dataset's figure either way). */
+export const CELL_COUNT = matchMedia("(max-width: 760px)").matches ? 6000 : 13000;
 
 const W = 1600;
 const H = 1000;
@@ -78,7 +80,8 @@ function layer(w: number, h: number) {
   return c;
 }
 
-export function createMap(canvas: HTMLCanvasElement) {
+/** `defer`: leave the first paint of the layers to `buildLazy()`. */
+export function createMap(canvas: HTMLCanvasElement, { defer = false } = {}) {
   const rand = mulberry32(2026);
   // Denser toward the east and around a few "metros", like real districts.
   const metros = [
@@ -153,81 +156,108 @@ export function createMap(canvas: HTMLCanvasElement) {
     for (let i = 0; i < CELL_COUNT; i++) if (pick(i)) voronoi.renderCell(i, c);
   }
 
+  // The layers are painted in steps — one per pass over the cells — so a
+  // slow phone can paint them a frame apart instead of in one long task
+  // (it was ~1 s of blocked main thread at 4x CPU throttling: Lighthouse's
+  // TBT). `build()` runs them all at once (a resize); `buildLazy()` yields
+  // between them (the first build, under the loader).
+  const STEPS = 6;
+  const ramp = (s: number) => mix(bg, accent, 0.12 + (s / (STEPS - 1)) * 0.88);
+  function buildSteps(): (() => void)[] {
+    let make: () => readonly [HTMLCanvasElement, CanvasRenderingContext2D];
+    let fc: CanvasRenderingContext2D;
+    let f: HTMLCanvasElement;
+    let hc: CanvasRenderingContext2D;
+    let hl: HTMLCanvasElement;
+    return [
+      () => {
+        const dpr = Math.min(devicePixelRatio || 1, 2);
+        // Layout size, not getBoundingClientRect: the rect is the TRANSFORMED
+        // box — rebuilt mid-tilt (a resize), rotateX squashed its height and
+        // the backing store came out short, cutting the bottom of the map off.
+        canvas.width = Math.max(1, Math.round(canvas.clientWidth * dpr));
+        canvas.height = Math.max(1, Math.round(canvas.clientHeight * dpr));
+        scale = canvas.width / W;
+        make = () => {
+          const l = layer(canvas.width, canvas.height);
+          const c = l.getContext("2d")!;
+          c.setTransform(scale, 0, 0, scale, 0, 0);
+          c.clip(coast);
+          return [l, c] as const;
+        };
+        const [o, oc] = make();
+        oc.beginPath();
+        voronoi.render(oc);
+        // Bright enough that the mesh reads through the ring's hole before
+        // any district is colored: the teaser is the cells themselves.
+        oc.strokeStyle = inkSoft;
+        oc.globalAlpha = 0.28;
+        oc.lineWidth = 0.6 / scale;
+        oc.stroke();
+        oc.globalAlpha = 1;
+        oc.lineWidth = 1.6 / scale;
+        oc.strokeStyle = inkSoft;
+        oc.globalAlpha = 0.5;
+        oc.stroke(coast);
+        outline = o;
+        [f, fc] = make();
+      },
+      // The choropleth, one band of the ramp per step.
+      ...Array.from({ length: STEPS }, (_, s) => () => {
+        paintCells(fc, (i) => !noData[i] && Math.floor(value[i] * STEPS) === s);
+        fc.fillStyle = ramp(s);
+        fc.fill();
+      }),
+      () => {
+        fc.beginPath();
+        voronoi.render(fc);
+        fc.strokeStyle = tok("--bg");
+        fc.lineWidth = 0.5 / scale;
+        fc.stroke();
+        fill = f;
+      },
+      () => {
+        const [g, gc] = make();
+        paintCells(gc, (i) => noData[i] === 1);
+        gc.fillStyle = ink;
+        gc.fill();
+        gc.strokeStyle = tok("--accent");
+        gc.lineWidth = 3 / scale;
+        gc.stroke();
+        glitch = g;
+        const [k, kc] = make();
+        paintCells(kc, (i) => noData[i] === 1);
+        kc.fillStyle = ink;
+        kc.globalAlpha = 0.9;
+        kc.fill();
+        clean = k;
+      },
+      // The no-data cells on the same ramp as the rest, from their neighbours.
+      () => {
+        [hl, hc] = make();
+        for (let s = 0; s < STEPS; s++) {
+          paintCells(hc, (i) => noData[i] === 1 && Math.floor(healed[i] * STEPS) === s);
+          hc.fillStyle = ramp(s);
+          hc.fill();
+        }
+        paintCells(hc, (i) => noData[i] === 1);
+        hc.strokeStyle = tok("--bg");
+        hc.lineWidth = 0.5 / scale;
+        hc.stroke();
+        heal = hl;
+        ready = true;
+      },
+    ];
+  }
+  let ready = false;
   function build() {
-    const dpr = Math.min(devicePixelRatio || 1, 2);
-    // Layout size, not getBoundingClientRect: the rect is the TRANSFORMED box
-    // — rebuilt mid-tilt (a resize), rotateX squashed its height and the
-    // backing store came out short, cutting the bottom of the map off.
-    canvas.width = Math.max(1, Math.round(canvas.clientWidth * dpr));
-    canvas.height = Math.max(1, Math.round(canvas.clientHeight * dpr));
-    scale = canvas.width / W;
-    const make = () => {
-      const l = layer(canvas.width, canvas.height);
-      const c = l.getContext("2d")!;
-      c.setTransform(scale, 0, 0, scale, 0, 0);
-      c.clip(coast);
-      return [l, c] as const;
-    };
-
-    const [o, oc] = make();
-    oc.beginPath();
-    voronoi.render(oc);
-    // Bright enough that the mesh reads through the ring's hole before any
-    // district is colored: the teaser is the 13,000 cells themselves.
-    oc.strokeStyle = inkSoft;
-    oc.globalAlpha = 0.28;
-    oc.lineWidth = 0.6 / scale;
-    oc.stroke();
-    oc.globalAlpha = 1;
-    oc.lineWidth = 1.6 / scale;
-    oc.strokeStyle = inkSoft;
-    oc.globalAlpha = 0.5;
-    oc.stroke(coast);
-    outline = o;
-
-    const [f, fc] = make();
-    const steps = 6;
-    const ramp = (s: number) => mix(bg, accent, 0.12 + (s / (steps - 1)) * 0.88);
-    for (let s = 0; s < steps; s++) {
-      paintCells(fc, (i) => !noData[i] && Math.floor(value[i] * steps) === s);
-      fc.fillStyle = ramp(s);
-      fc.fill();
+    for (const step of buildSteps()) step();
+  }
+  async function buildLazy(next: () => Promise<void>) {
+    for (const step of buildSteps()) {
+      step();
+      await next();
     }
-    fc.beginPath();
-    voronoi.render(fc);
-    fc.strokeStyle = tok("--bg");
-    fc.lineWidth = 0.5 / scale;
-    fc.stroke();
-    fill = f;
-
-    const [g, gc] = make();
-    paintCells(gc, (i) => noData[i] === 1);
-    gc.fillStyle = ink;
-    gc.fill();
-    gc.strokeStyle = tok("--accent");
-    gc.lineWidth = 3 / scale;
-    gc.stroke();
-    glitch = g;
-
-    const [k, kc] = make();
-    paintCells(kc, (i) => noData[i] === 1);
-    kc.fillStyle = ink;
-    kc.globalAlpha = 0.9;
-    kc.fill();
-    clean = k;
-
-    // The no-data cells on the same ramp as the rest, from their neighbours.
-    const [hl, hc] = make();
-    for (let s = 0; s < steps; s++) {
-      paintCells(hc, (i) => noData[i] === 1 && Math.floor(healed[i] * steps) === s);
-      hc.fillStyle = ramp(s);
-      hc.fill();
-    }
-    paintCells(hc, (i) => noData[i] === 1);
-    hc.strokeStyle = tok("--bg");
-    hc.lineWidth = 0.5 / scale;
-    hc.stroke();
-    heal = hl;
   }
 
   /** How many districts the reveal circle has swept — drives the counter. */
@@ -265,6 +295,7 @@ export function createMap(canvas: HTMLCanvasElement) {
   }
 
   function render(s: MapState) {
+    if (!ready) return;
     const w = canvas.width;
     const h = canvas.height;
     ctx.setTransform(1, 0, 0, 1, 0, 0);
@@ -349,6 +380,6 @@ export function createMap(canvas: HTMLCanvasElement) {
     return out;
   }
 
-  build();
-  return { build, render, revealedCount, sites };
+  if (!defer) build();
+  return { build, buildLazy, render, revealedCount, sites };
 }

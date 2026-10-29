@@ -63,7 +63,9 @@ export function intro() {
   // --- the opening's entrance (time-based, not scroll) ---
   // Built paused: this runs under the loader, and the caller plays it the
   // moment the loader lets go.
-  const split = SplitText.create("[data-hero-name] .hero__line", { type: "chars", mask: "lines" });
+  // aria "none": SplitText's default puts an aria-label on each split <span>,
+  // which ARIA forbids on a span with no role. The <h1> carries the label.
+  const split = SplitText.create("[data-hero-name] .hero__line", { type: "chars", mask: "lines", aria: "none" });
   const entrance = gsap
     .timeline({ paused: true })
     .from("[data-hero-ring]", { rotate: -70, opacity: 0, scale: 0.8, duration: 1.6, ease: "expo.out" }, 0)

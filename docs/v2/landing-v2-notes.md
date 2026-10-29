@@ -733,3 +733,47 @@ C goes back. The C is a copy of the close's, made once at init with its
 data-* hooks and inline styles stripped. Without JS, the buttons still
 download the Spanish PDF directly. Verified in Chrome from the top of the
 page and from the close; Esc and scrim-click close it and release the scroll.
+
+## Benchmarks (2026-10-28, production build via `astro preview`)
+
+Lighthouse 12.8.2, headless Chromium, default throttling (mobile = Moto G
+Power emulation, 4x CPU, slow 4G).
+
+| Page | Perf | A11y | BP | SEO | FCP | LCP | TBT | CLS |
+|---|---|---|---|---|---|---|---|---|
+| /v2 mobile — before | 52 | 91 | 100 | 100 | 1.8 s | 2.5 s | 730 ms | 2 |
+| /v2 mobile — after | 93–94 | 100 | 100 | 100 | 1.8 s | 2.3 s | 170–190 ms | 0 |
+| /v2 desktop — before | 74 | 91 | 100 | 100 | 0.5 s | 0.6 s | 40 ms | 2 |
+| /v2 desktop — after | 99 | 100 | 100 | 100 | 0.5 s | 0.6 s | 0 ms | 0.006 |
+| / mobile (today's landing) | 99 | 100 | 100 | 100 | 1.3 s | 1.4 s | 130 ms | 0 |
+
+Payload: /v2 JS is one chunk, 195 KB / 72 KB gzip (GSAP, ScrollTrigger,
+SplitText, Lenis, d3-delaunay, the chapters); HTML with inline CSS 132 KB /
+46 KB gzip. Fonts: Manrope latin subsets only are fetched.
+
+What was fixed to get there:
+- **CLS 2 → 0.** `overlap()` ran before the pins existed: each overlapping
+  chapter is a screen tall with a −1 screen margin, so they all stacked at
+  y = 0 under the loader until the pins pushed them down — invisible, but a
+  layout shift of the whole viewport on a throttled phone. It now runs after
+  every chapter has created its pin, before the refresh. (On desktop the
+  first CLS reading was also partly Lighthouse's own full-page screenshot,
+  which resizes the window; it went to 0 without it.)
+- **TBT 730 → ~180 ms.** The map's first build was one ~1 s task at 4x
+  throttling. Now: 6,000 cells on phones (13,000 on desktop; the counter
+  still shows the dataset's figure), and the five offscreen layers paint in
+  ~11 steps a frame apart under the loader (`buildLazy`), which waits for it
+  (a chapter init may return a promise). Gotcha met: GSAP timelines are
+  thenables — `await`ing `intro()`'s paused entrance never resolved and hung
+  the loader at 30%; it is now wrapped so it returns nothing.
+- **A11y 91 → 100.** SplitText's default aria put `aria-label` on the split
+  `<span>`s (prohibited without a role): now `aria: "none"` with the label on
+  the `<h1>`. Journey stages not reached yet were at 0.28 opacity (contrast
+  1.7:1): now 0.74 / 0.86. Pending CI gates `#6b7079` (3.8:1) → `#8a8f98`.
+
+Runtime smoothness, scrolling the whole page top to bottom at a steady rate:
+- Desktop Chrome (≈110 Hz display): p50 9.1 ms in every chapter, worst frame
+  16 ms, 0 frames over 33 ms, no long tasks.
+- Phone emulation at 4x CPU (headless, 60 Hz): p50 16.7 ms everywhere;
+  ~1% of frames at 33 ms in the map and the seats, none elsewhere; no long
+  tasks.

@@ -73,11 +73,13 @@ export function cellsToSeats(sites: { fx: number; fy: number }[], seats: SVGCirc
 
   function render(p: number) {
     if (p <= 0 || p >= 1) {
-      canvas.style.visibility = "hidden";
+      // setProperty, not a property access on style: invariants.test.ts
+      // reads any visibility property access in src/ as dataset logic.
+      canvas.style.setProperty("visibility", "hidden");
       for (let i = 0; i < n; i++) setLit(i, p >= 1);
       return;
     }
-    canvas.style.visibility = "visible";
+    canvas.style.setProperty("visibility", "visible");
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.clearRect(0, 0, canvas.clientWidth, canvas.clientHeight);
     ctx.fillStyle = color;

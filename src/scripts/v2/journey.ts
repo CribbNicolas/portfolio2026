@@ -6,6 +6,9 @@ import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { $, $$ } from "./util";
 
+const DIM_NEXT = 0.74;
+const DIM_PAST = 0.86;
+
 export function journey() {
   const stages = $$("[data-stage]");
   const chips = $$("[data-chip-stage]");
@@ -16,7 +19,9 @@ export function journey() {
   let current = -2;
 
   gsap.set(chips, { autoAlpha: 0, scale: 0.6, y: 10 });
-  gsap.set(stages, { opacity: 0.28 });
+  // Dimmed, not faded out: the stages not reached yet still have to clear
+  // the text contrast minimum (at 0.28 they failed Lighthouse's check).
+  gsap.set(stages, { opacity: DIM_NEXT });
 
   // The thread down the left edge draws with the scroll.
   gsap.fromTo(
@@ -39,7 +44,7 @@ export function journey() {
     current = i;
     stages.forEach((s, j) => {
       s.classList.toggle("is-current", j === i);
-      gsap.to(s, { opacity: j === i ? 1 : j < i ? 0.55 : 0.28, duration: 0.45, ease: "power2.out", overwrite: true });
+      gsap.to(s, { opacity: j === i ? 1 : j < i ? DIM_PAST : DIM_NEXT, duration: 0.45, ease: "power2.out", overwrite: true });
     });
 
     const on = chips.filter((c) => Number(c.dataset.chipStage) <= i);
