@@ -45,10 +45,17 @@ interface Props {
    * the safe side of the mistake.
    */
   hreflang?: boolean;
+  /**
+   * The path this page declares as its canonical, when it is not itself.
+   * The brief views (`/brief`, `/en/brief`) repeat the landing's facts on a
+   * second URL, so they point at their landing: one page competes in search,
+   * and the sitemap leaves them out to say the same thing.
+   */
+  canonicalPath?: string;
 }
 
-const { title, description, locale = "es", shareable = false, hreflang = false } = Astro.props;
-const canonical = new URL(Astro.url.pathname, Astro.site);
+const { title, description, locale = "es", shareable = false, hreflang = false, canonicalPath } = Astro.props;
+const canonical = new URL(canonicalPath ?? Astro.url.pathname, Astro.site);
 const m = MESSAGES[locale];
 
 // The dimensions come from the same module that uses them to generate the

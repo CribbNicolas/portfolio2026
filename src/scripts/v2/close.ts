@@ -1,4 +1,4 @@
-// SPIKE — the close. Peak-end: the C that opened the page comes back, turns
+// The close. Peak-end: the C that opened the page comes back, turns
 // into place, and its hole becomes the download button, split in ESP / EN.
 // Not pinned, and not scrubbed (author, 2026-10-28): the entrance PLAYS on its
 // own once the section is on screen — the C turns into place, then the two

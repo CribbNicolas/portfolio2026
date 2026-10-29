@@ -10,13 +10,8 @@ test("both locales define the same keys", () => {
 });
 
 test("no message is empty", () => {
-  // A handful of messages are functions (numbers are interpolated, not fixed
-  // copy — `svgMapAriaLabel`, `emptyStackNote`): call
-  // them with representative args and check the *output*, not the function
-  // itself.
   for (const [locale, dict] of Object.entries(MESSAGES)) {
-    for (const [key, raw] of Object.entries(dict)) {
-      const value = typeof raw === "function" ? raw(1, 1) : raw;
+    for (const [key, value] of Object.entries(dict)) {
       assert.ok(value.trim().length > 0, `${locale}.${key} is empty`);
     }
   }
@@ -41,8 +36,7 @@ test("no English message is a pasted Spanish string", () => {
   // such character — an equality check against `MESSAGES.es` would instead
   // have to special-case each of those by hand.
   const SPANISH_ONLY_CHARS = /[áéíóúñ¿¡]/i;
-  for (const [key, raw] of Object.entries(MESSAGES.en)) {
-    const value = typeof raw === "function" ? raw(1, 1) : raw;
+  for (const [key, value] of Object.entries(MESSAGES.en)) {
     assert.doesNotMatch(
       value,
       SPANISH_ONLY_CHARS,
@@ -58,10 +52,6 @@ test("English chrome copy is not a silent paste of the Spanish", () => {
   const MAY_BE_IDENTICAL = new Set<keyof Messages>(["emailLabel", "llmsStack"]);
   for (const key of Object.keys(MESSAGES.es) as (keyof Messages)[]) {
     if (MAY_BE_IDENTICAL.has(key)) continue;
-    const es = MESSAGES.es[key];
-    const en = MESSAGES.en[key];
-    const esText = typeof es === "function" ? es(1, 1) : es;
-    const enText = typeof en === "function" ? en(1, 1) : en;
-    assert.notEqual(enText, esText, `MESSAGES.en.${key} is still the Spanish string`);
+    assert.notEqual(MESSAGES.en[key], MESSAGES.es[key], `MESSAGES.en.${key} is still the Spanish string`);
   }
 });

@@ -1,4 +1,4 @@
-// SPIKE — chapter 4, "Nada se pierde": the seat map, two clicks that race
+// Chapter 4, "Nada se pierde": the seat map, two clicks that race
 // each other into the cart, and the queue (AsyncPile) that makes them wait.
 //
 // The hand-off and the hall's glide are scrubbed. The four beats are NOT:
@@ -25,6 +25,8 @@ export function seats() {
   const syncMap = $("[data-sync-map]");
   const syncCart = $("[data-sync-cart]");
   const laneLabel = $("[data-pile-label]");
+  // The two labels that carry words come from the page, per locale.
+  const { concurrent, serial } = laneLabel.dataset as { concurrent: string; serial: string };
   const surfaces = $$("[data-surfaces] .surface");
   const count = { map: 0, cart: 0 };
 
@@ -215,7 +217,7 @@ export function seats() {
     // saying 4 while the cart says 3: the lost seat turns red on the map.
     () => {
       const tl = gsap.timeline();
-      reset(tl, { seats: "", cart: 0, map: 0, label: "Store API · 4 pedidos a la vez" });
+      reset(tl, { seats: "", cart: 0, map: 0, label: `Store API · ${concurrent}` });
       picks.forEach((_, i) => {
         const t = 0.35 + i * 0.12;
         seat(tl, i, "pending", t);
@@ -249,7 +251,7 @@ export function seats() {
     // when its line is in the cart.
     () => {
       const tl = gsap.timeline();
-      reset(tl, { seats: "pending", cart: 0, map: 4, label: "AsyncPile · uno por vez" });
+      reset(tl, { seats: "pending", cart: 0, map: 4, label: `AsyncPile · ${serial}` });
       const SLOT = 13;
       tokens.forEach((t, i) => tl.set(t, { autoAlpha: 1, left: `${(3 - i) * SLOT}%`, y: 0 }, 0.2));
       tokens.forEach((t, i) => {

@@ -1,9 +1,9 @@
-// SPIKE — chapter 3, the map as the peak. It opens with the C of "Quién soy"
+// Chapter 3, the map as the peak. It opens with the C of "Quién soy"
 // shrinking away to uncover the map, plays five beats, and ends with an
 // aerial descent: the map fades and the seats chapter's hall is waiting.
 import gsap from "gsap";
 import { createMap, CELL_COUNT, type MapState } from "./map";
-import { $, $$, beatHelpers, paced, pinPaced, railUpdater } from "./util";
+import { $, $$, beatHelpers, numbers, paced, pinPaced, railUpdater } from "./util";
 
 /**
  * The un-cover: the exact reverse of "Quién soy"'s cover. The chapter starts
@@ -58,7 +58,7 @@ let map: ReturnType<typeof createMap> | undefined;
 /** The districts that leave the map for the hall (morph.ts). */
 export const mapSites = (n: number) => map?.sites(n) ?? [];
 
-export function peak() {
+export async function peak() {
   const canvas = $<HTMLCanvasElement>("[data-peak-canvas]");
   // The layers paint a frame apart under the loader (map.ts buildLazy): the
   // pins and timelines below need none of them, only the geometry.
@@ -67,7 +67,7 @@ export function peak() {
   const state: MapState = { reveal: 0, glitch: 0, scan: 0, heal: 0, dim: 0 };
   const counter = $("[data-counter]");
   const target = Number(counter.dataset.target);
-  const fmt = new Intl.NumberFormat("es-AR");
+  const fmt = numbers();
   const beats = $$("[data-beat]");
   const rail = $$("[data-rail]");
   const c = uncover();
@@ -193,7 +193,8 @@ export function peak() {
   // the ring and the mesh in its hole are already on screen.
   new IntersectionObserver(([e]) => (live = e.isIntersecting)).observe($("[data-peak]"));
   const frame = () => new Promise<void>((r) => requestAnimationFrame(() => r()));
-  return m.buildLazy(frame).then(draw);
+  await m.buildLazy(frame);
+  draw();
 }
 
 export function peakStill() {
@@ -203,5 +204,5 @@ export function peakStill() {
   gsap.set("[data-bar-before]", { "--w": 1 });
   gsap.set("[data-bar-after]", { "--w": 0.1 });
   const counter = $("[data-counter]");
-  counter.textContent = new Intl.NumberFormat("es-AR").format(Number(counter.dataset.target));
+  counter.textContent = numbers().format(Number(counter.dataset.target));
 }

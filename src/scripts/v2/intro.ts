@@ -1,4 +1,4 @@
-// SPIKE — chapters 1 and 2 as ONE pinned stage. The opening plays its
+// Chapters 1 and 2 as ONE pinned stage. The opening plays its
 // entrance; on scroll the C stops turning, crosses over the copy and grows
 // until the screen is its color; "Quién soy" is revealed on that color. While
 // the manifesto lights up, the stack breaks apart into Interfaz / Servidor /
@@ -76,7 +76,6 @@ export function intro() {
   // --- "Quién soy", initial state ---
   const words = $$("[data-manifesto] .w");
   const plates = $$("[data-plate]");
-  const stops = $$(".career__stop");
   // Phones get the same pile at less than half the spacing.
   const k = matchMedia(NARROW).matches ? 0.45 : 1;
 
@@ -85,8 +84,6 @@ export function intro() {
   gsap.set(words, { opacity: 0.2 });
   gsap.set(plates, { z: -420, yPercent: 0, autoAlpha: 0 });
   gsap.set("[data-about-summary], .about__kicker", { autoAlpha: 0, y: 16 });
-  gsap.set(stops, { autoAlpha: 0, y: 12 });
-  gsap.set("[data-career-line]", { scaleX: 0 });
 
   const c = cover(spin);
   const tl = gsap.timeline({ defaults: { ease: "power2.out" } });
@@ -134,11 +131,8 @@ export function intro() {
 
   tl.to("[data-about-summary]", { autoAlpha: 1, y: 0, duration: 0.3 }, F + 1.0);
 
-  // The career line: quick, it is context, not a chapter.
-  const K = F + 1.35;
-  tl.to("[data-career-line]", { scaleX: 1, duration: 0.45, ease: "none" }, K);
-  tl.to(stops, { autoAlpha: 1, y: 0, duration: 0.2, stagger: 0.1 }, K);
-  tl.to({}, { duration: 0.3 });
+  // A beat to read the summary before the hand-off.
+  tl.to({}, { duration: 0.35 });
 
   // The hand-off: everything on the violet lifts away until the screen is
   // nothing but the C's color again — exactly what the map chapter opens on,
@@ -147,14 +141,13 @@ export function intro() {
   // The next chapter rises over this stage during the pin's last screen (that
   // is how the overlap works) as a violet curtain — the same violet. The
   // content lifts off DURING that screen, so it is never a screen of nothing.
-  tl.to(".about__copy, .stack, .career", { y: -90, autoAlpha: 0, duration: 0.8, ease: "power2.in", stagger: 0.08 }, H);
+  tl.to(".about__copy, .stack", { y: -90, autoAlpha: 0, duration: 0.8, ease: "power2.in", stagger: 0.08 }, H);
 
   // Pacing, in screens of scroll. The cover is a transition: it should feel
   // like one push. "Quién soy" gets the most, because there is reading in it.
   const outer = paced(tl, [
     [C, 0.85], // the C floods the screen
-    [K, 1.7], // manifesto + the stack breaking apart and turning
-    [H, 0.5], // the career line
+    [H, 1.9], // manifesto + the stack breaking apart and turning, then the summary
     [tl.duration(), 1.0], // the content lifts off while the map chapter slides over it
   ]);
   pinPaced("[data-intro]", "[data-intro-stage]", outer);

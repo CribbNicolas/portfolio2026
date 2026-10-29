@@ -1,0 +1,40 @@
+---
+/**
+ * The brief view, in Spanish: the landing's facts with none of its chapters —
+ * the pill, the projects and the CV section (`HomeDocument.astro`). For the
+ * reader who wants the CV now, linked from the landing's hero and back.
+ *
+ * Canonical → `/`: it repeats the landing's facts on a second URL, so it
+ * points at the landing instead of competing with it in search, and the
+ * sitemap leaves it out. No Open Graph and no hreflang (`Base.astro` opt-ins):
+ * the shareable page is the landing. Its path is English in both locales
+ * (author, 2026-10-29).
+ */
+import Base from "../layouts/Base.astro";
+import { content } from "@content";
+import { LOCALE_PATHS } from "../lib/anchors";
+import HomeDocument from "../components/HomeDocument.astro";
+import Analytics from "../components/Analytics.astro";
+
+import "@fontsource/manrope/400.css";
+import "@fontsource/manrope/600.css";
+import "@fontsource/manrope/800.css";
+import "../styles/tokens.css";
+import "../styles/home.css";
+import "../styles/cv.css";
+import "../styles/projects.css";
+import "../styles/lab.css";
+
+const view = await content.getView("portfolio", "es");
+const { identity } = view;
+---
+
+<Base
+  locale={view.locale}
+  title={`${identity.fullName} — ${identity.searchTitle}`}
+  description={identity.summary.short}
+  canonicalPath={LOCALE_PATHS[view.locale].home}
+>
+  <HomeDocument view={view} />
+  <Analytics />
+</Base>

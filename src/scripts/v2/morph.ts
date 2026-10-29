@@ -1,4 +1,4 @@
-// SPIKE — the hand-off from the map to the hall: districts become seats.
+// The hand-off from the map to the hall: districts become seats.
 // While the seats chapter slides up over the map's last screen, one district
 // per seat lifts off the map as a point of light and flies to its seat; the
 // seat lights up as it lands, row by row from the stage out. Same problem,

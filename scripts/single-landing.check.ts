@@ -363,7 +363,7 @@ test("neither landing repeats the CV header", () => {
  * carry its own locale's chrome copy and its own locale's author text, and
  * not the other's.
  *
- * The map title is chrome (`messages.ts`, a closed compile-time set); the
+ * The experience heading is chrome (`messages.ts`, a closed compile-time set); the
  * identity summary is author's prose (the dataset, the thing `resolveView`
  * resolves). Between the two they cover both halves of what a mismatched
  * `locale`/`view` pair would get wrong.
@@ -374,12 +374,12 @@ test("each landing renders its own locale's content, not the other's", () => {
     ["English", enLanding, MESSAGES.en, MESSAGES.es, datasetEn],
   ] as const) {
     assert.ok(
-      html.includes(own.mapTitle),
-      `the ${name} landing is missing its own map title ("${own.mapTitle}")`,
+      html.includes(own.sectionExperience),
+      `the ${name} landing is missing its own experience heading ("${own.sectionExperience}")`,
     );
     assert.ok(
-      !html.includes(other.mapTitle),
-      `the ${name} landing contains the OTHER locale's map title ("${other.mapTitle}") — ` +
+      !html.includes(other.sectionExperience),
+      `the ${name} landing contains the OTHER locale's experience heading ("${other.sectionExperience}") — ` +
         "locale/view mismatch: the chrome copy and the data are speaking different languages",
     );
     assert.ok(

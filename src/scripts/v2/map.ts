@@ -1,4 +1,4 @@
-// SPIKE — the illustrative district map. Generated geometry, not RPPL's:
+// The illustrative district map. Generated geometry, not RPPL's:
 // ~13,000 Voronoi cells inside a made-up landmass, painted once into
 // offscreen layers so each frame is a handful of drawImage calls.
 import { Delaunay } from "d3-delaunay";

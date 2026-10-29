@@ -1,10 +1,14 @@
-// SPIKE — shared bits for the /v2 chapters.
+// Shared bits for the landing's chapters.
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 
 /** The phone layout's media query — phones, and tablets held upright. Keep
  *  in step with the big block in v2.css. */
 export const NARROW = "(max-width: 760px), (max-width: 1100px) and (orientation: portrait)";
+
+/** Numbers in the page's own language (`<html lang>`): 13.000 in Spanish,
+ *  13,000 in English — the same grouping the dataset's labels use. */
+export const numbers = () => new Intl.NumberFormat(document.documentElement.lang);
 
 /** The page's smooth scroll, for the few moments a chapter holds it still
  *  (the DD interception). Set by main.ts; typed loosely so this file does

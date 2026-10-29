@@ -134,7 +134,12 @@ export default defineConfig({
       // sitemap would invite the crawler to the one page we ask it to ignore —
       // and two contradictory signals confuse more than the absence of one.
       // `single-landing.check.ts` guards the rest of that invariant.
-      filter: (page) => !page.includes("/cv/"),
+      //
+      // The brief views (`/brief/`, `/en/brief/`) are out for the matching
+      // reason: their canonical points at the landing (`Base.astro`
+      // `canonicalPath`), and a sitemap listing a page that declares another
+      // URL canonical is the same contradiction.
+      filter: (page) => !page.includes("/cv/") && !page.includes("/brief/"),
       // Same two landings `Base.astro`'s `hreflang` tags point at each other,
       // declared here too: a sitemap that disagrees with the `<head>` is
       // worse than a sitemap that says nothing about locales at all — it

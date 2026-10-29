@@ -1,135 +1,49 @@
 ---
 /**
- * The home: identity + the knowledge map.
+ * The home: the landing (`src/components/v2/Landing.astro`), in Spanish.
  *
- * The map is the view that delivers on the schema's promise —
- * `Achievement`s live loose so they can be cross-referenced, and no other
- * surface cross-references them. It lived at `/lab` while the home was a
- * placeholder; now it is the front page.
+ * This file's own job is what has to be a direct child of `<Base>`: the
+ * `<head>` (title, Open Graph, hreflang, the JSON-LD `Person`), the `js`
+ * class the chapters' CSS keys on, and the analytics. Everything visible is
+ * shared with `/en/` through `Landing`.
  *
- * It is the ONLY page on the site that ships JavaScript, which is why it is in
- * `PAGES_WITH_JS` in `scripts/no-client-js.check.ts`. `/cv` stays at zero: the
- * PDF comes from there, and a script slipping in changes the render silently.
- * (`/en/` ships it too now, for the same reason: it renders the same map.)
- *
- * ALL the graph computation runs here, at build time. None of that derivation
- * travels to the browser: the client receives already resolved coordinates.
- *
- * This file's own job is what CANNOT move into `HomeDocument.astro`: the
- * `<Base>` shell, the JSON-LD and the hover CSS (both `slot="head"`, so only
- * whoever calls `<Base>` directly can place them), the serialized graph data
- * for the 3D boot, and the analytics wiring. See `HomeDocument.astro`'s header
- * comment for why splitting it this way, and not further, is what keeps the
- * Spanish build byte-identical. Everything else — the pill, the hero, the map
- * markup, the projects, the CV section — is shared with `/en/`.
+ * It ships JavaScript (`PAGES_WITH_JS` in `scripts/pages-with-js.ts`): the
+ * chapters are scroll-driven on purpose (DeltaDictum: landing-v2/direction).
+ * Without JS every word is still in the HTML.
  */
 import Base from "../layouts/Base.astro";
-import { content, buildKnowledgeGraph, layoutGraph, MESSAGES } from "@content";
+import { content } from "@content";
 import { buildPersonJsonLd } from "../lib/jsonld";
-import { buildHoverCss } from "../lib/lab-hover-css";
-import { buildLabData } from "../lib/lab-data";
-import HomeDocument from "../components/HomeDocument.astro";
+import Landing from "../components/v2/Landing.astro";
+import Analytics from "../components/Analytics.astro";
 
 import "@fontsource/manrope/400.css";
 import "@fontsource/manrope/600.css";
 import "@fontsource/manrope/800.css";
 import "../styles/tokens.css";
-import "../styles/home.css";
-import "../styles/cv.css";
-import "../styles/projects.css";
-import "../styles/lab.css";
+import "../styles/v2.css";
 
-const locale = "es";
-const view = await content.getView("portfolio", locale);
+const view = await content.getView("portfolio", "es");
 const { identity } = view;
 const jsonLd = buildPersonJsonLd(view, new URL(Astro.site!));
-const m = MESSAGES[locale];
-
-/**
- * The Cloudflare Web Analytics beacon token.
- *
- * It is NOT a secret: it travels in the HTML of every visit, same as the
- * Clarity ID. It is read from a variable anyway, for the same reason — to
- * rotate it or switch the measurement off without touching code, and so the
- * token does not live in a public repo where it stays in the history even after
- * being changed.
- *
- * When it is undefined the `<script>` is not rendered: in dev and in any
- * unconfigured build, the analytics do not exist.
- */
-const cloudflareBeacon: string | undefined = import.meta.env.PUBLIC_CF_BEACON_TOKEN;
-
-const graph = buildKnowledgeGraph(view);
-const positioned = layoutGraph(graph);
-const hoverCss = buildHoverCss(positioned);
-
-// What the 3D runtime needs. Coordinates already rounded by `layoutGraph`.
-// `buildLabData` (src/lib/lab-data.ts) is what makes this the SAME shape as
-// `/en/`'s: both pages call one typed function instead of each inlining its
-// own copy of the field list, which is how the two used to drift with no
-// compiler or test noticing.
-const graphData = JSON.stringify(buildLabData(positioned, m));
 ---
 
 {/*
-  `shareable` emits Open Graph and a Twitter Card. It is the ONLY page carrying
-  them: `/cv` has noindex and exists only to print the PDF, and the 404 is not a
-  destination. In `Base.astro` it is opt-in, so forgetting it on a new page
-  means not emitting them — the safe side of the mistake.
-
-  `hreflang` is the same shape of opt-in, for the same reason: this and
-  `/en/` are the two indexable landings `HREFLANG` in `src/lib/anchors.ts`
-  point at each other, and `/cv` must never carry it.
+  `shareable` (Open Graph + Twitter Card) and `hreflang` are opt-in in
+  `Base.astro`: only the two landings carry them.
 */}
 <Base
-  locale={locale}
+  locale={view.locale}
   title={`${identity.fullName} — ${identity.searchTitle}`}
   description={identity.summary.short}
   shareable
   hreflang
 >
   <script type="application/ld+json" is:inline slot="head" set:html={JSON.stringify(jsonLd)} />
-  <style is:inline set:html={hoverCss} slot="head" />
-
-  <HomeDocument view={view} positioned={positioned} />
-
-  {/*
-    El beacon de Cloudflare Web Analytics.
-
-    Va a mano y NO desde el dashboard de Pages. Habilitarlo ahí hace que
-    Cloudflare inyecte el snippet en TODO el sitio en el próximo deploy, y eso
-    metería JavaScript en `/cv` — que es de donde Browser Rendering imprime el
-    PDF. Peor: la inyección pasa en el borde, después del build, así que
-    `no-client-js.check.ts` no la vería. El invariante se rompería en producción
-    con todos los checks en verde.
-
-    `is:inline` explícito: Astro lo trataría así igual por tener atributos, pero
-    declararlo evita un hint más de `astro(4000)`.
-
-    Sin Subresource Integrity, por lo mismo que el tag de Clarity: el beacon lo
-    actualiza Cloudflare del lado del servidor y un hash fijo lo rompería en la
-    primera versión nueva. Lo que acota el riesgo es dónde corre — solo la
-    landing, que no tiene formularios ni credenciales.
-  */}
-  {cloudflareBeacon && (
-    <script
-      is:inline
-      type="module"
-      src="https://static.cloudflareinsights.com/beacon.min.js"
-      data-cf-beacon={JSON.stringify({ token: cloudflareBeacon })}
-    />
-  )}
-
-  <script type="application/json" is:inline data-lab-data set:html={graphData} />
-  <script>
-    // Analytics go FIRST, and that is not an oversight: `Clarity.init` only
-    // injects a `<script async>` and its own try/catch swallows any error, so it
-    // cannot throw. `start()` does touch the DOM and can fail on an odd device —
-    // the other way around, a map failure would take the measurement with it,
-    // which is exactly what helps understand that failure.
-    import { startAnalytics } from "../scripts/analytics";
-    import { start } from "../scripts/lab/boot";
-    startAnalytics();
-    start();
+  <script is:inline slot="head">
+    document.documentElement.classList.add("js");
   </script>
+
+  <Analytics />
+  <Landing view={view} />
 </Base>

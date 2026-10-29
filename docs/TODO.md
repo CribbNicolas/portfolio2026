@@ -10,104 +10,25 @@ between lists; delete one only when it is done.
 Landing v2 ships as one PR, and every stage below is done before it opens.
 Stages run in order: each one assumes the previous is closed (translating
 before the Spanish is final, or reviewing before the identity is, means doing
-it twice). CI is adapted last, to the shape the site ends up with.
+it twice). CI is adapted to the shape the site ends up with, and the
+author's manual review (stage 5) closes it before the PR.
 
-### 1. Core — v2 with no debt, v1 as the simple version, translations
+### 1. Core — v2 with no debt, v1 as the brief view, translations
 
-**Spanish content (first: everything else translates or lays out from it)**
-- [ ] Ask the RPPL client whether the map's shape may be shown. Send it now;
-      the answer takes its own time.
-- [ ] `summary.long` says "En Dinkum entrego las dos puntas" in the present
-      tense, but development on Muse and Seat Map ended (2026-02/03); today it
-      is support. Fix the tense (ES, then EN and `i18n:lock`).
-- [ ] A hook sentence that passes the voice test.
-- [ ] Confirm the provisional DeltaDictum copy: the `[DECISION]` memory typed
-      in the interception (`ddHook` in `v2.astro`) and the closing line.
-- [ ] "Quién soy" is the About section; its mini career line may be redundant
-      next to "Recorrido".
-- [ ] The slot left by the dropped Audiences chapter: a second career
-      highlight, or close it.
-- [ ] DeltaDictum (project) and Astro (skill) move from `v2.astro` into
-      `content.es.json`, then EN, `i18n:lock`, `og:local`. Until then neither
-      reaches the JSON-LD (`knowsAbout`), `llms.txt` or `cv.json`.
-- [ ] The CI panel list is typed in `v2.astro`; read it from
-      `content-validation.yml`.
+Done on 2026-10-29: v2 serves `/` and `/en/` from one component
+(`src/components/v2/Landing.astro`, copy in `src/lib/landing-copy.ts`); v1
+is the brief view at `/brief` and `/en/brief` (canonical → its landing,
+out of the sitemap), without the 3D map. The author's read of the copy is
+in stage 5.
 
-**v2 debt**
-- [ ] `src/scripts/v2/peak.ts:61` raises an `astro check` hint.
-- [ ] Clarity and the Cloudflare beacon in v2 (added by hand per landing file).
-- [ ] Cookie consent for EU visitors: Clarity writes eight third-party cookies
-      (`src/scripts/analytics.ts`); today there is only a footer line. Lands
-      together with Clarity in v2.
-
-**SEO and agents: v2 loses nothing v1 has** (audited 2026-10-29 against
-`dist/index.html` and `dist/v2/index.html`)
-- [ ] `<head>`: v2 emits 8 tags against v1's 26. `v2.astro` calls `<Base>`
-      with the title "v2 (spike)" and without `shareable` (Open Graph +
-      Twitter Card), `hreflang` (es/en/x-default) or the JSON-LD `Person`
-      (`slot="head"`, as `index.astro` does). Title back to
-      `${fullName} — ${searchTitle}`.
-- [ ] `identity.links` in the close lack `rel="me"` (v1: `rel="me noopener"`);
-      it ties the page to the LinkedIn/GitHub profiles, as `sameAs` does.
-- [ ] Indexable content v2 drops: education (Digital House, INCADE, UGD: 0
-      of 3), three project names (RPPL map, Muse CRM, Muse API), 5 of 14
-      achievements (the journey shows two per role) and the Cloudflare skill.
-      Decide where it lives in v2's HTML (a compact CV chapter, the Audiences
-      slot), so `/` keeps every fact the dataset publishes.
-- [ ] Anchors: v2 has none of `ANCHORS` (`#mapa`, `#proyectos`, `#cv`; EN
-      `#map`, `#projects`). `cv.astro` and `robots.txt` send the reader to the
-      landing's `#cv`, and any shared link with an anchor lands on nothing.
-      Keep the ids on v2's equivalent sections, or accept losing them (then the
-      bump is `major`).
-- [ ] Duplicate content: the simple version repeats v2's facts on a second
-      indexable URL. Decide its `canonical` (to itself or to `/`) and whether
-      it goes in the sitemap and in `HREFLANG`; `Base` and the sitemap must
-      agree.
-- [ ] Sitemap: today it lists `/v2/` with no `hreflang` pair. After the swap,
-      `/`, `/en/` and the simple version's pair, `/v2/` gone.
-- [ ] `llms.txt` (ES and EN, in production today) links four
-      `/projects/<slug>` "Caso" pages that do not exist: 404 for every agent
-      that follows them (`src/lib/llms-txt.ts:59`). Drop the line until case
-      pages exist, and make `endpoints.check.ts` resolve every internal link
-      of `llms.txt` against `dist/`.
-- [ ] `llms.txt`'s "CV (HTML)" link points to `/cv`: `noindex`, disallowed in
-      `robots.txt`. Point it where the reader's CV is after the anchor
-      decision, and update `robots.txt`'s comment to match.
-- [ ] Without JS the text is already in the HTML (checked). Remaining: with
-      JS off, no CSS leaves a chapter invisible or stacked.
-
-**English**
-- [ ] Hard-coded Spanish in `v2.astro` and the chapter scripts moves to a
-      per-locale table, `messages.ts` style (a missing translation is a
-      compile error).
-- [ ] `/en/v2` from the same page, the way `/en/` shares `HomeDocument` with `/`,
-      with the same `<head>` in `en` (`og:locale` `en_US`, `og.en.jpg`).
-- [ ] Check `formatMetricEnds` output in English.
-- [ ] Author reads and signs off the English `summary.long` and Hogarth.
-
-**v1 becomes the "simple version"**
-- [ ] A better name than "versión simple" (candidates: "versión clásica",
-      "versión directa", "lectura rápida", "vista breve").
-- [ ] Keep or remove v1's 3D map (`src/scripts/lab/`, `three`, `GraphSvg`,
-      `knowledge-graph`/`graph-layout`). If it stays,
-      `src/scripts/lab/field.ts:133`: after degrading, reset
-      `measure = frameMeter()` as `graph-3d.ts` does. If it goes, so do the
-      files and the `three` dependency.
-- [ ] The changes the author has in mind for it.
-- [ ] Its URL once v2 takes `/` (not `/cv`: PDF source, no incoming links).
-- [ ] The swap: v2 serves `/` and `/en/`, v1 moves to its URL, `/v2` stops
-      existing. `LOCALE_PATHS`/`anchors.ts`, `messages.ts`, `llms.txt` and the
-      sitemap follow.
-- [ ] A link each way between v2 and the simple version, in both locales.
-
-**CV**
+- [ ] The changes the author has in mind for the brief view.
 - [ ] Revalidate the ATS approach (one-column `cv-ats`, standard headings,
       keywords): is the CV passing filters, or does the formula need to change?
 
 ### 2. Design and identity
 
-- [ ] Palette: violet lives only on `/v2`; favicon, OG card, `Logo`, `/cv`
-      and `404` are terracotta. One identity across v2, the simple version and
+- [ ] Palette: violet lives only on the landing; favicon, OG card, `Logo`, `/cv`
+      and `404` are terracotta. One identity across v2, the brief view and
       the PDFs (`/cv` never prints dark). `theme-color` in `Base.astro`
       (`#131417`) follows the final `--bg`. Then `og:local`.
 - [ ] Loader: once per session, or on every load (today every load, while the
@@ -116,28 +37,15 @@ it twice). CI is adapted last, to the shape the site ends up with.
 
 ### 3. Performance and accessibility
 
-- [ ] Lighthouse, mobile and desktop, on v2 (ES and EN) and the simple
-      version.
+- [ ] Lighthouse, mobile and desktop, on v2 (ES and EN) and the brief
+      view.
 - [ ] Core Web Vitals: LCP with the loader in front, CLS from the held scenes,
       INP while Lenis runs.
-- [ ] Measure v2's JS chunk; the number becomes its byte ceiling in stage 5.
+- [ ] Measure v2's JS chunk; the number becomes its byte ceiling in stage 4.
 - [ ] Accessibility: keyboard through the held scenes, visible focus,
       screen-reader order, contrast with the final palette.
 
-### 4. Manual visual review
-
-- [ ] Author's review at the six resolutions: 375×667, 390×844, 412×915,
-      768×1024, 1366×768, 1920×1080 (DevTools device mode, scroll the whole
-      page), in both locales and on the simple version.
-- [ ] The reduced-motion ("still") page once more after the layout changes.
-- [ ] Phones: check the seats beat card no longer covers the cart and surfaces.
-- [ ] At least once on a real phone, iOS Safari and Android Chrome. Held scroll
-      (Lenis stop + `is-held`), `svh` heights and the touch cue have only run
-      emulated. Compare Lenis against native scroll there.
-- [ ] Look at the social card in a real chat and in LinkedIn's Post Inspector
-      (the branch's Pages preview URL).
-
-### 5. CI/CD under the new directives
+### 4. CI/CD under the new directives
 
 - [ ] Write the directive first: v2's exception to invariant 7 (scroll
       hijacking, client JS on the landing) in CLAUDE.md and in the headers of
@@ -145,12 +53,60 @@ it twice). CI is adapted last, to the shape the site ends up with.
 - [ ] `test:js` and `test:bundle`: the landing in `PAGES_WITH_JS` (Lenis and
       the held scenes listen for `wheel`/`touchmove`), its chunk with the
       ceiling measured in stage 3.
+- [ ] `test:js`: the brief views ship the analytics script, and the
+      landings an inline head script (`document.documentElement.classList
+      .add("js")`) that the "every <script> without src is data" rule
+      rejects. Decide both in `PAGES_WITH_JS` and the rule.
+- [ ] `test:landing`'s CV drift test counts `<li>` from `#cv` to the end
+      of the page and expects the PDF's count. The landing's CV chapter shows
+      the `portfolio` surface (every achievement), the PDF `cv-ats`: assert
+      that every PDF achievement appears in the chapter instead, and count
+      inside the section only.
 - [ ] `public/_headers` CSP against v2's inline script.
 - [ ] `served.check.ts` and `single-landing.check.ts` for the new structure
-      (v2 on `/`, the simple version on its URL).
+      (v2 on `/`, the brief view on `/brief`).
 - [ ] "Zero hex in JS" for the map: today only a comment convention; turn it
       into a check.
 - [ ] Full sequence from CLAUDE.md, then Lighthouse again.
+
+### 5. Author's review: visual and text (last, before the PR)
+
+Everything only the author can sign off, done on the branch's Pages preview
+once stages 1–4 are closed (a text change after it means `i18n:lock` and
+the checks again).
+
+**Text**
+- [ ] Read the hook on screen, in both locales.
+- [ ] Confirm the provisional DeltaDictum copy: the `[DECISION]` memory typed
+      in the interception (`ddHook` in `landing-copy.ts`) and the CTA line
+      ("Un producto mío, hecho para la forma en que trabajo con agentes de
+      código.").
+- [ ] Confirm the DeltaDictum project as written into the dataset (problem,
+      solution, outcome; from its README and CHANGELOG only, no `decisions`:
+      a trade-off would have been invented).
+- [ ] Read and sign off, as prose, the English: `summary.long`, Hogarth, the
+      DeltaDictum project and every `en` line of `landing-copy.ts`.
+- [ ] English CV chapter: the kicker "CV" sits over the heading "CV"
+      (`cvKicker` and `MESSAGES.en.cvTitle`); keep one.
+
+**Visual**
+- [ ] The six resolutions: 375×667, 390×844, 412×915, 768×1024, 1366×768,
+      1920×1080 (DevTools device mode, scroll the whole page), in both
+      locales and on the brief view.
+- [ ] The new CV chapter (`.cvx`, before the close) and the brief view's
+      link back to the guided landing.
+- [ ] At 1366×768 the dock overlaps the close's last line while it scrolls
+      under it (seen in a screenshot, 2026-10-29).
+- [ ] The reduced-motion ("still") page once more after the layout changes.
+- [ ] The page with JavaScript off (DevTools → disable JavaScript): it now
+      reuses the still layout; nothing should be hidden or stacked.
+- [ ] Phones: check the seats beat card no longer covers the cart and surfaces.
+- [ ] At least once on a real phone, iOS Safari and Android Chrome. Held scroll
+      (Lenis stop + `is-held`), `svh` heights and the touch cue have only run
+      emulated. Compare Lenis against native scroll there.
+- [ ] Look at the social card in a real chat and in LinkedIn's Post Inspector
+      (the branch's Pages preview URL).
+
 - [ ] PR: from a `feature/*` branch (not `spike/landing-v2`) into `develop`,
       with the version bump. `major` if any URL or anchor of today's `/` goes
       away, `minor` otherwise.
@@ -160,6 +116,10 @@ it twice). CI is adapted last, to the shape the site ends up with.
 - [ ] After the next production deploy, check `pnpm run pdf:refresh` works:
       `PDF_REFRESH_TOKEN` was set as a Pages Production secret on 2026-10-29,
       and Pages applies secrets to new deployments only.
+- [ ] With `PUBLIC_CLARITY_ID` set (production), check the browser holds no
+      `_clck`, `_clsk` or `MUID` cookie after interacting with `/`, and
+      that Clarity still records (`/collect` requests): consent is declared
+      denied on purpose (`src/scripts/analytics.ts`).
 - [ ] Verify on staging that our `robots.txt` wins over Cloudflare's managed
       one; if not, use Search Console.
 

@@ -19,14 +19,16 @@ Positioning, which every piece of copy serves: the search title is
 Engineer" (complete products, not just the interface). The differentiator is
 shipping whole products: geospatial maps at scale, legacy systems modernised
 without breaking them. AI is a visible pillar of how the work gets done, never
-the headline.
+the headline — with one deliberate exception, the landing's hero hook, which
+leads with coding agents and DeltaDictum (author, 2026-10-29).
 
 ## Language
 
 Site content is Spanish (`content.es.json`, canonical, always edited first) and
 English (`content.en.json`, translated from it). Identifiers, comments, docs and
 commit messages are always English. A user-visible string stays in its
-surface's language, URL anchors included.
+surface's language, URL anchors included. URL paths are the exception: they
+are English in both locales (`/brief`, `/en/brief`).
 
 ## Invariants (non-negotiable)
 

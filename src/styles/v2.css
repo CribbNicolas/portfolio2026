@@ -1,13 +1,13 @@
-/* SPIKE — /v2. Throwaway styles: opening, who I am, the map, the seats. */
+/* The landing (`/`, `/en/`): every chapter of `components/v2/Landing.astro`. */
 
 :root {
   /* The switch-off black: deeper than --bg, the DD chapter opens on it. */
   --void: #060608;
-  /* Spike-only accent: a muted violet in place of the terracotta (author,
-     2026-10-26: "violeta o púrpura, no tan chillón", then "más oscuro y
-     profundo"). Overrides tokens.css on
-     /v2 only; the favicon, OG card and /cv keep the terracotta until the
-     palette is decided. */
+  /* A muted violet in place of the terracotta (author, 2026-10-26: "violeta
+     o púrpura, no tan chillón", then "más oscuro y profundo"). Overrides
+     tokens.css on the landing only; the favicon, OG card, the brief view and
+     /cv keep the terracotta until the palette is decided (docs/TODO.md,
+     stage 2). */
   --accent: #5e4bc4;
   --accent-faint: #1a1630;
   /* The deep violet cannot carry small text on the dark background (3.6:1),
@@ -16,7 +16,7 @@
      thin marks on dark (7.6:1). */
   --accent-ink: #a99bf0;
   --accent-rgb: 169 155 240;
-  /* Spike-only: the failure color of the seats chapter. Not a token yet. */
+  /* The failure color of the seats chapter. Not a token yet (stage 2). */
   --danger: #e5484d;
   --gutter: clamp(16px, 6vw, 96px);
   /* ONE vertical rhythm for the free-scroll chapters: the space between two
@@ -459,42 +459,6 @@ body::after {
 }
 .plate--front .plate__chips li {
   border-color: rgb(var(--accent-rgb) / 0.6);
-}
-
-.career {
-  grid-column: 1 / -1;
-  position: relative;
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 12px;
-  margin: 0;
-  padding: 16px 0 0;
-  list-style: none;
-}
-.career__stop {
-  display: grid;
-  gap: 2px;
-}
-.career__stop strong {
-  font-size: 1.05rem;
-  letter-spacing: -0.02em;
-}
-.career__stop small {
-  color: rgb(240 238 234 / 0.7);
-}
-.career__line {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 2px;
-  background: rgb(240 238 234 / 0.22);
-}
-.career__line i {
-  display: block;
-  height: 100%;
-  background: var(--ink);
-  transform-origin: left;
 }
 
 /* --- chapters (map, seats): pinned stage, beats on the left ------------- */
@@ -1035,7 +999,7 @@ html.is-held body {
   --scrim: 0;
 }
 [data-dd-stage].is-lit,
-.still [data-dd-stage] {
+:root:is(.still, :not(.js)) [data-dd-stage] {
   background: var(--void);
 }
 /* Nothing of it shows while it rises, see-through, over the seats — not
@@ -1849,6 +1813,154 @@ html.is-held body {
   color: var(--accent-ink);
   background-size: 100% 2px;
 }
+
+/* --- 8. The CV: every fact, plain and dense ---------------------------------
+   No motion and no pin: it is the page's text-only layer, what a crawler or
+   a reader in a hurry gets. Denser than the chapters on purpose. */
+.cvx {
+  padding: var(--section-pad) var(--gutter);
+  border-top: 1px solid var(--line);
+}
+.cvx__head {
+  max-width: 44rem;
+  margin-bottom: 8svh;
+}
+.cvx__kicker {
+  margin: 0;
+  color: var(--accent-ink);
+}
+.cvx__head h2 {
+  margin: 14px 0 16px;
+  font-size: clamp(2.4rem, 5vw, 4.4rem);
+  font-weight: 800;
+  line-height: 0.98;
+  letter-spacing: -0.045em;
+}
+.cvx__lede {
+  max-width: 48ch;
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: 1.05rem;
+  line-height: 1.5;
+}
+.cvx__grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr);
+  gap: 72px;
+}
+.cvx__h {
+  margin: 0 0 20px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--line);
+  color: var(--ink-soft);
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+.cvx__h:not(:first-child) {
+  margin-top: 56px;
+}
+.cvx__role,
+.cvx__project {
+  max-width: 64ch;
+  margin-bottom: 36px;
+}
+.cvx__when {
+  margin: 0 0 6px;
+}
+.cvx h4 {
+  margin: 0 0 8px;
+  font-size: 1.25rem;
+  font-weight: 800;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+}
+.cvx__client {
+  color: var(--ink-soft);
+  font-weight: 600;
+}
+.cvx__status {
+  margin-left: 10px;
+  color: var(--accent-ink);
+  font-size: 0.75rem;
+  vertical-align: middle;
+}
+.cvx__context,
+.cvx__project p {
+  margin: 0 0 10px;
+  color: var(--ink-soft);
+  line-height: 1.5;
+}
+.cvx__project .cvx__outcome {
+  color: var(--ink);
+}
+.cvx__wins {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.cvx__wins li {
+  padding-left: 16px;
+  border-left: 2px solid var(--line);
+  line-height: 1.45;
+}
+.cvx__stack {
+  color: var(--ink-soft);
+}
+.cvx__links {
+  display: flex;
+  gap: 16px;
+}
+.cvx__links a {
+  color: var(--accent-ink);
+}
+.cvx__side {
+  align-self: start;
+}
+.cvx__skills {
+  margin: 0;
+}
+.cvx__skills dt {
+  margin-top: 14px;
+  color: var(--ink-soft);
+  font-size: 0.85rem;
+}
+.cvx__skills dt:first-child {
+  margin-top: 0;
+}
+.cvx__skills dd {
+  margin: 4px 0 0;
+  line-height: 1.5;
+}
+.cvx__edu {
+  margin-bottom: 16px;
+}
+.cvx__edu p {
+  margin: 0 0 4px;
+  line-height: 1.4;
+}
+.cvx__side > p {
+  margin: 0;
+}
+@media (max-width: 760px), (max-width: 1100px) and (orientation: portrait) {
+  .cvx__grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0;
+  }
+  .cvx__side .cvx__h:first-child {
+    margin-top: 56px;
+  }
+}
+.foot__privacy {
+  flex-basis: 100%;
+  max-width: 72ch;
+  margin: 0;
+  line-height: 1.5;
+}
+
 .foot {
   display: flex;
   flex-wrap: wrap;
@@ -1955,10 +2067,9 @@ html.is-held body {
   }
   .about {
     /* minmax(0, …): a bare 1fr grows to its widest child's min-content, and
-       the career row's four names pushed the manifesto past the screen's
-       right edge. */
+       a long chip row pushed the manifesto past the screen's right edge. */
     grid-template-columns: minmax(0, 1fr);
-    grid-template-rows: auto 1fr auto;
+    grid-template-rows: auto 1fr;
     align-content: start;
     gap: 8px;
     padding-top: 84px;
@@ -2005,21 +2116,6 @@ html.is-held body {
   .plate__chips .chip__icon {
     width: 10px;
     height: 10px;
-  }
-  /* Four stops do not fit across a phone: two by two, each with room for
-     its year and company. */
-  .career {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 10px 16px;
-    padding-top: 14px;
-    font-size: 0.78rem;
-  }
-  .career__stop strong {
-    font-size: 0.92rem;
-    line-height: 1.15;
-  }
-  .career__stop small {
-    display: none;
   }
   .chapter__stage::after {
     display: none;
@@ -2322,7 +2418,7 @@ html.is-held body {
 }
 
 /* Short phones (iPhone SE and the like): "Quién soy" has to fit a
-   manifesto, three cards and the career in ~667px. Tighter edges, a smaller
+   manifesto and three cards in ~667px. Tighter edges, a smaller
    manifesto and a slightly narrower stack buy the room. */
 @media (max-width: 760px) and (max-height: 720px) {
   .about {
@@ -2339,10 +2435,6 @@ html.is-held body {
   }
   .stack__iso {
     width: 80vw;
-  }
-  .career {
-    gap: 6px 16px;
-    padding-top: 10px;
   }
 }
 
@@ -2388,79 +2480,93 @@ html.is-held body {
     width: 12px;
     height: 12px;
   }
-  .career__stop small {
-    display: block;
-  }
 }
 
 /* --- reduced motion: every chapter laid out still ----------------------- */
-.still .chapter__stage,
-.still .intro__stage {
+/* The same layout serves a page with no JavaScript (no `.js` class on
+   <html>, set by the inline head script): the chapters' resting states are
+   the scripts' job, and without them every layer would sit on top of the
+   one before. Still, the text is all there and nothing overlaps. */
+:root:not(.js) [data-dd-stage] {
+  visibility: visible;
+}
+/* The race's lines type in one by one (dd.ts); with no script, both
+   sessions show finished. The "keep scrolling" cue belongs to the pin. */
+:root:not(.js) .ddterm .tl {
+  opacity: 1;
+}
+:root:not(.js) .ddgo,
+:root:not(.js) .peak__world {
+  /* The map is drawn by map.ts; without it the canvas is an empty box. */
+  display: none;
+}
+:root:is(.still, :not(.js)) .chapter__stage,
+:root:is(.still, :not(.js)) .intro__stage {
   height: auto;
   min-height: 100svh;
 }
-.still .hero,
-.still .about {
+:root:is(.still, :not(.js)) .hero,
+:root:is(.still, :not(.js)) .about {
   position: relative;
   min-height: 100svh;
 }
-.still .hero__ringwrap {
+:root:is(.still, :not(.js)) .hero__ringwrap {
   display: none;
 }
-.still .chapter__stage {
+:root:is(.still, :not(.js)) .chapter__stage {
   display: grid;
   gap: 32px;
   padding: var(--section-pad) var(--gutter) 0;
 }
-.still .chapter__stage::after {
+:root:is(.still, :not(.js)) .chapter__stage::after {
   display: none;
 }
-.still .beat__title {
+:root:is(.still, :not(.js)) .beat__title {
   font-size: clamp(1.8rem, 3.4vw, 2.8rem);
 }
-.still .peak__world,
-.still .seats__visual {
+:root:is(.still, :not(.js)) .peak__world,
+:root:is(.still, :not(.js)) .seats__visual {
   position: relative;
   min-height: 60svh;
   transform: none;
   inset: auto;
   width: auto;
 }
-.still .peak__ringwrap {
+:root:is(.still, :not(.js)) .peak__ringwrap {
   display: none;
 }
-.still .beats,
-.still .beat {
+:root:is(.still, :not(.js)) .beats,
+:root:is(.still, :not(.js)) .beat {
   position: static;
   transform: none;
   display: grid;
   gap: 48px;
   width: auto;
 }
-.still .rail {
+:root:is(.still, :not(.js)) .rail {
   display: none;
 }
 /* DD, still: the manifesto lit, the race finished, the notes in a column. */
-.still .ddm,
-.still .ddrace {
+:root:is(.still, :not(.js)) .ddm,
+:root:is(.still, :not(.js)) .ddrace {
   position: relative;
   inset: auto;
   visibility: visible;
 }
-.still .ddm__claim .w {
+:root:is(.still, :not(.js)) .ddm__claim .w {
   opacity: 1;
 }
-.still .ddrace {
+:root:is(.still, :not(.js)) .ddrace {
   padding: 0;
 }
-.still .ddnote {
+:root:is(.still, :not(.js)) .ddnote {
   opacity: 1;
 }
-.still .ddnotes {
+:root:is(.still, :not(.js)) .ddnotes {
   grid-area: auto;
   grid-column: 1 / -1;
   padding: 0;
 }
-.still .ddlinks {
+:root:is(.still, :not(.js)) .ddlinks {
   display: none;
 }

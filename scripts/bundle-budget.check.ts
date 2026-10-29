@@ -1,10 +1,11 @@
 /**
- * Byte budget for the map, on every page that ships it.
+ * Byte budget for every page that ships JavaScript.
  *
- * The claim this file defends is not "three is small" — it is not, it is 127 KB
- * gzip — but that it is **off the critical path**. Without this check that is a
- * promise: it takes one static import of `graph-3d` for Rollup to hoist three
- * into the initial bundle, and nothing warns.
+ * PENDING (docs/TODO.md, stage 5): the ceilings below were measured for the
+ * old landing and its 3D map, which is gone (author, 2026-10-29). The landing
+ * now runs scroll-driven chapters (GSAP, Lenis): its chunk gets a ceiling
+ * measured in stage 3, and the wheel/touchmove rule an explicit exception for
+ * it. Until then those tests fail on purpose instead of being loosened.
  *
  * The pages measured come from `PAGES_WITH_JS` (`pages-with-js.ts`), the same
  * list `no-client-js.check.ts` uses to decide which pages may ship a script at
@@ -34,26 +35,14 @@ import { readdir, readFile } from "node:fs/promises";
 import { gzipSync } from "node:zlib";
 import { basename, join } from "node:path";
 
-import { content, buildKnowledgeGraph } from "../content/source/index";
+import { content } from "../content/source/index";
 import { PAGES_WITH_JS } from "./pages-with-js";
 
 const DIST = "dist";
 const ASTRO = join(DIST, "_astro");
-/**
- * Representative page for checks that are about CSS rules or DOM markup
- * shared by construction across locales — the stylesheet and the map
- * component are the same module either way, so scanning both landings would
- * measure the same source twice. Only used by the tests that are NOT byte
- * budgets (see the bottom third of this file).
- */
-const REPRESENTATIVE_PAGE = "index.html";
 
-/** What a page executes before deciding whether loading the 3D is worth it. */
+/** What a page executes up front, through static imports. */
 const CRITICAL_BUDGET_KB = 4;
-/** The deferred chunk with three inside. Measured: 127 KB. */
-const DEFERRED_BUDGET_KB = 150;
-/** The background field: WebGL by hand, no library. Measured: 1.9 KB. */
-const FIELD_BUDGET_KB = 8;
 /**
  * Each landing's HTML carries the graph coordinates inside it — and, since
  * `inlineStylesheets: "always"`, its stylesheets too. That move traded two
@@ -64,13 +53,6 @@ const FIELD_BUDGET_KB = 8;
  * with every HTML response is that the next thing to cross it gets noticed.
  */
 const HTML_BUDGET_KB = 34;
-
-/**
- * Prefix of the field chunk. Rollup names the chunk after the module, so this
- * string is coupled to `src/scripts/lab/field.ts`: renaming that file without
- * touching this one turns the check into a silent pass.
- */
-const FIELD_CHUNK = "field.";
 
 const kb = (b: Buffer): number => Math.round((gzipSync(b).length / 1024) * 10) / 10;
 
@@ -130,54 +112,11 @@ for (const page of PAGES_WITH_JS) {
     );
   });
 
-  test(`${page}: three is NOT on the critical path`, async () => {
-    // The central claim. If a static import hoists the chunk — directly, or
-    // through another chunk the entry statically imports — this catches it.
-    for (const f of critical) {
-      const src = (await read(f)).toString("utf8");
-      assert.ok(
-        !src.includes("WebGLRenderer"),
-        `three ended up inside ${page}'s critical chunk ${f}. Check that nobody imports ` +
-        `\`graph-3d\` statically: an \`import\` of a type without \`type\` is enough.`,
-      );
-    }
-  });
-
   test(`${page}: the HTML fits the budget`, () => {
     const weight = kb(Buffer.from(html, "utf8"));
     assert.ok(weight <= HTML_BUDGET_KB, `${page} weighs ${weight} KB gzip of HTML, ceiling ${HTML_BUDGET_KB} KB.`);
   });
 }
-
-test("the three chunk exists as a separate file and fits the budget", async () => {
-  // Global over every emitted chunk, not per page: both landings' entry
-  // chunks resolve to the SAME shared `boot.js`, so a duplicated three chunk
-  // would mean Rollup split per locale instead of sharing — a bug this
-  // assertion already catches without needing to loop over `PAGES_WITH_JS`.
-  const withThree: string[] = [];
-  for (const f of chunks) {
-    if ((await read(f)).toString("utf8").includes("WebGLRenderer")) withThree.push(f);
-  }
-  assert.equal(withThree.length, 1, `expected 1 chunk with three, found ${withThree.length}: ${withThree.join(", ")}`);
-
-  const weight = kb(await read(withThree[0]!));
-  assert.ok(
-    weight <= DEFERRED_BUDGET_KB,
-    `the 3D chunk weighs ${weight} KB gzip, ceiling ${DEFERRED_BUDGET_KB} KB. ` +
-    `Check that nothing from \`three/examples\` or postprocessing got in.`,
-  );
-});
-
-test("the background field did not drag in a library", async () => {
-  const field = chunks.find((f) => f.startsWith(FIELD_CHUNK));
-  assert.ok(field, `no field chunk found among: ${chunks.join(", ")}`);
-  const weight = kb(await read(field));
-  assert.ok(
-    weight <= FIELD_BUDGET_KB,
-    `the field chunk weighs ${weight} KB gzip, ceiling ${FIELD_BUDGET_KB} KB. ` +
-    `It is WebGL by hand: if it grew like this, a dependency got in that should not be there.`,
-  );
-});
 
 test("no chunk took zod or the dataset to the browser", async () => {
   // A single `import ... from "@content"` in client code drags both:
@@ -196,38 +135,6 @@ test("no chunk took zod or the dataset to the browser", async () => {
   }
 });
 
-test("the SVG fallback has one node per graph node", async () => {
-  // Keeps the SVG from atrophying unnoticed: if the 3D becomes the only real
-  // path, the requirement to degrade without JS stops holding silently. It is
-  // compared against the derivation, not against a written number.
-  //
-  // Checked on the representative page only: the node count is a property of
-  // the graph structure, which does not change with the locale's labels.
-  const html = await readFile(join(DIST, REPRESENTATIVE_PAGE), "utf8");
-  const view = await content.getView("portfolio", "es");
-  const expected = buildKnowledgeGraph(view).nodes.length;
-  const drawn = [...html.matchAll(/class="lab__node/g)].length;
-  assert.equal(
-    drawn, expected,
-    `the SVG draws ${drawn} nodes and the graph has ${expected}.`,
-  );
-});
-
-test("the map shares the touch gesture with the browser, it does not intercept it", async () => {
-  // `touch-action: pan-x pan-y` gives every one-finger swipe to the page.
-  // Rotation is two fingers, counted in JS, never via preventDefault on
-  // touchmove — exactly what CLAUDE.md invariant 7 forbids.
-  const html = await readFile(join(DIST, REPRESENTATIVE_PAGE), "utf8");
-  const sheets = (await readdir(ASTRO)).filter((f) => f.endsWith(".css"));
-  const sources = [html, ...(await Promise.all(sheets.map((f) => readFile(join(ASTRO, f), "utf8"))))]
-    .map((s) => s.replace(/\s+/g, ""));
-  const ok = sources.some((src) =>
-    /\.lab__map--3d\{[^}]*touch-action:pan-xpan-y/.test(src) ||
-    /\.lab__map--3d\{[^}]*touch-action:pan-ypan-x/.test(src),
-  );
-  assert.ok(ok, "`touch-action: pan-x pan-y` is missing on .lab__map--3d: a one-finger drag could hijack the scroll");
-});
-
 test("no client module listens for wheel or touchmove", async () => {
   // Scrolling stays in the browser's hands by construction. A `wheel` or
   // `touchmove` listener is the doorway to scroll hijacking, so the doorway is
@@ -240,24 +147,5 @@ test("no client module listens for wheel or touchmove", async () => {
         `chunk ${f} registers a \`${event}\` listener. The pointer and the scroll are read passively.`,
       );
     }
-  }
-});
-
-test("the canvases cannot capture the pointer", async () => {
-  // `pointer-events: none` is what makes clicks and scroll pass through. It is
-  // a CSS rule, so it is verified in what is EMITTED, not in the intent.
-  //
-  // Searched in the HTML and in the .css files: Astro inlines small sheets into
-  // the page, so looking only at `_astro/*.css` would give a false negative.
-  const html = await readFile(join(DIST, REPRESENTATIVE_PAGE), "utf8");
-  const sheets = (await readdir(ASTRO)).filter((f) => f.endsWith(".css"));
-  const sources = [html, ...(await Promise.all(sheets.map((f) => readFile(join(ASTRO, f), "utf8"))))]
-    .map((s) => s.replace(/\s+/g, ""));
-
-  for (const className of ["lab__canvas", "lab__field"]) {
-    const found = sources.some((src) =>
-      new RegExp(`\\.${className}\\{[^}]*pointer-events:none`).test(src),
-    );
-    assert.ok(found, `\`pointer-events: none\` on .${className} not found in the emitted output`);
   }
 });

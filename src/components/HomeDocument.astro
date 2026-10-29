@@ -1,35 +1,18 @@
 ---
 /**
- * The landing body: the floating pill, the hero, the knowledge map, the
- * projects and the CV section. Shared by `/` and `/en/`, parameterized by
- * `locale` — `src/pages/index.astro` is the largest file in the repo and the
- * only one shipping JavaScript, so two copies of its markup is exactly how the
- * two languages start drifting on day three.
+ * The brief view's body (`/brief`, `/en/brief`): the floating pill, the
+ * hero, the projects and the CV section — the landing's facts with none of
+ * its chapters. Shared by both locales, parameterized by `view.locale`.
+ *
+ * Until 2026-10-29 this was the home and carried a 3D knowledge map; the map
+ * was removed when the chaptered landing (`components/v2/Landing.astro`) took
+ * `/`. What is left links back to that landing and keeps the reader in the
+ * brief view across the language switch.
  *
  * Deliberately NOT responsible for anything that has to be a direct child of
- * `<Base>`: the JSON-LD script, the hover-CSS `<style>`, the serialized graph
- * data for the 3D boot, the analytics scripts and the Cloudflare beacon all
- * stay in the calling page. Two reasons, not one:
- *
- *  - The first three are `slot="head"`/body-order-sensitive content wired
- *    directly off `<Base>` in the page; a component nested one level down from
- *    `<Base>` cannot redirect part of its own output into a *different* slot
- *    than the one it was given as a whole. Moving them here would either
- *    silently relocate the JSON-LD out of `<head>` or require `<Base>` itself
- *    to know about the map, which is backwards.
- *  - Even where that were not true, moving them would change `dist/index.html`
- *    beyond the two diffs the plan allows (the switch, the second download
- *    link): the JSON-LD script and the graph data script are unrelated to
- *    either, so touching their position at all is a needless risk against the
- *    Spanish byte-identity requirement.
- *
- * `positioned` (the 3D layout) is a prop and not fetched in here for the same
- * reason: the page needs the SAME graph to build the hover CSS and the
- * serialized boot data, and `layoutGraph` is deterministic but not free — a
- * static build recomputing an identical force layout twice per page buys
- * nothing. Everything else this component needs (the CV surface, chrome
- * copy, both PDFs' file names, the map's SVG draw list, the sorted skill
- * list) it derives itself from `locale` and `view`, same as `CvDocument`.
+ * `<Base>` (the analytics stay in the calling page). Everything else it
+ * needs (the CV surface, chrome copy, both PDFs' file names) it derives from
+ * `view`, same as `CvDocument`.
  *
  * `locale` is NOT a separate prop: it is read off `view.locale`. Two
  * independent props (one prior version of this file took both) make "English
@@ -41,14 +24,10 @@
  */
 import type { ContentView, Locale } from "@content";
 import { content, formatSeniority, formatDateRange, formatYearMonth, pdfFilename, MESSAGES } from "@content";
-import { buildSvgMap } from "../lib/graph-svg";
-import { ITEM_ID } from "../lib/lab-hover-css";
-import { nodeHasMapLabel, isStickyMapLabel } from "../lib/map-labels";
 import { ANCHORS, LOCALE_PATHS, OTHER_LOCALE, anchorScrollCss } from "../lib/anchors";
-import type { PositionedGraph } from "../../content/source/index";
+import { LANDING } from "../lib/landing-copy";
 import Logo from "./Logo.astro";
 import LocaleSwitch from "./LocaleSwitch.astro";
-import GraphSvg from "./lab/GraphSvg.astro";
 import ProjectList from "./projects/ProjectList.astro";
 import Section from "./cv/Section.astro";
 import RoleBlock from "./cv/RoleBlock.astro";
@@ -56,10 +35,9 @@ import SkillList from "./cv/SkillList.astro";
 
 interface Props {
   view: ContentView;
-  positioned: PositionedGraph;
 }
 
-const { view, positioned } = Astro.props;
+const { view } = Astro.props;
 const locale = view.locale;
 const { identity } = view;
 const m = MESSAGES[locale];
@@ -89,17 +67,6 @@ const datasetOf: Record<Locale, typeof datasetOwn> = {
 const PDF_LABEL: Record<Locale, string> = { es: "Español", en: "English" };
 const pdfOrder: Locale[] = [locale, other];
 
-const map = buildSvgMap(positioned);
-
-// The DOM list: it is both the accessible content and the DOM side of the
-// hover bridge. Ordered by degree — the most connected on top, which is the
-// most proven, not whatever comes first alphabetically.
-const items = positioned.nodes
-  .filter((n) => n.kind === "skill")
-  .sort((a, b) => b.degree - a.degree || a.label.localeCompare(b.label, locale));
-
-const withEvidenceCount = items.filter((n) => n.degree > 0).length;
-
 // skillId → canonical name, for each project's stack. Built here and not in
 // `ProjectList`: `view.skills` arrives grouped by category, and flattening it
 // is this component's job, not the dumb one's.
@@ -110,7 +77,6 @@ const skillNameById = new Map(
 
 <div class="lab">
   <style is:inline set:html={anchorScrollCss()} />
-  <canvas class="lab__field" data-lab-field aria-hidden="true"></canvas>
 
   {/*
     Index and contact in a pill that follows the scroll. It replaces the hero
@@ -141,8 +107,7 @@ const skillNameById = new Map(
         bar does not wrap — the download button rides over the mail link and the
         social links ride under the language switch. Three anchors were the
         cheapest thing in the bar to give up: the page scrolls in one column and
-        every section is a screen away. `m.navMap`/`navProjects`/
-        `navSectionsLabel` and `anchors` stay defined for whatever replaces it.
+        every section is a screen away.
       */}
 
       <ul class="pill__contact">
@@ -232,87 +197,7 @@ const skillNameById = new Map(
       <p class="home__role">
         {identity.searchTitle} · {formatSeniority(view.yearsOfExperience, locale)} · {identity.location.city}, {identity.location.country}
       </p>
-    </section>
-
-    <section id={anchors.map} class="lab__map-section">
-      {/*
-        Visible title, lede and counters came out as a second hero on top of
-        the map. The heading stays for the document outline and for the
-        locale-mismatch check; it is not shown.
-      */}
-      <h2 class="visually-hidden">{m.mapTitle}</h2>
-
-      {/*
-        `tabindex` and `role` go on the CONTAINER, not on the canvas: the
-        canvas is `pointer-events: none` and cannot receive anything. The drag,
-        the click and the arrow keys are listened for here.
-      */}
-      <div
-        class="lab__map"
-        tabindex="0"
-        role="application"
-        aria-label={m.mapAriaLabel}
-      >
-        <GraphSvg
-          map={map}
-          ariaLabel={m.svgMapAriaLabel(positioned.nodes.length, positioned.edges.length)}
-        />
-        <canvas class="lab__canvas" data-lab-graph aria-hidden="true"></canvas>
-        {/*
-          The 3D labels live in the DOM, not in WebGL: a font atlas would cost
-          more than the whole scene and the text would come out blurry. They are
-          server-rendered and hidden until the 3D mounts; the SVG carries its own.
-        */}
-        <div class="lab__labels" aria-hidden="true">
-          {positioned.nodes
-            .filter((n) => nodeHasMapLabel(n))
-            .map((n) => (
-              <span
-                class={`lab__label-3d lab__label-3d--${n.kind}${isStickyMapLabel(n) ? " lab__label-3d--sticky" : ""}`}
-                data-lab-label
-                data-node={n.id}
-              >
-                {n.label}
-              </span>
-            ))}
-        </div>
-        <div class="lab__tooltip" data-lab-tooltip aria-hidden="true"></div>
-
-        {/*
-          El panel de detalle lo llena el JS con `textContent` sobre elementos
-          creados a mano — nunca `innerHTML`. `aria-live="polite"` hace que un
-          lector de pantalla anuncie el nodo enfocado sin interrumpir.
-        */}
-        <div class="lab__panel" data-lab-panel role="status" aria-live="polite"></div>
-
-        <p class="lab__hint" aria-hidden="true">
-          <span class="lab__hint--fine">{m.mapHint}</span>
-          <span class="lab__hint--coarse">{m.mapHintTouch}</span>
-        </p>
-      </div>
-
-      <div class="lab__indice">
-        <h3 class="lab__index-title">Stack</h3>
-        <ul class="lab__list">
-          {items.map((n) => (
-            <li>
-              <span
-                id={ITEM_ID(n.id)}
-                class={n.degree > 0 ? "lab__item" : "lab__item lab__item--empty"}
-                data-node={n.id}
-                tabindex="0"
-              >
-                <span class="lab__dot" aria-hidden="true"></span>
-                {n.label}
-                {n.degree > 0 && <span class="lab__degree">{n.degree}</span>}
-              </span>
-            </li>
-          ))}
-        </ul>
-        {items.length - withEvidenceCount > 0 && (
-        <p class="lab__note">{m.emptyStackNote(items.length - withEvidenceCount)}</p>
-        )}
-      </div>
+      <p class="home__guided"><a href={LOCALE_PATHS[locale].home}>{LANDING[locale].guidedLink} <span aria-hidden="true">→</span></a></p>
     </section>
 
     <section id={anchors.projects} class="projects-section">

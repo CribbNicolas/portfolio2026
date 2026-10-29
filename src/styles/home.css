@@ -19,6 +19,15 @@
   font-weight: 600;
 }
 
+/* The way back to the guided landing. */
+.home__guided {
+  margin: calc(var(--space) * 2) 0 0;
+  font-weight: 600;
+}
+.home__guided a {
+  color: var(--accent);
+}
+
 @media (min-width: 40rem) {
   .home__name {
     font-size: 3rem;

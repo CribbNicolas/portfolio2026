@@ -1,4 +1,4 @@
-// SPIKE — chapter "DeltaDictum", the second hook. It opens on the black the
+// Chapter "DeltaDictum", the second hook. It opens on the black the
 // seats chapter switched off into (seats.ts does the switch-off and the
 // interception), then three acts in one pin:
 //  1 · the name and the claim, scrubbed — the words light up as you scroll;

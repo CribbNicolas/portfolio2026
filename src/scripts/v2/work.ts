@@ -1,4 +1,4 @@
-// SPIKE — chapter "Cómo trabajo". Calm on purpose: plain scroll, text that
+// Chapter "Cómo trabajo". Calm on purpose: plain scroll, text that
 // rises in, and one quiet mechanism — the CI of this very site ticking its
 // checks in order as the reader moves through the principles.
 import gsap from "gsap";

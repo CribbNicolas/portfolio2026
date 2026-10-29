@@ -11,8 +11,9 @@
  * ships types, and `init()` checks `getElementById("clarity-script")` before
  * injecting, so calling it twice does not duplicate the tag.
  *
- * It is called ONLY from the two landing files, `src/pages/index.astro` and
- * `src/pages/en/index.astro`. Never from `Base.astro`:
+ * It is called ONLY from `src/components/Analytics.astro`, which only the
+ * reader-facing pages use (the landings and the brief views). Never from
+ * `Base.astro`:
  * `/cv` has to stay at zero JavaScript because Browser Rendering prints the PDF
  * from there, and a third-party script would change the render with nobody
  * noticing. `no-client-js.check.ts` verifies that across all of `dist/`.
@@ -52,9 +53,10 @@ const WAKE_EVENTS = ["scroll", "pointerdown", "keydown", "touchstart"] as const;
 /**
  * Starts Clarity on the visitor's first interaction, not on load.
  *
- * Clarity is not one script: the tag pulls `clarity.js` (~26 KB) and then
- * writes eight third-party cookies, `MUID` and `MR` on `bing.com` among them.
- * Paid at load, that is bytes and cookies spent on every bounce — and it is
+ * Clarity is not one script: the tag pulls `clarity.js` (~26 KB). With
+ * consent granted it would also write eight third-party cookies (`MUID` and
+ * `MR` on `bing.com` among them); see below for why it never is.
+ * Paid at load, that is bytes spent on every bounce — and it is
  * the whole distance between this page's Lighthouse Best Practices and the
  * 100 that `/cv`, which has no analytics, already scores. Behind the first
  * interaction the cost lands only on visits that turned into something, and
@@ -65,7 +67,16 @@ const WAKE_EVENTS = ["scroll", "pointerdown", "keydown", "touchstart"] as const;
  * says what Clarity does either way.
  *
  * `init` never throws — the package's `injectScript` wraps everything in its
- * own try/catch — so this cannot take the map down with it.
+ * own try/catch — so this cannot take the page down with it.
+ *
+ * Cookieless, for every visitor (author, 2026-10-29): consent is declared
+ * DENIED for both storages right after `init`, so Clarity writes none of its
+ * cookies (`_clck`, `_clsk`, nor Microsoft's ad ones) and still records
+ * heatmaps and sessions over `/collect` (learn.microsoft.com/clarity/consent-mode).
+ * That is what makes a consent banner unnecessary for EU visitors. The cost
+ * is recognising a returning visitor, which a one-page site barely uses.
+ * The call goes through the queue `init` sets up, so it lands before the tag
+ * itself has loaded.
  */
 export function startAnalytics(): void {
   const id = ID;
@@ -75,6 +86,7 @@ export function startAnalytics(): void {
     // The fired listener removed itself (`once`); these are the others.
     for (const type of WAKE_EVENTS) removeEventListener(type, fire);
     Clarity.init(id);
+    Clarity.consentV2({ ad_Storage: "denied", analytics_Storage: "denied" });
   };
 
   for (const type of WAKE_EVENTS) {

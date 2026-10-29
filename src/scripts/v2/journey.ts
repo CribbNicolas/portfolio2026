@@ -1,4 +1,4 @@
-// SPIKE — chapter 5, "Recorrido". Not pinned: plain scroll, on purpose, after
+// Chapter 5, "Recorrido". Not pinned: plain scroll, on purpose, after
 // two pinned chapters in a row. The stages scroll on the left; on the right a
 // sticky toolbox shows the year and grows with every stage, each skill popping
 // in at the stage of its first recorded use.
@@ -50,10 +50,12 @@ export function journey() {
     const on = chips.filter((c) => Number(c.dataset.chipStage) <= i);
     const off = chips.filter((c) => Number(c.dataset.chipStage) > i);
     chips.forEach((c) => c.classList.toggle("is-fresh", Number(c.dataset.chipStage) === i));
-    gsap.to(off, { autoAlpha: 0, scale: 0.6, y: 10, duration: 0.25, ease: "power2.in", overwrite: true });
+    // Guarded: GSAP warns "target not found" on an empty list, and the last
+    // stage has nothing left to hide.
+    if (off.length) gsap.to(off, { autoAlpha: 0, scale: 0.6, y: 10, duration: 0.25, ease: "power2.in", overwrite: true });
     // Only the chips that were hidden pop; the ones already there stay put.
     const arriving = on.filter((c) => Number(gsap.getProperty(c, "autoAlpha")) < 1);
-    gsap.to(arriving, {
+    if (arriving.length) gsap.to(arriving, {
       autoAlpha: 1,
       scale: 1,
       y: 0,

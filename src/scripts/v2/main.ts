@@ -1,4 +1,4 @@
-// SPIKE — /v2 entry: smooth scroll, the intro loader, the opening, and then
+// The landing's entry: smooth scroll, the intro loader, the opening, and then
 // one module per chapter. Lenis drives the scroll; ScrollTrigger reads it
 // through the GSAP ticker.
 import gsap from "gsap";
@@ -39,7 +39,8 @@ function startLenis() {
       lenis.scrollTo(a.getAttribute("href")!, { duration: 1.4 });
     });
   }
-  // Spike-only: lets the screenshot script jump to exact scroll positions.
+  // Lets the QA screenshots (DeltaDictum: landing-v2/qa) jump to exact
+  // scroll positions.
   (window as unknown as { __lenis: Lenis }).__lenis = lenis;
   scroller.lenis = lenis;
   return lenis;
@@ -125,6 +126,7 @@ export async function start() {
     journeyStill();
     workStill();
     closeStill();
+    anchorTarget()?.scrollIntoView();
     return;
   }
   // Plays on EVERY load while the opening is being polished (author,
@@ -194,4 +196,19 @@ export async function start() {
   await progress.finish();
   lenis.start();
   entrance?.play();
+  // A shared link with an anchor (`/#cv`) lands on its section once the
+  // page is built, not on the opening the reload reset it to.
+  // `resize()` first: Lenis measured the page before the pins added their
+  // spacing, and would clamp the jump to that shorter page.
+  const anchored = anchorTarget();
+  if (anchored) {
+    lenis.resize();
+    lenis.scrollTo(anchored, { immediate: true });
+  }
+}
+
+/** The element the URL's `#anchor` names, if any. */
+function anchorTarget(): HTMLElement | null {
+  const id = decodeURIComponent(location.hash.slice(1));
+  return id ? document.getElementById(id) : null;
 }

@@ -1,4 +1,4 @@
-// SPIKE — "Descargar CV", from anywhere on the page: the close's C and its two
+// "Descargar CV", from anywhere on the page: the close's C and its two
 // halves (ESP / EN) are pulled up from the last section into the middle of
 // the screen, over a dark scrim (author, 2026-10-28). If the close is on
 // screen, the C leaves its own place; from anywhere else it rises from below,

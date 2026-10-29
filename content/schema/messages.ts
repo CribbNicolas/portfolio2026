@@ -49,28 +49,6 @@ export interface Messages {
    *  the component — they are the files' own languages, not chrome copy. */
   downloadCv: string;
   closeDialog: string;
-  /** The pill nav: its accessible label and the two section links (the CV
-   *  one reuses `sectionExperience`'s sibling headings, not a nav string). */
-  navSectionsLabel: string;
-  navMap: string;
-  navProjects: string;
-  /** The knowledge map section: heading, lede and the node/edge counters. */
-  mapTitle: string;
-  mapLede: string;
-  statsNodes: string;
-  statsConnections: string;
-  statsAffinity: string;
-  /** The map container's accessible label (drag/click instructions). */
-  mapAriaLabel: string;
-  /** `GraphSvg`'s own `aria-label`, built from live counts — a function
-   *  because the numbers are computed at render time, not fixed copy. */
-  svgMapAriaLabel: (nodes: number, edges: number) => string;
-  mapHint: string;
-  /** Coarse pointer (a phone): one finger scrolls, two rotate. */
-  mapHintTouch: string;
-  /** The note under the stack list when some skills have zero connections:
-   *  real skills, just not backed by a written achievement yet. */
-  emptyStackNote: (count: number) => string;
   /** Landing section headings outside the CV proper. */
   projectsTitle: string;
   cvTitle: string;
@@ -78,26 +56,6 @@ export interface Messages {
    *  nothing). */
   projectStatusInProgress: string;
   projectStatusPrototype: string;
-  /**
-   * The map's node-kind labels and pluralization, read by
-   * `src/scripts/lab/interaction.ts` — code that runs in the BROWSER and may
-   * not import `@content` (it would drag zod and the whole dataset along,
-   * see that file's header comment). These travel instead inside the
-   * serialized graph payload (`LabData.strings`, `src/scripts/lab/types.ts`),
-   * built once per page from this record, not per node.
-   */
-  mapKindRole: string;
-  mapKindProject: string;
-  mapKindAchievement: string;
-  mapKindSkill: string;
-  mapConnectionSingular: string;
-  mapConnectionPlural: string;
-  mapAchievementSingular: string;
-  mapAchievementPlural: string;
-  /** "+{n} more" / "+{n} más" — `{n}` is a literal placeholder the browser
-   *  substitutes; kept as a plain string (not a function) because it crosses
-   *  into `LabData`, which is JSON, not code. */
-  mapMoreTemplate: string;
   /**
    * The footer's Clarity/privacy note, split around the link so the anchor
    * stays real markup instead of being flattened into a template string.
@@ -124,7 +82,6 @@ export interface Messages {
   llmsHtmlCv: string;
   llmsPdfCv: string;
   llmsJson: string;
-  llmsCase: string;
   /** 404 page. Spanish first on the one shared `404.html`. */
   errorTitle: string;
   errorDescription: string;
@@ -159,41 +116,17 @@ export const MESSAGES: Record<Locale, Messages> = {
     metricTo: "a",
     downloadCv: "Descargar CV",
     closeDialog: "Cerrar",
-    navSectionsLabel: "Secciones",
-    navMap: "Mapa",
-    navProjects: "Proyectos",
-    mapTitle: "Mapa de conocimiento",
-    mapLede:
-      "\nLos logros no viven adentro de cada trabajo: viven sueltos y se cruzan por\n          tecnología, por rol y por proyecto. Esto es ese cruce, dibujado.\n",
-    statsNodes: "Nodos",
-    statsConnections: "Conexiones",
-    statsAffinity: "Por afinidad",
-    mapAriaLabel:
-      "Mapa de conocimiento. Un dedo desplaza la página, dos dedos rotan el mapa. Hacé click en un nodo para ver qué lo respalda. Las flechas también rotan.",
-    svgMapAriaLabel: (nodes, edges) =>
-      `Mapa de conocimiento: ${nodes} nodos y ${edges} conexiones entre roles, proyectos, logros y tecnologías.`,
-    mapHint: "Arrastrá para rotar · click en un nodo",
-    mapHintTouch: "Dos dedos para rotar · un dedo desplaza",
-    emptyStackNote: (count) =>
-      `Las ${count} tecnologías sin conexiones son reales: las uso,\n          pero todavía no escribí el logro que lo demuestre. Van huecas y chicas, agrupadas\n          en el núcleo. El mapa muestra el hueco en vez de taparlo.`,
     projectsTitle: "Proyectos",
     cvTitle: "Currículum",
     projectStatusInProgress: "En curso",
     projectStatusPrototype: "Prototipo",
-    mapKindRole: "Rol",
-    mapKindProject: "Proyecto",
-    mapKindAchievement: "Logro",
-    mapKindSkill: "Tecnología",
-    mapConnectionSingular: "conexión",
-    mapConnectionPlural: "conexiones",
-    mapAchievementSingular: "Logro",
-    mapAchievementPlural: "Logros",
-    mapMoreTemplate: "+{n} más",
     footerPrivacyIntro:
-      "\nUso Microsoft Clarity para ver qué partes de esta página se leen: mide\n      clicks y scroll, y graba sesiones anónimas. Usa cookies.  ",
+      "Uso Microsoft Clarity para ver qué partes de esta página se leen: mide clicks y scroll, y graba " +
+      "sesiones anónimas, sin cookies. ",
     footerPrivacyLinkText: "Su política de privacidad",
     footerPrivacyOutro:
-      ". También uso Cloudflare\n      Web Analytics para el tráfico y la velocidad de carga: no usa cookies ni\n      identifica visitantes.\n",
+      ". También uso Cloudflare Web Analytics para el tráfico y la velocidad de carga: tampoco usa " +
+      "cookies ni identifica visitantes.",
     ogImageAltSuffix: "Retrato y marca.",
     pdfUnconfigured: "El PDF no está configurado en este entorno.",
     pdfTimeout: "El render del PDF tardó demasiado. Probá de nuevo en un minuto.",
@@ -206,14 +139,13 @@ export const MESSAGES: Record<Locale, Messages> = {
     llmsHtmlCv: "CV en HTML",
     llmsPdfCv: "CV en PDF",
     llmsJson: "Datos en JSON",
-    llmsCase: "Caso",
     errorTitle: "Esta página no existe",
     errorDescription: "La dirección que pediste no corresponde a ninguna página de este sitio.",
     errorText:
       "La dirección que pediste no corresponde a ninguna página del sitio. Puede que el link estuviera mal copiado, o que apuntara a algo que ya no está.",
     errorBack: "Volver al inicio",
     errorNavLabel: "Secciones del sitio",
-    errorDestMap: "El mapa de conocimiento",
+    errorDestMap: "El mapa de RPPL",
     errorDestProjects: "Los proyectos",
     errorDestCv: "El CV completo",
   },
@@ -239,45 +171,17 @@ export const MESSAGES: Record<Locale, Messages> = {
     metricTo: "to",
     downloadCv: "Download CV",
     closeDialog: "Close",
-    navSectionsLabel: "Sections",
-    navMap: "Map",
-    navProjects: "Projects",
-    mapTitle: "Knowledge map",
-    mapLede:
-      "Achievements don't live inside a single job: they float loose and cross over technology, role and project. This is that crossing, drawn out.",
-    statsNodes: "Nodes",
-    statsConnections: "Connections",
-    statsAffinity: "By affinity",
-    mapAriaLabel:
-      "Knowledge map. One finger scrolls the page, two fingers rotate the map. Click a node to see what backs it up. The arrow keys rotate it too.",
-    svgMapAriaLabel: (nodes, edges) =>
-      `Knowledge map: ${nodes} nodes and ${edges} connections across roles, projects, achievements and skills.`,
-    mapHint: "Drag to rotate · click a node",
-    mapHintTouch: "Two fingers to rotate · one finger scrolls",
-    emptyStackNote: (count) =>
-      `The ${count} technologies with no connections are real: I use them, but haven't ` +
-      `written the achievement that proves it yet. They render hollow and small, grouped at ` +
-      `the core. The map shows the gap instead of covering it up.`,
     projectsTitle: "Projects",
     cvTitle: "CV",
     projectStatusInProgress: "In progress",
     projectStatusPrototype: "Prototype",
-    mapKindRole: "Role",
-    mapKindProject: "Project",
-    mapKindAchievement: "Achievement",
-    mapKindSkill: "Technology",
-    mapConnectionSingular: "connection",
-    mapConnectionPlural: "connections",
-    mapAchievementSingular: "Achievement",
-    mapAchievementPlural: "Achievements",
-    mapMoreTemplate: "+{n} more",
     footerPrivacyIntro:
       "I use Microsoft Clarity to see which parts of this page get read: it measures " +
-      "clicks and scroll, and records anonymous sessions. It uses cookies. ",
+      "clicks and scroll, and records anonymous sessions, with no cookies. ",
     footerPrivacyLinkText: "Its privacy policy",
     footerPrivacyOutro:
       ". I also use Cloudflare Web Analytics for traffic and load speed: it uses no cookies " +
-      "and identifies no visitors.",
+      "either and identifies no visitors.",
     ogImageAltSuffix: "Portrait and branding.",
     pdfUnconfigured: "The PDF isn't configured in this environment.",
     pdfTimeout: "The PDF render took too long. Try again in a minute.",
@@ -290,14 +194,13 @@ export const MESSAGES: Record<Locale, Messages> = {
     llmsHtmlCv: "CV in HTML",
     llmsPdfCv: "CV as PDF",
     llmsJson: "Data as JSON",
-    llmsCase: "Case",
     errorTitle: "This page doesn't exist",
     errorDescription: "The address you asked for doesn't match any page on this site.",
     errorText:
       "The address you asked for doesn't match any page on this site. The link may have been copied wrong, or it pointed at something that is no longer here.",
     errorBack: "Back to the home page",
     errorNavLabel: "Site sections",
-    errorDestMap: "The knowledge map",
+    errorDestMap: "The RPPL map",
     errorDestProjects: "The projects",
     errorDestCv: "The full CV",
   },

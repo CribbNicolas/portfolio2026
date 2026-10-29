@@ -9,14 +9,9 @@
  *
  * Dumb component: it receives already resolved projects and a map of skill
  * names. It does not filter or order by visibility (invariant 1).
- *
- * Each card's `id` is the one `buildHoverCss` expects: with that, the
- * cross-hover with the map works WITHOUT JavaScript, using rules that already
- * exist.
  */
 import type { ContentView, Locale, Project } from "@content";
-import { nodeId, MESSAGES } from "@content";
-import { ITEM_ID } from "../../lib/lab-hover-css";
+import { MESSAGES } from "@content";
 
 interface Props {
   projects: ContentView["projects"];
@@ -37,11 +32,7 @@ const STATUS: Partial<Record<Project["status"], string>> = {
 
 <ul class="projects">
   {projects.map((p) => (
-    <li
-      class="project"
-      id={ITEM_ID(nodeId("project", p.id))}
-      data-node={nodeId("project", p.id)}
-    >
+    <li class="project">
       <h3 class="project__name">
         {p.name}
         {STATUS[p.status] && <span class="project__status">{STATUS[p.status]}</span>}

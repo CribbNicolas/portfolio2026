@@ -26,7 +26,9 @@ interface Props {
 
 const { locale } = Astro.props;
 const other: Locale = OTHER_LOCALE[locale];
-const otherHref = LOCALE_PATHS[other].home;
+// The brief view is its only user: the switch keeps the reader in the brief
+// view (`/brief` ↔ `/en/brief`), not on the other locale's guided landing.
+const otherHref = LOCALE_PATHS[other].brief;
 
 const LABEL: Record<Locale, string> = { es: "ES", en: "EN" };
 const SWITCH_LABEL: Record<Locale, string> = {
