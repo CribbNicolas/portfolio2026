@@ -1,0 +1,161 @@
+/*
+ * Chrome shared by the landing (v2.css) and the brief view (brief.css): the
+ * dock that replaces a header, the buttons, and the C whose hole is the
+ * download (ESP / EN halves) — in the landing's close and its CV dialog, and
+ * in the brief view's CV dialog. Imported BEFORE each page's own sheet, so a
+ * page's later rules (the landing's phone sizes, the brief view's still C)
+ * win without !important.
+ */
+
+/* --- dock: what replaces the header ------------------------------------ */
+.dock {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--bg-pill);
+  backdrop-filter: blur(12px);
+}
+/* Links on the landing; the brief view's CV control is a <button> that opens
+   its dialog with no script (popovertarget). Both look the same. */
+.dock a,
+.dock button {
+  display: grid;
+  place-items: center;
+  height: 34px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 999px;
+  background: none;
+  color: var(--ink);
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+}
+.dock__logo {
+  padding: 0 8px !important;
+}
+.dock .dock__cv {
+  background: var(--accent);
+  color: var(--ink) !important;
+}
+.dock__lang:hover,
+.dock__logo:hover {
+  background: var(--bg-raised);
+}
+
+/* --- buttons ------------------------------------------------------------ */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  /* A flex box drops the space before an inner arrow <span>. */
+  gap: 0.4em;
+  height: 48px;
+  padding: 0 22px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: none;
+  color: var(--ink);
+  font: inherit;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  transition: transform 160ms ease-out, border-color 160ms ease-out;
+}
+.btn:hover {
+  border-color: var(--ink-soft);
+}
+.btn:active {
+  transform: scale(0.97);
+}
+.btn--solid {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: var(--ink);
+}
+
+/* --- the C and its two halves ------------------------------------------- */
+.close__ringwrap {
+  position: relative;
+  justify-self: center;
+  width: min(60vmin, 560px);
+  aspect-ratio: 1;
+}
+.close__ring {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.close__ring path {
+  transform-box: view-box;
+  transform-origin: 16px 16px;
+  animation: ring-turn 60s linear infinite;
+}
+@keyframes ring-turn {
+  to { transform: rotate(360deg); }
+}
+/* The hole is 6.4 of the 32 box: 40% of the ring's width across. The two
+   halves together are a touch smaller, so a sliver of dark separates them
+   from the ring, and a gap down the middle tells them apart. */
+.close__cv {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 35%;
+  aspect-ratio: 1;
+  margin: -17.5% 0 0 -17.5%;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 5px;
+}
+.close__half {
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 2px;
+  background: var(--accent-ink);
+  color: var(--bg);
+  text-decoration: none;
+  transition: background 200ms ease-out, transform 200ms ease-out;
+}
+.close__half--es {
+  border-radius: 999px 0 0 999px;
+  padding-left: 12%;
+  transform-origin: 100% 50%;
+}
+.close__half--en {
+  border-radius: 0 999px 999px 0;
+  padding-right: 12%;
+  transform-origin: 0 50%;
+}
+/* Each half leans out a little toward its own side on hover. */
+.close__half:hover {
+  background: var(--ink);
+}
+.close__half--es:hover {
+  translate: -4px 0;
+}
+.close__half--en:hover {
+  translate: 4px 0;
+}
+.close__half:active {
+  translate: 0 0;
+}
+.close__half-lang {
+  font-size: clamp(1.1rem, 3vmin, 1.9rem);
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -0.02em;
+}
+.close__half-file {
+  color: rgb(19 20 23 / 0.6) !important;
+  font-size: 0.62rem;
+}
