@@ -20,7 +20,7 @@ import assert from "node:assert/strict";
 import { accessSync, constants } from "node:fs";
 import { readdir, readFile } from "node:fs/promises";
 import { join, relative, sep } from "node:path";
-import { pdfFilename } from "../content/source/index";
+import { content, pdfFilename } from "../content/source/index";
 import { MESSAGES } from "../content/schema/messages";
 import { ANCHORS, LOCALE_PATHS, anchorScrollCss } from "../src/lib/anchors";
 import datasetEs from "../content/data/content.es.json";
@@ -300,33 +300,62 @@ test("the Spanish landing has its three anchors, the English landing has its own
   }
 });
 
-test("each landing's CV section has not drifted from its PDF", () => {
-  // `#cv` is the LAST section of the landing, so everything after the marker is
-  // the CV. The floating button that follows contributes no `<li>`.
-  const roles = (html: string) => (html.match(/class="role"/g) ?? []).length;
-  // Achievements are `<li>` with no class of their own: `RoleBlock` puts them
-  // in a `<ul class="role__bullets">`. Counting `<li>` over the tail is enough.
-  const achievements = (html: string) => (html.match(/<li[ >]/g) ?? []).length;
+test("each landing's CV chapter carries everything its PDF prints", async () => {
+  // The landing's CV chapter (`#cv`) shows the `portfolio` surface — every
+  // role and achievement the dataset publishes — while the PDF prints
+  // `cv-ats`, cut to two pages. So the chapter is a SUPERSET of the PDF:
+  // every role and every achievement the PDF prints has to be in it, or the
+  // page promising "the CV" says less than the file it hands out.
+  const text = (html: string) =>
+    html
+      .replace(/<[^>]+>/g, " ")
+      .replace(/&#39;|&#x27;/g, "'")
+      .replace(/&quot;/g, '"')
+      .replace(/&lt;/g, "<")
+      .replace(/&gt;/g, ">")
+      .replace(/&amp;/g, "&")
+      .replace(/\s+/g, " ");
 
-  for (const [name, home, pdf, cvId] of [
-    ["Spanish", landing, cv, ANCHORS.es.cv],
-    ["English", enLanding, enCv, ANCHORS.en.cv],
+  for (const [name, home, locale, cvId] of [
+    ["Spanish", landing, "es", ANCHORS.es.cv],
+    ["English", enLanding, "en", ANCHORS.en.cv],
   ] as const) {
     const start = home.indexOf(`id="${cvId}"`);
-    assert.ok(start > 0, `the #${cvId} section was not found in the ${name} landing`);
-    const tail = home.slice(start);
+    assert.ok(start > 0, `the #${cvId} chapter was not found in the ${name} landing`);
+    const end = home.indexOf("</section>", start);
+    const chapter = home.slice(start, end);
+    const words = text(chapter);
+    const printed = await content.getView("cv-ats", locale);
 
-    assert.ok(roles(pdf) > 0, "`class=\"role\"` no longer exists: update this test");
     assert.equal(
-      roles(tail), roles(pdf),
-      `the ${name} landing shows ${roles(tail)} roles and its /cv shows ${roles(pdf)}`,
+      (chapter.match(/class="cvx__role"/g) ?? []).length,
+      printed.experience.length,
+      `the ${name} CV chapter shows a different number of roles than the PDF`,
     );
-    assert.equal(
-      achievements(tail), achievements(pdf),
-      `the ${name} landing shows ${achievements(tail)} achievements and its /cv shows ` +
-      `${achievements(pdf)}. Rule 7: \`portfolio\` does not cap achievements per role and ` +
-      `\`cv-ats\` caps at 5 — somebody changed the surface of one of the two pages.`,
-    );
+    for (const role of printed.experience) {
+      assert.ok(words.includes(role.company), `the ${name} CV chapter lost the role at ${role.company}`);
+      for (const a of role.achievements) {
+        assert.ok(
+          words.includes(a.text.short),
+          `the ${name} CV chapter lacks an achievement the PDF prints: "${a.text.short.slice(0, 60)}…"`,
+        );
+      }
+    }
+  }
+});
+
+test("the brief views point at their landing and stay out of the sitemap", async () => {
+  // They repeat the landing's facts on a second URL: canonical → the landing,
+  // no Open Graph, no hreflang, not in the sitemap (Base.astro, astro.config).
+  const sitemap = await readFile(join(DIST, "sitemap-0.xml"), "utf8");
+  for (const locale of ["es", "en"] as const) {
+    const path = LOCALE_PATHS[locale].brief;
+    const html = await readFile(join(DIST, ...path.split("/").filter(Boolean), "index.html"), "utf8");
+    const canonical = /<link rel="canonical" href="([^"]+)"/.exec(html)?.[1] ?? "";
+    assert.equal(new URL(canonical).pathname, LOCALE_PATHS[locale].home, `${path} is not canonical to its landing`);
+    assert.ok(!html.includes('property="og:'), `${path} emits Open Graph`);
+    assert.ok(!/hreflang="x-default"/.test(html), `${path} carries the landings' hreflang set`);
+    assert.ok(!sitemap.includes(`${path}/`), `${path} is in the sitemap`);
   }
 });
 

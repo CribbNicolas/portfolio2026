@@ -10,7 +10,7 @@
 import Base from "../../layouts/Base.astro";
 import { content } from "@content";
 import { buildPersonJsonLd } from "../../lib/jsonld";
-import { landingHeadScript } from "../../lib/landing-head";
+import { BUILD_META, LANDING_HEAD_SCRIPT } from "../../lib/landing-head";
 import Landing from "../../components/v2/Landing.astro";
 import Analytics from "../../components/Analytics.astro";
 
@@ -25,7 +25,8 @@ const view = await content.getView("portfolio", "en");
 const { identity } = view;
 const jsonLd = buildPersonJsonLd(view, new URL(Astro.site!));
 // This deploy's id, as build.json serves it: what the loader's "seen" flag
-// is stamped with (src/lib/landing-head.ts).
+// is stamped with (src/lib/landing-head.ts). In a <meta>, not in the
+// script: the script's CSP hash must not change per deploy.
 const build = process.env.CF_PAGES_COMMIT_SHA ?? "local";
 ---
 
@@ -37,7 +38,8 @@ const build = process.env.CF_PAGES_COMMIT_SHA ?? "local";
   hreflang
 >
   <script type="application/ld+json" is:inline slot="head" set:html={JSON.stringify(jsonLd)} />
-  <script is:inline slot="head" set:html={landingHeadScript(build)} />
+  <meta name={BUILD_META} content={build} slot="head" />
+  <script is:inline slot="head" set:html={LANDING_HEAD_SCRIPT} />
 
   <Analytics />
   <Landing view={view} />

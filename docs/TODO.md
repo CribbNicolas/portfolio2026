@@ -66,30 +66,21 @@ visit (loader on):
   JS on the landing and ~1.1 s of style and layout on a throttled phone,
   both under the loader on a first visit.
 
-### 4. CI/CD under the new directives
+### 4. CI/CD under the new directives — done (2026-10-29)
 
-- [ ] Write the directive first: v2's exception to invariant 7 (scroll
-      hijacking, client JS on the landing) in CLAUDE.md and in the headers of
-      the checks it touches. Explicit, not a silent allowlist.
-- [ ] `test:js` and `test:bundle`: the landing in `PAGES_WITH_JS` (Lenis and
-      the held scenes listen for `wheel`/`touchmove`), its chunk with the
-      ceiling measured in stage 3 (71.6 KB gzip critical; the HTML 49 KB),
-      plus margin. The brief view: 1.5 KB critical, the field 2 KB deferred.
-- [ ] `test:js`: the brief views ship the analytics script, and the
-      landings an inline head script (`document.documentElement.classList
-      .add("js")`) that the "every <script> without src is data" rule
-      rejects. Decide both in `PAGES_WITH_JS` and the rule.
-- [ ] `test:landing`'s CV drift test counts `<li>` from `#cv` to the end
-      of the page and expects the PDF's count. The landing's CV chapter shows
-      the `portfolio` surface (every achievement), the PDF `cv-ats`: assert
-      that every PDF achievement appears in the chapter instead, and count
-      inside the section only.
-- [ ] `public/_headers` CSP against v2's inline script.
-- [ ] `served.check.ts` and `single-landing.check.ts` for the new structure
-      (v2 on `/`, the brief view on `/brief`).
-- [ ] "Zero hex in JS" for the map: today only a comment convention; turn it
-      into a check.
-- [ ] Full sequence from CLAUDE.md, then Lighthouse again.
+The full CLAUDE.md sequence passes. CLAUDE.md invariant 7 names the
+landing's scroll exception; `scripts/pages-with-js.ts` holds it
+(`SCROLL_DRIVEN_PAGES` for the landing, `PAGES_WITH_JS` adds the brief
+view). Byte ceilings from stage 3 plus margin; the wheel/touchmove rule
+exempts only chunks no other page loads. The landing's inline head script
+is a constant allowed by its sha256 in `public/_headers` (checked against
+the build and, after deploy, the served CSP). Two production-only breaks
+were found on the way and fixed: the CSP would have blocked that head
+script, and Astro was inlining the analytics script (Clarity would have been
+blocked too). The CV drift test now asserts the landing's chapter carries
+every achievement the PDF prints; the brief views are checked for
+canonical, no OG and no sitemap entry. "Zero hex in JS" is a test.
+Lighthouse after it: `/` 98/100/100/100, `/brief` 96/100/100/100 (mobile).
 
 ### 5. Author's review: visual and text (last, before the PR)
 

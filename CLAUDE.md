@@ -55,7 +55,10 @@ are English in both locales (`/brief`, `/en/brief`).
 7. **Design anti-checklist.** No skill bars, radars or percentages; no stock
    illustrations or decorative blobs; no carousels, custom cursors or splash
    screens; no photos with text inside; `/cv` never prints dark. No scroll
-   hijacking — except on landing v2, where it is a deliberate, open decision.
+   hijacking — except on the landing (`/`, `/en/`), where the scroll-driven
+   chapters (Lenis, pins, held scenes) are deliberate. The checks name that
+   exception explicitly (`scripts/pages-with-js.ts`); it never extends to
+   another page by allowlisting.
 8. **Free tiers only.** Hosting, rendering, analytics and CI stay on free plans;
    the domain is the only thing worth paying for.
 

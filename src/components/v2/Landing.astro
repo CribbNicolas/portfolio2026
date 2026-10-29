@@ -863,6 +863,13 @@ const cvLinks = (["es", "en"] as const).map((lang) => ({
 </main>
 
 <script>
+  // Analytics first, in this same file and not a script of their own: Astro
+  // inlines a small script, and the CSP (public/_headers) allows no inline
+  // code but the landing's head script — Clarity would be blocked in
+  // production. `Clarity.init` cannot throw; `start()` can, and must not take
+  // the measurement with it.
+  import { startAnalytics } from "../../scripts/analytics";
   import { start } from "../../scripts/v2/main";
+  startAnalytics();
   start();
 </script>

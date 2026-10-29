@@ -291,6 +291,13 @@ const statusLabel: Partial<Record<string, string>> = {
 </div>
 
 <script>
+  // Analytics first, in this same file and not a script of their own: Astro
+  // inlines a small script, and the CSP (public/_headers) allows no inline
+  // code but the landing's head script — Clarity would be blocked in
+  // production. `Clarity.init` cannot throw; `start()` can, and must not take
+  // the measurement with it.
+  import { startAnalytics } from "../scripts/analytics";
   import { start } from "../scripts/brief/boot";
+  startAnalytics();
   start();
 </script>

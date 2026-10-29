@@ -34,7 +34,8 @@ const cloudflareBeacon: string | undefined = import.meta.env.PUBLIC_CF_BEACON_TO
   />
 )}
 
-<script>
-  import { startAnalytics } from "../scripts/analytics";
-  startAnalytics();
-</script>
+{/*
+  Clarity starts from each page's own script (Landing.astro, HomeDocument
+  .astro), not from a <script> here: Astro would inline a script this small,
+  and the CSP allows no inline code but the landing's head script.
+*/}
