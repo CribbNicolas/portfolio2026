@@ -15,5 +15,6 @@ pnpm run dev
 pnpm run editor   # local editor for the Spanish dataset
 ```
 
-How the repo works and its rules: [`CLAUDE.md`](./CLAUDE.md). Pending work:
-[`docs/TODO.md`](./docs/TODO.md).
+How the repo works and its rules: [`CLAUDE.md`](./CLAUDE.md). Deferred ideas:
+[`docs/DEFERRED.md`](./docs/DEFERRED.md); pending work, when there is any, in
+`docs/TODO.md`.

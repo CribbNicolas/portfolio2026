@@ -43,6 +43,23 @@ body {
   text-wrap: balance;
 }
 
+/* A cap in the page's colour just ABOVE the viewport (bottom: 100%), never
+   inside it. Safari 26's translucent toolbar shows the page above the
+   visible area through the glass, and on this page that is what the
+   chapters keep out of sight while pinned: the incoming chapter, the
+   overlaps, the pin spacers (author, 2026-10-30, Safari). */
+body::before {
+  content: "";
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 100%;
+  height: 100vh;
+  z-index: 50;
+  pointer-events: none;
+  background: var(--bg);
+}
+
 /* Film grain over everything: texture, and it dithers the dark gradients that
    otherwise band into visible stripes. */
 body::after {
