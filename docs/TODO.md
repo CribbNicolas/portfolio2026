@@ -1,9 +1,9 @@
 # TODO
 
-Three lists. **TODO**: doing next. **Technical debt**: a finding to analyse
-later, logged here instead of being fixed inside an unrelated change.
-**Deferred**: analysed, not worth doing now, the idea is kept. Move items
-between lists; delete one only when it is done.
+Two lists. **TODO**: doing next. **Technical debt**: a finding to analyse
+later, logged here instead of being fixed inside an unrelated change. What
+was analysed and is not worth doing now lives in `docs/DEFERRED.md`. Move
+items between them; delete one only when it is done.
 
 ## TODO
 
@@ -120,11 +120,21 @@ and client, and the metric with its label. Reduced motion: every infinite
 loop stops (the C spun frantically at tokens.css's 0.01ms), and the dock's
 "Descargar CV" opens the same C with its two halves, shown in place. The CV
 dialog closes on a click or tap anywhere off the halves, guided and brief.
-Without JavaScript the guided landing shows a fixed way to the brief view,
-a card on the right on desktop, a bar along the bottom on phones, and its
+Without JavaScript the guided landing shows a fixed way to the brief view
+(`<noscript>`, not a redirect: preview crawlers would lose the OG card), a
+card on the right on desktop, a bar along the bottom on phones; and its
 "Descargar CV" buttons open both PDFs in the brief view's native popover
-(CvPick.astro, shared; content-sized, so the backdrop closes it natively)
-(`<noscript>`, not a redirect: preview crawlers would lose the OG card).
+(CvPick.astro, shared; content-sized, so the backdrop closes it natively).
+
+Accessibility audit (axe-core 4.10 over 12 page/state combinations, keyboard,
+reflow, 200 % zoom, forced colors; 2026-10-30). Done, axe now at 0: the
+focus ring in the text violet (2.9 → 7.6:1); "Quién soy" on the violet, the
+halves' "PDF", "nonce ✕" and /cv on screen to AA contrast; the hero's name
+and the PDF halves under Windows high contrast; no nested `<aside>`; /cv
+reflows at 320 px (screen only; the PDF keeps `nowrap`); the language link
+spelled out for screen readers; the brief view's own `<title>`. The rest
+(keyboard and screen readers in the scenes, 200 % zoom, endless motion, a
+skip link, an NVDA pass) is in `docs/DEFERRED.md`.
 
 - [ ] The two halved still stretches feel right on a real wheel and in phone
       emulation (author).
@@ -164,17 +174,3 @@ anything found there ships afterwards as minor fixes.
 ## Technical debt
 
 (empty)
-
-## Deferred
-
-- Per-posting CV: a generator that emits the exact `Skill.aliases` variant a job
-  post uses, and a JSON Resume mapper. Wait for a concrete need.
-- Own domain, then update `SITE_URL`.
-- Blog: never decided.
-- JSON-LD `CreativeWork` per project: little value while case studies have no
-  page of their own; today only `Person` is emitted.
-- JWD Maderas: unpublished until the author finishes it; links, outcome and
-  metric come with the launch.
-- Sanity (or any CMS): only if the local editor stops being enough. It costs
-  `sanity-source.ts` plus one line in `content/source/index.ts`.
-- zod 4: its own PR, gated by `editor/schema-adapter.ts`'s tests.

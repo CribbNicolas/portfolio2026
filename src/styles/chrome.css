@@ -174,14 +174,22 @@
 .close__half:active {
   translate: 0 0;
 }
+/* High contrast drops the halves' fill and they read as loose words; their
+   own colours are 7.6:1, so they keep them. */
+@media (forced-colors: active) {
+  .close__half {
+    forced-color-adjust: none;
+  }
+}
 .close__half-lang {
   font-size: clamp(0.7rem, 15cqi, 1.9rem);
   font-weight: 800;
   line-height: 1;
   letter-spacing: -0.02em;
 }
+/* 80 %: at 60 % it was 3.4:1 on the half. */
 .close__half-file {
-  color: rgb(19 20 23 / 0.6) !important;
+  color: rgb(19 20 23 / 0.8) !important;
   font-size: 0.62rem;
 }
 

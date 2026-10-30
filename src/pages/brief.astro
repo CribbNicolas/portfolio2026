@@ -22,6 +22,7 @@ import "@fontsource/manrope/800.css";
 import "../styles/tokens.css";
 import "../styles/chrome.css";
 import "../styles/brief.css";
+import { LANDING } from "../lib/landing-copy";
 
 const view = await content.getView("portfolio", "es");
 const { identity } = view;
@@ -29,7 +30,7 @@ const { identity } = view;
 
 <Base
   locale={view.locale}
-  title={`${identity.fullName} — ${identity.searchTitle}`}
+  title={`${identity.fullName} — ${identity.searchTitle} · ${LANDING[view.locale].briefTitle}`}
   description={identity.summary.short}
   canonicalPath={LOCALE_PATHS[view.locale].home}
 >

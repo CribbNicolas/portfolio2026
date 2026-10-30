@@ -233,7 +233,7 @@ const cvLinks = (["es", "en"] as const).map((lang) => ({
 <nav class="dock" aria-label={t.dockLabel}>
   <a class="dock__logo" href="#top"><Logo size={22} /></a>
   <button class="dock__cv" type="button" popovertarget="cv-pick" data-cv-open>{m.downloadCv}</button>
-  <a class="dock__lang" href={LOCALE_PATHS[other].home} hreflang={other} lang={other}>{t.otherLocaleShort}</a>
+  <a class="dock__lang" href={LOCALE_PATHS[other].home} hreflang={other} lang={other}>{t.otherLocaleShort}<span class="visually-hidden"> · {t.otherLocaleName}</span></a>
 </nav>
 
 {/*
@@ -713,7 +713,7 @@ const cvLinks = (["es", "en"] as const).map((lang) => ({
         </article>
       </div>
 
-      <aside class="pipeline" aria-label={t.pipelineAria}>
+      <section class="pipeline" aria-label={t.pipelineAria}>
         <div class="pipeline__sticky">
           <p class="mono pipeline__title">{t.pipelineTitle} <b class="pipeline__count"><span data-gate-count>0</span>/{gates.length}</b></p>
           <ol class="pipeline__list">
@@ -733,7 +733,7 @@ const cvLinks = (["es", "en"] as const).map((lang) => ({
           <p class="pipeline__now" data-gate-now aria-hidden="true"></p>
           <p class="pipeline__deploy mono" data-deploy><span aria-hidden="true">●</span> {t.pipelineDeploy}</p>
         </div>
-      </aside>
+      </section>
     </div>
   </section>
 
@@ -809,7 +809,7 @@ const cvLinks = (["es", "en"] as const).map((lang) => ({
         }
       </div>
 
-      <aside class="cvx__side">
+      <div class="cvx__side">
         <h3 class="cvx__h">{m.sectionSkills}</h3>
         <dl class="cvx__skills">
           {
@@ -839,7 +839,7 @@ const cvLinks = (["es", "en"] as const).map((lang) => ({
 
         <h3 class="cvx__h">{m.sectionLanguages}</h3>
         <p>{languagesLine}</p>
-      </aside>
+      </div>
     </div>
   </section>
 

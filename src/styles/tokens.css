@@ -71,8 +71,10 @@ body {
   letter-spacing: -0.005em;
 }
 
+/* The text violet, not the surface one: the deep violet is 2.9:1 on the
+   ground, under the 3:1 a focus indicator needs (WCAG 1.4.11). */
 :focus-visible {
-  outline: 2px solid var(--accent);
+  outline: 2px solid var(--accent-ink);
   outline-offset: 2px;
 }
 

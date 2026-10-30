@@ -192,6 +192,31 @@
   }
 }
 
+/* --- Screen only ---------------------------------------------------------- */
+/* On the dark screen the deep violet is 2.9:1 as text: the title, the
+   metrics and a hovered link take the text violet (7.6:1). On a phone the
+   contact links may break: `nowrap` is for the PDF's text extraction, and at
+   320 px the LinkedIn URL pushed the page 66 px sideways. */
+@media screen {
+  .cv__title,
+  .metric,
+  .cv__contact a:hover {
+    color: var(--accent-ink);
+  }
+}
+@media screen and (max-width: 30rem) {
+  .cv__contact a {
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+  /* The metric pill breaks too, each line its own pill (cloned box). */
+  .metric {
+    white-space: normal;
+    -webkit-box-decoration-break: clone;
+    box-decoration-break: clone;
+  }
+}
+
 /* --- Print: always light, whatever happens on screen --------------------- */
 
 @media print {

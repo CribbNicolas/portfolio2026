@@ -101,7 +101,7 @@ const statusLabel: Partial<Record<string, string>> = {
   <nav class="dock" aria-label={t.dockLabel}>
     <a class="dock__logo" href="#top"><Logo size={22} /></a>
     <button class="dock__cv" type="button" popovertarget="cv-pick">{m.downloadCv}</button>
-    <a class="dock__lang" href={LOCALE_PATHS[other].brief} hreflang={other} lang={other}>{t.otherLocaleShort}</a>
+    <a class="dock__lang" href={LOCALE_PATHS[other].brief} hreflang={other} lang={other}>{t.otherLocaleShort}<span class="visually-hidden"> · {t.otherLocaleName}</span></a>
   </nav>
 
   {/* The CV dialog: the landing's C, still (CvPick.astro). */}

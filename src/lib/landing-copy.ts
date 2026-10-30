@@ -29,6 +29,11 @@ export interface LandingCopy {
   /** The dock: its label and the other locale's short name. */
   dockLabel: string;
   otherLocaleShort: string;
+  /** The dock's language link, spelled out for a screen reader, in the
+   *  OTHER language (the link carries lang={other}). */
+  otherLocaleName: string;
+  /** The brief view's <title> suffix: it must not read as the landing's. */
+  briefTitle: string;
   /** The hero. The hook is the one place AI leads (author, 2026-10-29). */
   hook: string;
   heroAria: string;
@@ -120,6 +125,8 @@ export const LANDING: Record<Locale, LandingCopy> = {
   es: {
     dockLabel: "Accesos",
     otherLocaleShort: "EN",
+    otherLocaleName: "English version",
+    briefTitle: "Vista breve",
     hook: "Trabajo con agentes de código todos los días, y construí DeltaDictum para darles lo que el código no dice.",
     heroAria: "Apertura y quién soy",
     writeMe: "Escribime",
@@ -276,6 +283,8 @@ export const LANDING: Record<Locale, LandingCopy> = {
   en: {
     dockLabel: "Shortcuts",
     otherLocaleShort: "ES",
+    otherLocaleName: "Versión en español",
+    briefTitle: "Brief view",
     hook: "I work with coding agents every day, and I built DeltaDictum to give them what the code does not say.",
     heroAria: "Opening and about me",
     writeMe: "Email me",

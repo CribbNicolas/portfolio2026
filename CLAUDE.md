@@ -3,7 +3,7 @@
 Operating instructions for you. This file holds what is true everywhere in the
 repo. What is true of one file lives in that file's header comment; what is
 true of an area and no file says (decisions, discarded options, traps) lives in
-DeltaDictum and arrives when you touch those files. Pending work: `docs/TODO.md`.
+DeltaDictum and arrives when you touch those files. Pending work: `docs/TODO.md`; deferred ideas: `docs/DEFERRED.md`.
 
 ## What this is
 
@@ -90,7 +90,8 @@ the number as is. Choosing the bump is a judgement no check makes:
 
 ## Pending work
 
-`docs/TODO.md` has three lists: **TODO** (doing next), **Technical debt** (a
+`docs/TODO.md` has two lists: **TODO** (doing next) and **Technical debt** (a
 finding to analyse later — log it there instead of fixing it inside an
-unrelated change) and **Deferred** (analysed, not worth doing now, the idea is
-kept). Move items between lists; do not delete one that is not done.
+unrelated change). `docs/DEFERRED.md` keeps what was analysed and is not
+worth doing now, with why it waits. Move items between them; do not delete
+one that is not done.
