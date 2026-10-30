@@ -26,14 +26,33 @@ export const scroller: { lenis: { stop(): void; start(): void } | null } = { len
 const KEYS = new Set([" ", "PageDown", "PageUp", "ArrowDown", "ArrowUp", "Home", "End"]);
 const block = (e: Event) => e.preventDefault();
 const blockKeys = (e: KeyboardEvent) => KEYS.has(e.key) && e.preventDefault();
-export function holdScroll() {
+/**
+ * `at`: the scroll position the held scene belongs to. The pins scrub 0.7 s
+ * behind the scroll, so a fast flick on a phone has carried the page past
+ * the scene by the time it fires, and iOS momentum keeps going under
+ * `overflow: hidden`: the scene played on a screen the reader had already
+ * left (author, 2026-10-30, iPhone). Given `at`, the page goes back there
+ * and stays, whatever the momentum does, until it is let go.
+ */
+let heldAt: number | null = null;
+const stay = () => {
+  if (heldAt !== null && Math.abs(scrollY - heldAt) > 1) scrollTo(0, heldAt);
+};
+export function holdScroll(at?: number) {
   scroller.lenis?.stop();
   document.documentElement.classList.add("is-held");
   addEventListener("wheel", block, { passive: false });
   addEventListener("touchmove", block, { passive: false });
   addEventListener("keydown", blockKeys);
+  if (at !== undefined) {
+    heldAt = Math.round(at);
+    scrollTo(0, heldAt);
+    addEventListener("scroll", stay, { passive: true });
+  }
 }
 export function releaseScroll() {
+  heldAt = null;
+  removeEventListener("scroll", stay);
   document.documentElement.classList.remove("is-held");
   removeEventListener("wheel", block);
   removeEventListener("touchmove", block);

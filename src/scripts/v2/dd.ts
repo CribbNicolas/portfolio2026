@@ -227,17 +227,22 @@ export function dd() {
     // Jumping past it (a dragged scrollbar, a link) must not hold the page
     // for a scene that is no longer on screen.
     if (pin.direction < 0 || !pin.isActive) return shown();
-    holdScroll();
+    holdScroll(showY());
     scene = show();
   });
 
-  const outer = paced(tl, [
+  const pacing: [number, number][] = [
     [0.6, 0.45], // the name: right away, it is what the reader came down for
     [2.2, 1.3], // the claim lighting up, the lede
     [SHOW, 0.5], // the manifesto steps back
     [tl.duration(), 1.2], // the notes, once the race has played and let go
-  ]);
+  ];
+  const outer = paced(tl, pacing);
   const pin = pinPaced("[data-dd]", "[data-dd-stage]", outer);
+  /** The scroll position where the race starts (SHOW): the pin's start plus
+   *  the screens paced before it, and 2 px past it, so the scrub settles
+   *  inside the scene, not on its edge (see offY in seats.ts). */
+  const showY = () => Math.ceil(pin.start + innerHeight * pacing.filter(([to]) => to <= SHOW).reduce((s, [, vh]) => s + vh, 0)) + 2;
   // See-through until it pins: it rises over the last seats beat (overlap),
   // which must stay visible; black from the moment it takes over.
   ScrollTrigger.create({
