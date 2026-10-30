@@ -367,10 +367,16 @@ export function seats() {
   gsap.set(ddx, { autoAlpha: 0 });
 
   let hook: gsap.core.Timeline | null = null;
-  /** The screen as it is before the switch-off: nothing of the black. */
-  const screenOn = () => {
+  /** Stops the sequence. Cut short mid-play, its onComplete never comes:
+   *  the scroll is let go here, or the page stays held for good. */
+  const stopHook = () => {
+    if (hook?.isActive()) releaseScroll();
     hook?.kill();
     hook = null;
+  };
+  /** The screen as it is before the switch-off: nothing of the black. */
+  const screenOn = () => {
+    stopHook();
     gsap.set(crt, { visibility: "hidden" });
     gsap.set(bars.tb, { scaleY: 0 });
     gsap.set(bars.lr, { scaleX: 0 });
@@ -380,8 +386,7 @@ export function seats() {
   };
   /** The black with everything said — for a reader coming back up into it. */
   const screenSaid = () => {
-    hook?.kill();
-    hook = null;
+    stopHook();
     gsap.set(crt, { visibility: "visible" });
     gsap.set(bars.tb, { scaleY: 1 });
     gsap.set(bars.lr, { scaleX: 1 });
@@ -394,7 +399,7 @@ export function seats() {
   };
   const switchOff = () => {
     screenOn();
-    holdScroll();
+    holdScroll(offY());
     // Cleared first, then measured: the caret's home is right after "⏺ ".
     gsap.set(crt, { visibility: "visible" });
     gsap.set(ddx, { autoAlpha: 1 });
@@ -480,7 +485,7 @@ export function seats() {
     else if (pin.direction < 0 || !pin.isActive) screenSaid();
     else switchOff();
   });
-  const outer = paced(master, [
+  const pacing: [number, number][] = [
     // 00 the hall glides right. 0.9 until 2026-10-29: almost nothing moved for
     // most of that screen (author: halve the still stretches).
     [E, 0.45],
@@ -493,8 +498,14 @@ export function seats() {
     // DD's stage is see-through until it pins, so its rising over the last
     // seats beat shows nothing (dd.ts).
     [master.duration(), 0.35], // after the switch-off
-  ]);
+  ];
+  const outer = paced(master, pacing);
   const pin = pinPaced("[data-seats]", "[data-seats-stage]", outer);
+  /** The scroll position where the switch-off starts: the pin's start plus
+   *  the screens paced before it, and 2 px past it. Exactly on the edge, the
+   *  scrub settled a hair before `offAt`, read as "back up", and cut the
+   *  sequence with the scroll still held. */
+  const offY = () => Math.ceil(pin.start + innerHeight * pacing.filter(([to]) => to <= offAt).reduce((s, [, vh]) => s + vh, 0)) + 2;
   // In the fixed layer from the hand-off to the end of the pin: both are
   // stretches where the hall must not move with the scroll. Outside them it
   // goes home and scrolls with its stage like everything else.
