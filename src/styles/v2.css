@@ -43,21 +43,27 @@ body {
   text-wrap: balance;
 }
 
-/* A cap in the page's colour just ABOVE the viewport (bottom: 100%), never
-   inside it. Safari 26's translucent toolbar shows the page above the
-   visible area through the glass, and on this page that is what the
-   chapters keep out of sight while pinned: the incoming chapter, the
-   overlaps, the pin spacers (author, 2026-10-30, Safari). */
-body::before {
-  content: "";
-  position: fixed;
-  left: 0;
-  right: 0;
-  bottom: 100%;
-  height: 100vh;
-  z-index: 50;
-  pointer-events: none;
-  background: var(--bg);
+/* Safari 26 on iPhone, address bar on top: the translucent bar shows the
+   page just above the viewport through the glass, and on this page that is
+   what the pinned chapters keep out of sight — "Quién soy"'s violet over
+   the map, the seat map behind DD (author, 2026-10-30). A fixed element
+   wholly above the viewport is not painted there (tried in 1.4.1). Safari
+   does tint its bar with the background of a fixed, full-width element
+   that TOUCHES the top edge: this cap reaches 1 px into the viewport, in
+   the page's colour. iOS only (`-webkit-touch-callout`), so no other
+   browser gets the hairline. */
+@supports (-webkit-touch-callout: none) {
+  body::before {
+    content: "";
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: calc(100% - 1px);
+    height: 100vh;
+    z-index: 50;
+    pointer-events: none;
+    background: var(--bg);
+  }
 }
 
 /* Film grain over everything: texture, and it dithers the dark gradients that
