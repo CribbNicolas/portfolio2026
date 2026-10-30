@@ -82,7 +82,7 @@ every achievement the PDF prints; the brief views are checked for
 canonical, no OG and no sitemap entry. "Zero hex in JS" is a test.
 Lighthouse after it: `/` 98/100/100/100, `/brief` 96/100/100/100 (mobile).
 
-### 5. Author's review: visual and text (last, before the PR)
+### 5. Author's review: visual and text — done (2026-10-30)
 
 Everything only the author can sign off, once stages 1–4 are closed, on a
 local production build (`pnpm run build && pnpm run preview`): Pages only
@@ -136,12 +136,13 @@ spelled out for screen readers; the brief view's own `<title>`. The rest
 (keyboard and screen readers in the scenes, 200 % zoom, endless motion, a
 skip link, an NVDA pass) is in `docs/DEFERRED.md`.
 
-- [ ] The two halved still stretches feel right on a real wheel and in phone
-      emulation (author).
+- [x] The two halved still stretches feel right on a real wheel and in phone
+      emulation (author, 2026-10-30).
 
 ### 6. Release — PR, merge, deploy (Claude)
 
-- [ ] Move the work from `spike/landing-v2` to a `feature/*` branch.
+- [x] Move the work from `spike/landing-v2` to a `feature/*` branch
+      (`feature/landing-v2`).
 - [ ] PR into `develop` with the version bump: `minor` (no URL or anchor of
       today's `/` goes away; `/brief` and `/en/brief` are new). CI green.
 - [ ] Merge, then the promotions `develop` → `staging` → `main`
