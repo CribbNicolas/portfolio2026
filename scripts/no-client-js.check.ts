@@ -20,9 +20,11 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readdir, readFile } from "node:fs/promises";
+import { createHash } from "node:crypto";
 import { join, relative, sep } from "node:path";
 
-import { PAGES_WITH_JS } from "./pages-with-js";
+import { PAGES_WITH_JS, SCROLL_DRIVEN_PAGES } from "./pages-with-js";
+import { LANDING_HEAD_SCRIPT } from "../src/lib/landing-head";
 
 const DIST = "dist";
 
@@ -51,14 +53,17 @@ for (const file of pages) {
   const allowed = PAGES_WITH_JS.has(path);
 
   test(`${path}: every <script> without src is data, not code`, () => {
-    for (const m of html.matchAll(/<script([^>]*)>/g)) {
+    for (const m of html.matchAll(/<script([^>]*)>([\s\S]*?)<\/script>/g)) {
       const attrs = m[1] ?? "";
       if (/\ssrc=/.test(attrs)) continue;
+      // The landing's head script is the one inline code the CSP allows, by
+      // its hash (src/lib/landing-head.ts). Byte for byte, or it fails.
+      if (SCROLL_DRIVEN_PAGES.has(path) && m[2] === LANDING_HEAD_SCRIPT) continue;
       const type = /type=["']([^"']+)["']/.exec(attrs)?.[1];
       assert.ok(
         type && DATA_TYPES.has(type),
         `${path} has an executable inline <script${attrs}>. ` +
-        `Only ${[...DATA_TYPES].join(" and ")} are allowed.`,
+        `Only ${[...DATA_TYPES].join(" and ")} are allowed, plus the landing's head script.`,
       );
     }
   });
@@ -103,7 +108,21 @@ const ANALYTICS_FINGERPRINTS = [
   { mark: "cf-beacon", name: "Cloudflare Web Analytics" },
 ];
 
-test("analytics live ONLY on the landing", async () => {
+test("the CSP allows the landing's head script by its current hash", async () => {
+  // public/_headers has no 'unsafe-inline'. If the script changes and the
+  // hash does not, production blocks it: no `js` class, the landing falls
+  // back to its still layout and nothing here would notice.
+  const hash = `'sha256-${createHash("sha256").update(LANDING_HEAD_SCRIPT).digest("base64")}'`;
+  const headers = await readFile(join(DIST, "_headers"), "utf8");
+  const csp = /Content-Security-Policy:([^\n]*)/.exec(headers)?.[1] ?? "";
+  assert.ok(
+    csp.includes(hash),
+    `public/_headers' script-src does not carry ${hash}. The head script in ` +
+      "src/lib/landing-head.ts changed: put its new hash in the CSP (and drop the old one).",
+  );
+});
+
+test("analytics live ONLY on the reader pages", async () => {
   // The tests above already cover this indirectly: analytics in `Base.astro`
   // would make `/cv` emit a `<script src>` and several would fail. But they
   // would fail saying "cv/index.html cannot load JS", and whoever reads that
@@ -129,8 +148,8 @@ test("analytics live ONLY on the landing", async () => {
   assert.deepEqual(
     offenders,
     [],
-    `analytics reached ${offenders.join(", ")}. They go ONLY in the landings' own ` +
-      "pages: if they moved to Base.astro, /cv or /en/cv stopped being at zero JS " +
+    `analytics reached ${offenders.join(", ")}. They go ONLY in the reader pages ` +
+      "(src/components/Analytics.astro): if they moved to Base.astro, /cv or /en/cv stopped being at zero JS " +
       "and the PDF is printed from there.",
   );
 });

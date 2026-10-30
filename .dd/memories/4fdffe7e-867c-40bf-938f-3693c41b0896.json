@@ -1,0 +1,52 @@
+{
+  "schema_version": 8,
+  "id": "4fdffe7e-867c-40bf-938f-3693c41b0896",
+  "project_id": "portfolio2026",
+  "topic": "frontend/csp-inline",
+  "kind": "trap",
+  "status": "superseded",
+  "title": "The CSP allows no inline code but the landing's head script by hash: a tiny <script> Astro inlines is blocked in production only",
+  "body": "public/_headers sends script-src 'self' + the two analytics hosts + ONE sha256: the landing's head script (LANDING_HEAD_SCRIPT in src/lib/landing-head.ts). Two ways to break production with every local gate green:\n1) Astro INLINES a processed <script> whose chunk is tiny (it did with Analytics.astro's startAnalytics() once nothing else shared its chunk). Inline module code is blocked by the CSP and fails silently. Keep client code in each page's existing script (Landing.astro, HomeDocument.astro both call startAnalytics() first, then start()); do not add a separate small <script> to a component. `pnpm run test:js` rejects inline executable scripts, but build with PUBLIC_CLARITY_ID set too: without the ID the analytics chunk tree-shakes and hides the case.\n2) Editing LANDING_HEAD_SCRIPT changes its sha256: put the new hash in public/_headers in the same diff (test:js recomputes it and fails if missing; test:served checks the served policy after deploy). Keep the script constant: the build id lives in <meta name=\"build-id\">, not inside the script, so the hash survives deploys. Do not 'fix' a blocked script with 'unsafe-inline'.",
+  "not_derivable": "astro preview and dist/ carry no CSP (Cloudflare applies _headers), so the breakage is invisible locally; that Astro inlines small scripts is framework behaviour, not visible in the source.",
+  "triggers": [
+    {
+      "on": [
+        "edit",
+        "write"
+      ],
+      "paths": [
+        "public/_headers",
+        "src/lib/landing-head.ts",
+        "src/components/Analytics.astro",
+        "src/components/v2/Landing.astro",
+        "src/components/HomeDocument.astro"
+      ]
+    }
+  ],
+  "evidence": [
+    {
+      "type": "file",
+      "path": "public/_headers",
+      "sha256": "bd54a32eacb40b3618d6e34b86a81f2e92238858a236e00d34446bef2b3f8c35",
+      "summary": "Cited when this memory was saved."
+    },
+    {
+      "type": "file",
+      "path": "src/lib/landing-head.ts",
+      "sha256": "9d197c4e1b992dd9a3ed4aa4859bf25bb1e721dfdb84fcf38aebf542eda344eb",
+      "summary": "Cited when this memory was saved."
+    }
+  ],
+  "origin": "model_initiated",
+  "replaces": null,
+  "revisit_when": [],
+  "review": {
+    "issues": [],
+    "accepted": {
+      "by": "dd",
+      "at": "2026-10-29T23:13:05.804Z"
+    }
+  },
+  "created": "2026-10-29T23:13:05.804Z",
+  "updated": "2026-10-30T00:33:01.450Z"
+}

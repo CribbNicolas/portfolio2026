@@ -1,35 +1,18 @@
 ---
 /**
- * The landing body: the floating pill, the hero, the knowledge map, the
- * projects and the CV section. Shared by `/` and `/en/`, parameterized by
- * `locale` — `src/pages/index.astro` is the largest file in the repo and the
- * only one shipping JavaScript, so two copies of its markup is exactly how the
- * two languages start drifting on day three.
+ * The brief view's body (`/brief`, `/en/brief`): the floating pill, the
+ * hero, the projects and the CV section — the landing's facts with none of
+ * its chapters. Shared by both locales, parameterized by `view.locale`.
+ *
+ * Until 2026-10-29 this was the home and carried a 3D knowledge map; the map
+ * was removed when the chaptered landing (`components/v2/Landing.astro`) took
+ * `/`. What is left links back to that landing and keeps the reader in the
+ * brief view across the language switch.
  *
  * Deliberately NOT responsible for anything that has to be a direct child of
- * `<Base>`: the JSON-LD script, the hover-CSS `<style>`, the serialized graph
- * data for the 3D boot, the analytics scripts and the Cloudflare beacon all
- * stay in the calling page. Two reasons, not one:
- *
- *  - The first three are `slot="head"`/body-order-sensitive content wired
- *    directly off `<Base>` in the page; a component nested one level down from
- *    `<Base>` cannot redirect part of its own output into a *different* slot
- *    than the one it was given as a whole. Moving them here would either
- *    silently relocate the JSON-LD out of `<head>` or require `<Base>` itself
- *    to know about the map, which is backwards.
- *  - Even where that were not true, moving them would change `dist/index.html`
- *    beyond the two diffs the plan allows (the switch, the second download
- *    link): the JSON-LD script and the graph data script are unrelated to
- *    either, so touching their position at all is a needless risk against the
- *    Spanish byte-identity requirement.
- *
- * `positioned` (the 3D layout) is a prop and not fetched in here for the same
- * reason: the page needs the SAME graph to build the hover CSS and the
- * serialized boot data, and `layoutGraph` is deterministic but not free — a
- * static build recomputing an identical force layout twice per page buys
- * nothing. Everything else this component needs (the CV surface, chrome
- * copy, both PDFs' file names, the map's SVG draw list, the sorted skill
- * list) it derives itself from `locale` and `view`, same as `CvDocument`.
+ * `<Base>` (the analytics stay in the calling page). Everything else it
+ * needs (the CV surface, chrome copy, both PDFs' file names) it derives from
+ * `view`, same as `CvDocument`.
  *
  * `locale` is NOT a separate prop: it is read off `view.locale`. Two
  * independent props (one prior version of this file took both) make "English
@@ -40,26 +23,30 @@
  * makes that divergence unrepresentable rather than merely untested.
  */
 import type { ContentView, Locale } from "@content";
-import { content, formatSeniority, formatDateRange, formatYearMonth, pdfFilename, MESSAGES } from "@content";
-import { buildSvgMap } from "../lib/graph-svg";
-import { ITEM_ID } from "../lib/lab-hover-css";
-import { nodeHasMapLabel, isStickyMapLabel } from "../lib/map-labels";
+import {
+  content,
+  formatDateRange,
+  formatDuration,
+  formatMetricLabeled,
+  formatRoleTitleParts,
+  formatSeniority,
+  formatYearMonth,
+  groupedSkills,
+  pdfFilename,
+  MESSAGES,
+} from "@content";
 import { ANCHORS, LOCALE_PATHS, OTHER_LOCALE, anchorScrollCss } from "../lib/anchors";
-import type { PositionedGraph } from "../../content/source/index";
+import { LANDING } from "../lib/landing-copy";
+import { splitFigures } from "../lib/highlight";
+import { RING_PATH, BRAND_VIEWBOX } from "../lib/brand";
 import Logo from "./Logo.astro";
-import LocaleSwitch from "./LocaleSwitch.astro";
-import GraphSvg from "./lab/GraphSvg.astro";
-import ProjectList from "./projects/ProjectList.astro";
-import Section from "./cv/Section.astro";
-import RoleBlock from "./cv/RoleBlock.astro";
-import SkillList from "./cv/SkillList.astro";
+import CvPick from "./CvPick.astro";
 
 interface Props {
   view: ContentView;
-  positioned: PositionedGraph;
 }
 
-const { view, positioned } = Astro.props;
+const { view } = Astro.props;
 const locale = view.locale;
 const { identity } = view;
 const m = MESSAGES[locale];
@@ -70,276 +57,180 @@ const anchors = ANCHORS[locale];
 // EXACTLY what gets printed, because the download button promises "the CV".
 const viewCv = await content.getView("cv-ats", locale);
 
-// Both PDFs are offered on both landings, so both datasets are needed
-// regardless of which locale this page is: the current locale's file name
-// comes from its own `updatedAt`, and so does the other's — using the
-// current locale's date for both would silently mislabel whichever PDF is
-// not this page's own.
+const t = LANDING[locale];
 const other: Locale = OTHER_LOCALE[locale];
-const [datasetOwn, datasetOther] = await Promise.all([
-  content.getDataset(locale),
-  content.getDataset(other),
-]);
-const datasetOf: Record<Locale, typeof datasetOwn> = {
-  [locale]: datasetOwn,
-  [other]: datasetOther,
-} as Record<Locale, typeof datasetOwn>;
-/** The file's own language, not the page's — same reason LocaleSwitch
- *  labels the two sides ES/EN rather than translating "Spanish". */
-const PDF_LABEL: Record<Locale, string> = { es: "Español", en: "English" };
-const pdfOrder: Locale[] = [locale, other];
 
-const map = buildSvgMap(positioned);
+// Both PDFs, each named from ITS dataset's `updatedAt`: using one date for
+// both would mislabel whichever is not this page's own. The halves are
+// fixed: Spanish left, English right, as in the landing's close.
+const datasets = { es: await content.getDataset("es"), en: await content.getDataset("en") };
+const cvLinks = (["es", "en"] as const).map((lang) => ({
+  lang,
+  short: lang === "es" ? "ESP" : "EN",
+  href: LOCALE_PATHS[lang].pdf,
+  file: pdfFilename(lang, datasets[lang].updatedAt),
+  label: t.cvHalfLabel[lang],
+}));
 
-// The DOM list: it is both the accessible content and the DOM side of the
-// hover bridge. Ordered by degree — the most connected on top, which is the
-// most proven, not whatever comes first alphabetically.
-const items = positioned.nodes
-  .filter((n) => n.kind === "skill")
-  .sort((a, b) => b.degree - a.degree || a.label.localeCompare(b.label, locale));
-
-const withEvidenceCount = items.filter((n) => n.degree > 0).length;
-
-// skillId → canonical name, for each project's stack. Built here and not in
-// `ProjectList`: `view.skills` arrives grouped by category, and flattening it
-// is this component's job, not the dumb one's.
-const skillNameById = new Map(
-  Object.values(view.skills).flat().map((s) => [s.id, s.name]),
-);
+// The CV sections read `cv-ats` (what the PDF prints); the projects, which
+// the PDF does not carry, read the portfolio view.
+const skillGroups = groupedSkills(viewCv.skills, locale);
+const skillNameById = new Map(Object.values(viewCv.skills).flat().map((s) => [s.id, s.name]));
+/** A role's stack: every skill its printed achievements cite, in order. */
+const stackOf = (role: (typeof viewCv.experience)[number]) =>
+  [...new Set(role.achievements.flatMap((a) => a.skillIds))].flatMap((id) => skillNameById.get(id) ?? []);
+const languagesLine = viewCv.languages
+  .map((l) => `${l.name} ${l.level === "native" ? m.levelNative.toLowerCase() : l.level}`)
+  .join(" · ");
+/** What is shown next to a project's name. `archived` is not labelled. */
+const statusLabel: Partial<Record<string, string>> = {
+  "in-progress": m.projectStatusInProgress,
+  prototype: m.projectStatusPrototype,
+};
 ---
 
-<div class="lab">
+<div class="lab" id="top">
   <style is:inline set:html={anchorScrollCss()} />
-  <canvas class="lab__field" data-lab-field aria-hidden="true"></canvas>
 
   {/*
-    Index and contact in a pill that follows the scroll. It replaces the hero
-    buttons: the download CTA is already covered by the floating one below, and
-    two large buttons up top pushed the map off the first screen.
-
-    `href="#cv"` and NOT `/cv` — that route exists only to print the PDF, and
-    `single-landing.check.ts` verifies nobody links to it.
-
-    Without JS the pill is already fixed and usable: the script only adds the
-    lag while scrolling. That is why the initial `transform` lives in the CSS.
+    The same dock as the guided landing (chrome.css): the mark back to the
+    top, the CV, and the other language — here, the other language's brief
+    view. The CV control opens the dialog below with no script
+    (`popovertarget`), so the download works with JavaScript off too.
   */}
-  <div class="bar" data-pill>
-    <header class="pill">
-      {/*
-        The logo is decorative on purpose (`label={null}`): the name is already
-        in the hero's `<h1>`, and a screen reader announcing it again here only
-        adds noise before the index.
-      */}
-      <Logo class="pill__logo" size={26} label={null} />
+  <nav class="dock" aria-label={t.dockLabel}>
+    <a class="dock__logo" href="#top"><Logo size={22} /></a>
+    <button class="dock__cv" type="button" popovertarget="cv-pick">{m.downloadCv}</button>
+    <a class="dock__lang" href={LOCALE_PATHS[other].brief} hreflang={other} lang={other}>{t.otherLocaleShort}<span class="visually-hidden"> · {t.otherLocaleName}</span></a>
+  </nav>
 
-      <span class="pill__sep" aria-hidden="true"></span>
+  {/* The CV dialog: the landing's C, still (CvPick.astro). */}
+  <CvPick cvLinks={cvLinks} kicker={`${m.downloadCv} · ${t.cvModalPick}`} closeLabel={m.closeDialog} />
 
-      {/*
-        The section index (map / projects / CV) used to sit here. It is out on
-        BOTH sizes, not hidden under a media query: the pill's children do not
-        shrink (`white-space: nowrap`, `flex: none`), so past its own width the
-        bar does not wrap — the download button rides over the mail link and the
-        social links ride under the language switch. Three anchors were the
-        cheapest thing in the bar to give up: the page scrolls in one column and
-        every section is a screen away. `m.navMap`/`navProjects`/
-        `navSectionsLabel` and `anchors` stay defined for whatever replaces it.
-      */}
+  {/*
+    The background: the brand's C, the landing's turning ring, blurred into
+    light behind the text, with a slow parallax as the page scrolls (author,
+    2026-10-29). Pure CSS (brief.css): no script, no canvas.
+  */}
+  <div class="brief__backdrop" aria-hidden="true">
+    <svg class="brief__ring" viewBox={BRAND_VIEWBOX}>
+      <path d={RING_PATH} fill="var(--accent)" />
+    </svg>
+  </div>
 
-      <ul class="pill__contact">
-        <li class="pill__mail">
-          {/* The address itself at every width, never a "Email" label: the
-              address is the thing you can act on — read it off the screen,
-              copy it, tap it — and a label that hides it makes the bar's one
-              piece of contact information depend on tapping to find out what
-              it even is. */}
-          <a href={`mailto:${identity.contact.email}`}>{identity.contact.email}</a>
-        </li>
-        {identity.links.map((link) => (
-          <li class="pill__social"><a href={link.url} rel="me noopener">{link.label}</a></li>
-        ))}
+  {/*
+    The CV, laid out like the PDF (`cv-ats`: same sections, same order, same
+    cut) so the brief view and the download say the same thing, plus the
+    projects. What a reader scans for is set apart: figures inside the text
+    (`splitFigures`), the metrics, the company of each role, its stack, and
+    the skills declared `core`.
+  */}
+  <main class="brief" id={anchors.cv}>
+    <header class="brief__head" data-reveal>
+      <p class="brief__kicker">{identity.searchTitle} · {identity.brandTitle}</p>
+      <h1 class="brief__name">{identity.fullName}</h1>
+      <p class="brief__tagline">{identity.tagline.short}</p>
+      <ul class="brief__facts">
+        <li><strong>{formatSeniority(view.yearsOfExperience, locale)}</strong></li>
+        <li>{identity.location.city}, {identity.location.country} · {identity.location.timezone}</li>
+        <li>{languagesLine}</li>
       </ul>
-
-      <span class="pill__sep" aria-hidden="true"></span>
-
-      {/* The language switch. A link, not a script — see LocaleSwitch.astro. */}
-      <LocaleSwitch locale={locale} />
+      {/* Contact, as the PDF's header carries it. */}
+      <p class="brief__contact">
+        <a href={`mailto:${identity.contact.email}`}>{identity.contact.email}</a>
+        {identity.links.map((l) => <a href={l.url} rel="me noopener">{l.label}</a>)}
+      </p>
+      <div class="brief__actions">
+        <button class="btn btn--solid" type="button" popovertarget="cv-pick">{m.downloadCv}</button>
+        <a class="btn" href={LOCALE_PATHS[locale].home}>{t.guidedLink} <span aria-hidden="true">→</span></a>
+      </div>
     </header>
 
-    {/*
-      One button, both PDFs. A native `popover` so opening it needs no JS —
-      the landing already ships a bundle for the map, but the download has
-      to work with that bundle blocked, and `/cv` stays at zero either way.
-      The visible label is always "CV": the language choice lives in the
-      modal, which is the only place both files can sit without crowding
-      the pill on a phone.
-    */}
-    <button
-      type="button"
-      class="download"
-      popovertarget="cv-download"
-      aria-haspopup="dialog"
-      aria-controls="cv-download"
-      aria-label={m.downloadCv}
-    >
-      <span class="download__arrow" aria-hidden="true">↓</span>
-      CV
-    </button>
-  </div>
-
-  {/*
-    Lives outside `.bar` on purpose: the bar carries `transform`, which
-    would become the containing block of a `position: fixed` popover in
-    any browser that fails to promote it to the top layer. The button
-    still opens it by id.
-  */}
-  <div
-    id="cv-download"
-    popover
-    class="download-menu"
-    role="dialog"
-    aria-labelledby="cv-download-title"
-  >
-    <div class="download-menu__head">
-      <p id="cv-download-title" class="download-menu__title">{m.downloadCv}</p>
-      <button
-        type="button"
-        class="download-menu__close"
-        popovertarget="cv-download"
-        popovertargetaction="hide"
-        aria-label={m.closeDialog}
-      >
-        ×
-      </button>
-    </div>
-    <div class="download-menu__list">
-      {pdfOrder.map((lang) => (
-        <a
-          href={LOCALE_PATHS[lang].pdf}
-          download={pdfFilename(lang, datasetOf[lang].updatedAt)}
-          lang={lang}
-          hreflang={lang}
-        >
-          <span class="download-menu__lang">{PDF_LABEL[lang]}</span>
-          <span class="download-menu__file">{pdfFilename(lang, datasetOf[lang].updatedAt)}</span>
-        </a>
-      ))}
-    </div>
-  </div>
-
-  <main class="lab__content">
-    <section class="home lab__hero">
-      <h1 class="home__name">{identity.fullName}</h1>
-      <p class="home__role">
-        {identity.searchTitle} · {formatSeniority(view.yearsOfExperience, locale)} · {identity.location.city}, {identity.location.country}
-      </p>
+    <section class="brief__section" aria-labelledby="brief-profile" data-reveal>
+      <h2 class="brief__h" id="brief-profile">{m.sectionProfile}</h2>
+      <p class="brief__profile">{viewCv.identity.summary.short}</p>
     </section>
 
-    <section id={anchors.map} class="lab__map-section">
-      {/*
-        Visible title, lede and counters came out as a second hero on top of
-        the map. The heading stays for the document outline and for the
-        locale-mismatch check; it is not shown.
-      */}
-      <h2 class="visually-hidden">{m.mapTitle}</h2>
+    <section class="brief__section" aria-labelledby="brief-skills" data-reveal>
+      <h2 class="brief__h" id="brief-skills">{m.sectionSkills}</h2>
+      <dl class="brief__skills">
+        {skillGroups.map((g) => (
+          <div class="brief__skill-group">
+            <dt>{g.label}</dt>
+            <dd>
+              <ul>
+                {g.skills.map((s) => (
+                  <li class:list={{ "is-core": s.level === "core" }}>{s.name}</li>
+                ))}
+              </ul>
+            </dd>
+          </div>
+        ))}
+      </dl>
+    </section>
 
-      {/*
-        `tabindex` and `role` go on the CONTAINER, not on the canvas: the
-        canvas is `pointer-events: none` and cannot receive anything. The drag,
-        the click and the arrow keys are listened for here.
-      */}
-      <div
-        class="lab__map"
-        tabindex="0"
-        role="application"
-        aria-label={m.mapAriaLabel}
-      >
-        <GraphSvg
-          map={map}
-          ariaLabel={m.svgMapAriaLabel(positioned.nodes.length, positioned.edges.length)}
-        />
-        <canvas class="lab__canvas" data-lab-graph aria-hidden="true"></canvas>
-        {/*
-          The 3D labels live in the DOM, not in WebGL: a font atlas would cost
-          more than the whole scene and the text would come out blurry. They are
-          server-rendered and hidden until the 3D mounts; the SVG carries its own.
-        */}
-        <div class="lab__labels" aria-hidden="true">
-          {positioned.nodes
-            .filter((n) => nodeHasMapLabel(n))
-            .map((n) => (
-              <span
-                class={`lab__label-3d lab__label-3d--${n.kind}${isStickyMapLabel(n) ? " lab__label-3d--sticky" : ""}`}
-                data-lab-label
-                data-node={n.id}
-              >
-                {n.label}
-              </span>
+    <section class="brief__section" aria-labelledby="brief-experience">
+      <h2 class="brief__h" id="brief-experience" data-reveal>{m.sectionExperience}</h2>
+      {viewCv.experience.map((role) => (
+        <article class="brief__role" data-reveal>
+          <p class="brief__when">
+            {formatDateRange(role.start, role.end, locale)} · {formatDuration(role.durationMonths, locale)}
+            {formatRoleTitleParts(role, locale).concurrent && <> · {formatRoleTitleParts(role, locale).concurrent}</>}
+          </p>
+          <h3 class="brief__role-title">
+            {formatRoleTitleParts(role, locale).title}
+            <span class="brief__company">{role.company}</span>
+            {role.clientDescription && <span class="brief__client">{role.clientDescription}</span>}
+          </h3>
+          <p class="brief__context">{role.context.short}</p>
+          <ul class="brief__wins">
+            {role.achievements.map((a) => (
+              <li>
+                {splitFigures(a.text.short).map((p) => (p.figure ? <strong class="brief__fig">{p.text}</strong> : p.text))}
+                {a.metric && <span class="brief__metric-row"><span class="brief__metric">{formatMetricLabeled(a.metric, locale)}</span></span>}
+              </li>
             ))}
-        </div>
-        <div class="lab__tooltip" data-lab-tooltip aria-hidden="true"></div>
+          </ul>
+          {stackOf(role).length > 0 && (
+            <ul class="brief__stack" aria-label={m.sectionSkills}>
+              {stackOf(role).map((name) => <li>{name}</li>)}
+            </ul>
+          )}
+        </article>
+      ))}
+    </section>
 
-        {/*
-          El panel de detalle lo llena el JS con `textContent` sobre elementos
-          creados a mano — nunca `innerHTML`. `aria-live="polite"` hace que un
-          lector de pantalla anuncie el nodo enfocado sin interrumpir.
-        */}
-        <div class="lab__panel" data-lab-panel role="status" aria-live="polite"></div>
-
-        <p class="lab__hint" aria-hidden="true">
-          <span class="lab__hint--fine">{m.mapHint}</span>
-          <span class="lab__hint--coarse">{m.mapHintTouch}</span>
-        </p>
-      </div>
-
-      <div class="lab__indice">
-        <h3 class="lab__index-title">Stack</h3>
-        <ul class="lab__list">
-          {items.map((n) => (
-            <li>
-              <span
-                id={ITEM_ID(n.id)}
-                class={n.degree > 0 ? "lab__item" : "lab__item lab__item--empty"}
-                data-node={n.id}
-                tabindex="0"
-              >
-                <span class="lab__dot" aria-hidden="true"></span>
-                {n.label}
-                {n.degree > 0 && <span class="lab__degree">{n.degree}</span>}
-              </span>
-            </li>
-          ))}
-        </ul>
-        {items.length - withEvidenceCount > 0 && (
-        <p class="lab__note">{m.emptyStackNote(items.length - withEvidenceCount)}</p>
-        )}
+    <section class="brief__section" id={anchors.projects} aria-labelledby="brief-projects">
+      <h2 class="brief__h" id="brief-projects" data-reveal>{m.projectsTitle}</h2>
+      <div class="brief__projects">
+        {view.projects.map((p) => (
+          <article class="brief__project" data-reveal>
+            <h3>
+              {p.name}
+              {statusLabel[p.status] && <span class="brief__status">{statusLabel[p.status]}</span>}
+            </h3>
+            {p.client && <p class="brief__client">{p.client}</p>}
+            <p>{p.solution.short}</p>
+            <p class="brief__outcome">
+              {splitFigures(p.outcome.short).map((part) => (part.figure ? <strong class="brief__fig">{part.text}</strong> : part.text))}
+            </p>
+            {p.links.length > 0 && (
+              <p class="brief__links">
+                {p.links.map((l) => <a href={l.url} rel="noopener">{l.label} <span aria-hidden="true">↗</span></a>)}
+              </p>
+            )}
+          </article>
+        ))}
       </div>
     </section>
 
-    <section id={anchors.projects} class="projects-section">
-      <h2 class="lab__title">{m.projectsTitle}</h2>
-      <ProjectList projects={view.projects} skillNameById={skillNameById} locale={locale} />
-    </section>
-
-    <section id={anchors.cv} class="cv">
-      <h2 class="cv__section-title">{m.cvTitle}</h2>
-
-      <Section title={m.sectionProfile}>
-        <p class="profile">{viewCv.identity.summary.short}</p>
-      </Section>
-
-      <Section title={m.sectionSkills}>
-        <SkillList skills={viewCv.skills} locale={locale} />
-      </Section>
-
-      <Section title={m.sectionExperience}>
-        {viewCv.experience.map((role) => <RoleBlock role={role} locale={locale} />)}
-      </Section>
-
-      <Section title={m.sectionEducation}>
+    <section class="brief__section brief__section--pair" data-reveal>
+      <div>
+        <h2 class="brief__h">{m.sectionEducation}</h2>
         {viewCv.education.map((e) => (
-          <div class="entry">
-            <p class="entry__title">{e.degree}{e.field && <> — {e.field}</>}</p>
-            <p class="entry__meta">
+          <div class="brief__edu">
+            <p class="brief__edu-title">{e.degree}{e.field && <> — {e.field}</>}</p>
+            <p class="brief__when">
               {e.institution}
               {e.end && <> · {e.start ? formatDateRange(e.start, e.end, locale) : formatYearMonth(e.end, locale)}</>}
               {e.status === "partial" && <> · {m.studyPartial}</>}
@@ -347,30 +238,34 @@ const skillNameById = new Map(
             </p>
           </div>
         ))}
-      </Section>
-
-      <Section title={m.sectionLanguages}>
+      </div>
+      <div>
+        <h2 class="brief__h">{m.sectionLanguages}</h2>
         {viewCv.languages.map((l) => (
-          <p class="skill-group">
-            <span class="skill-group__label">{l.name}:</span>{" "}
-            {l.level === "native" ? m.levelNative : l.level}
+          <p class="brief__lang">
+            <strong>{l.name}</strong> {l.level === "native" ? m.levelNative : l.level}
           </p>
         ))}
-      </Section>
+      </div>
     </section>
+    {/* The same two actions at the end, where the reading stops. */}
+    <footer class="brief__end" data-reveal>
+      <div class="brief__actions">
+        <button class="btn btn--solid" type="button" popovertarget="cv-pick">{m.downloadCv}</button>
+        <a class="btn" href={LOCALE_PATHS[locale].home}>{t.guidedLink} <span aria-hidden="true">→</span></a>
+      </div>
+    </footer>
   </main>
 
   {/*
-    The privacy line. Clarity uses cookies and records sessions; saying so is
-    the least that is reasonable if EU traffic arrives (docs/05 §5). It lives
-    here and not in `Base.astro` because the analytics do not live there
-    either: if they are removed tomorrow, this line goes with them and is not
-    left orphaned on `/cv`.
+    The privacy line: Clarity records anonymous sessions, without cookies
+    (src/scripts/analytics.ts). It lives here and not in `Base.astro` because
+    the analytics do not live there either: if they are removed tomorrow,
+    this line goes with them and is not left orphaned on `/cv`.
 
-    Cloudflare Web Analytics is named separately because it is NOT the same:
-    it uses no cookies and identifies nobody. Putting both in one sentence
-    would suggest both record, and that would overstate in the direction that
-    does not apply.
+    Cloudflare Web Analytics is named separately because it records nothing
+    and identifies nobody. Putting both in one sentence would suggest both
+    record, and that would overstate in the direction that does not apply.
   */}
   <footer class="footer">
     <p>{m.footerPrivacyIntro}<a
@@ -379,3 +274,15 @@ const skillNameById = new Map(
         target="_blank">{m.footerPrivacyLinkText}</a>{m.footerPrivacyOutro}</p>
   </footer>
 </div>
+
+<script>
+  // Analytics first, in this same file and not a script of their own: Astro
+  // inlines a small script, and the CSP (public/_headers) allows no inline
+  // code but the landing's head script — Clarity would be blocked in
+  // production. `Clarity.init` cannot throw; `start()` can, and must not take
+  // the measurement with it.
+  import { startAnalytics } from "../scripts/analytics";
+  import { start } from "../scripts/brief/boot";
+  startAnalytics();
+  start();
+</script>

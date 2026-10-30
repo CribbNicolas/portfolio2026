@@ -1,0 +1,51 @@
+{
+  "schema_version": 8,
+  "id": "c8545098-6cb3-4400-b1ce-4fd628cbd8c8",
+  "project_id": "portfolio2026",
+  "topic": "landing-v2/copy",
+  "kind": "decision",
+  "status": "active",
+  "title": "Write landing copy to the research rules: a name, number or decision per sentence; limits after the proof; AI leads only in the hook",
+  "body": "Rules from the 2026-10-26 research, on top of CLAUDE.md's voice rules. The copy lives in src/lib/landing-copy.ts (ES first, EN translated).\n- Every sentence carries a proper name, a number or a decision. No adjectives about the person.\n- Open each proof chapter with who needed what, before the skill.\n- Numbers only from the dataset through formatMetric/formatMetricEnds (the '~'), never typed in; a TODO never becomes a headline.\n- State facts plainly, no humblebrag. Limits (Inglés A2) go plainly and only AFTER the proof; on /en/, near the contact path.\n- AI is framed as owned verification ('lo que entra al repo lo decido yo'), never the headline, with ONE exception decided by the author 2026-10-29: the hero hook leads with it ('Trabajo con agentes de código todos los días, y construí DeltaDictum para darles lo que el código no dice.'). Do not 'fix' the hook back, and do not extend the exception to other chapters. CLAUDE.md records it.\n- One line of text per beat inside pinned scenes; longer explanation goes to the free-scroll chapters.\n- Same facts in both languages: /en/ direct, short and literal; / keeps the dataset's rioplatense voice.\n- No 'hire me', no false scarcity, no skill bars, no logo wall, no testimonials or services slot while those collections are empty.\n- One CV label everywhere: 'Descargar CV' / 'Download CV'.",
+  "not_derivable": "These came from a deleted research report; CLAUDE.md carries only the general voice test, not the placement and AI-framing rules or why the hook is the exception.",
+  "triggers": [
+    {
+      "on": [
+        "edit",
+        "write"
+      ],
+      "paths": [
+        "src/lib/landing-copy.ts",
+        "src/components/v2/Landing.astro",
+        "src/scripts/v2/**"
+      ]
+    }
+  ],
+  "evidence": [
+    {
+      "type": "file",
+      "path": "src/lib/landing-copy.ts",
+      "sha256": "41eec21446dc1fb1938e741243b3a4143f36f565dda8a327522466a358d0b64a",
+      "summary": "Cited when this memory was saved."
+    },
+    {
+      "type": "file",
+      "path": "CLAUDE.md",
+      "sha256": "a973b75b2edfe0002ce133b18c3957af08e9b731e2fe892e64f1fc7eb7178705",
+      "summary": "Cited when this memory was saved."
+    }
+  ],
+  "origin": "user_explicit",
+  "replaces": "603b6458-fcb1-4700-a727-b51a6ded220b",
+  "revisit_when": [],
+  "review": {
+    "issues": [],
+    "batch": "landing-v2-stage-1-revisions",
+    "accepted": {
+      "by": "person",
+      "at": "2026-10-29T20:58:04.689Z"
+    }
+  },
+  "created": "2026-10-29T20:48:04.973Z",
+  "updated": "2026-10-29T20:58:04.744Z"
+}

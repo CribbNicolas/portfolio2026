@@ -1,0 +1,42 @@
+{
+  "schema_version": 8,
+  "id": "9afcb992-c7bd-4675-bab5-333229f84f44",
+  "project_id": "portfolio2026",
+  "topic": "ci/secrets",
+  "kind": "decision",
+  "status": "active",
+  "title": "Never add a deploy step or a Cloudflare token to GitHub Actions; Pages builds the repo on its own",
+  "body": "GitHub Actions only runs gates (content-validation.yml, version-gate.yml, flujo-de-ramas.yml, smoke-deploy.yml). It does not deploy: Cloudflare Pages pulls and builds `staging` and `main` itself. Consequence, and the reason to keep it this way: there is no Cloudflare token stored in GitHub, so nothing to rotate if a workflow log leaks. Earlier the site was built in Actions and the finished `dist/` uploaded to Pages; that was dropped once the build stopped needing Chromium. If a workflow seems to need Cloudflare API access, find another way (e.g. the smoke reads public URLs and /build.json) rather than adding a secret.",
+  "not_derivable": "The absence of a token is a deliberate security choice; code cannot show why something is missing.",
+  "triggers": [
+    {
+      "on": [
+        "edit",
+        "write"
+      ],
+      "paths": [
+        ".github/workflows/*.yml"
+      ]
+    }
+  ],
+  "evidence": [
+    {
+      "type": "file",
+      "path": ".github/workflows/smoke-deploy.yml",
+      "sha256": "9f96c635b5c604ee5289e992cadfeaf0ba1d45995778e77a31b6141c5ace8f40",
+      "summary": "Verifies the published site using only public URLs and /build.json."
+    }
+  ],
+  "origin": "user_explicit",
+  "replaces": null,
+  "revisit_when": [],
+  "review": {
+    "issues": [],
+    "accepted": {
+      "by": "dd",
+      "at": "2026-10-29T17:11:34.409Z"
+    }
+  },
+  "created": "2026-10-29T17:11:34.409Z",
+  "updated": "2026-10-29T17:11:34.503Z"
+}

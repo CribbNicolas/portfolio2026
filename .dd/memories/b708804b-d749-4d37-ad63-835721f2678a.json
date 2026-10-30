@@ -1,0 +1,56 @@
+{
+  "schema_version": 8,
+  "id": "b708804b-d749-4d37-ad63-835721f2678a",
+  "project_id": "portfolio2026",
+  "topic": "content/surfaces",
+  "kind": "decision",
+  "status": "active",
+  "title": "Treat cv-ats as the only CV: do not build a designed CV (CV-A) and do not delete the unrendered cv / cv-short surfaces",
+  "body": "Decided by the author 2026-10-29: `cv-ats` is the only CV, rendered by src/pages/cv.astro and src/pages/en/cv.astro and printed to the PDF. The designed CV-A (two columns, photo, colour, meant for WhatsApp/email/freelance clients) was dropped: one artifact means never wondering which one to send, and the WhatsApp/email reader gets the same PDF or the landing link. The `cv` and `cv-short` values of `Surface` in content/schema/content-schema.ts, and their rows in PRIORITY_CUTOFF / MAX_ACHIEVEMENTS_PER_ROLE in content/schema/resolve-view.ts, stay on purpose even though nothing renders them: removing them is a migration with no reader. Do not add a page, component or PDF for them, and do not prune them as dead code. The schema comment on `cv` still says \"2 pages, designed\": that describes the abandoned plan, not a pending task.",
+  "not_derivable": "The code shows cv and cv-short as live Surface values with cutoffs; nothing says they are intentionally dead, nor that a designed CV was considered and rejected.",
+  "triggers": [
+    {
+      "on": [
+        "edit",
+        "write"
+      ],
+      "paths": [
+        "content/schema/content-schema.ts",
+        "content/schema/resolve-view.ts",
+        "src/pages/cv.astro",
+        "src/pages/en/cv.astro",
+        "src/components/cv/**"
+      ]
+    }
+  ],
+  "evidence": [
+    {
+      "type": "file",
+      "path": "content/schema/content-schema.ts",
+      "sha256": "ded5323ced67229fdd0bec59d8f1b690fb0b59b55faba9f013ca8c16d33ce456",
+      "summary": "Surface union still lists \"cv\" (designed, 2 pages) and \"cv-short\"; no page renders them."
+    },
+    {
+      "type": "file",
+      "path": "content/schema/resolve-view.ts",
+      "sha256": "5ed9f16291c19d9b728f72c92c75567ec0591b65ab1010d2c17738f1944bd0de",
+      "summary": "PRIORITY_CUTOFF and MAX_ACHIEVEMENTS_PER_ROLE keep entries for cv and cv-short."
+    },
+    {
+      "type": "note",
+      "summary": "Author decision 2026-10-29: CV-A dropped, cv-ats is the only CV, cv/cv-short kept unrendered in the schema."
+    }
+  ],
+  "origin": "user_explicit",
+  "replaces": null,
+  "revisit_when": [],
+  "review": {
+    "issues": [],
+    "accepted": {
+      "by": "dd",
+      "at": "2026-10-29T17:11:37.319Z"
+    }
+  },
+  "created": "2026-10-29T17:11:37.319Z",
+  "updated": "2026-10-29T17:11:37.418Z"
+}

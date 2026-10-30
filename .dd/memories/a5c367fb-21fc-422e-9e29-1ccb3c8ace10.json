@@ -1,0 +1,53 @@
+{
+  "schema_version": 8,
+  "id": "a5c367fb-21fc-422e-9e29-1ccb3c8ace10",
+  "project_id": "portfolio2026",
+  "topic": "landing/brief-view",
+  "kind": "decision",
+  "status": "active",
+  "title": "The brief view (/brief, /en/brief) is the cv-ats CV on screen: same sections, the landing's dock, a still CV dialog, the blurred turning C, canonical to its landing",
+  "body": "Decided by the author 2026-10-29. The old landing lives on as the 'vista breve' / 'brief view' at /brief and /en/brief (src/pages/brief.astro, src/pages/en/brief.astro, src/components/HomeDocument.astro, src/styles/brief.css). Paths English in both locales; canonical to the locale's landing, out of the sitemap, no Open Graph, not in HREFLANG: do not change without the author.\nLook, per the author: as close as possible to the cv-ats PDF (same sections and cut) plus the projects, easy to read, key data set apart (figures via splitFigures, metrics, companies, core skills). Background: the landing's C, blurred into a glow, turning slowly, with a scroll-driven parallax — pure CSS (.brief__backdrop/.brief__ring, animation-timeline: scroll()), no canvas, no WebGL (the earlier wave field was replaced). Sections are soft translucent panels with NO borders (the boxed look was 'too hard'). Reveal-on-enter fades (src/scripts/brief/boot.ts), never scroll-tied. Same dock as the landing (src/styles/chrome.css); Download CV and 'Ver el recorrido guiado' buttons at the start and the end; the CV dialog is the landing's C with ESP/EN halves, STILL, as a native popover. Under reduced motion the C must not animate at all (tokens.css would otherwise spin it at 0.01 ms).",
+  "not_derivable": "The reading-first brief, the blurred C, borderless panels and the button placement were the author's instructions; the code shows the result, not which parts are requirements.",
+  "triggers": [
+    {
+      "on": [
+        "edit"
+      ],
+      "paths": [
+        "src/pages/brief.astro",
+        "src/pages/en/brief.astro",
+        "src/components/HomeDocument.astro",
+        "src/styles/brief.css",
+        "src/scripts/brief/boot.ts",
+        "astro.config.mjs"
+      ]
+    }
+  ],
+  "evidence": [
+    {
+      "type": "file",
+      "path": "src/components/HomeDocument.astro",
+      "sha256": "640e48b6cc2a322f2857bbe1c4e43b3ed36c0353abe1a4389623a9b6c6b60c84",
+      "summary": "Cited when this memory was saved."
+    },
+    {
+      "type": "file",
+      "path": "src/styles/brief.css",
+      "sha256": "b9afba03ab93db909c54dcbf647b00b17d3a964c49fe4fcc3fde8b6434a463b1",
+      "summary": "Cited when this memory was saved."
+    }
+  ],
+  "origin": "user_explicit",
+  "replaces": "dc3d97ac-2a05-4855-b39e-ebccdfe7c167",
+  "revisit_when": [],
+  "review": {
+    "issues": [],
+    "batch": "landing-v2-review",
+    "accepted": {
+      "by": "person",
+      "at": "2026-10-30T00:33:01.210Z"
+    }
+  },
+  "created": "2026-10-30T00:18:54.181Z",
+  "updated": "2026-10-30T00:33:01.279Z"
+}

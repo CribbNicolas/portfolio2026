@@ -1,0 +1,60 @@
+{
+  "schema_version": 8,
+  "id": "965b5d39-e4d6-4312-8adf-562387e27986",
+  "project_id": "portfolio2026",
+  "topic": "editor/zod",
+  "kind": "trap",
+  "status": "active",
+  "title": "Bump zod only in its own PR gated by editor/schema-adapter.test.ts; zod 4 rewrites the _def introspection the editor relies on",
+  "body": "The editor derives its form from the Zod schema via `_def`, internal API outside semver. package.json declares `zod: ^3.23.8` and what is installed is 3.25.76 — minors of internal churn arrived without anyone deciding (measured 2026-08-27). The choice made was to keep the range and confine every `_def` access to editor/schema-adapter.ts, whose tests assert the shapes it expects, instead of pinning the exact version. So: never read `_def` outside that file; treat any zod bump (lockfile refresh included) as its own PR with schema-adapter tests and `pnpm run test:editor` as the gate. Zod 4 changed introspection substantially: that migration will hurt, and the adapter is what keeps it to one file. If the range keeps causing surprise churn, pinning the exact version is the fallback.",
+  "not_derivable": "The pin-vs-range decision, the measured drift and the zod 4 warning are not in code comments.",
+  "triggers": [
+    {
+      "on": [
+        "edit",
+        "write"
+      ],
+      "paths": [
+        "package.json",
+        "pnpm-lock.yaml",
+        "editor/schema-adapter.ts",
+        "editor/descriptors.ts"
+      ]
+    },
+    {
+      "on": [
+        "run"
+      ],
+      "commands": [
+        "pnpm update",
+        "pnpm add zod"
+      ]
+    }
+  ],
+  "evidence": [
+    {
+      "type": "file",
+      "path": "editor/schema-adapter.ts",
+      "sha256": "94a1866d38135b6e6941d896a6b41ec39a8f94bd63e7664591f463579102abd1",
+      "summary": "The only file that reads zod's _def; header explains isolation."
+    },
+    {
+      "type": "file",
+      "path": "package.json",
+      "sha256": "ad64290a4378821c49c99fc14330ac7fe842f0e7a8508e6d83d81c283f040fdc",
+      "summary": "zod ^3.23.8 range."
+    }
+  ],
+  "origin": "user_explicit",
+  "replaces": null,
+  "revisit_when": [],
+  "review": {
+    "issues": [],
+    "accepted": {
+      "by": "dd",
+      "at": "2026-10-29T17:11:39.944Z"
+    }
+  },
+  "created": "2026-10-29T17:11:39.944Z",
+  "updated": "2026-10-29T17:11:40.045Z"
+}

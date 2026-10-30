@@ -1,0 +1,49 @@
+{
+  "schema_version": 8,
+  "id": "d4aea12d-2d5a-459b-a99d-a88e7d84fde1",
+  "project_id": "portfolio2026",
+  "topic": "landing-v2/deltadictum",
+  "kind": "trap",
+  "status": "active",
+  "title": "Never publish DeltaDictum benchmark numbers on the site: the benchmark is not public, even though the supermem repo has them",
+  "body": "The DeltaDictum benchmark is NOT public. Do not show anything from it: recorded run counts, the requirements-met rates with vs without DD, task or project counts, hook latency, or the benchmark's finding against DD. That holds even though C:\\dev\\supermem\\docs\\benchmarks has the numbers and an earlier iteration showed them (the author removed them, 2026-10-26). The race in dd.ts is labelled 'ilustrativo' and claims no numbers. Only public facts from DD's README, CHANGELOG and site are allowed: the npm version, the supported harnesses, the first-commit → 1.0 dates, the license. The installation block was also removed in favour of one link to DD's docs. This matters most when DD moves out of the hard-coded constants in src/pages/v2.astro into content.es.json/content.en.json as a Project (a pending TODO): the comment that guards this today does not travel with the data, and metric 'source's must point at public files only.",
+  "not_derivable": "The guard is a comment in v2.astro that is lost when the data moves into the dataset; the private numbers are one directory away in the supermem repo.",
+  "triggers": [
+    {
+      "on": [
+        "edit",
+        "write"
+      ],
+      "paths": [
+        "src/pages/v2.astro",
+        "src/scripts/v2/dd.ts",
+        "content/data/content.es.json",
+        "content/data/content.en.json"
+      ]
+    }
+  ],
+  "evidence": [
+    {
+      "type": "file",
+      "path": "src/pages/v2.astro",
+      "sha256": "b931ac1565b288156fecbd8697fcbf9828cfbf66a174d16f30da83a791671908",
+      "summary": "Comment above the dd constants: the benchmark is NOT public, so nothing from it appears here"
+    },
+    {
+      "type": "note",
+      "summary": "Spike iteration 7 (2026-10-26): author removed every benchmark number; do not bring it back."
+    }
+  ],
+  "origin": "user_explicit",
+  "replaces": null,
+  "revisit_when": [],
+  "review": {
+    "issues": [],
+    "accepted": {
+      "by": "dd",
+      "at": "2026-10-29T17:11:44.913Z"
+    }
+  },
+  "created": "2026-10-29T17:11:44.913Z",
+  "updated": "2026-10-29T17:11:44.978Z"
+}

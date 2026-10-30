@@ -1,0 +1,41 @@
+---
+/**
+ * Cloudflare Web Analytics and Microsoft Clarity, for the reader-facing pages
+ * only: the landings (`/`, `/en/`) and the brief views (`/brief`,
+ * `/en/brief`). Never from `Base.astro`: `/cv` and `/en/cv` stay at zero
+ * JavaScript because Browser Rendering prints the PDF from them.
+ *
+ * One component instead of the same two tags pasted into four pages: a copy
+ * that drifts is how one page ends up measured and its twin not.
+ *
+ * The beacon token is NOT a secret: it travels in the HTML of every visit,
+ * same as the Clarity ID. It is read from a variable anyway, to rotate it or
+ * switch the measurement off without touching code. Undefined (dev, any
+ * unconfigured build) means no tag at all.
+ */
+const cloudflareBeacon: string | undefined = import.meta.env.PUBLIC_CF_BEACON_TOKEN;
+---
+
+{/*
+  By hand and NOT from the Pages dashboard: enabling it there injects the
+  snippet into EVERY page at the edge, `/cv` included, after the build — where
+  `no-client-js.check.ts` cannot see it.
+
+  No Subresource Integrity: Cloudflare updates the beacon server-side and a
+  fixed hash would break on its first new version. What bounds the risk is
+  where it runs: pages with no forms and no credentials.
+*/}
+{cloudflareBeacon && (
+  <script
+    is:inline
+    type="module"
+    src="https://static.cloudflareinsights.com/beacon.min.js"
+    data-cf-beacon={JSON.stringify({ token: cloudflareBeacon })}
+  />
+)}
+
+{/*
+  Clarity starts from each page's own script (Landing.astro, HomeDocument
+  .astro), not from a <script> here: Astro would inline a script this small,
+  and the CSP allows no inline code but the landing's head script.
+*/}

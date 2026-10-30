@@ -1,0 +1,43 @@
+{
+  "schema_version": 8,
+  "id": "640eed2d-0b19-45d9-81cb-a2b201d56fc4",
+  "project_id": "portfolio2026",
+  "topic": "i18n/english-voice",
+  "kind": "decision",
+  "status": "active",
+  "title": "Draft the English CV by hand from the Spanish and review it as prose; never ship machine-translated text into content.en.json",
+  "body": "The English version (`content/data/content.en.json`, /en/, /en/cv, /en/cv.pdf) was originally refused because translating a CV tends to produce translated English, worse than written English. It was accepted on 2026-09-02 on one condition: discipline, not avoidance. Spanish stays canonical; English is drafted by hand from it, not machine-translated and committed; the lock flags every Spanish field that moved. No tool judges translation quality (the lock, `scripts/i18n.check.ts` and the type system cannot tell a good sentence from a bad one), so the English diff is reviewed as prose, and the voice rules of the Spanish copy (no filler, no claims someone else with the same stack could write) apply to the English too.",
+  "not_derivable": "The original objection and the condition under which English was accepted are history, not code.",
+  "triggers": [
+    {
+      "on": [
+        "edit",
+        "write"
+      ],
+      "paths": [
+        "content/data/content.en.json",
+        "content/schema/messages.ts"
+      ]
+    }
+  ],
+  "evidence": [
+    {
+      "type": "file",
+      "path": "content/data/content.en.json",
+      "sha256": "2e929ce290d0b99e55c89ca528308a05a3075f463fc01871d6d564d4d93d94df",
+      "summary": "English CV dataset, translated from content.es.json."
+    }
+  ],
+  "origin": "user_explicit",
+  "replaces": null,
+  "revisit_when": [],
+  "review": {
+    "issues": [],
+    "accepted": {
+      "by": "dd",
+      "at": "2026-10-29T17:12:18.801Z"
+    }
+  },
+  "created": "2026-10-29T17:12:18.801Z",
+  "updated": "2026-10-29T17:12:18.899Z"
+}

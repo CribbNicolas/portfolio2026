@@ -3,8 +3,7 @@
  * The page Cloudflare Pages serves when a route does not exist.
  *
  * It exists to fix a soft 404: without a `dist/404.html`, Pages returned
- * `200 text/html` for any made-up route (closed #1, measured on
- * 2026-08-25). A crawler asking for a broken URL and receiving "all good, there
+ * `200 text/html` for any made-up route (measured on 2026-08-25). A crawler asking for a broken URL and receiving "all good, there
  * is a page here" treats the site as low quality. Astro emits this page as
  * `dist/404.html` and Pages serves it with the right status, no further config.
  *
@@ -35,7 +34,6 @@ const DESTINATIONS = (locale: Locale) => {
   const home = LOCALE_PATHS[locale].home;
   const anchors = ANCHORS[locale];
   return [
-    { href: `${home}#${anchors.map}`, label: m.errorDestMap },
     { href: `${home}#${anchors.projects}`, label: m.errorDestProjects },
     { href: `${home}#${anchors.cv}`, label: m.errorDestCv },
   ];
@@ -92,7 +90,7 @@ const DESTINATIONS = (locale: Locale) => {
     font-weight: 800;
     line-height: 1;
     letter-spacing: -0.04em;
-    color: var(--accent);
+    color: var(--accent-ink);
     font-variant-numeric: tabular-nums;
   }
 
@@ -142,7 +140,7 @@ const DESTINATIONS = (locale: Locale) => {
 
   .error__destinations a:hover,
   .error__back a:hover {
-    color: var(--accent);
+    color: var(--accent-ink);
   }
 
   .error__back {

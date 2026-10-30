@@ -1,7 +1,7 @@
 /**
  * Gate: every PR entering `develop` has to raise the `package.json` version.
  *
- * `package.json` is the ONLY source of truth for versioning (docs/08). That
+ * `package.json` is the ONLY source of truth for versioning. That
  * claim only holds while the number changes when the code changes, and that is
  * not sustained by discipline: it is sustained by a check that breaks the PR.
  *

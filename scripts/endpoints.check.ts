@@ -4,7 +4,7 @@
  * `/cv` has eleven tests over the PDF, the landing has nine checks, the bundle
  * has a budget. `/cv.json` and `/llms.txt` had nothing — and a real
  * `formatRoleTitle` bug already got through into `llms.txt` once, recorded in
- * PR #1 (`07-technical-debt.md` §8).
+ * PR #1.
  *
  * What is verified here is what breaks silently: JSON that stops parsing, a
  * contract key that disappears, and text assembled from a field that came back
@@ -157,6 +157,37 @@ for (const [locale, llms, path] of [
       assert.ok(llms.includes(`- ${label}: `), `${path} does not print the "${label}" group`);
       assert.ok(llms.includes(skills[0]!.name), `"${skills[0]!.name}" is missing from the "${label}" group`);
     }
+  });
+
+  test(`every internal link in ${path} resolves in the build`, async () => {
+    // An agent follows these links; a 404 is worse than no link. It once
+    // linked four `/projects/<slug>` case pages that never existed. The
+    // site's origin is the one its own `cv.json` link carries, so this needs
+    // no copy of SITE_URL.
+    const links = [...llms.matchAll(/\]\(([^)\s]+)\)/g)].map((m) => m[1]!);
+    const jsonLink = links.find((l) => l.endsWith(LOCALE_PATHS[locale].json));
+    assert.ok(jsonLink, `${path} has no link to ${LOCALE_PATHS[locale].json}`);
+    const origin = new URL(jsonLink).origin;
+
+    const broken: string[] = [];
+    for (const link of links.filter((l) => l.startsWith(origin))) {
+      const url = new URL(link);
+      const segments = url.pathname.replace(/^\/|\/$/g, "").split("/").filter(Boolean);
+      // `/` and `/en/` are directories; `/cv.pdf` is a file.
+      const file = /\.[a-z]+$/.test(url.pathname)
+        ? join(DIST, ...segments)
+        : join(DIST, ...segments, "index.html");
+      let body: string;
+      try {
+        body = await readFile(file, "utf8");
+      } catch {
+        broken.push(`${link} (no ${file})`);
+        continue;
+      }
+      const id = url.hash.slice(1);
+      if (id && !body.includes(`id="${id}"`)) broken.push(`${link} (no #${id} in ${file})`);
+    }
+    assert.deepEqual(broken, [], `${path} links to what the build does not have:\n  ${broken.join("\n  ")}`);
   });
 
   test(`no dataset TODO reaches ${path} as a bare field`, () => {

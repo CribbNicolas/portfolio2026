@@ -1,0 +1,908 @@
+---
+/**
+ * The landing: one continuous scroll that ends in the CV download. Shared by
+ * `/` and `/en/`, parameterized by the view's own `locale` (the same reason
+ * `HomeDocument.astro` gives: two copies of this markup drift on day three,
+ * and a separate `locale` prop makes "English copy over the Spanish view" a
+ * typo away).
+ *
+ * What it is NOT responsible for, and why: everything that has to be a direct
+ * child of `<Base>` — the JSON-LD (`slot="head"`) and the analytics — stays
+ * in the calling page.
+ *
+ * Words come from two places only: the dataset (facts, through `@content`)
+ * and `src/lib/landing-copy.ts` (the page's own sentences, per locale). The
+ * chapter scripts read anything they print from the markup, never from a
+ * string of their own. Decisions behind the chapters live in DeltaDictum
+ * (topics landing-v2/*).
+ *
+ * Chapter order: opening + who I am, the RPPL map, the seat map, DeltaDictum,
+ * the journey, how I work, the CV, the close. The CV chapter is the plain-HTML
+ * home of every fact the dataset publishes (`portfolio` surface: every role
+ * and achievement, the projects, the education), and of the `ANCHORS` ids
+ * `#cv`/`#proyectos`; `#mapa` is the map chapter. It sits before the close
+ * and not between Seats and DeltaDictum: that seam is the CRT interception,
+ * one continuous scene.
+ */
+import type { ContentView, Locale } from "@content";
+import {
+  content,
+  formatDateRange,
+  formatDuration,
+  formatMetric,
+  formatMetricLabeled,
+  formatMetricLines,
+  formatMetricEnds,
+  formatRoleTitle,
+  formatRoleTitleParts,
+  formatSeniority,
+  formatYearMonth,
+  groupedSkills,
+  MESSAGES,
+  pdfFilename,
+} from "@content";
+import { RING_PATH, N_PATH, N_WEIGHT, BRAND_VIEWBOX } from "../../lib/brand";
+import { ANCHORS, LOCALE_PATHS, OTHER_LOCALE, anchorScrollCss } from "../../lib/anchors";
+import { LANDING } from "../../lib/landing-copy";
+import { ciSteps } from "../../lib/ci-steps";
+import { glueShortWords, glueTitle } from "../../lib/highlight";
+import Logo from "../Logo.astro";
+import CvPick from "../CvPick.astro";
+import SkillIcon from "./SkillIcon.astro";
+
+interface Props {
+  view: ContentView;
+}
+
+const { view } = Astro.props;
+const locale = view.locale;
+const { identity } = view;
+const m = MESSAGES[locale];
+const t = LANDING[locale];
+const paths = LOCALE_PATHS[locale];
+const anchors = ANCHORS[locale];
+const other: Locale = OTHER_LOCALE[locale];
+const years = formatSeniority(view.yearsOfExperience, locale);
+
+const achievements = view.experience.flatMap((r) => r.achievements);
+const byId = (id: string) => {
+  const a = achievements.find((x) => x.id === id);
+  if (!a) throw new Error(`landing: achievement ${id} not in the portfolio view`);
+  return a;
+};
+
+// --- 1. Opening ---------------------------------------------------------------
+const nameParts = identity.fullName.split(" ");
+const displayName = [nameParts[0], nameParts[2]];
+
+// --- 2. Who I am --------------------------------------------------------------
+// The manifesto is split into words so the scroll can light them one by one.
+const manifestoWords = t.manifesto(identity.preferredName, years).split(" ");
+const sk = view.skills;
+const plates = [
+  { id: "front", copy: t.plates.front, skills: [...sk.language, ...sk.frontend, ...sk.data].slice(0, 11) },
+  { id: "back", copy: t.plates.back, skills: [...sk.backend, ...sk.cms].slice(0, 6) },
+  { id: "ship", copy: t.plates.ship, skills: [...sk.infra, ...sk.tooling, ...sk.testing, ...sk.practice].slice(0, 8) },
+];
+
+// --- 3. The map ---------------------------------------------------------------
+const map = byId("dinkum-mapbox");
+const fix = byId("dinkum-mapbox-fix");
+const index = byId("dinkum-mapbox-index");
+// The counter runs up to the dataset's own figure; the "~" of the estimate is
+// shown by `formatMetric` in the label underneath, never typed here.
+const counterTarget = Number((map.metric?.delta ?? "0").replace(/\D/g, ""));
+const [kBrief, kScale, kBroke, kDecision, kResult] = t.peakKickers;
+const beats = [
+  { kicker: kBrief, title: t.peakTitles.brief, body: map.text.short },
+  { kicker: kScale, title: (map.metric && formatMetricLabeled(map.metric, locale)) ?? "", body: t.peakBodies.scale, counter: true },
+  { kicker: kBroke, title: t.peakTitles.broke, body: fix.text.short },
+  { kicker: kDecision, title: t.peakTitles.decision, body: index.text.short },
+  {
+    kicker: kResult,
+    title: (index.metric && formatMetric(index.metric, locale)) ?? "",
+    // "de ~5 s" over "a ~500 ms", one half per line: never "de ~5 s a"
+    // over a lone "~500 ms".
+    lines: index.metric ? formatMetricLines(index.metric, locale) : null,
+    body: t.peakBodies.result,
+    // Each bar carries its own end of the metric, "~" included.
+    bars: index.metric ? formatMetricEnds(index.metric) : null,
+  },
+];
+
+// --- 4. Nothing gets lost -----------------------------------------------------
+// Beats with an empty body take the achievement's own text.
+const seatBodies = [byId("dinkum-wp").text.short, "", byId("dinkum-woo-sync").text.short, ""];
+const seatBeats = t.seatBeats.map((b, i) => ({ ...b, body: b.body || seatBodies[i] }));
+
+// An illustrative hall: rows on an arc facing the stage. Deterministic, so the
+// "sold" pattern is the same on every build.
+const ROWS = "ABCDEFGHIJ";
+const PICK_ROW = 5;
+const seats: { x: number; y: number; id: string; sold: boolean; pick: number | null }[] = [];
+for (let i = 0; i < ROWS.length; i++) {
+  const r = 150 + i * 27;
+  const count = Math.floor((r * 1.25) / 21);
+  const mid = Math.floor(count / 2);
+  for (let j = 0; j < count; j++) {
+    const a = (j / (count - 1) - 0.5) * 1.25;
+    const id = `${ROWS[i]}${j + 1}`;
+    const pick = i === PICK_ROW && j >= mid - 1 && j < mid + 3 ? j - (mid - 1) : null;
+    const sold = pick === null && ((i * 7 + j * 13) % 9 < 2 || (i > 6 && (i + j) % 5 === 0));
+    seats.push({ x: 400 + r * Math.sin(a), y: -70 + r * Math.cos(a), id, sold, pick });
+  }
+}
+const picked = seats.filter((s) => s.pick !== null).sort((a, b) => a.pick! - b.pick!);
+
+// --- 5. DeltaDictum -----------------------------------------------------------
+// The project is the dataset's; the facts below are public ones from DD's own
+// CHANGELOG and README. The benchmark is NOT public: nothing from it appears.
+const ddProject = view.projects.find((p) => p.id === "deltadictum");
+if (!ddProject) throw new Error("landing: the deltadictum project is not in the portfolio view");
+const linkOf = (kind: string) => {
+  const l = ddProject.links.find((x) => x.kind === kind);
+  if (!l) throw new Error(`landing: deltadictum has no ${kind} link`);
+  return l.url;
+};
+const dd = {
+  repo: linkOf("repo"),
+  docs: linkOf("website"),
+  year: ddProject.start.slice(0, 4),
+  // From DD's CHANGELOG (1.1.0, 2026-10-22). Not a dataset field: it moves
+  // with every DD release, and the dataset stores what stays true.
+  version: "1.1.0",
+  prompt: "add a test for the store's close() method",
+};
+
+// --- 6. The journey -----------------------------------------------------------
+// Adaptability as a dated trail, not an adjective. Each stage lists the skills
+// whose FIRST recorded use is an achievement of that stage — derived from
+// `skillIds`, so the toolbox only grows with work that is in the dataset.
+const skillName = new Map(Object.values(view.skills).flat().map((s) => [s.id, s.name]));
+const seen = new Set<string>();
+const journey = [...view.experience]
+  .sort((a, b) => a.start.localeCompare(b.start))
+  .map((r) => {
+    const fresh = [...new Set(r.achievements.flatMap((a) => a.skillIds))].filter((id) => !seen.has(id));
+    fresh.forEach((id) => seen.add(id));
+    return {
+      company: r.company,
+      title: formatRoleTitle(r, locale),
+      range: formatDateRange(r.start, r.end, locale),
+      duration: formatDuration(r.durationMonths, locale),
+      year: r.start.slice(0, 4),
+      context: r.context.short,
+      wins: r.achievements.slice(0, 2).map((a) => a.text.short),
+      fresh: fresh.map((id) => ({ id, name: skillName.get(id) ?? id })),
+    };
+  });
+
+// --- 7. How I work ------------------------------------------------------------
+// The panel is THIS repo's CI, read from the workflow file in its order. A step
+// the copy table does not describe fails the build instead of shipping blank.
+const gates = ciSteps().map((cmd) => {
+  const what = t.gates[cmd];
+  if (!what) throw new Error(`landing: CI step "${cmd}" has no line in landing-copy.ts gates`);
+  return { cmd, what };
+});
+const languagesLine = view.languages.map((l) => `${l.name} ${l.level === "native" ? m.levelNative : l.level}`).join(" · ");
+
+// --- 8. The CV ------------------------------------------------------------------
+const roles = view.experience;
+const skillGroups = groupedSkills(view.skills, locale);
+const statusLabel: Partial<Record<string, string>> = {
+  "in-progress": m.projectStatusInProgress,
+  prototype: m.projectStatusPrototype,
+};
+
+// --- 9. Close -------------------------------------------------------------------
+// The closing line is the dataset's own (last sentence of `summary.long`).
+const closingLine = (identity.summary.long ?? identity.summary.short).trim().split("\n").at(-1)!.split(". ").at(-1)!;
+// Both PDFs, each named from ITS dataset's `updatedAt`: using one date for
+// both would mislabel whichever is not this page's own. The C's two halves
+// are fixed in both locales: Spanish left, English right.
+const datasets = { es: await content.getDataset("es"), en: await content.getDataset("en") };
+const cvLinks = (["es", "en"] as const).map((lang) => ({
+  lang,
+  short: lang === "es" ? "ESP" : "EN",
+  href: LOCALE_PATHS[lang].pdf,
+  file: pdfFilename(lang, datasets[lang].updatedAt),
+  label: t.cvHalfLabel[lang],
+}));
+---
+
+<style is:inline set:html={anchorScrollCss()} />
+
+<div class="loader" data-loader aria-hidden="true">
+  <svg class="loader__mark" viewBox={BRAND_VIEWBOX} width="120" height="120">
+    <path data-ring-fill d={RING_PATH} fill="var(--accent)" />
+    <path data-ring-outline d={RING_PATH} fill="none" stroke="var(--accent)" stroke-width="0.6" />
+    <path
+      data-ring-n
+      d={N_PATH}
+      fill="none"
+      stroke="var(--ink)"
+      stroke-width={N_WEIGHT}
+      stroke-linecap="round"
+      stroke-linejoin="round"
+    />
+  </svg>
+  <p class="loader__pct mono" data-loader-pct>0%</p>
+</div>
+
+<nav class="dock" aria-label={t.dockLabel}>
+  <a class="dock__logo" href="#top"><Logo size={22} /></a>
+  <button class="dock__cv" type="button" popovertarget="cv-pick" data-cv-open>{m.downloadCv}</button>
+  <a class="dock__lang" href={LOCALE_PATHS[other].home} hreflang={other} lang={other}>{t.otherLocaleShort}<span class="visually-hidden"> · {t.otherLocaleName}</span></a>
+</nav>
+
+{/*
+  Without JavaScript the chapters are their scenes half built, one under the
+  other: a bar sends the reader to the brief view (author, 2026-10-30). A
+  bar, not a redirect: the link-preview crawlers run no script and some
+  follow a meta refresh, and would trade this page's Open Graph card for the
+  brief view, which has none and is canonical to here.
+*/}
+{/* Both PDFs with no script: the dock's and the hero's "Descargar CV"
+    open this native popover; with JS, cvmodal.ts plays the animated C. */}
+<CvPick cvLinks={cvLinks} kicker={`${m.downloadCv} · ${t.cvModalPick}`} closeLabel={m.closeDialog} />
+
+<noscript>
+  <p class="nojs">{t.noJs} <a href={paths.brief}>{t.briefLink} <span aria-hidden="true">→</span></a></p>
+</noscript>
+
+{/*
+  Where the seats chapter switches off, like an old screen: bars close in
+  to a line, the line to a dot. On that black the page intercepts the
+  reader the way DD intercepts an agent (seats.ts). Outside <main> on
+  purpose: a pinned ancestor would trap a fixed layer.
+*/}
+<div class="crt" data-crt aria-hidden="true">
+  <i class="crt__bar crt__bar--top"></i><i class="crt__bar crt__bar--bottom"></i>
+  <i class="crt__bar crt__bar--left"></i><i class="crt__bar crt__bar--right"></i>
+  <i class="crt__line" data-crt-line></i>
+  <i class="crt__dot" data-crt-dot></i>
+  <div class="ddx" data-ddx>
+    <p class="ddx__cmd" data-ddx-cmd><span data-ddx-type>Scroll(DeltaDictum)</span><span class="ddx__caret" data-ddx-caret></span></p>
+    <p class="ddx__l gray" data-ddx-l>⎿  PreToolUse:Scroll hook additional context:</p>
+    <p class="ddx__l gray nest" data-ddx-l>DD - project knowledge ({t.ddHookScope}):</p>
+    <p class="ddx__mem nest" data-ddx-mem>{t.ddHook}</p>
+    <p class="ddx__go mono" data-ddx-go>{t.keepScrolling} <span aria-hidden="true">↓</span></p>
+  </div>
+</div>
+
+{/*
+  "Descargar CV" from anywhere: the close's C and its two halves, pulled up
+  into the middle over a dark scrim (cvmodal.ts copies them in here).
+*/}
+<div class="cvmodal" data-cvmodal hidden>
+  <div class="cvmodal__scrim" data-cvmodal-scrim></div>
+  <div class="cvmodal__body" role="dialog" aria-modal="true" aria-label={m.downloadCv}>
+    <p class="mono cvmodal__kicker" data-cvmodal-kicker>{m.downloadCv} · {t.cvModalPick}</p>
+    <div class="cvmodal__slot" data-cvmodal-slot></div>
+  </div>
+  <button class="cvmodal__x" type="button" data-cvmodal-close aria-label={m.closeDialog}>×</button>
+</div>
+
+<main id="top">
+  {/* --- 1 + 2. Opening and who I am: ONE pinned stage ------------------ */}
+  {/*
+    The C grows over the opening until the whole screen is its color, and
+    "Quién soy" is revealed ON that color. Both layers live in one stage so
+    the hand-off is a single timeline, not two sections meeting at a seam.
+  */}
+  <section class="intro" data-intro aria-label={t.heroAria}>
+    <div class="intro__stage" data-intro-stage>
+      <div class="hero" data-hero>
+        <div class="hero__copy">
+          <p class="hero__meta mono" data-hero-fade>{identity.searchTitle} · {identity.brandTitle}</p>
+          {/* The name is read once, from the heading's label: the lines are split
+              into letters for the entrance (SplitText, aria: "none"). */}
+          <h1 class="hero__name" data-hero-name aria-label={displayName.join(" ")}>
+            {displayName.map((part) => <span class="hero__line" aria-hidden="true">{part}</span>)}
+          </h1>
+          <p class="hero__hook" data-hero-fade>{t.hook}</p>
+          <p class="hero__facts mono" data-hero-fade>
+            {years} · {identity.location.city}, {identity.location.country} · {identity.location.timezone}
+          </p>
+          <div class="hero__actions" data-hero-fade>
+            <button class="btn btn--solid" type="button" popovertarget="cv-pick" data-cv-open>{m.downloadCv}</button>
+            <a class="btn" href={`mailto:${identity.contact.email}`}>{t.writeMe}</a>
+          </div>
+        </div>
+
+        {/*
+          The guided version is opt-in by scrolling; the brief one is one
+          click away. Which cue shows is decided by the INPUT, not the
+          width (v2.css): a touch screen gets the finger, a mouse the wheel.
+        */}
+        <div class="hero__choice" data-hero-fade>
+          <p class="hero__cue">
+            <span class="cue cue--wheel" aria-hidden="true"><i></i></span>
+            <svg class="cue cue--swipe" viewBox="0 0 24 24" aria-hidden="true">
+              {/* Pointing hand, after Lucide's "pointer" (ISC). */}
+              <g>
+                <path d="M22 14a8 8 0 0 1-8 8" />
+                <path d="M18 11v-1a2 2 0 0 0-2-2a2 2 0 0 0-2 2" />
+                <path d="M14 10V9a2 2 0 0 0-2-2a2 2 0 0 0-2 2v1" />
+                <path d="M10 9.5V4a2 2 0 0 0-2-2a2 2 0 0 0-2 2v10" />
+                <path d="M18 11a2 2 0 1 1 4 0v3a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15" />
+              </g>
+            </svg>
+            <span>{t.guidedCue}</span>
+          </p>
+          <span class="hero__alt">
+            <span class="hero__or mono" aria-hidden="true">{t.or}</span>
+            <a class="hero__simple" href={paths.brief}>{t.briefLink} <span aria-hidden="true">→</span></a>
+          </span>
+        </div>
+      </div>
+
+      <div class="hero__ringwrap" data-ring-wrap aria-hidden="true">
+        <svg class="hero__ring" data-hero-ring viewBox={BRAND_VIEWBOX}>
+          <path d={RING_PATH} fill="var(--accent)" />
+        </svg>
+      </div>
+
+      <div class="about" data-about>
+        <div class="about__copy">
+          <p class="mono about__kicker">{t.aboutKicker}</p>
+          <p class="about__manifesto" data-manifesto>
+            {manifestoWords.map((w) => <span class="w">{w} </span>)}
+          </p>
+          <p class="about__summary" data-about-summary>{identity.summary.short}</p>
+        </div>
+
+        <div class="stack" data-stack aria-hidden="true">
+          <div class="stack__iso" data-stack-iso>
+            {
+              plates.map((p, i) => (
+                <div class={`plate plate--${p.id}`} data-plate={i}>
+                  <div class="plate__face">
+                    <p class="plate__label">
+                      <span class="mono">{String(i + 1).padStart(2, "0")}</span> {p.copy[0]}
+                      <em>{p.copy[1]}</em>
+                    </p>
+                    <ul class="plate__chips">
+                      {p.skills.map((s) => (
+                        <li>
+                          <SkillIcon id={s.id} />
+                          {s.name}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+              ))
+            }
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  {/* --- 3. The map, the peak -------------------------------------------- */}
+  <section id={anchors.map} class="peak chapter" data-peak aria-label={t.peakAria}>
+    <div class="peak__stage chapter__stage" data-peak-stage>
+      <div class="peak__world" data-peak-world>
+        <div class="peak__tilt" data-peak-tilt>
+          <canvas class="peak__canvas" data-peak-canvas aria-hidden="true"></canvas>
+        </div>
+      </div>
+      {/* The C from "Quién soy", still covering the screen: it shrinks away to reveal the map. */}
+      <div class="peak__ringwrap" data-peak-ringwrap aria-hidden="true">
+        <svg class="peak__ring" data-peak-ring viewBox={BRAND_VIEWBOX}>
+          <path d={RING_PATH} fill="var(--accent)" />
+        </svg>
+      </div>
+
+      <ol class="beats">
+        {
+          beats.map((b, i) => (
+            <li class="beat" data-beat={i}>
+              <p class="beat__kicker mono">
+                <span>{String(i + 1).padStart(2, "0")}</span> {b.kicker}
+              </p>
+              <h2 class="beat__title">
+                {/* The counter starts at 0 and peak.ts runs it up: a screen
+                    reader would announce "0". It reads the metric instead. */}
+                {b.counter ? (
+                  <>
+                    <span data-counter data-target={counterTarget} aria-hidden="true">0</span>
+                    <span class="visually-hidden">{b.title}</span>
+                  </>
+                ) : b.lines ? (
+                  b.lines.map((line) => <span class="beat__line">{line}</span>)
+                ) : glueTitle(b.title)}
+              </h2>
+              {b.counter && <p class="beat__label mono" aria-hidden="true">{b.title}</p>}
+              <p class="beat__body">{glueShortWords(b.body)}</p>
+              {b.bars && (
+                <div class="bars" aria-hidden="true">
+                  <div class="bars__row">
+                    <span class="mono">{t.barsBefore}</span>
+                    <span class="bars__track"><i data-bar-before></i><b class="mono" data-bar-val>{b.bars.before}</b></span>
+                  </div>
+                  <div class="bars__row">
+                    <span class="mono">{t.barsAfter}</span>
+                    <span class="bars__track"><i data-bar-after></i><b class="mono" data-bar-val>{b.bars.after}</b></span>
+                  </div>
+                </div>
+              )}
+            </li>
+          ))
+        }
+      </ol>
+
+      <div class="rail" aria-hidden="true">
+        {beats.map((_, i) => <i data-rail={i}></i>)}
+      </div>
+      <p class="chapter__note mono">{t.peakNote}</p>
+    </div>
+  </section>
+
+  {/* --- 4. Nothing gets lost -------------------------------------------- */}
+  <section class="seats chapter" data-seats aria-label={t.seatsAria}>
+    <div class="chapter__stage" data-seats-stage>
+      <div class="seats__visual">
+        <div class="hall3d" data-hall3d>
+        <svg class="hall" viewBox="0 0 800 340" aria-hidden="true" data-hall>
+          <rect class="hall__stage" x="300" y="6" width="200" height="22" rx="4" />
+          <text class="hall__stage-label" x="400" y="21">{t.stage}</text>
+          {
+            seats.map((s) => (
+              <circle
+                class:list={["seat", { "seat--sold": s.sold }]}
+                cx={s.x.toFixed(1)}
+                cy={s.y.toFixed(1)}
+                r="7.2"
+                data-pick={s.pick ?? undefined}
+              />
+            ))
+          }
+        </svg>
+        </div>
+
+        <div class="flow">
+          <div class="lane" data-lane>
+            <span class="lane__label mono" data-pile-label data-concurrent={t.laneConcurrent} data-serial={t.laneSerial}>AsyncPile</span>
+            {picked.map((s, i) => <span class="token mono" data-token={i}>+{s.id}</span>)}
+            <span class="token token--lost mono" data-token-lost>nonce ✕</span>
+          </div>
+          <div class="cart" data-cart>
+            <p class="mono">{t.cart}</p>
+            <ul>
+              {picked.map((s, i) => <li data-cart-item={i}>{t.row} {s.id[0]} · {s.id.slice(1)}</li>)}
+            </ul>
+          </div>
+        </div>
+
+        <p class="sync mono" data-sync>
+          {t.syncMap} <b data-sync-map>0</b> · {t.syncCart} <b data-sync-cart>0</b>
+        </p>
+
+        <div class="surfaces" data-surfaces>
+          {
+            t.surfaces.map((label) => (
+              <div class="surface">
+                <p class="mono">{label}</p>
+                <p>{picked.map((s) => s.id).join(" · ")}</p>
+              </div>
+            ))
+          }
+        </div>
+      </div>
+
+      <ol class="beats">
+        {
+          seatBeats.map((b, i) => (
+            <li class="beat" data-seat-beat={i}>
+              <p class="beat__kicker mono">
+                <span>{String(i + 1).padStart(2, "0")}</span> {b.kicker}
+              </p>
+              <h2 class="beat__title">{glueTitle(b.title)}</h2>
+              <p class="beat__body">{glueShortWords(b.body)}</p>
+            </li>
+          ))
+        }
+      </ol>
+
+      <div class="rail" aria-hidden="true">
+        {seatBeats.map((_, i) => <i data-seat-rail={i}></i>)}
+      </div>
+      <p class="chapter__note mono">{t.seatsNote}</p>
+    </div>
+  </section>
+
+  {/* --- 5. DeltaDictum: the second hook ------------------------------- */}
+  {/*
+    It lands on the black the seats chapter switched off into (the .crt
+    layer, outside <main>), so it opens on nothing: then the name, the race
+    with and without DD, and the same session annotated. The terminals are
+    in English in both locales on purpose: they ARE Claude Code sessions.
+  */}
+  <section class="dd chapter" data-dd aria-label={t.ddAria}>
+    <div class="chapter__stage dd__stage" data-dd-stage>
+      <div class="ddm" data-ddm>
+        <p class="mono ddm__kicker" data-ddm-kicker><span>{t.ownProject}</span> · {dd.year} · v{dd.version}</p>
+        <h2 class="ddm__name" data-ddm-name>{ddProject.name}.</h2>
+        <p class="ddm__claim" data-ddm-claim>
+          {t.ddClaim[0].split(" ").map((w) => <span class="w">{w} </span>)}
+          <em>{t.ddClaim[1].split(" ").map((w) => <span class="w">{w} </span>)}</em>
+        </p>
+        <p class="ddm__lede" data-ddm-lede>{t.ddLede}</p>
+      </div>
+
+      <div class="ddrace" data-ddrace>
+        <p class="ddrace__ask mono" data-ddrace-ask>
+          {t.ddRaceAsk} · <span>{t.ddRaceIllustrative}</span>
+        </p>
+        {
+          (["off", "on"] as const).map((side) => (
+            <figure class={`ddterm ddterm--${side}`} data-race={side}>
+              <figcaption class="ddterm__cap">{side === "off" ? t.ddCaptionOff : t.ddCaptionOn}</figcaption>
+              <div class="ddterm__chrome" aria-hidden="true">
+                <i></i><i></i><i></i><span>~/my-project — claude{side === "on" ? " · DD" : ""}</span>
+              </div>
+              <div class="ddterm__screen">
+                <p class="tl prompt" data-l="prompt">&gt; <span data-type>{dd.prompt}</span></p>
+                <p class="tl gap" data-l="answer"><span class="white">⏺</span> I'll add the test in tests/store.test.js.</p>
+                {side === "on" && (
+                  <div class="tl" data-l="hook">
+                    <p class="gray" data-note-anchor="2">⎿  PreToolUse:Edit hook additional context:</p>
+                    <p class="gray nest">DD - project knowledge (tests/store.test.js):</p>
+                    <p class="nest memory" data-note-anchor="1">[TRAP] Close stores in t.after - a failing assertion otherwise leaves the handle open and node --test never ends.</p>
+                  </div>
+                )}
+                <p class="tl gap" data-l="update"><span class="green">⏺</span> <strong>Update</strong>(tests/store.test.js)</p>
+                <div class="tl" data-l="diff">
+                  <p class="nest add">+  const store = openStore(dir);</p>
+                  {side === "on" ? (
+                    <p class="nest add">+  t.after(() =&gt; store.close());</p>
+                  ) : (
+                    <>
+                      <p class="nest add">+  assert.equal(store.get("k"), "v");</p>
+                      <p class="nest add">+  store.close();</p>
+                    </>
+                  )}
+                </div>
+                <p class="tl gap" data-l="run"><span class="green">⏺</span> <strong>Bash</strong>(node --test)</p>
+                {side === "off" ? (
+                  <p class="tl nest bad" data-l="result">⎿  ✗ 1 failing · close() never ran · still running…</p>
+                ) : (
+                  <p class="tl nest ok" data-l="result" data-note-anchor="3">⎿  ✓ node --test exited · the store closed in t.after</p>
+                )}
+              </div>
+              {/* The outcome, big enough to read from across the room. */}
+              {side === "off" ? (
+                <p class="tl ddterm__verdict bad" data-l="verdict">
+                  <span class="spin" data-spin>⠋</span> {t.ddHung} · <span data-clock>0:00</span>
+                </p>
+              ) : (
+                <p class="tl ddterm__verdict ok" data-l="verdict">✓ {t.ddDone}</p>
+              )}
+            </figure>
+          ))
+        }
+        <ol class="ddnotes" aria-label={t.ddHowAria}>
+          {
+            t.ddNotes.map((n) => (
+              <li class="ddnote" data-note={n.kicker}>
+                <span class="ddnote__n mono">{n.kicker}</span>
+                <h3>{n.title}</h3>
+                <p>{n.body}</p>
+              </li>
+            ))
+          }
+        </ol>
+        <svg class="ddlinks" data-ddlinks aria-hidden="true"></svg>
+      </div>
+
+      <p class="ddgo mono" data-dd-go>{t.keepScrolling} <span aria-hidden="true">↓</span></p>
+      <div class="rail" aria-hidden="true">
+        {[0, 1].map((i) => <i data-dd-rail={i}></i>)}
+      </div>
+    </div>
+
+    <div class="ddcta">
+      <p class="ddcta__line" data-dd-reveal>{t.ddCtaLine}</p>
+      <p class="dd__pill mono" data-dd-reveal>
+        <span class="live" aria-hidden="true"></span>{t.ddHarnesses}
+      </p>
+      <ul class="dd__checks" data-dd-reveal>
+        {
+          t.ddChecks.map((c) => (
+            <li>
+              <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 5 5 9-10" /></svg>
+              {c}
+            </li>
+          ))
+        }
+      </ul>
+      <p class="dd__links" data-dd-reveal>
+        <a class="btn btn--solid" href={dd.repo}>{t.ddGithub}</a>
+        <a class="btn" href={dd.docs}>{t.ddDocs}</a>
+      </p>
+      <ul class="dd__facts" data-dd-reveal>
+        <li><b>v{dd.version}</b><span>{t.ddFacts.npm}</span></li>
+        <li><b>3 + 2</b><span>{t.ddFacts.harnesses}</span></li>
+        <li><b>{t.ddFacts.dates[0]}</b><span>{t.ddFacts.dates[1]}</span></li>
+        <li><b>PolyForm Shield</b><span>{t.ddFacts.license}</span></li>
+      </ul>
+    </div>
+  </section>
+
+  {/* --- 6. The journey ------------------------------------------------- */}
+  <section class="journey" data-journey aria-label={t.journeyKicker}>
+    <header class="journey__head">
+      <p class="mono journey__kicker">{t.journeyKicker}</p>
+      <h2>{t.journeyTitle(years, journey.length)}</h2>
+    </header>
+
+    <div class="journey__body">
+      <ol class="journey__stages">
+        <li class="journey__line" aria-hidden="true"><i data-journey-line></i></li>
+        {
+          journey.map((r, i) => (
+            <li class="stage" data-stage={i} data-year={r.year}>
+              <span class="stage__dot" aria-hidden="true"></span>
+              <p class="mono stage__when">{r.range} · {r.duration}</p>
+              <h3 class="stage__company">{r.company}</h3>
+              <p class="stage__title">{r.title}</p>
+              <p class="stage__context">{r.context}</p>
+              <ul class="stage__wins">
+                {r.wins.map((w) => (
+                  <li>{w}</li>
+                ))}
+              </ul>
+            </li>
+          ))
+        }
+      </ol>
+
+      <aside class="toolbox" aria-hidden="true">
+        <div class="toolbox__sticky">
+          <p class="mono">{t.toolboxIn}</p>
+          <p class="toolbox__year" data-toolbox-year>{journey[0]?.year}</p>
+          <p class="mono"><span data-toolbox-count>0</span> {t.toolboxTools}</p>
+          <ul class="toolbox__chips">
+            {
+              journey.flatMap((r, i) =>
+                r.fresh.map((s) => (
+                  <li data-chip-stage={i}>
+                    <SkillIcon id={s.id} />
+                    {s.name}
+                  </li>
+                )),
+              )
+            }
+          </ul>
+        </div>
+      </aside>
+    </div>
+  </section>
+
+  {/* --- 7. How I work ---------------------------------------------------- */}
+  {/*
+    The calm chapter: little motion, a lot of proof. The proof is THIS site:
+    the panel lists the CI steps that really run on every push, read from
+    .github/workflows/content-validation.yml, and they tick as you read.
+    Limits come last, after the proof (the pratfall effect only helps
+    someone already seen as competent).
+  */}
+  <section class="work" data-work aria-label={t.workKicker}>
+    <div class="work__body">
+      <div class="work__principles">
+        <header class="work__head">
+          <p class="mono work__kicker">{t.workKicker}</p>
+          <h2>{t.workTitle}</h2>
+        </header>
+        {
+          t.principles.map((p, i) => (
+            <article class="principle" data-principle={i}>
+              <p class="mono principle__num">{p.kicker}</p>
+              <h3>{p.title}</h3>
+              <p>{p.body}</p>
+            </article>
+          ))
+        }
+        <article class="principle principle--limits" data-principle={t.principles.length}>
+          <p class="mono principle__num">{t.limitsKicker}</p>
+          <h3>{languagesLine}.</h3>
+          <p>{t.limitsBody(identity.location.city, identity.location.timezone)}</p>
+        </article>
+      </div>
+
+      <section class="pipeline" aria-label={t.pipelineAria}>
+        <div class="pipeline__sticky">
+          <p class="mono pipeline__title">{t.pipelineTitle} <b class="pipeline__count"><span data-gate-count>0</span>/{gates.length}</b></p>
+          <ol class="pipeline__list">
+            {
+              gates.map((g) => (
+                <li class="gate" data-gate>
+                  <span class="gate__mark" aria-hidden="true"></span>
+                  <code>{g.cmd}</code>
+                  <span>{g.what}</span>
+                </li>
+              ))
+            }
+          </ol>
+          {/* Phones only: the list collapses to marks, so the check being run
+              is spelled out here — otherwise the count climbs with nothing
+              to say what it counts. */}
+          <p class="pipeline__now" data-gate-now aria-hidden="true"></p>
+          <p class="pipeline__deploy mono" data-deploy><span aria-hidden="true">●</span> {t.pipelineDeploy}</p>
+        </div>
+      </section>
+    </div>
+  </section>
+
+  {/* --- 8. The CV -------------------------------------------------------- */}
+  {/*
+    Every fact the dataset publishes, as plain HTML with no motion: what a
+    crawler, an agent or a reader in a hurry gets without the chapters.
+    `portfolio` surface, so nothing is cut (the PDF is `cv-ats`, cut to two
+    pages). Free scroll, like the two chapters before it.
+  */}
+  <section id={anchors.cv} class="cvx" aria-labelledby="cvx-title">
+    <header class="cvx__head">
+      {/* In English the kicker and the heading are the same word ("CV"):
+          shown once (author, 2026-10-29). */}
+      {t.cvKicker !== m.cvTitle && <p class="mono cvx__kicker">{t.cvKicker}</p>}
+      <h2 id="cvx-title">{m.cvTitle}</h2>
+      <p class="cvx__lede">{t.cvLede}</p>
+    </header>
+
+    <div class="cvx__grid">
+      <div class="cvx__main">
+        <h3 class="cvx__h">{m.sectionExperience}</h3>
+        {
+          roles.map((r) => (
+            <article class="cvx__role">
+              {/* The PDF's shape (RoleBlock.astro, author 2026-10-29): the
+                  heading is title and company; the concurrency and the
+                  client go on the dated line; a metric keeps its label. */}
+              <h4>{formatRoleTitleParts(r, locale).title} · {r.company}</h4>
+              <p class="mono cvx__when">
+                {formatDateRange(r.start, r.end, locale)} · {formatDuration(r.durationMonths, locale)}
+                {r.location && <> · {r.location}</>}
+                {formatRoleTitleParts(r, locale).concurrent && <> · {formatRoleTitleParts(r, locale).concurrent}</>}
+                {r.clientDescription && <> · {r.clientDescription}</>}
+              </p>
+              <p class="cvx__context">{r.context.short}</p>
+              <ul class="cvx__wins">
+                {r.achievements.map((a) => (
+                  <li>
+                    {a.text.short}
+                    {a.metric && <> — <span class="cvx__metric">{formatMetricLabeled(a.metric, locale)}</span></>}
+                  </li>
+                ))}
+              </ul>
+            </article>
+          ))
+        }
+
+        <h3 class="cvx__h" id={anchors.projects}>{m.projectsTitle}</h3>
+        {
+          view.projects.map((p) => (
+            <article class="cvx__project">
+              <h4>
+                {p.name}
+                {p.client && <span class="cvx__client"> · {p.client}</span>}
+                {statusLabel[p.status] && <span class="mono cvx__status">{statusLabel[p.status]}</span>}
+              </h4>
+              <p>{p.problem.short}</p>
+              <p>{p.solution.short}</p>
+              <p class="cvx__outcome">{p.outcome.short}</p>
+              {p.skillIds.length > 0 && (
+                <p class="mono cvx__stack">{p.skillIds.map((id) => skillName.get(id) ?? id).join(" · ")}</p>
+              )}
+              {p.links.length > 0 && (
+                <p class="cvx__links">
+                  {p.links.map((l) => (
+                    <a href={l.url} rel="noopener">{l.label}</a>
+                  ))}
+                </p>
+              )}
+            </article>
+          ))
+        }
+      </div>
+
+      <div class="cvx__side">
+        <h3 class="cvx__h">{m.sectionSkills}</h3>
+        <dl class="cvx__skills">
+          {
+            skillGroups.map((g) => (
+              <>
+                <dt>{g.label}</dt>
+                <dd>{g.skills.map((s) => s.name).join(", ")}</dd>
+              </>
+            ))
+          }
+        </dl>
+
+        <h3 class="cvx__h">{m.sectionEducation}</h3>
+        {
+          view.education.map((e) => (
+            <div class="cvx__edu">
+              <p>{e.degree}{e.field && <> — {e.field}</>}</p>
+              <p class="mono">
+                {e.institution}
+                {e.end && <> · {e.start ? formatDateRange(e.start, e.end, locale) : formatYearMonth(e.end, locale)}</>}
+                {e.status === "partial" && <> · {m.studyPartial}</>}
+                {e.status === "in-progress" && <> · {m.studyInProgress}</>}
+              </p>
+            </div>
+          ))
+        }
+
+        <h3 class="cvx__h">{m.sectionLanguages}</h3>
+        <p>{languagesLine}</p>
+      </div>
+    </div>
+  </section>
+
+  {/* --- 9. Close --------------------------------------------------------- */}
+  {/*
+    Peak-end: the ending is half of what is remembered. The C that opened the
+    page comes back, turns once, and its hole BECOMES the download button,
+    split in two halves: the CV in Spanish and in English. Not pinned: the C
+    enters while the section rises, so there is never an empty screen.
+  */}
+  <section class="close" data-close aria-label={t.closeAria}>
+    <div class="close__stage">
+      <div class="close__ringwrap">
+        <svg class="close__ring" data-close-ring viewBox={BRAND_VIEWBOX} aria-hidden="true">
+          <path d={RING_PATH} fill="var(--accent)" />
+        </svg>
+        <div class="close__cv" data-close-cv>
+          {
+            cvLinks.map((cv) => (
+              <a class:list={["close__half", `close__half--${cv.lang}`]} href={cv.href} download={cv.file} hreflang={cv.lang} aria-label={cv.label}>
+                <span class="close__half-lang">{cv.short}</span>
+                <span class="close__half-file mono">PDF</span>
+              </a>
+            ))
+          }
+        </div>
+      </div>
+
+      <div class="close__copy" data-close-copy>
+        <p class="mono close__kicker">{m.downloadCv} · {t.closePick}</p>
+        <p class="close__line">{closingLine}</p>
+        <ul class="close__contact">
+          <li><a href={`mailto:${identity.contact.email}`}>{identity.contact.email}</a></li>
+          {identity.links.map((l) => (
+            <li><a href={l.url} rel="me noopener">{l.label}</a></li>
+          ))}
+        </ul>
+      </div>
+    </div>
+
+    <footer class="foot">
+      <span>{identity.fullName} · {identity.location.city}, {identity.location.country}</span>
+      <span class="foot__agents">
+        {t.forAgents} <a href={paths.llms}>llms.txt</a> · <a href={paths.json}>cv.json</a>
+      </span>
+      {/* The privacy line lives with the analytics, not in Base.astro: if
+          they go, it goes with them instead of being orphaned on /cv. */}
+      <p class="foot__privacy">{m.footerPrivacyIntro}<a
+          href="https://privacy.microsoft.com/privacystatement"
+          rel="noopener noreferrer"
+          target="_blank">{m.footerPrivacyLinkText}</a>{m.footerPrivacyOutro}</p>
+    </footer>
+  </section>
+</main>
+
+<script>
+  // Analytics first, in this same file and not a script of their own: Astro
+  // inlines a small script, and the CSP (public/_headers) allows no inline
+  // code but the landing's head script — Clarity would be blocked in
+  // production. `Clarity.init` cannot throw; `start()` can, and must not take
+  // the measurement with it.
+  import { startAnalytics } from "../../scripts/analytics";
+  import { start } from "../../scripts/v2/main";
+  startAnalytics();
+  start();
+</script>

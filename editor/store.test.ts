@@ -1,6 +1,6 @@
 /**
- * The layer that reads and writes. The spec singles it out for tests because it
- * is where a datum gets lost.
+ * The layer that reads and writes. It is singled out for tests because it is
+ * where a datum gets lost.
  *
  * Every test runs against a COPY of the real dataset in a temp directory. The
  * committed file is never touched — a test that writes to the project's single

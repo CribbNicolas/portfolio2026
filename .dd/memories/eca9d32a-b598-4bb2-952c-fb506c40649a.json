@@ -1,0 +1,49 @@
+{
+  "schema_version": 8,
+  "id": "eca9d32a-b598-4bb2-952c-fb506c40649a",
+  "project_id": "portfolio2026",
+  "topic": "privacy/phone",
+  "kind": "trap",
+  "status": "active",
+  "title": "Never add \"cv-ats\" to identity.contact.publishPhoneOn: that surface is the public /cv HTML page, not only the PDF",
+  "body": "`publishPhoneOn` (content/data/content.*.json, enforced by rule 8 in content/schema/resolve-view.ts) lists the surfaces allowed to emit the phone. It is `[]` today on purpose. It is tempting to add `cv-ats` so the downloaded PDF carries a phone number, but the PDF and the `/cv` + `/en/cv` HTML pages render the SAME surface (the PDF is printed from that page by functions/_handler.ts), and the landing's #cv section also uses cv-ats. Adding it once put the phone on the open web. If a phone ever has to reach a recruiter, it needs a surface that is not served as a public page; do not reuse cv-ats. Same reasoning applies to `streetAddress`.",
+  "not_derivable": "The schema lets any Surface be listed; nothing in code says cv-ats was tried there and leaked the phone onto the public HTML page.",
+  "triggers": [
+    {
+      "on": [
+        "edit",
+        "write"
+      ],
+      "paths": [
+        "content/data/content.*.json",
+        "content/schema/resolve-view.ts"
+      ]
+    }
+  ],
+  "evidence": [
+    {
+      "type": "file",
+      "path": "content/schema/resolve-view.ts",
+      "sha256": "5ed9f16291c19d9b728f72c92c75567ec0591b65ab1010d2c17738f1944bd0de",
+      "summary": "Rule 8: phone only leaves when publishPhoneOn includes the surface."
+    },
+    {
+      "type": "file",
+      "path": "content/data/content.es.json",
+      "sha256": "800ec82c5a2df6189546749f94547d11fd8f4cebb5f0a734cf11e630c33fb5d8",
+      "summary": "identity.contact.publishPhoneOn is []."
+    }
+  ],
+  "origin": "user_explicit",
+  "replaces": null,
+  "revisit_when": [],
+  "review": {
+    "issues": [],
+    "accepted": {
+      "by": "dd",
+      "at": "2026-10-29T17:11:48.586Z"
+    }
+  },
+  "created": "2026-10-29T17:11:48.586Z",
+  "updated": "2026-10-29T17:11:48.686Z"
+}

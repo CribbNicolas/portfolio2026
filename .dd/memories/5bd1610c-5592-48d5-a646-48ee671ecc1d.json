@@ -1,0 +1,55 @@
+{
+  "schema_version": 8,
+  "id": "5bd1610c-5592-48d5-a646-48ee671ecc1d",
+  "project_id": "portfolio2026",
+  "topic": "i18n/dataset",
+  "kind": "decision",
+  "status": "active",
+  "title": "Keep content.en.json a complete dataset, not an overlay, and keep the lock as one hash per Spanish field, not a per-file date",
+  "body": "content/data/content.en.json is a full dataset with locale \"en\": same shape, same ids, dates, skillIds, visibility, confidence and employmentType as content.es.json, with only human text differing. It passes datasetSchema and checkRules exactly like the Spanish one, which is what lets resolveView, the editor, validate and format:data work unchanged; json-source.ts only adds it to the DATASETS map, and a third language is one more file plus a messages.ts column. An overlay (Spanish base + English patches) would force every one of those consumers to learn to merge. Staleness is tracked by content/data/translation.lock.json, one hash per Spanish string keyed by id-based paths (scripts/i18n-fields.ts), not by comparing updatedAt per file: a per-file date says the whole translation is stale the moment any Spanish field changes, while a per-field hash names WHICH text drifted. Same pattern as og.lock.json.",
+  "not_derivable": "The code shows two full datasets and a per-field lock but not the rejected alternatives (overlay, per-file updatedAt) or why they lost; that lived only in the deleted 2026-09-02 cv-en-pdf spec.",
+  "triggers": [
+    {
+      "on": [
+        "edit",
+        "write"
+      ],
+      "paths": [
+        "content/source/json-source.ts",
+        "scripts/i18n-fields.ts",
+        "scripts/i18n-lock.ts",
+        "scripts/i18n.check.ts"
+      ]
+    }
+  ],
+  "evidence": [
+    {
+      "type": "file",
+      "path": "content/source/json-source.ts",
+      "sha256": "eb23d02ba3a0629100543406868262e73bce1123b5aa1cb061c93ecb8391d006",
+      "summary": "DATASETS map holds one full dataset per locale; unsupported locale throws."
+    },
+    {
+      "type": "file",
+      "path": "scripts/i18n.check.ts",
+      "sha256": "deeacbcd637f4f5e0669ca6023375901eec80bb85f78d7db590e00c7569fb813",
+      "summary": "Enforces structural parity between the two full datasets and per-field staleness against the lock."
+    },
+    {
+      "type": "note",
+      "summary": "Rationale from the deleted docs/superpowers/specs/2026-09-02-cv-en-pdf-design.md §2 and §3.1."
+    }
+  ],
+  "origin": "user_explicit",
+  "replaces": null,
+  "revisit_when": [],
+  "review": {
+    "issues": [],
+    "accepted": {
+      "by": "dd",
+      "at": "2026-10-29T17:11:41.632Z"
+    }
+  },
+  "created": "2026-10-29T17:11:41.632Z",
+  "updated": "2026-10-29T17:11:41.735Z"
+}

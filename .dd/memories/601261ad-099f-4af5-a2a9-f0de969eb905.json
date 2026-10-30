@@ -1,0 +1,58 @@
+{
+  "schema_version": 8,
+  "id": "601261ad-099f-4af5-a2a9-f0de969eb905",
+  "project_id": "portfolio2026",
+  "topic": "identity/titles",
+  "kind": "decision",
+  "status": "active",
+  "title": "Put identity.searchTitle (Desarrollador Full Stack) first wherever a machine or a search reads the title; brandTitle (Product Engineer) only after it",
+  "body": "Two identities that do not mix: `searchTitle` = `Desarrollador Full Stack`, what recruiters type into Computrabajo, Bumeran or LinkedIn Recruiter; `brandTitle` = `Product Engineer` (\"I build complete web products, not screens\"), for About, portfolio and conversation. In LatAm nobody searches for \"Product Engineer\", so the searchable title starts the chain and the brand comes after: putting the brand first gains character and loses appearances, and with freelance + local market appearances are the asset. Apply it to <title> tags, the CV header, JSON-LD `jobTitle`, /llms.txt, the OG card and the hero meta line (src/pages/v2.astro included). Do not swap the order or replace searchTitle with brandTitle for style.",
+  "not_derivable": "jsonld.test only pins jobTitle; the market reason, and that the order is a rule for every surface rather than a per-file choice, is nowhere in code.",
+  "triggers": [
+    {
+      "on": [
+        "edit",
+        "write"
+      ],
+      "paths": [
+        "src/pages/index.astro",
+        "src/pages/en/index.astro",
+        "src/pages/cv.astro",
+        "src/pages/en/cv.astro",
+        "src/pages/v2.astro",
+        "src/components/HomeDocument.astro",
+        "src/components/cv/Header.astro",
+        "src/lib/jsonld.ts",
+        "src/lib/llms-txt.ts",
+        "scripts/og-data.ts",
+        "scripts/og-template.ts"
+      ]
+    }
+  ],
+  "evidence": [
+    {
+      "type": "file",
+      "path": "src/lib/jsonld.ts",
+      "sha256": "3879fa0561f5c14ab867232d859b30d6a16bd263273a1d238ee5596bc3db82db",
+      "summary": "jobTitle: identity.searchTitle."
+    },
+    {
+      "type": "file",
+      "path": "src/lib/llms-txt.ts",
+      "sha256": "c9687140d2d99e28c9f0038141960f962d213fb001516db9f774296cedd86e40",
+      "summary": "Emits searchTitle (brandTitle) in that order."
+    }
+  ],
+  "origin": "user_explicit",
+  "replaces": null,
+  "revisit_when": [],
+  "review": {
+    "issues": [],
+    "accepted": {
+      "by": "dd",
+      "at": "2026-10-29T17:11:43.171Z"
+    }
+  },
+  "created": "2026-10-29T17:11:43.171Z",
+  "updated": "2026-10-29T17:11:43.271Z"
+}

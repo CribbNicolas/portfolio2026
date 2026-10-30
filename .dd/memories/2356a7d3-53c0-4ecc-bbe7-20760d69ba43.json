@@ -1,0 +1,43 @@
+{
+  "schema_version": 8,
+  "id": "2356a7d3-53c0-4ecc-bbe7-20760d69ba43",
+  "project_id": "portfolio2026",
+  "topic": "landing-v2/chapters",
+  "kind": "failed_approach",
+  "status": "superseded",
+  "title": "Do not bring back the Audiences (Venn of set operators) chapter for adsmovil-audiencias: the author built it and rejected it",
+  "body": "On 2026-10-26 `src/pages/v2.astro` had an 'Audiences' chapter (src/scripts/v2/aud.ts, plain scroll) between Seats and DeltaDictum, built from the adsmovil-audiencias achievement (priority 1, otherwise unused). It had a sticky Venn diagram of edad / rubro / localidad; each text step switched the operator (AND, OR, XOR, NOT, then (edad AND rubro) OR localidad), the region filled, 170 illustrative dots lit up and a count followed. The author did not like it, and aud.ts was deleted. The slot for a second career highlight stays OPEN: propose a different treatment rather than the same Venn/operator visual. Also: the other repos in C:\\dev (KEDO, Project-Patriark, Orquesta, IntelliForm, Merchan7…) are not in the dataset, and none gets a chapter unless the author picks it.",
+  "not_derivable": "aud.ts was deleted with no trace in the code; only the deleted decision log recorded that this was tried and rejected.",
+  "triggers": [
+    {
+      "on": [
+        "edit",
+        "write"
+      ],
+      "paths": [
+        "src/pages/v2.astro",
+        "src/scripts/v2/main.ts",
+        "src/scripts/v2/*.ts"
+      ]
+    }
+  ],
+  "evidence": [
+    {
+      "type": "note",
+      "summary": "Spike iterations 6–7 (2026-10-26): Audiences chapter built, rejected by the author, aud.ts deleted."
+    }
+  ],
+  "origin": "user_explicit",
+  "replaces": null,
+  "revisit_when": [],
+  "review": {
+    "issues": [],
+    "batch": "docs-migration",
+    "accepted": {
+      "by": "person",
+      "at": "2026-10-29T17:24:10.461Z"
+    }
+  },
+  "created": "2026-10-29T17:12:19.331Z",
+  "updated": "2026-10-29T20:58:04.103Z"
+}

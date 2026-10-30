@@ -1,0 +1,56 @@
+{
+  "schema_version": 8,
+  "id": "2d4e9c22-12b1-4d3f-8315-ded4e864c41c",
+  "project_id": "portfolio2026",
+  "topic": "release/version",
+  "kind": "decision",
+  "status": "active",
+  "title": "Bump package.json.version by hand in every PR into develop; never expose it in outputs or bump it on promotion",
+  "body": "package.json is the ONLY version declaration and nothing consumes it (not /cv.json, /llms.txt or a meta tag). Exposing it would be a contract with no counterpart; add it only when a real consumer exists, and then DERIVE it from package.json at build time, never hand-write a second copy.\nBump at develop because that is where changes enter one at a time; versioning at staging would give a batch one number. develop->staging and staging->main carry the number unchanged, so production shows the version verified in preview.\npatch = a fix, nothing reads differently; minor = something new (section, endpoint, datum); major = something existing changes shape (a URL goes away, a /cv.json field renamed).\nBy hand because patch/minor/major is a semantic call. Rejected: a bot committing the bump (needs a write token on a protected branch and leaves a commit the source lacks -> conflict every merge); deriving from conventional commits (depends on every message being right, adds a dependency). Check before opening the PR: `git fetch origin develop && pnpm run test:version`.",
+  "not_derivable": "The rejected automation options, the bump semantics and the 'do not expose' rule are not in code.",
+  "triggers": [
+    {
+      "on": [
+        "edit",
+        "write"
+      ],
+      "paths": [
+        "package.json",
+        "scripts/version.ts",
+        "scripts/version-bump.check.ts",
+        ".github/workflows/version-gate.yml",
+        "src/pages/cv.json.ts",
+        "src/lib/llms-txt.ts"
+      ]
+    },
+    {
+      "on": [
+        "run"
+      ],
+      "commands": [
+        "pnpm run test:version",
+        "gh pr create"
+      ]
+    }
+  ],
+  "evidence": [
+    {
+      "type": "file",
+      "path": "scripts/version-bump.check.ts",
+      "sha256": "5dad75d7bdfd2dd13c9aad63297b2c1d2c693d15f3fce78ecdd5c5c1533feb24",
+      "summary": "Gate: PR version strictly greater than develop's."
+    }
+  ],
+  "origin": "user_explicit",
+  "replaces": null,
+  "revisit_when": [],
+  "review": {
+    "issues": [],
+    "accepted": {
+      "by": "dd",
+      "at": "2026-10-29T17:11:48.924Z"
+    }
+  },
+  "created": "2026-10-29T17:11:48.924Z",
+  "updated": "2026-10-29T17:11:49.020Z"
+}

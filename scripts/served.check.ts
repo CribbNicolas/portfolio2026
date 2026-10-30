@@ -10,7 +10,7 @@
  * Analytics from the Pages dashboard injects its beacon into the WHOLE site on
  * the next deploy. That would put JavaScript on `/cv`, which is where Browser
  * Rendering prints the PDF from, and all five checks would stay green because
- * `dist/` did not change (docs/05 §3 step 8).
+ * `dist/` did not change.
  *
  * It runs from `smoke-deploy.yml`, after every deploy, against the real URL.
  *
@@ -20,6 +20,8 @@
 
 import { test } from "node:test";
 import assert from "node:assert/strict";
+import { createHash } from "node:crypto";
+import { LANDING_HEAD_SCRIPT } from "../src/lib/landing-head";
 
 const SITE = process.env.SITE?.replace(/\/+$/, "");
 
@@ -63,7 +65,7 @@ for (const path of PRINTED_PAGES) {
       [],
       `the served ${path} loads JS: ${external.join(", ")}. The dist/ can be clean and ` +
         "this still happen: something injected it after the build. Suspect Web " +
-        "Analytics enabled from the Pages dashboard (docs/05 §3 step 8).",
+        "Analytics enabled from the Pages dashboard.",
     );
   });
 
@@ -118,6 +120,28 @@ test("the landing carries its security headers", async () => {
 
   for (const header of ["strict-transport-security", "permissions-policy", "x-content-type-options"]) {
     assert.ok(res.headers.get(header), `the served landing has no \`${header}\``);
+  }
+});
+
+test("the served CSP lets the landing's head script run", async () => {
+  // Without it the landing never gets its `js` class and falls back to the
+  // still layout, with every gate in dist/ green: the CSP only exists once
+  // Pages serves it. The script must be the constant, byte for byte, and the
+  // served policy must carry its hash (src/lib/landing-head.ts).
+  for (const path of ["/", "/en/"]) {
+    const res = await get(path);
+    const html = await res.text();
+    const csp = res.headers.get("content-security-policy") ?? "";
+    assert.ok(html.includes(`<script>${LANDING_HEAD_SCRIPT}</script>`), `the served ${path} lost its head script`);
+    const hash = `'sha256-${createHash("sha256").update(LANDING_HEAD_SCRIPT).digest("base64")}'`;
+    assert.ok(csp.includes(hash), `the served ${path} CSP does not allow the head script (${hash})`);
+  }
+});
+
+test("the brief views are served", async () => {
+  for (const path of ["/brief", "/en/brief"]) {
+    const res = await get(path);
+    assert.equal(res.status, 200, `${path} returned ${res.status}`);
   }
 });
 

@@ -1,0 +1,51 @@
+{
+  "schema_version": 8,
+  "id": "a7cf053b-5e9b-4734-b48d-ca96acc01ff9",
+  "project_id": "portfolio2026",
+  "topic": "content/services",
+  "kind": "decision",
+  "status": "active",
+  "title": "Keep `services` empty and build no services section: availability lives in the last paragraph of identity.summary.long",
+  "body": "Decided by the author 2026-10-29: no services catalogue. The author takes any web development job, employed or freelance, and a list of three services would turn away the fourth. That availability, plus location (Rosario), remote/hybrid and what the author looks for, is written in the LAST paragraph of `identity.summary.long` in content/data/content.es.json (English mirror in content.en.json). Consequences: `services` stays `[]` (do not seed it with placeholders), there is no price range to define because there is no service to price, and a \"Servicios\" landing section is not pending work. The `Service` interface in content/schema/content-schema.ts stays only so nothing has to be migrated if this changes. What IS still open is where that last summary paragraph renders (an About section).",
+  "not_derivable": "An empty services array and an unused Service type look like unfinished work; the code cannot say the catalogue was rejected or where the availability text lives instead.",
+  "triggers": [
+    {
+      "on": [
+        "edit",
+        "write"
+      ],
+      "paths": [
+        "content/data/content.*.json",
+        "content/schema/content-schema.ts",
+        "src/components/HomeDocument.astro",
+        "src/pages/index.astro",
+        "src/pages/en/index.astro",
+        "src/pages/v2.astro"
+      ]
+    }
+  ],
+  "evidence": [
+    {
+      "type": "file",
+      "path": "content/data/content.es.json",
+      "sha256": "800ec82c5a2df6189546749f94547d11fd8f4cebb5f0a734cf11e630c33fb5d8",
+      "summary": "services is []; summary.long ends with 'Tomo cualquier trabajo de desarrollo web, en relación de dependencia o freelance.'"
+    },
+    {
+      "type": "note",
+      "summary": "Author decision 2026-10-29: no services catalogue."
+    }
+  ],
+  "origin": "user_explicit",
+  "replaces": null,
+  "revisit_when": [],
+  "review": {
+    "issues": [],
+    "accepted": {
+      "by": "dd",
+      "at": "2026-10-29T17:11:36.667Z"
+    }
+  },
+  "created": "2026-10-29T17:11:36.667Z",
+  "updated": "2026-10-29T17:11:36.764Z"
+}

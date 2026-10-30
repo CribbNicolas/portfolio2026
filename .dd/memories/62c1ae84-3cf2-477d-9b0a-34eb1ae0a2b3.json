@@ -1,0 +1,50 @@
+{
+  "schema_version": 8,
+  "id": "62c1ae84-3cf2-477d-9b0a-34eb1ae0a2b3",
+  "project_id": "portfolio2026",
+  "topic": "analytics/tools",
+  "kind": "decision",
+  "status": "superseded",
+  "title": "Keep both Clarity and Cloudflare Web Analytics on the landings; they measure different things and neither replaces the other",
+  "body": "Cloudflare Web Analytics gives pageviews, referrers, country, browser and Core Web Vitals, with no cookies — but no heatmaps. The question worth answering (which parts of the CV get read) needs Microsoft Clarity: click, scroll and area heatmaps plus session recordings. Both are free, so both stay. Do not remove Clarity 'because CWA already covers analytics', and do not swap CWA for Clarity's pageview data. Both live only on `/` and `/en/` (src/pages/index.astro, src/pages/en/index.astro); `/cv` and `/en/cv` stay at zero JS. Clarity starts on first interaction (src/scripts/analytics.ts).",
+  "not_derivable": "Why two analytics tools coexist (heatmaps vs CWA's vitals) is not explained in code.",
+  "triggers": [
+    {
+      "on": [
+        "edit",
+        "write"
+      ],
+      "paths": [
+        "src/scripts/analytics.ts",
+        "src/pages/index.astro",
+        "src/pages/en/index.astro"
+      ]
+    }
+  ],
+  "evidence": [
+    {
+      "type": "file",
+      "path": "src/scripts/analytics.ts",
+      "sha256": "91ca58d94a11582e7bcaf96422be9d4a4540537d8aab29b0909c6b730c859657",
+      "summary": "Clarity loader, started on first interaction."
+    },
+    {
+      "type": "file",
+      "path": "src/pages/index.astro",
+      "sha256": "0d4a3dd57f5970e3615d1fa1a18b2b6163ab4ca3b9f59ba5b3371b159e3627db",
+      "summary": "CF beacon and Clarity wiring."
+    }
+  ],
+  "origin": "user_explicit",
+  "replaces": null,
+  "revisit_when": [],
+  "review": {
+    "issues": [],
+    "accepted": {
+      "by": "dd",
+      "at": "2026-10-29T17:11:34.033Z"
+    }
+  },
+  "created": "2026-10-29T17:11:34.033Z",
+  "updated": "2026-10-29T20:58:04.583Z"
+}

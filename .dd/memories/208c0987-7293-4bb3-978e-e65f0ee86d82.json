@@ -1,0 +1,43 @@
+{
+  "schema_version": 8,
+  "id": "208c0987-7293-4bb3-978e-e65f0ee86d82",
+  "project_id": "portfolio2026",
+  "topic": "content/client-evidence",
+  "kind": "fact",
+  "status": "active",
+  "title": "No access to any client system or contact: the public RPPL page and the Muse CRM sales site are the only external evidence",
+  "body": "Stated by the author 2026-10-29: there is no access to RPPL, Muse CRM, Adsmovil, Hogarth or any other system built for a client, and no channel to ask those clients anything. What exists publicly is the RPPL page that hosts the map (the `rppl-map` demo link of project `mapas-distritos`) and Muse CRM's marketing site and app (links of `muse-crm`); everything else is what content/data/content.es.json already says. Consequences: do not plan steps like 'ask the client whether X may be shown' or 'get the real numbers from the system'; the landing's RPPL map stays illustrative geometry (src/scripts/v2/map.ts, labelled 'Geometría ilustrativa · los números son reales'), never a copy of the real map's shape; screenshots or media of client work come only from those public pages.",
+  "not_derivable": "Access to clients and their systems is an external fact; the dataset shows links, not that nothing else can be obtained.",
+  "triggers": [
+    {
+      "on": [
+        "edit"
+      ],
+      "paths": [
+        "content/data/content.es.json",
+        "content/data/content.en.json",
+        "src/scripts/v2/map.ts",
+        "docs/TODO.md"
+      ]
+    }
+  ],
+  "evidence": [
+    {
+      "type": "note",
+      "summary": "Author, 2026-10-29: 'No nos dan acceso a rppl ni ningun otro sistema que hayamos hecho... Para RPPL tenes la url que redirige al proyecto y para MuseCRM tenemos la landing. No hay mas que eso.'"
+    }
+  ],
+  "origin": "user_explicit",
+  "replaces": null,
+  "revisit_when": [],
+  "review": {
+    "issues": [],
+    "batch": "landing-v2-stage-1",
+    "accepted": {
+      "by": "person",
+      "at": "2026-10-29T20:46:19.815Z"
+    }
+  },
+  "created": "2026-10-29T20:42:21.575Z",
+  "updated": "2026-10-29T20:46:19.862Z"
+}

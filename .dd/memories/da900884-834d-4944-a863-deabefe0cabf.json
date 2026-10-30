@@ -1,0 +1,51 @@
+{
+  "schema_version": 8,
+  "id": "da900884-834d-4944-a863-deabefe0cabf",
+  "project_id": "portfolio2026",
+  "topic": "pdf/page-budget",
+  "kind": "trap",
+  "status": "active",
+  "title": "The CV PDF is already at 2 of its 2-page maximum: adding CV content means removing something else",
+  "body": "scripts/pdf-output.check.ts asserts `pages <= 2` for both locales (the 2-page rule is a CV-strategy decision, not a test quirk). Both PDFs currently fill both pages, so any extra achievement, role, skill, section, longer Prose.short on a cv-ats surface, bigger font/margin in src/styles/cv.css, or a looser `PRIORITY_CUTOFF`/`MAX_ACHIEVEMENTS_PER_ROLE` in content/schema/resolve-view.ts can push it to 3 and fail `pnpm run test:pdf` (after `pnpm run pdf:local`). English text runs longer than Spanish, so check content.en.json too, not just the Spanish one. Do not raise the limit or shrink type to fit: cut or lower the `visibility.priority` of something else, or ask the author what to drop.",
+  "not_derivable": "The check states the ceiling but not that the current CV already sits exactly on it; that only shows up after a build + PDF render, long after the edit.",
+  "triggers": [
+    {
+      "on": [
+        "edit",
+        "write"
+      ],
+      "paths": [
+        "content/data/content.es.json",
+        "content/data/content.en.json",
+        "src/components/cv/**",
+        "src/styles/cv.css",
+        "content/schema/resolve-view.ts"
+      ]
+    }
+  ],
+  "evidence": [
+    {
+      "type": "file",
+      "path": "scripts/pdf-output.check.ts",
+      "sha256": "89f31c6b2dea7d947cb74bf884a9634ae997e8f2b13a35e6a933e56bb1065862",
+      "summary": "Line 161: assert pages <= 2 (docs/03 §2)."
+    },
+    {
+      "type": "note",
+      "summary": "Measured 2026-08-25 (README limits table): both PDFs at 2 of 2 pages."
+    }
+  ],
+  "origin": "user_explicit",
+  "replaces": null,
+  "revisit_when": [],
+  "review": {
+    "issues": [],
+    "batch": "docs-migration",
+    "accepted": {
+      "by": "person",
+      "at": "2026-10-29T17:24:10.976Z"
+    }
+  },
+  "created": "2026-10-29T17:11:47.518Z",
+  "updated": "2026-10-29T17:24:11.023Z"
+}

@@ -1,0 +1,53 @@
+{
+  "schema_version": 8,
+  "id": "431009c5-6e4d-440c-9f5b-7e96e4bf8187",
+  "project_id": "portfolio2026",
+  "topic": "i18n/workflow",
+  "kind": "procedure",
+  "status": "active",
+  "title": "Edit content.es.json first, then test:i18n, translate only the named paths, i18n:lock, and commit all three files together",
+  "body": "1. Edit content/data/content.es.json (preferably via `pnpm run editor`). Never write a fact into content.en.json first.\n2. `pnpm run test:i18n` — it names every path whose Spanish no longer matches the lock: exactly what changed.\n3. Translate those paths, and only those, in content/data/content.en.json.\n4. `pnpm run i18n:lock` — re-stamps the lock to the CURRENT Spanish.\n5. Commit content.es.json, content.en.json and content/data/translation.lock.json in ONE commit. A commit with the Spanish change alone ships a stale English CV.\nA reviewer runs step 2 on a dataset PR: green means English accounted for everything Spanish moved. If the change touches visible card text, also run `pnpm run og:local` and commit its artifacts.",
+  "not_derivable": "The ordered loop and the one-commit rule are a workflow; no script encodes the sequence.",
+  "triggers": [
+    {
+      "on": [
+        "edit",
+        "write"
+      ],
+      "paths": [
+        "content/data/content.es.json",
+        "content/data/content.en.json",
+        "content/data/translation.lock.json"
+      ]
+    },
+    {
+      "on": [
+        "run"
+      ],
+      "commands": [
+        "pnpm run test:i18n"
+      ]
+    }
+  ],
+  "evidence": [
+    {
+      "type": "file",
+      "path": "scripts/i18n.check.ts",
+      "sha256": "deeacbcd637f4f5e0669ca6023375901eec80bb85f78d7db590e00c7569fb813",
+      "summary": "Tracked-path, structural, missing and stale-translation failures."
+    }
+  ],
+  "origin": "user_explicit",
+  "replaces": null,
+  "revisit_when": [],
+  "review": {
+    "issues": [],
+    "batch": "docs-migration",
+    "accepted": {
+      "by": "person",
+      "at": "2026-10-29T17:24:10.595Z"
+    }
+  },
+  "created": "2026-10-29T17:11:42.836Z",
+  "updated": "2026-10-29T17:24:10.641Z"
+}
