@@ -15,7 +15,8 @@
  * once already: it kept scanning a 44-byte wrapper while the chunk that
  * actually runs sat one hop away, unread.
  *
- * The thresholds come from the stage 3 measurement (docs/TODO.md, 2026-10-29)
+ * The thresholds come from the stage 3 measurement (2026-10-29; the table is
+ * in docs/TODO.md as of commit 0961036, deleted once landing v2 shipped)
  * plus margin. When one fails, the message states the measured value, the
  * ceiling and what to look at. Going over can be right; then raise the
  * constant in the same diff, with the reason.

@@ -70,13 +70,20 @@ const WAKE_EVENTS = ["scroll", "pointerdown", "keydown", "touchstart"] as const;
  * own try/catch — so this cannot take the page down with it.
  *
  * Cookieless, for every visitor (author, 2026-10-29): consent is declared
- * DENIED for both storages right after `init`, so Clarity writes none of its
- * cookies (`_clck`, `_clsk`, nor Microsoft's ad ones) and still records
- * heatmaps and sessions over `/collect` (learn.microsoft.com/clarity/consent-mode).
+ * DENIED for both storages right after `init`, so Clarity writes no
+ * first-party cookie (`_clck`, `_clsk`) and still records heatmaps and
+ * sessions over `/collect` (learn.microsoft.com/clarity/consent-mode).
  * That is what makes a consent banner unnecessary for EU visitors. The cost
  * is recognising a returning visitor, which a one-page site barely uses.
  * The call goes through the queue `init` sets up, so it lands before the tag
  * itself has loaded.
+ *
+ * This call ALONE is not enough. Measured on production, 2026-10-30: the tag
+ * and its sync pixels (`c.gif`) still set third-party cookies (`CLID`,
+ * `MUID`, `MR`, `SM`, `ANONCHK` on clarity.ms; `MUID`, `MR`, `SRM_B` on
+ * bing.com), whatever the consent said or when. What stopped them is the
+ * Clarity project's own setting: Settings → Setup → Advanced → Cookies OFF.
+ * Turning it back on makes the footer's "sin cookies" false.
  */
 export function startAnalytics(): void {
   const id = ID;
