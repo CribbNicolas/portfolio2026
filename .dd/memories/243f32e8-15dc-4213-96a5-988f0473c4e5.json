@@ -4,7 +4,7 @@
   "project_id": "portfolio2026",
   "topic": "analytics/beacon-trap",
   "kind": "trap",
-  "status": "active",
+  "status": "superseded",
   "title": "Never enable Cloudflare Web Analytics from the Pages dashboard; the beacon is wired by hand in Analytics.astro",
   "body": "Enabling Web Analytics in the Pages dashboard injects the beacon into the WHOLE site on the next deploy, /cv and /en/cv included. Those pages must stay at zero JS because Browser Rendering prints the published page for the PDF (waits on networkidle), so a script there silently changes production PDFs. no-client-js.check.ts cannot see it: it reads dist/, and the injection happens at the edge. Only scripts/served.check.ts (smoke-deploy.yml) would catch it, after the fact.\nInstead the beacon (PUBLIC_CF_BEACON_TOKEN) and Clarity (PUBLIC_CLARITY_ID) are wired by hand in src/components/Analytics.astro, which only the reader pages use: src/pages/index.astro, src/pages/en/index.astro, src/pages/brief.astro, src/pages/en/brief.astro. Never in src/layouts/Base.astro, which /cv uses. A new reader page that should be measured uses that component; a new tag goes into it, and the CSP in public/_headers must allow its origins.",
   "not_derivable": "The dashboard toggle is outside the repo; the code shows the manual wiring, not why the toggle must stay off.",
@@ -51,5 +51,5 @@
     }
   },
   "created": "2026-10-29T20:48:06.030Z",
-  "updated": "2026-10-29T20:58:04.262Z"
+  "updated": "2026-10-29T23:15:14.574Z"
 }

@@ -4,7 +4,7 @@
   "project_id": "portfolio2026",
   "topic": "pdf/zero-js",
   "kind": "decision",
-  "status": "active",
+  "status": "superseded",
   "title": "Keep /cv and /en/cv at zero client JavaScript: production PDFs are printed from the PUBLISHED pages",
   "body": "functions/cv.pdf.ts and functions/en/cv.pdf.ts call functions/_handler.ts, which asks Cloudflare Browser Rendering to print the live /cv or /en/cv and waits for network idle (`LOAD_WAIT` in scripts/pdf-options.ts: networkidle0 on Browser Rendering, networkidle on Playwright). Any script on those pages — a component with a <script>, an island, analytics added to src/layouts/Base.astro, a ClientRouter — changes the downloaded PDF silently in production, not just your local build. Only the two landings (index.html, en/index.html) may ship JS; the allowlist is `PAGES_WITH_JS` in scripts/pages-with-js.ts, and adding a page there is an explicit decision that must show up in a diff, never a fix for a failing `pnpm run test:js`. Put landing-only scripts in src/pages/index.astro / src/pages/en/index.astro, never in Base.astro or src/components/cv/** (shared with the CV pages).",
   "not_derivable": "The link between 'a script in Base.astro' and 'a different PDF in production' spans the layout, the Pages Function and the print options; nothing in Base.astro or the CV components warns about it.",
@@ -54,5 +54,5 @@
     }
   },
   "created": "2026-10-29T17:11:47.864Z",
-  "updated": "2026-10-29T17:11:47.964Z"
+  "updated": "2026-10-29T23:15:14.735Z"
 }

@@ -4,7 +4,7 @@
   "project_id": "portfolio2026",
   "topic": "landing/brief-view",
   "kind": "decision",
-  "status": "active",
+  "status": "superseded",
   "title": "The brief view (/brief, /en/brief) is the cv-ats CV on screen: same sections, the landing's dock, a still CV dialog, the animated field, canonical to its landing",
   "body": "Decided by the author 2026-10-29. The old landing lives on as the 'vista breve' / 'brief view' at /brief and /en/brief (src/pages/brief.astro, src/pages/en/brief.astro, src/components/HomeDocument.astro; LOCALE_PATHS.*.brief). Paths are English in BOTH locales. Its canonical points at the locale's landing (Base.astro canonicalPath), astro.config.mjs's sitemap filter drops /brief/, no Open Graph, not in HREFLANG: do not change that without the author.\nLook and content, per the author: as close as possible to the cv-ats PDF (Perfil, Habilidades, Experiencia, Educación, Idiomas, same cut) plus the projects, easy to read, key data set apart (figures via src/lib/highlight.ts splitFigures, metrics, companies, core skills). It keeps the animated background (src/scripts/brief/field.ts) and simple reveal-on-enter fades (src/scripts/brief/boot.ts), never scroll-tied, nothing flashy. Same header as the guided landing: the dock (src/styles/chrome.css). Download CV and 'Ver el recorrido guiado' buttons at the start and at the end. The CV dialog is the landing's C with its ESP/EN halves but STILL (no turning), as a native popover. The 3D knowledge map is gone for good.",
   "not_derivable": "The reading-first brief, the still C and the button placement were the author's instructions; the code shows the result, not which parts are requirements.",
@@ -50,5 +50,5 @@
     }
   },
   "created": "2026-10-29T21:42:25.838Z",
-  "updated": "2026-10-29T22:00:14.061Z"
+  "updated": "2026-10-30T00:33:01.279Z"
 }

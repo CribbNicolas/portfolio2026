@@ -1,0 +1,53 @@
+{
+  "schema_version": 8,
+  "id": "bb0a54d0-6cc2-45f8-aedd-98a409ca48c2",
+  "project_id": "portfolio2026",
+  "topic": "pdf/zero-js",
+  "kind": "decision",
+  "status": "active",
+  "title": "Keep /cv and /en/cv at zero client JavaScript: production PDFs are printed from the PUBLISHED pages",
+  "body": "functions/cv.pdf.ts and functions/en/cv.pdf.ts call functions/_handler.ts, which asks Cloudflare Browser Rendering to print the live /cv or /en/cv and waits for network idle (LOAD_WAIT in scripts/pdf-options.ts). Any script on those pages — a component with a <script>, an island, analytics added to src/layouts/Base.astro, a ClientRouter — changes the downloaded PDF silently in production. Only the reader pages may ship JS: the landing (index.html, en/index.html) and the brief view (brief/index.html, en/brief/index.html). The allowlist is PAGES_WITH_JS in scripts/pages-with-js.ts (SCROLL_DRIVEN_PAGES within it is the landing's scroll exception); adding a page there is an explicit decision that shows up in a diff, never a fix for a failing `pnpm run test:js`. Page scripts live in src/components/v2/Landing.astro and src/components/HomeDocument.astro, never in Base.astro or src/components/cv/** (shared with the CV pages).",
+  "not_derivable": "The link between a script on /cv and a changed production PDF goes through Browser Rendering at request time; nothing in the CV page's code shows it.",
+  "triggers": [
+    {
+      "on": [
+        "edit",
+        "write"
+      ],
+      "paths": [
+        "src/layouts/Base.astro",
+        "src/components/cv/*.astro",
+        "src/pages/cv.astro",
+        "src/pages/en/cv.astro",
+        "scripts/pages-with-js.ts"
+      ]
+    }
+  ],
+  "evidence": [
+    {
+      "type": "file",
+      "path": "scripts/pages-with-js.ts",
+      "sha256": "75a14796074262219ef629fa9345c813987256eff3d84697fe9f0478cd7023cd",
+      "summary": "Cited when this memory was saved."
+    },
+    {
+      "type": "file",
+      "path": "functions/_handler.ts",
+      "sha256": "134bf15465e2e7c106f58b1218bfac3ad9c0ba906c69a0d9937afae27535f9f4",
+      "summary": "Cited when this memory was saved."
+    }
+  ],
+  "origin": "model_initiated",
+  "replaces": "e9950ad2-2138-4da4-a370-e58ddf1ef02f",
+  "revisit_when": [],
+  "review": {
+    "issues": [],
+    "batch": "landing-v2-stage-4",
+    "accepted": {
+      "by": "person",
+      "at": "2026-10-29T23:15:14.678Z"
+    }
+  },
+  "created": "2026-10-29T23:13:06.374Z",
+  "updated": "2026-10-29T23:15:14.735Z"
+}

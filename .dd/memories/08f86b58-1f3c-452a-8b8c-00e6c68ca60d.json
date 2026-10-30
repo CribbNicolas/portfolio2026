@@ -1,0 +1,55 @@
+{
+  "schema_version": 8,
+  "id": "08f86b58-1f3c-452a-8b8c-00e6c68ca60d",
+  "project_id": "portfolio2026",
+  "topic": "analytics/beacon-trap",
+  "kind": "trap",
+  "status": "active",
+  "title": "Never enable Cloudflare Web Analytics from the Pages dashboard; the beacon is wired by hand in Analytics.astro",
+  "body": "Enabling Web Analytics in the Pages dashboard injects the beacon into the WHOLE site on the next deploy, /cv and /en/cv included. Those pages must stay at zero JS because Browser Rendering prints the published page for the PDF (waits on networkidle), so a script there silently changes production PDFs. no-client-js.check.ts cannot see it: it reads dist/, and the injection happens at the edge. Only scripts/served.check.ts (smoke-deploy.yml) would catch it, after the fact.\nInstead the beacon (PUBLIC_CF_BEACON_TOKEN, an external src) lives in src/components/Analytics.astro, used by the reader pages only (src/pages/index.astro, en/index.astro, brief.astro, en/brief.astro). Clarity (PUBLIC_CLARITY_ID) starts from each page's own script (startAnalytics() in Landing.astro and HomeDocument.astro), not from a <script> in Analytics.astro: Astro would inline that tiny script and the CSP would block it (memory frontend/csp-inline). Never in src/layouts/Base.astro, which /cv uses. A new tag needs its origins in the CSP in public/_headers.",
+  "not_derivable": "The dashboard toggle is outside the repo; the code shows the manual wiring, not why the toggle must stay off.",
+  "triggers": [
+    {
+      "on": [
+        "edit",
+        "write"
+      ],
+      "paths": [
+        "src/components/Analytics.astro",
+        "src/pages/index.astro",
+        "src/pages/en/index.astro",
+        "src/pages/brief.astro",
+        "src/pages/en/brief.astro",
+        "src/layouts/Base.astro",
+        "public/_headers"
+      ]
+    }
+  ],
+  "evidence": [
+    {
+      "type": "file",
+      "path": "src/components/Analytics.astro",
+      "sha256": "20946c75c4ec8fb51e8bdc26e9796a88f944c27e2586ca8fb3bc3e8c796590d9",
+      "summary": "Cited when this memory was saved."
+    },
+    {
+      "type": "file",
+      "path": "scripts/served.check.ts",
+      "sha256": "636488cfe3a0d9a419ef64e1a7d3273ecbd63e2c53d192143b69012eb4cdd7fb",
+      "summary": "Cited when this memory was saved."
+    }
+  ],
+  "origin": "model_initiated",
+  "replaces": "243f32e8-15dc-4213-96a5-988f0473c4e5",
+  "revisit_when": [],
+  "review": {
+    "issues": [],
+    "batch": "landing-v2-stage-4",
+    "accepted": {
+      "by": "person",
+      "at": "2026-10-29T23:15:14.516Z"
+    }
+  },
+  "created": "2026-10-29T23:13:06.942Z",
+  "updated": "2026-10-29T23:15:14.574Z"
+}
