@@ -1,0 +1,45 @@
+{
+  "schema_version": 8,
+  "id": "88e3b361-b7d1-47a1-af79-578823fb8929",
+  "project_id": "portfolio2026",
+  "topic": "seo/og-image",
+  "kind": "failed_approach",
+  "status": "active",
+  "title": "Do not generate one social image per platform; one 1200x630 og:image per locale covers every network",
+  "body": "Facebook, LinkedIn, WhatsApp, Slack, Discord and Twitter all read the SAME og:image tag; they differ in how they crop, not in which file they request. So scripts/build-og.ts emits one card per locale (public/og.jpg, public/og.en.jpg). Accepted gap: the square crop some messaging clients use for the chat-list thumbnail loses the text edge; designing the main card to survive it would make it worse on the six platforms that show it whole. Reconsider only if data shows traffic arriving mostly through square thumbnails.",
+  "not_derivable": "The per-platform image idea and the accepted square-crop loss are not mentioned in code.",
+  "triggers": [
+    {
+      "on": [
+        "edit",
+        "write"
+      ],
+      "paths": [
+        "scripts/build-og.ts",
+        "scripts/og-template.ts",
+        "scripts/og-data.ts",
+        "src/layouts/Base.astro"
+      ]
+    }
+  ],
+  "evidence": [
+    {
+      "type": "file",
+      "path": "scripts/build-og.ts",
+      "sha256": "ce51ef3ac42f88c857760adaaa8a70e888c11406afbdbaae3b0886e459ab1d6b",
+      "summary": "Writes public/og.jpg and public/og.en.jpg."
+    }
+  ],
+  "origin": "user_explicit",
+  "replaces": null,
+  "revisit_when": [],
+  "review": {
+    "issues": [],
+    "accepted": {
+      "by": "dd",
+      "at": "2026-10-29T17:11:50.248Z"
+    }
+  },
+  "created": "2026-10-29T17:11:50.248Z",
+  "updated": "2026-10-29T17:11:50.317Z"
+}

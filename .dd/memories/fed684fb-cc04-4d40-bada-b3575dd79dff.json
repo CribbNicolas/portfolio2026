@@ -1,0 +1,54 @@
+{
+  "schema_version": 8,
+  "id": "fed684fb-cc04-4d40-bada-b3575dd79dff",
+  "project_id": "portfolio2026",
+  "topic": "frontend/bundle",
+  "kind": "trap",
+  "status": "superseded",
+  "title": "Never import `@content` (or content/source) from src/scripts/**, never import `three` statically, and never import three/examples/jsm or three/addons",
+  "body": "src/scripts/** is the only code bundled for the browser. 1) `@content` resolves to content/source/index.ts -> json-source.ts, which statically imports zod and both datasets: one import ships them to every visitor. Types cross only through src/scripts/lab/types.ts (no runtime imports); build-time helpers belong in src/lib/ (see lab-data.ts). 2) `three` (~127 KB gzip) has exactly ONE importer, src/scripts/lab/graph-3d.ts, and boot.ts loads it with `await import(\"./graph-3d\")`. A single static import of graph-3d (or of three) from any module makes Rollup hoist it into the critical chunk, even if other imports are dynamic. 3) `three/examples/jsm/*` and `three/addons` are forbidden on behaviour, not weight: OrbitControls registers a `wheel` listener with preventDefault, i.e. scroll hijacking. Write the control by hand (interaction.ts does). All three are caught only after `pnpm run build` by `pnpm run test:bundle` (looks for ZodObject/dataset strings and WebGLRenderer in critical chunks), so get it right while editing.",
+  "not_derivable": "The checks only fire after a full build; an agent writing a new client module sees no local hint unless it happens to read types.ts or graph-3d.ts headers.",
+  "triggers": [
+    {
+      "on": [
+        "edit",
+        "write"
+      ],
+      "paths": [
+        "src/scripts/**"
+      ]
+    }
+  ],
+  "evidence": [
+    {
+      "type": "file",
+      "path": "src/scripts/lab/types.ts",
+      "sha256": "fff7ad116e08805d072c1cfa3ea2cc3dfa13175ad9955b7b5d09317ba53ddefd",
+      "summary": "Header: imports nothing at runtime; @content would drag zod + dataset; static graph-3d import hoists three."
+    },
+    {
+      "type": "file",
+      "path": "src/scripts/lab/graph-3d.ts",
+      "sha256": "c6d4c256af5a7ba569705c4bd5f93588a4063c65971bc80ce750688bbd7a67de",
+      "summary": "Header: the only file importing three; OrbitControls rejected because it registers wheel with preventDefault."
+    },
+    {
+      "type": "file",
+      "path": "scripts/bundle-budget.check.ts",
+      "sha256": "ade6a9ad8b62c3279c89fd736e24ec6a5700c69edf7456ee63a9489adf55c4ec",
+      "summary": "Asserts no WebGLRenderer in critical chunks (line ~139) and no zod/dataset in any bundle (lines ~183-194)."
+    }
+  ],
+  "origin": "user_explicit",
+  "replaces": null,
+  "revisit_when": [],
+  "review": {
+    "issues": [],
+    "accepted": {
+      "by": "dd",
+      "at": "2026-10-29T17:11:40.614Z"
+    }
+  },
+  "created": "2026-10-29T17:11:40.614Z",
+  "updated": "2026-10-29T20:58:03.943Z"
+}

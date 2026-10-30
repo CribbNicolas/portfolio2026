@@ -1,0 +1,55 @@
+{
+  "schema_version": 8,
+  "id": "6600c77e-3b2a-426c-b151-7092598da1e2",
+  "project_id": "portfolio2026",
+  "topic": "landing-v2/layout",
+  "kind": "trap",
+  "status": "active",
+  "title": "In v2 size canvases and compute screen centres from clientWidth, never innerWidth or a transformed getBoundingClientRect",
+  "body": "v2.css sets html { scrollbar-gutter: stable } so that holdScroll's is-held overflow hiding shifts nothing. As a result innerWidth includes the gutter (e.g. 2560 against a 2545 px page). A fixed canvas sized from innerWidth squeezes every point left, more the further right it is: the morph's points missed their seats this way. Size backing stores from the canvas's own clientWidth/clientHeight and take the screen centre from document.documentElement.clientWidth (ghostCenter in peak.ts, the caret in seats.ts). Second trap: the map's canvas sits inside a 3D-tilted element. Sizing it from getBoundingClientRect() reads the PROJECTED box, so a rebuild mid-tilt (on resize) got a squashed height and cut off the bottom of the map. Size it from clientWidth/clientHeight (map.ts). A rect is still the right tool for reading where something is ON SCREEN (the .peak__probe points in morph.ts).",
+  "not_derivable": "The reason is spread over one-line comments in four files; new canvas or centring code would naturally reach for innerWidth or a rect.",
+  "triggers": [
+    {
+      "on": [
+        "edit",
+        "write"
+      ],
+      "paths": [
+        "src/scripts/v2/**",
+        "src/styles/v2.css"
+      ]
+    }
+  ],
+  "evidence": [
+    {
+      "type": "file",
+      "path": "src/styles/v2.css",
+      "sha256": "832abaec9015b311db4b32c08cd2b18f5a4354becaebfe79af326cf29e714615",
+      "summary": "html { scrollbar-gutter: stable } next to the is-held rules"
+    },
+    {
+      "type": "file",
+      "path": "src/scripts/v2/peak.ts",
+      "sha256": "2ecb796fb3c1023be18cf007b89360dfdc4862d6f9820ae201cec9566d137d2c",
+      "summary": "ghostCenter: clientWidth, not innerWidth"
+    },
+    {
+      "type": "file",
+      "path": "src/scripts/v2/map.ts",
+      "sha256": "067ca7735ee74988ef152a603c57ad6ef26ce37ad4bb41c727a0e2524e982366",
+      "summary": "canvas sized from clientWidth/clientHeight, not the transformed rect"
+    }
+  ],
+  "origin": "user_explicit",
+  "replaces": null,
+  "revisit_when": [],
+  "review": {
+    "issues": [],
+    "accepted": {
+      "by": "dd",
+      "at": "2026-10-29T17:11:45.893Z"
+    }
+  },
+  "created": "2026-10-29T17:11:45.893Z",
+  "updated": "2026-10-29T17:11:45.993Z"
+}

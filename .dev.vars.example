@@ -1,10 +1,10 @@
 # Template of the variables `functions/cv.pdf.ts` sees when it runs locally with
-# `pnpm exec wrangler pages dev dist`. Copy to `.dev.vars`, which is in
-# .gitignore.
+# `pnpm dlx wrangler pages dev dist` (dlx: wrangler is not a repo dependency).
+# Copy to `.dev.vars`, which is in .gitignore.
 #
 # In production these SAME names are configured in the Cloudflare Pages dashboard
-# (Settings → Variables and Secrets), not in a file. See
-# docs/05-deploy-and-analytics.md §3.
+# (Settings → Variables and Secrets), not in a file: the account ID as
+# Plaintext, the token as a Secret.
 #
 # They are not needed to work on the CV: `pnpm run dev` serves `/cv` in HTML and
 # `pnpm run pdf:local` prints the PDF with Playwright, neither touching the

@@ -1,7 +1,7 @@
 /**
  * The page, in a real browser, against a real server.
  *
- * The spec says the editor needs no UI tests, and this is not one: there are no
+ * The editor needs no UI tests, and this is not one: there are no
  * per-component assertions here. It is the one end-to-end pass that proves the
  * page loads, renders from the schema, and can actually save — because
  * `editor/public/` is the only code in this repo the compiler never sees, and a
@@ -242,7 +242,7 @@ test("a 409 latches Save, and a keystroke does not re-enable it", async () => {
 });
 
 test('"add" on an absent optional array creates the array instead of throwing', async () => {
-  // `periods` is optional, and the spec advertises adding to it by name. The
+  // `periods` is optional, and the editor supports adding to it by name. The
   // skill has to be one that has none: on a skill that already carries them,
   // "add" appends and never exercises the absent-array path.
   assert.notEqual(NO_PERIODS, -1, "every skill carries periods now: pick another absent optional");

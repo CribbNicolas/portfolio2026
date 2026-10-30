@@ -4,7 +4,7 @@
  *
  * It exists because `public/og.jpg` and `public/og.en.jpg` are COMMITTED
  * artifacts — generated with `pnpm run og:local` and not in the build, because
- * the Cloudflare builder has no Chromium (closed #18). A committed artifact
+ * the Cloudflare builder has no Chromium. A committed artifact
  * drifts out of sync silently:
  * you change the role in the dataset, the site says one thing and the image
  * LinkedIn sees keeps saying the other. Nobody finds out until someone shares

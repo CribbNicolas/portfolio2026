@@ -1,0 +1,48 @@
+{
+  "schema_version": 8,
+  "id": "433eb238-f115-4fee-af70-9bd6bca84776",
+  "project_id": "portfolio2026",
+  "topic": "deploy/hosting",
+  "kind": "decision",
+  "status": "active",
+  "title": "Keep hosting and the build on Cloudflare Pages; do not move to Azure Static Web Apps or GitHub Pages",
+  "body": "The site is hosted AND built by Cloudflare Pages (build command `pnpm run build`, output `dist`). Chosen over the alternatives for concrete reasons: Pages' free tier has unlimited bandwidth and requests, 500 builds/month and custom domains with no cap; Azure Static Web Apps Free stops at 100 GB bandwidth and 2 domains; GitHub Pages has no Functions, and the on-demand PDF (`functions/cv.pdf.ts`, `functions/en/cv.pdf.ts`) needs one. The stack must stay on free tiers (only the domain is paid). If full Puppeteer or the Browser Rendering binding is ever needed, the exit is migrating from Pages to Workers with static assets, where the binding exists — not changing host.",
+  "not_derivable": "The rejected hosts and the reasons against them appear nowhere in code; only the Pages choice is visible.",
+  "triggers": [
+    {
+      "on": [
+        "edit",
+        "write"
+      ],
+      "paths": [
+        "functions/**",
+        "astro.config.mjs",
+        ".github/workflows/*.yml"
+      ]
+    }
+  ],
+  "evidence": [
+    {
+      "type": "file",
+      "path": "functions/_handler.ts",
+      "sha256": "134bf15465e2e7c106f58b1218bfac3ad9c0ba906c69a0d9937afae27535f9f4",
+      "summary": "Header comment: Browser Rendering binding unavailable in Pages Functions, REST API used instead."
+    },
+    {
+      "type": "note",
+      "summary": "Hosting comparison recorded in the deploy doc (2026-08-24/25) before docs migration."
+    }
+  ],
+  "origin": "user_explicit",
+  "replaces": null,
+  "revisit_when": [],
+  "review": {
+    "issues": [],
+    "accepted": {
+      "by": "dd",
+      "at": "2026-10-29T17:11:38.319Z"
+    }
+  },
+  "created": "2026-10-29T17:11:38.319Z",
+  "updated": "2026-10-29T17:11:38.417Z"
+}

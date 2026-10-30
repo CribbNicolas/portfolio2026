@@ -8,10 +8,9 @@
  * NOTE: the words this module emits come from `messages.ts`, in the locale the
  * caller asks for. Only the code around them is in English.
  *
- * The date format is `MM/AAAA` because `docs/03-cv.md` §2 asks for it:
- * consistent, with no month names that shift between surfaces. It stays
- * numeric in both locales — "09/2025" reads the same in English, so there is
- * nothing to translate.
+ * The date format is `MM/AAAA`: consistent, with no month names that shift
+ * between surfaces. It stays numeric in both locales — "09/2025" reads the
+ * same in English, so there is nothing to translate.
  */
 
 import type { Locale, Role, YearMonth } from "./content-schema";
@@ -23,8 +22,8 @@ import { MESSAGES } from "./messages";
 
 /**
  * "2023-07" → "07/2023". Takes `locale` for a uniform signature across this
- * module, but the format itself does not change with it: `docs/03-cv.md` §2
- * asks for MM/AAAA precisely so it does not shift between surfaces, and
+ * module, but the format itself does not change with it: MM/AAAA
+ * exists precisely so it does not shift between surfaces, and
  * "09/2025" reads the same in English.
  */
 export function formatYearMonth(ym: YearMonth, _locale: Locale): string {
@@ -76,9 +75,24 @@ export function formatRoleTitle(
   role: Pick<Role, "title" | "displayTitle" | "concurrent">,
   locale: Locale,
 ): string {
-  const m = MESSAGES[locale];
-  const title = role.displayTitle ?? role.title;
-  return role.concurrent ? `${title} (${m.concurrentSuffix})` : title;
+  const { title, concurrent } = formatRoleTitleParts(role, locale);
+  return concurrent ? `${title} (${concurrent})` : title;
+}
+
+/**
+ * The same two pieces apart, for the CV: an ATS autofills its job-title field
+ * from the heading line, so "(en paralelo)" glued to it lands in the form as
+ * part of the title. The CV prints the title alone in the heading and the
+ * concurrency on the meta line, where rule 2 still declares it.
+ */
+export function formatRoleTitleParts(
+  role: Pick<Role, "title" | "displayTitle" | "concurrent">,
+  locale: Locale,
+): { title: string; concurrent: string | null } {
+  return {
+    title: role.displayTitle ?? role.title,
+    concurrent: role.concurrent ? MESSAGES[locale].concurrentSuffix : null,
+  };
 }
 
 /**

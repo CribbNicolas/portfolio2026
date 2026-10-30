@@ -1,0 +1,61 @@
+{
+  "schema_version": 8,
+  "id": "fa6d1697-59b9-4798-a8dd-50cdb66deb2c",
+  "project_id": "portfolio2026",
+  "topic": "content/backend",
+  "kind": "failed_approach",
+  "status": "active",
+  "title": "Do not add a CMS: Keystatic was discarded and Sanity postponed because content outside git skips the gates",
+  "body": "Evaluated 2026-08-25 under the free-stack constraint. Keystatic: discarded — it needs an Astro SSR adapter plus React and Markdoc, in a repo built on `output: static` and a tiny critical JS budget. Sanity: viable (free tier is ample) but postponed; its model already changed twice (2023, 2025), and decisively, with data outside git it stops passing through the gates — validate, rules 7/8 and test:pdf run on push, not on a webhook, so a badly loaded achievement would publish unchecked. The real friction (a typo costs PRs) is not fixed by a CMS, only sidestepped by skipping gates. Chosen instead: the local editor (`pnpm run editor`), kept outside src/pages. Editing from a phone was deliberately discarded with it. Adopting Sanity later costs the same: write `sanity-source.ts` and change one line in content/source/index.ts.",
+  "not_derivable": "The CMS evaluation and the 'gates run on push' argument are not in code; only the resulting seam is.",
+  "triggers": [
+    {
+      "on": [
+        "edit",
+        "write"
+      ],
+      "paths": [
+        "content/source/index.ts",
+        "content/source/json-source.ts",
+        "astro.config.mjs",
+        "scripts/editor.ts"
+      ]
+    },
+    {
+      "on": [
+        "run"
+      ],
+      "commands": [
+        "pnpm add @keystatic",
+        "pnpm add sanity",
+        "pnpm add @sanity"
+      ]
+    }
+  ],
+  "evidence": [
+    {
+      "type": "file",
+      "path": "content/source/index.ts",
+      "sha256": "238820244246549d7917c30f7ceb57fc127e9c2822b0dcb0f73976c3d731ddca",
+      "summary": "The one-line migration seam."
+    },
+    {
+      "type": "file",
+      "path": "scripts/editor.ts",
+      "sha256": "2d1620ee65caa905272d562cd810c5775e6e38ef8dfba1fe6a2e2a36c4f63edd",
+      "summary": "Local editor, outside src/pages to avoid an SSR adapter."
+    }
+  ],
+  "origin": "user_explicit",
+  "replaces": null,
+  "revisit_when": [],
+  "review": {
+    "issues": [],
+    "accepted": {
+      "by": "dd",
+      "at": "2026-10-29T17:11:35.046Z"
+    }
+  },
+  "created": "2026-10-29T17:11:35.046Z",
+  "updated": "2026-10-29T17:11:35.144Z"
+}

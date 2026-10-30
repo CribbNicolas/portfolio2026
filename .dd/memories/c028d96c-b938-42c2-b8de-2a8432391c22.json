@@ -1,0 +1,43 @@
+{
+  "schema_version": 8,
+  "id": "c028d96c-b938-42c2-b8de-2a8432391c22",
+  "project_id": "portfolio2026",
+  "topic": "seo/head-omissions",
+  "kind": "decision",
+  "status": "active",
+  "title": "Do not add og:site_name, profile:first_name/last_name or twitter:site/creator to Base.astro; each omission is deliberate",
+  "body": "og:site_name: it distinguishes a page from its site; here the site IS the person and og:title starts with the full name. Slack/LinkedIn stack it above the title, so the name appears twice and reads as a bug. Reconsider if the site gets a brand name different from the person's, or destination pages beyond the landings (case studies).\nprofile:first_name/last_name: og:type is profile, but identity stores one `fullName`; splitting 'Nicolás Agustín Cribb Barbaro' is guessing (split(' ') gives last_name 'Agustín'), which breaks invariant 4, and no known consumer renders them. Reconsider only if the schema gains givenName/familyName (schema.org Person would use them too).\ntwitter:site/creator: there is no Twitter account (identity.links has GitHub and LinkedIn); summary_large_image works without it, only 'via @user' is lost. If an account appears, derive it from identity.links, never hand-write it.\nNone of these affect whether the link previews correctly.",
+  "not_derivable": "Absent tags leave no trace in code; the reasons and reconsider-conditions exist only here.",
+  "triggers": [
+    {
+      "on": [
+        "edit",
+        "write"
+      ],
+      "paths": [
+        "src/layouts/Base.astro",
+        "src/lib/jsonld.ts"
+      ]
+    }
+  ],
+  "evidence": [
+    {
+      "type": "file",
+      "path": "src/layouts/Base.astro",
+      "sha256": "64e262845744af1dc5719d4a7ea9cd6f24803efa39374e6ca942a1362673ed3a",
+      "summary": "Emits OG/Twitter tags behind `shareable`; none of the omitted ones."
+    }
+  ],
+  "origin": "user_explicit",
+  "replaces": null,
+  "revisit_when": [],
+  "review": {
+    "issues": [],
+    "accepted": {
+      "by": "dd",
+      "at": "2026-10-29T17:11:49.249Z"
+    }
+  },
+  "created": "2026-10-29T17:11:49.249Z",
+  "updated": "2026-10-29T17:11:49.348Z"
+}

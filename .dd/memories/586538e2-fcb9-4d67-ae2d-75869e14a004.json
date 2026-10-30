@@ -1,0 +1,52 @@
+{
+  "schema_version": 8,
+  "id": "586538e2-fcb9-4d67-ae2d-75869e14a004",
+  "project_id": "portfolio2026",
+  "topic": "design/no-orphan-words",
+  "kind": "decision",
+  "status": "superseded",
+  "title": "No orphan words: a line never ends alone on one word, and a before/after movement breaks into its two halves",
+  "body": "Author's UX rule (2026-10-29), for every page and both locales. 1) The last line of a heading or paragraph never holds one word alone: v2.css and brief.css set text-wrap: balance on h1–h4 and short copy (.beat__body, .beat__label, .stage__wins li, .principle p) and text-wrap: pretty on running p/li. 2) No line ends on a dangling short word ('report: a' / 'choropleth'): the landing's beat titles and bodies go through glueShortWords (src/lib/highlight.ts), which ties every 1–2 letter word to the next with a no-break space. 3) A before/after metric is set as its two halves, one per line: 'de ~5 s' / 'a ~500 ms', never 'de ~5 s a' over a lone '~500 ms' (formatMetricLines in content/schema/format-metric.ts, .beat__line in v2.css). When adding copy or a new display surface, apply the same; check new text at 2560 px and on a phone, in Spanish and English (English wraps differently).",
+  "not_derivable": "It is the author's design rule; the CSS shows the mechanism but not that it is a requirement to keep on every new piece of text.",
+  "triggers": [
+    {
+      "on": [
+        "edit",
+        "write"
+      ],
+      "paths": [
+        "src/styles/v2.css",
+        "src/styles/brief.css",
+        "src/lib/landing-copy.ts",
+        "src/components/v2/Landing.astro",
+        "src/lib/highlight.ts"
+      ]
+    }
+  ],
+  "evidence": [
+    {
+      "type": "file",
+      "path": "src/lib/highlight.ts",
+      "sha256": "3caea51469857eb7b920e8fe1a92a823dcba37a9269acdc98bf40ef7c9dc79ea",
+      "summary": "Cited when this memory was saved."
+    },
+    {
+      "type": "file",
+      "path": "src/styles/v2.css",
+      "sha256": "c794c5317dd2e5fa99fa1d5d8b1bfe1101d69ee2d2982e34cc22d46fb9e17b1c",
+      "summary": "Cited when this memory was saved."
+    }
+  ],
+  "origin": "user_explicit",
+  "replaces": null,
+  "revisit_when": [],
+  "review": {
+    "issues": [],
+    "accepted": {
+      "by": "dd",
+      "at": "2026-10-29T23:42:47.901Z"
+    }
+  },
+  "created": "2026-10-29T23:42:47.901Z",
+  "updated": "2026-10-30T00:07:55.518Z"
+}

@@ -31,11 +31,46 @@ const APPROX = "~";
  * stays inside the subset, in every locale.
  */
 export function formatMetric(m: Metric, locale: Locale): string | null {
-  const approx = m.confidence === "estimated" ? APPROX : "";
-  const { metricFrom, metricTo } = MESSAGES[locale];
-
-  if (m.before && m.after)
-    return `${metricFrom} ${approx}${m.before} ${metricTo} ${approx}${m.after}`;
-  if (m.delta) return `${approx}${m.delta}`;
+  const lines = formatMetricLines(m, locale);
+  if (lines) return lines.join(" ");
+  if (m.delta) return `${approx(m)}${m.delta}`;
   return null;
 }
+
+/**
+ * A before/after movement as its two halves, "de ~5 s" and "a ~500 ms", for
+ * a surface that sets it on two lines: broken anywhere else it leaves "de
+ * ~5 s a" over a lone "~500 ms" (author, 2026-10-29: no orphan words).
+ * `null` for a delta-only metric, which is one piece.
+ */
+export function formatMetricLines(m: Metric, locale: Locale): [string, string] | null {
+  const { metricFrom, metricTo } = MESSAGES[locale];
+  const ends = formatMetricEnds(m);
+  return ends ? [`${metricFrom} ${ends.before}`, `${metricTo} ${ends.after}`] : null;
+}
+
+/**
+ * The metric with what it measures, for a surface where it stands on its own
+ * (the CV bullet, the brief view's badge, the label under the landing's
+ * counter): "~13.000 distritos escolares en el dataset", "tiempo de indexado:
+ * de ~5 s a ~500 ms". A bare "~13.000" after a sentence reads as a broken
+ * number to a parser, an LLM grader and a recruiter alike (ATS review,
+ * 2026-10-29). The label is the dataset's, in the dataset's language.
+ */
+export function formatMetricLabeled(m: Metric, locale: Locale): string | null {
+  const value = formatMetric(m, locale);
+  if (!value) return null;
+  return formatMetricEnds(m) ? `${m.label}: ${value}` : `${value} ${m.label}`;
+}
+
+/**
+ * The two ends of a before/after `Metric`, each already marked, for a surface
+ * that shows them apart (a bar per end). Lives here so the "~" still has one
+ * home: a caller printing `m.before` itself would fork rule 4.
+ */
+export function formatMetricEnds(m: Metric): { before: string; after: string } | null {
+  if (!m.before || !m.after) return null;
+  return { before: `${approx(m)}${m.before}`, after: `${approx(m)}${m.after}` };
+}
+
+const approx = (m: Metric) => (m.confidence === "estimated" ? APPROX : "");

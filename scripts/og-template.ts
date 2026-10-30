@@ -47,14 +47,18 @@ export interface OgData {
 }
 
 // Tokens from `src/styles/tokens.css`, resolved by hand because this HTML does
-// not go through the bundler and there is no cascade to inherit from. Always
-// light mode: the card is rendered by each social network's server, not by
-// anybody's browser, so there is no `prefers-color-scheme` to consult.
-const BACKGROUND = "#f7f6f4";
-const INK = "#17181c";
-const SOFT = "#5f636e";
-const ACCENT = "#b0472a";
-const LINE = "#e5e3df";
+// not go through the bundler and there is no cascade to inherit from. The
+// site's palette as the landing shows it (author, 2026-10-29): dark ground,
+// the violet as a surface (the ring) and its light tint for text (the
+// kicker), since the deep violet cannot carry small text on dark. One look
+// for every network: the card is rendered by their servers, not by anybody's
+// browser, so there is no `prefers-color-scheme` to consult.
+const BACKGROUND = "#131417";
+const INK = "#f0eeea";
+const SOFT = "#a1a5b0";
+const ACCENT = "#5e4bc4";
+const ACCENT_INK = "#a99bf0";
+const LINE = "#2c2f36";
 
 /** The ring framing the photo. Same language as the brand: open on the right. */
 const GAP = 24; // % of the perimeter
@@ -109,7 +113,7 @@ body {
 .brand { display: flex; margin-bottom: 10px; }
 .kicker {
   font-size: 19px; font-weight: 800; letter-spacing: 0.13em;
-  text-transform: uppercase; color: ${ACCENT};
+  text-transform: uppercase; color: ${ACCENT_INK};
 }
 .name {
   font-size: 76px; font-weight: 800; letter-spacing: -0.035em;

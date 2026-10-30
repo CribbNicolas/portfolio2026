@@ -1,0 +1,48 @@
+{
+  "schema_version": 8,
+  "id": "af8d1469-a576-49cb-81aa-074a183d0bf5",
+  "project_id": "portfolio2026",
+  "topic": "landing-v2/qa",
+  "kind": "procedure",
+  "status": "active",
+  "title": "Check v2 layout changes at the six resolutions × 16 moments, with an automatic sideways-scroll and text-past-edge check",
+  "body": "The compatibility pass that v2 was signed off with (2026-10-28), to repeat after layout changes. Resolutions: 375×667, 390×844, 412×915, 768×1024, 1366×768 and 1920×1080. At each one, take Playwright screenshots at 16 moments: hero, about, three map beats, the map→seats hand-off, two seats beats, the interception, DD's name, DD's notes, DD's CTA, journey, work, close, and the CV overlay. Review them by eye. Also check automatically that there is no sideways scroll and no visible text past a viewport edge. The phone layout applies to NARROW in util.ts, (max-width: 760px), (max-width: 1100px) and (orientation: portrait), so portrait tablets get it too; they used to get the desktop layout, broken. Keep the v2.css media query and NARROW in step. Short phones (≤720 px tall) have their own tweaks. All of this was emulated: held scroll, svh heights and the touch cue have never run on a real phone.",
+  "not_derivable": "The moment list and the automatic checks were a one-off script that is not in the repo; only the resolutions survive in docs/v2/TODO.md.",
+  "triggers": [
+    {
+      "on": [
+        "edit",
+        "write"
+      ],
+      "paths": [
+        "src/styles/v2.css",
+        "src/scripts/v2/util.ts",
+        "src/pages/v2.astro"
+      ]
+    }
+  ],
+  "evidence": [
+    {
+      "type": "file",
+      "path": "src/scripts/v2/util.ts",
+      "sha256": "a3c1d38b3097e91afdeaa74a6c5920bc2b32c3501eb7d6aac64a2d9652fc1433",
+      "summary": "NARROW media query shared with v2.css"
+    },
+    {
+      "type": "note",
+      "summary": "Compatibility pass of 2026-10-28 at six resolutions, run with Playwright."
+    }
+  ],
+  "origin": "user_explicit",
+  "replaces": null,
+  "revisit_when": [],
+  "review": {
+    "issues": [],
+    "accepted": {
+      "by": "dd",
+      "at": "2026-10-29T17:11:46.534Z"
+    }
+  },
+  "created": "2026-10-29T17:11:46.534Z",
+  "updated": "2026-10-29T17:11:46.602Z"
+}

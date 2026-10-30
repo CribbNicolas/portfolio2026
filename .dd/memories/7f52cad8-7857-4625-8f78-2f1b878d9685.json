@@ -1,0 +1,59 @@
+{
+  "schema_version": 8,
+  "id": "7f52cad8-7857-4625-8f78-2f1b878d9685",
+  "project_id": "portfolio2026",
+  "topic": "og/regenerate",
+  "kind": "procedure",
+  "status": "active",
+  "title": "After changing the OG template, brand geometry, photo or either dataset, run `pnpm run og:local` and commit the regenerated images and og.lock.json",
+  "body": "The social cards are committed artifacts, not build output (the Cloudflare builder has no Chromium). Their fingerprint in og.lock.json (repo root) hashes the texts derived from content/data/content.es.json and content.en.json, the template scripts/og-template.ts, the brand in src/lib/brand.ts and the photo public/foto.jpeg. Steps: 1) make the change; 2) `pnpm run og:local` (launches Chromium via scripts/build-og.ts); 3) commit public/og.jpg, public/og.en.jpg and og.lock.json together with the change. Otherwise `pnpm run test:og` (scripts/og-output.check.ts) fails as stale — that is the gate working, not a false positive. If the check reports the image is over WhatsApp's weight ceiling, lower `QUALITY` in scripts/build-og.ts rather than switching to PNG.",
+  "not_derivable": "A dataset edit looks unrelated to the social card; the dependency only appears when test:og fails after a build, and the fix requires committing binaries.",
+  "triggers": [
+    {
+      "on": [
+        "edit",
+        "write"
+      ],
+      "paths": [
+        "scripts/og-template.ts",
+        "scripts/og-data.ts",
+        "src/lib/brand.ts",
+        "public/foto.jpeg",
+        "content/data/content.es.json",
+        "content/data/content.en.json"
+      ]
+    }
+  ],
+  "evidence": [
+    {
+      "type": "file",
+      "path": "scripts/og-data.ts",
+      "sha256": "39447c0f4c19de6aac176e30beb2b0c417bdc37d9517e58fb1b97120a7c62541",
+      "summary": "PHOTO = public/foto.jpeg; fingerprint hashes texts + photo; outputs public/og.jpg and public/og.en.jpg."
+    },
+    {
+      "type": "file",
+      "path": "scripts/build-og.ts",
+      "sha256": "ce51ef3ac42f88c857760adaaa8a70e888c11406afbdbaae3b0886e459ab1d6b",
+      "summary": "og:local writes the images and og.lock.json; QUALITY tuned for WhatsApp's weight ceiling."
+    },
+    {
+      "type": "file",
+      "path": "scripts/og-output.check.ts",
+      "sha256": "07e8211cba8620eacd07e9ea49adbff57d44918724ced4a454e3edb52bc323cc",
+      "summary": "test:og: dimensions, weight ceiling, staleness against the fingerprint, favicon vs brand.ts."
+    }
+  ],
+  "origin": "user_explicit",
+  "replaces": null,
+  "revisit_when": [],
+  "review": {
+    "issues": [],
+    "accepted": {
+      "by": "dd",
+      "at": "2026-10-29T17:11:47.182Z"
+    }
+  },
+  "created": "2026-10-29T17:11:47.182Z",
+  "updated": "2026-10-29T17:11:47.282Z"
+}

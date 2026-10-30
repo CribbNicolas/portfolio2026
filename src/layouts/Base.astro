@@ -12,8 +12,7 @@ const OG_LOCALE: Record<Locale, string> = { es: "es_AR", en: "en_US" };
  * Base layout. Its only responsibility is the `<head>`.
  *
  * The `head` slot exists so each page can inject its server-rendered JSON-LD:
- * crawlers do not execute JS, so it has to be in the server HTML
- * (docs/04 §3).
+ * crawlers do not execute JS, so it has to be in the server HTML.
  */
 interface Props {
   title: string;
@@ -46,10 +45,17 @@ interface Props {
    * the safe side of the mistake.
    */
   hreflang?: boolean;
+  /**
+   * The path this page declares as its canonical, when it is not itself.
+   * The brief views (`/brief`, `/en/brief`) repeat the landing's facts on a
+   * second URL, so they point at their landing: one page competes in search,
+   * and the sitemap leaves them out to say the same thing.
+   */
+  canonicalPath?: string;
 }
 
-const { title, description, locale = "es", shareable = false, hreflang = false } = Astro.props;
-const canonical = new URL(Astro.url.pathname, Astro.site);
+const { title, description, locale = "es", shareable = false, hreflang = false, canonicalPath } = Astro.props;
+const canonical = new URL(canonicalPath ?? Astro.url.pathname, Astro.site);
 const m = MESSAGES[locale];
 
 // The dimensions come from the same module that uses them to generate the

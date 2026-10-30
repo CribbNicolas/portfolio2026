@@ -1,0 +1,53 @@
+{
+  "schema_version": 8,
+  "id": "1f997063-2703-4a4f-8559-39dad6f97922",
+  "project_id": "portfolio2026",
+  "topic": "content/confidentiality",
+  "kind": "fact",
+  "status": "active",
+  "title": "Keep Hogarth's client, Adsmovil product names, freelance clients and Seat Map/Muse screenshots out of every published text and image",
+  "body": "Confidentiality limits the author set, all of which apply to content/data/content.*.json and anything under public/:\n- Hogarth works under NDA: the employer may be named; the client is only `cliente global del sector tecnológico (Fortune 500)` (`clientDescription`). Client name, page names and the specific markets/languages stay out; copy describes the adaptation pattern only.\n- Adsmovil: never present the author's audience query builder as the product later marketed as \"Personas\" / Audience Marketplace. It was announced after the author left. The internal name is unknown; the only allowed mention is the existing disclaimer in `adsmovil-audiencias`.\n- Freelance (2020-04 -> 2022-06): no client names, no case study.\n- WooCommerce Seat Map (`wp-plugins`) and Muse (`muse-crm`, `muse-api`) are private client software: never publish screenshots or captures. Their evidence is the decisions block (and, for Muse, the public app link). Any visual for them must be drawn by us, e.g. an architecture diagram.",
+  "not_derivable": "NDA scope, the post-departure product launch and the no-capture rule are agreements outside the repo; the data only shows what was already left out.",
+  "triggers": [
+    {
+      "on": [
+        "edit",
+        "write"
+      ],
+      "paths": [
+        "content/data/content.*.json",
+        "public/**"
+      ]
+    }
+  ],
+  "evidence": [
+    {
+      "type": "file",
+      "path": "content/data/content.es.json",
+      "sha256": "800ec82c5a2df6189546749f94547d11fd8f4cebb5f0a734cf11e630c33fb5d8",
+      "summary": "hogarth.clientDescription is the anonymised Fortune 500 phrase; adsmovil-audiencias.text.long disclaims Personas/Audience Marketplace; projects carry no media."
+    },
+    {
+      "type": "file",
+      "path": "content/schema/content-schema.ts",
+      "sha256": "ded5323ced67229fdd0bec59d8f1b690fb0b59b55faba9f013ca8c16d33ce456",
+      "summary": "clientDescription documented as the NDA form."
+    },
+    {
+      "type": "note",
+      "summary": "Author 2026-10-29: Seat Map and Muse captures cannot be published; visuals only as drawn diagrams."
+    }
+  ],
+  "origin": "user_explicit",
+  "replaces": null,
+  "revisit_when": [],
+  "review": {
+    "issues": [],
+    "accepted": {
+      "by": "dd",
+      "at": "2026-10-29T17:11:35.367Z"
+    }
+  },
+  "created": "2026-10-29T17:11:35.367Z",
+  "updated": "2026-10-29T17:11:35.463Z"
+}

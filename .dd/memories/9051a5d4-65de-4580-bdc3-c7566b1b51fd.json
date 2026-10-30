@@ -1,0 +1,50 @@
+{
+  "schema_version": 8,
+  "id": "9051a5d4-65de-4580-bdc3-c7566b1b51fd",
+  "project_id": "portfolio2026",
+  "topic": "analytics/tools",
+  "kind": "decision",
+  "status": "superseded",
+  "title": "Keep both Clarity and Cloudflare Web Analytics on the reader pages; they measure different things and neither replaces the other",
+  "body": "Cloudflare Web Analytics gives pageviews, referrers, country, browser and Core Web Vitals, with no cookies, but no heatmaps. The question worth answering (which parts of the page and the CV get read) needs Microsoft Clarity: click, scroll and area heatmaps plus session recordings. Both are free, so both stay. Do not remove Clarity 'because CWA already covers analytics', and do not swap CWA for Clarity's pageview data. Both are wired once in src/components/Analytics.astro, used by the landings (/, /en/) and the brief views (/brief, /en/brief); /cv and /en/cv stay at zero JS. Clarity starts on first interaction and runs cookieless (src/scripts/analytics.ts).",
+  "not_derivable": "Why two analytics tools coexist (heatmaps vs CWA's vitals) is not explained in code.",
+  "triggers": [
+    {
+      "on": [
+        "edit",
+        "write"
+      ],
+      "paths": [
+        "src/scripts/analytics.ts",
+        "src/components/Analytics.astro"
+      ]
+    }
+  ],
+  "evidence": [
+    {
+      "type": "file",
+      "path": "src/components/Analytics.astro",
+      "sha256": "f3994b856215b099a998f76a3c0bd26a3245f3fffcd231a31a0e4161c42f4167",
+      "summary": "Cited when this memory was saved."
+    },
+    {
+      "type": "file",
+      "path": "src/scripts/analytics.ts",
+      "sha256": "54074ac86ed3fdd945ceefca260ea393b8154ed7d49361e3d50ce212f22e7890",
+      "summary": "Cited when this memory was saved."
+    }
+  ],
+  "origin": "user_explicit",
+  "replaces": "62c1ae84-3cf2-477d-9b0a-34eb1ae0a2b3",
+  "revisit_when": [],
+  "review": {
+    "issues": [],
+    "batch": "landing-v2-stage-1-revisions",
+    "accepted": {
+      "by": "person",
+      "at": "2026-10-29T20:58:04.529Z"
+    }
+  },
+  "created": "2026-10-29T20:48:06.546Z",
+  "updated": "2026-10-29T23:15:14.917Z"
+}

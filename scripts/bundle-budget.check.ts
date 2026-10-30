@@ -1,29 +1,24 @@
 /**
- * Byte budget for the map, on every page that ships it.
- *
- * The claim this file defends is not "three is small" — it is not, it is 127 KB
- * gzip — but that it is **off the critical path**. Without this check that is a
- * promise: it takes one static import of `graph-3d` for Rollup to hoist three
- * into the initial bundle, and nothing warns.
+ * Byte budget for every page that ships JavaScript, and the scroll rule.
  *
  * The pages measured come from `PAGES_WITH_JS` (`pages-with-js.ts`), the same
  * list `no-client-js.check.ts` uses to decide which pages may ship a script at
  * all. Before this shared list existed, the byte ceiling read `dist/index.html`
- * by path: when `/en/` shipped a second landing with the same map, it got no
- * budget at all, silently (docs/07-technical-debt.md #37).
+ * by path: when `/en/` shipped a second landing, it got no budget at all,
+ * silently.
  *
- * The "critical path" for each page is not just its `<script src>`: Rollup
- * shares the boot logic between the two landings, so that tag can point at a
- * few-byte wrapper while the real payload lives one static `import` away, in a
- * chunk the wrapper alone never reveals. `criticalChunks` below follows static
- * `import` specifiers transitively from each page's entry chunk — but never a
- * dynamic `import()`, which is the deliberate boundary where `three` is allowed
- * to cross. Skipping that walk is exactly how this check went blind once
- * already: it kept scanning a 44-byte wrapper for `WebGLRenderer` while the
- * 4.6 KB chunk that actually runs sat one hop away, unread.
+ * The "critical path" for each page is not just its `<script src>`: Rollup can
+ * point that tag at a few-byte wrapper while the real payload lives one static
+ * `import` away. `criticalChunks` below follows static `import` specifiers
+ * transitively from each page's entry chunk — but never a dynamic `import()`,
+ * which is the deliberate boundary for what may load late. Skipping that walk is exactly how this check went blind
+ * once already: it kept scanning a 44-byte wrapper while the chunk that
+ * actually runs sat one hop away, unread.
  *
- * The thresholds come from the first green measurement plus margin. When one
- * fails, the message states the measured value, the ceiling and what to look at.
+ * The thresholds come from the stage 3 measurement (docs/TODO.md, 2026-10-29)
+ * plus margin. When one fails, the message states the measured value, the
+ * ceiling and what to look at. Going over can be right; then raise the
+ * constant in the same diff, with the reason.
  *
  * The name does NOT end in `.test.ts` on purpose: it needs a prior build.
  */
@@ -34,43 +29,32 @@ import { readdir, readFile } from "node:fs/promises";
 import { gzipSync } from "node:zlib";
 import { basename, join } from "node:path";
 
-import { content, buildKnowledgeGraph } from "../content/source/index";
-import { PAGES_WITH_JS } from "./pages-with-js";
+import { content } from "../content/source/index";
+import { PAGES_WITH_JS, SCROLL_DRIVEN_PAGES } from "./pages-with-js";
 
 const DIST = "dist";
 const ASTRO = join(DIST, "_astro");
-/**
- * Representative page for checks that are about CSS rules or DOM markup
- * shared by construction across locales — the stylesheet and the map
- * component are the same module either way, so scanning both landings would
- * measure the same source twice. Only used by the tests that are NOT byte
- * budgets (see the bottom third of this file).
- */
-const REPRESENTATIVE_PAGE = "index.html";
-
-/** What a page executes before deciding whether loading the 3D is worth it. */
-const CRITICAL_BUDGET_KB = 4;
-/** The deferred chunk with three inside. Measured: 127 KB. */
-const DEFERRED_BUDGET_KB = 150;
-/** The background field: WebGL by hand, no library. Measured: 1.9 KB. */
-const FIELD_BUDGET_KB = 8;
-/**
- * Each landing's HTML carries the graph coordinates inside it — and, since
- * `inlineStylesheets: "always"`, its stylesheets too. That move traded two
- * render-blocking requests (~670 ms before the first paint, measured on the
- * published page) for ~16 KB gzip of inlined CSS, which is why this ceiling
- * went from 30 to 34: 29 KB measured, plus margin. It is deliberately NOT
- * generous. The whole point of a byte budget on a page whose CSS now travels
- * with every HTML response is that the next thing to cross it gets noticed.
- */
-const HTML_BUDGET_KB = 34;
 
 /**
- * Prefix of the field chunk. Rollup names the chunk after the module, so this
- * string is coupled to `src/scripts/lab/field.ts`: renaming that file without
- * touching this one turns the check into a silent pass.
+ * Critical JS, gzip. The landing runs GSAP, ScrollTrigger, SplitText, Lenis,
+ * d3-delaunay and its chapters up front, under the loader: 71.6 KB measured.
+ * The brief view only boots the reveal and the analytics: 1.5 KB measured.
  */
-const FIELD_CHUNK = "field.";
+const CRITICAL_BUDGET_KB = (page: string): number => (SCROLL_DRIVEN_PAGES.has(page) ? 80 : 4);
+
+/** Any chunk a page loads later through `import()`. None today (the brief
+ *  view's background moved to CSS); a new one starts under this ceiling. */
+const DEFERRED_BUDGET_KB = 8;
+
+/**
+ * HTML, gzip, stylesheets included (`inlineStylesheets: "always"` traded two
+ * render-blocking requests, ~670 ms on the published page, for CSS in every
+ * response). The landing carries every chapter's markup and v2.css: 49 KB
+ * measured. The brief view: 19 KB. Deliberately NOT generous: the point of a
+ * byte budget on a page whose CSS travels with every response is that the
+ * next thing to cross it gets noticed.
+ */
+const HTML_BUDGET_KB = (page: string): number => (SCROLL_DRIVEN_PAGES.has(page) ? 55 : 24);
 
 const kb = (b: Buffer): number => Math.round((gzipSync(b).length / 1024) * 10) / 10;
 
@@ -86,98 +70,64 @@ const scriptSrcs = (html: string): string[] =>
  * A STATIC `import ... from "./x.js"` (or bare `import "./x.js"`) specifier.
  * Deliberately does not match `import("./x.js")`: the required `["']`
  * immediately after the optional `from` clause cannot follow the `(` a
- * dynamic call opens with, so `graph-3d`'s and `field`'s dynamic imports never
- * enter the walk. That is not incidental — it is the boundary this whole file
- * exists to keep three on the far side of.
+ * dynamic call opens with, so dynamic imports never enter the critical walk.
  */
 const STATIC_IMPORT_RE = /import\s*(?:[^"'();]*?\bfrom\s*)?["'](\.[^"']+)["']/g;
+const DYNAMIC_IMPORT_RE = /import\(\s*["'](\.[^"']+)["']\s*\)/g;
 
 /**
  * Every chunk a page's entry script(s) reach through STATIC imports only,
- * followed transitively. This is "the critical path": what the browser must
- * fetch and run before the page is interactive, as opposed to what a dynamic
- * `import()` defers until the map scrolls into view.
+ * followed transitively — "the critical path" — and the chunks those load
+ * later through a dynamic `import()`.
  */
-async function criticalChunks(html: string): Promise<string[]> {
+async function walk(html: string): Promise<{ critical: string[]; deferred: string[] }> {
   const seen = new Set<string>();
+  const deferred = new Set<string>();
   const queue = scriptSrcs(html);
   while (queue.length) {
     const f = queue.shift()!;
     if (seen.has(f)) continue;
     seen.add(f);
     const src = (await read(f)).toString("utf8");
-    for (const m of src.matchAll(STATIC_IMPORT_RE)) {
-      // Chunks live flat in `_astro/`, so a relative specifier's basename is
-      // its filename regardless of how many `./`/`../` segments precede it.
-      const next = basename(m[1]!);
-      if (!seen.has(next)) queue.push(next);
-    }
+    // Chunks live flat in `_astro/`, so a relative specifier's basename is
+    // its filename regardless of how many `./`/`../` segments precede it.
+    for (const m of src.matchAll(STATIC_IMPORT_RE)) queue.push(basename(m[1]!));
+    for (const m of src.matchAll(DYNAMIC_IMPORT_RE)) deferred.add(basename(m[1]!));
   }
-  return [...seen];
+  return { critical: [...seen], deferred: [...deferred].filter((f) => !seen.has(f)) };
 }
+
+const walks = new Map<string, { critical: string[]; deferred: string[] }>();
+for (const page of PAGES_WITH_JS) walks.set(page, await walk(await readFile(join(DIST, page), "utf8")));
 
 for (const page of PAGES_WITH_JS) {
   const html = await readFile(join(DIST, page), "utf8");
-  const critical = await criticalChunks(html);
+  const { critical, deferred } = walks.get(page)!;
 
-  test(`${page}: the critical path is only the bootstrap`, async () => {
+  test(`${page}: the critical JS fits its ceiling`, async () => {
     let total = 0;
     for (const f of critical) total += kb(await read(f));
+    const ceiling = CRITICAL_BUDGET_KB(page);
     assert.ok(
-      total <= CRITICAL_BUDGET_KB,
-      `${page}'s critical JS weighs ${total} KB gzip, ceiling ${CRITICAL_BUDGET_KB} KB. ` +
-      `Chunks: ${critical.join(", ")}. Most likely a static import got in that should have been dynamic.`,
+      total <= ceiling,
+      `${page}'s critical JS weighs ${total} KB gzip, ceiling ${ceiling} KB. ` +
+        `Chunks: ${critical.join(", ")}. A static import that should be dynamic, or a dependency that grew.`,
     );
   });
 
-  test(`${page}: three is NOT on the critical path`, async () => {
-    // The central claim. If a static import hoists the chunk — directly, or
-    // through another chunk the entry statically imports — this catches it.
-    for (const f of critical) {
-      const src = (await read(f)).toString("utf8");
-      assert.ok(
-        !src.includes("WebGLRenderer"),
-        `three ended up inside ${page}'s critical chunk ${f}. Check that nobody imports ` +
-        `\`graph-3d\` statically: an \`import\` of a type without \`type\` is enough.`,
-      );
+  test(`${page}: every deferred chunk fits its ceiling`, async () => {
+    for (const f of deferred) {
+      const weight = kb(await read(f));
+      assert.ok(weight <= DEFERRED_BUDGET_KB, `${page} defers ${f}: ${weight} KB gzip, ceiling ${DEFERRED_BUDGET_KB} KB.`);
     }
   });
 
   test(`${page}: the HTML fits the budget`, () => {
     const weight = kb(Buffer.from(html, "utf8"));
-    assert.ok(weight <= HTML_BUDGET_KB, `${page} weighs ${weight} KB gzip of HTML, ceiling ${HTML_BUDGET_KB} KB.`);
+    const ceiling = HTML_BUDGET_KB(page);
+    assert.ok(weight <= ceiling, `${page} weighs ${weight} KB gzip of HTML, ceiling ${ceiling} KB.`);
   });
 }
-
-test("the three chunk exists as a separate file and fits the budget", async () => {
-  // Global over every emitted chunk, not per page: both landings' entry
-  // chunks resolve to the SAME shared `boot.js`, so a duplicated three chunk
-  // would mean Rollup split per locale instead of sharing — a bug this
-  // assertion already catches without needing to loop over `PAGES_WITH_JS`.
-  const withThree: string[] = [];
-  for (const f of chunks) {
-    if ((await read(f)).toString("utf8").includes("WebGLRenderer")) withThree.push(f);
-  }
-  assert.equal(withThree.length, 1, `expected 1 chunk with three, found ${withThree.length}: ${withThree.join(", ")}`);
-
-  const weight = kb(await read(withThree[0]!));
-  assert.ok(
-    weight <= DEFERRED_BUDGET_KB,
-    `the 3D chunk weighs ${weight} KB gzip, ceiling ${DEFERRED_BUDGET_KB} KB. ` +
-    `Check that nothing from \`three/examples\` or postprocessing got in.`,
-  );
-});
-
-test("the background field did not drag in a library", async () => {
-  const field = chunks.find((f) => f.startsWith(FIELD_CHUNK));
-  assert.ok(field, `no field chunk found among: ${chunks.join(", ")}`);
-  const weight = kb(await read(field));
-  assert.ok(
-    weight <= FIELD_BUDGET_KB,
-    `the field chunk weighs ${weight} KB gzip, ceiling ${FIELD_BUDGET_KB} KB. ` +
-    `It is WebGL by hand: if it grew like this, a dependency got in that should not be there.`,
-  );
-});
 
 test("no chunk took zod or the dataset to the browser", async () => {
   // A single `import ... from "@content"` in client code drags both:
@@ -196,68 +146,26 @@ test("no chunk took zod or the dataset to the browser", async () => {
   }
 });
 
-test("the SVG fallback has one node per graph node", async () => {
-  // Keeps the SVG from atrophying unnoticed: if the 3D becomes the only real
-  // path, the requirement to degrade without JS stops holding silently. It is
-  // compared against the derivation, not against a written number.
-  //
-  // Checked on the representative page only: the node count is a property of
-  // the graph structure, which does not change with the locale's labels.
-  const html = await readFile(join(DIST, REPRESENTATIVE_PAGE), "utf8");
-  const view = await content.getView("portfolio", "es");
-  const expected = buildKnowledgeGraph(view).nodes.length;
-  const drawn = [...html.matchAll(/class="lab__node/g)].length;
-  assert.equal(
-    drawn, expected,
-    `the SVG draws ${drawn} nodes and the graph has ${expected}.`,
-  );
-});
-
-test("the map shares the touch gesture with the browser, it does not intercept it", async () => {
-  // `touch-action: pan-x pan-y` gives every one-finger swipe to the page.
-  // Rotation is two fingers, counted in JS, never via preventDefault on
-  // touchmove — exactly what spec §3.4 forbids.
-  const html = await readFile(join(DIST, REPRESENTATIVE_PAGE), "utf8");
-  const sheets = (await readdir(ASTRO)).filter((f) => f.endsWith(".css"));
-  const sources = [html, ...(await Promise.all(sheets.map((f) => readFile(join(ASTRO, f), "utf8"))))]
-    .map((s) => s.replace(/\s+/g, ""));
-  const ok = sources.some((src) =>
-    /\.lab__map--3d\{[^}]*touch-action:pan-xpan-y/.test(src) ||
-    /\.lab__map--3d\{[^}]*touch-action:pan-ypan-x/.test(src),
-  );
-  assert.ok(ok, "`touch-action: pan-x pan-y` is missing on .lab__map--3d: a one-finger drag could hijack the scroll");
-});
-
-test("no client module listens for wheel or touchmove", async () => {
-  // Scrolling stays in the browser's hands by construction. A `wheel` or
-  // `touchmove` listener is the doorway to scroll hijacking, so the doorway is
-  // forbidden, not the abuse.
+test("only the landing's code listens for wheel or touchmove", async () => {
+  // A `wheel` or `touchmove` listener is the doorway to scroll hijacking, so
+  // the doorway is forbidden — with ONE named exception, CLAUDE.md invariant
+  // 7: the landing's scroll-driven chapters (Lenis, held scenes). A chunk is
+  // exempt only when no other page loads it, so the exception cannot leak to
+  // the brief view through a shared chunk.
+  const landing = new Set<string>();
+  const others = new Set<string>();
+  for (const [page, { critical, deferred }] of walks) {
+    for (const f of [...critical, ...deferred]) (SCROLL_DRIVEN_PAGES.has(page) ? landing : others).add(f);
+  }
   for (const f of chunks) {
+    if (landing.has(f) && !others.has(f)) continue;
     const src = (await read(f)).toString("utf8");
     for (const event of ["wheel", "touchmove"]) {
       assert.ok(
         !src.includes(`"${event}"`) && !src.includes(`'${event}'`),
-        `chunk ${f} registers a \`${event}\` listener. The pointer and the scroll are read passively.`,
+        `chunk ${f} registers a \`${event}\` listener and is not the landing's alone. ` +
+          "The scroll exception is the landing's (scripts/pages-with-js.ts SCROLL_DRIVEN_PAGES).",
       );
     }
-  }
-});
-
-test("the canvases cannot capture the pointer", async () => {
-  // `pointer-events: none` is what makes clicks and scroll pass through. It is
-  // a CSS rule, so it is verified in what is EMITTED, not in the intent.
-  //
-  // Searched in the HTML and in the .css files: Astro inlines small sheets into
-  // the page, so looking only at `_astro/*.css` would give a false negative.
-  const html = await readFile(join(DIST, REPRESENTATIVE_PAGE), "utf8");
-  const sheets = (await readdir(ASTRO)).filter((f) => f.endsWith(".css"));
-  const sources = [html, ...(await Promise.all(sheets.map((f) => readFile(join(ASTRO, f), "utf8"))))]
-    .map((s) => s.replace(/\s+/g, ""));
-
-  for (const className of ["lab__canvas", "lab__field"]) {
-    const found = sources.some((src) =>
-      new RegExp(`\\.${className}\\{[^}]*pointer-events:none`).test(src),
-    );
-    assert.ok(found, `\`pointer-events: none\` on .${className} not found in the emitted output`);
   }
 });

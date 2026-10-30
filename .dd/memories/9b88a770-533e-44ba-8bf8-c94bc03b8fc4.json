@@ -1,0 +1,57 @@
+{
+  "schema_version": 8,
+  "id": "9b88a770-533e-44ba-8bf8-c94bc03b8fc4",
+  "project_id": "portfolio2026",
+  "topic": "deploy/pdf-local",
+  "kind": "procedure",
+  "status": "active",
+  "title": "Test the PDF Function's render on the staging preview; locally wrangler only proves routing, caching and errors",
+  "body": "Working on the CV does not need the Function: `pnpm run dev` serves `/cv` and `pnpm run pdf:local` prints with Playwright. Only for `functions/**`:\n1. `cp .dev.vars.example .dev.vars` and fill both values.\n2. `pnpm run build`\n3. `pnpm dlx wrangler pages dev dist` (dlx: wrangler is NOT a repo dependency; `.dev.vars.example` says `pnpm exec`, which fails) -> http://localhost:8788/cv.pdf\nBrowser Rendering will try to print `http://localhost:8788/cv`, unreachable from Cloudflare's cloud, so locally you verify routing, caching and error handling, NOT the render. The render is tested on the `staging` preview (staging.cribbnicolas.pages.dev/cv.pdf), and the smoke (`smoke-deploy.yml`) is the end-to-end test. A tunnel was considered and rejected as infra for a one-minute preview.",
+  "not_derivable": "That the render cannot be tested locally, and that a tunnel was rejected in favour of the staging preview, is not written in code.",
+  "triggers": [
+    {
+      "on": [
+        "edit",
+        "write"
+      ],
+      "paths": [
+        "functions/**",
+        ".dev.vars.example"
+      ]
+    },
+    {
+      "on": [
+        "run"
+      ],
+      "commands": [
+        "wrangler pages dev"
+      ]
+    }
+  ],
+  "evidence": [
+    {
+      "type": "file",
+      "path": ".dev.vars.example",
+      "sha256": "90aa56929570ed6a9ae0f9ea3af9374872215f85271b6ffba03e758ed71bbabc",
+      "summary": "Local vars template; its wrangler command says `pnpm exec`."
+    },
+    {
+      "type": "file",
+      "path": ".github/workflows/smoke-deploy.yml",
+      "sha256": "9f96c635b5c604ee5289e992cadfeaf0ba1d45995778e77a31b6141c5ace8f40",
+      "summary": "Tests the published PDF after each staging/main deploy."
+    }
+  ],
+  "origin": "user_explicit",
+  "replaces": null,
+  "revisit_when": [],
+  "review": {
+    "issues": [],
+    "accepted": {
+      "by": "dd",
+      "at": "2026-10-29T17:11:38.974Z"
+    }
+  },
+  "created": "2026-10-29T17:11:38.974Z",
+  "updated": "2026-10-29T17:11:39.077Z"
+}

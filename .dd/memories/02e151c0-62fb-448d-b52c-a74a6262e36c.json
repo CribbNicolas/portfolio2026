@@ -1,0 +1,58 @@
+{
+  "schema_version": 8,
+  "id": "02e151c0-62fb-448d-b52c-a74a6262e36c",
+  "project_id": "portfolio2026",
+  "topic": "i18n/lock",
+  "kind": "trap",
+  "status": "active",
+  "title": "Run i18n:lock only after actually translating; re-stamping untranslated English passes every gate",
+  "body": "translation.lock.json holds one hash per SPANISH string and nothing for English, on purpose: Spanish is always edited first, so the lock only answers 'did the Spanish this English came from move since?'. Catching silent English-only edits would need a second hash per field and a second check for a mistake the workflow forbids; do not add one. Trap: `pnpm run i18n:lock` stamps whatever is in content.en.json, good, bad or copy-pasted Spanish. i18n.check.ts only catches an EXACT copy over 40 characters, so running the lock without translating declares the work done. Same shape as `format:data` and `og:local`: gates against forgetting, not against lying. Before stamping, confirm every path test:i18n named was really translated; reviewers read the English diff like a number.",
+  "not_derivable": "Why only Spanish is hashed and that a re-stamp proves nothing are not stated in i18n-lock.ts or i18n.check.ts.",
+  "triggers": [
+    {
+      "on": [
+        "run"
+      ],
+      "commands": [
+        "pnpm run i18n:lock"
+      ]
+    },
+    {
+      "on": [
+        "edit",
+        "write"
+      ],
+      "paths": [
+        "scripts/i18n-lock.ts",
+        "scripts/i18n.check.ts",
+        "content/data/translation.lock.json"
+      ]
+    }
+  ],
+  "evidence": [
+    {
+      "type": "file",
+      "path": "scripts/i18n-lock.ts",
+      "sha256": "fa3b342187fe53e9ebd89048f52b7cb930f986afa809654b387c988b27c94eb7",
+      "summary": "Hashes every Spanish translatable string; checks nothing."
+    },
+    {
+      "type": "file",
+      "path": "scripts/i18n.check.ts",
+      "sha256": "deeacbcd637f4f5e0669ca6023375901eec80bb85f78d7db590e00c7569fb813",
+      "summary": "Missing-translation check: byte-identical and over 40 chars."
+    }
+  ],
+  "origin": "user_explicit",
+  "replaces": null,
+  "revisit_when": [],
+  "review": {
+    "issues": [],
+    "accepted": {
+      "by": "dd",
+      "at": "2026-10-29T17:11:42.201Z"
+    }
+  },
+  "created": "2026-10-29T17:11:42.201Z",
+  "updated": "2026-10-29T17:11:42.301Z"
+}

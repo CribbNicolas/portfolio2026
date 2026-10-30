@@ -116,8 +116,8 @@ test("the two datasets are structurally identical outside translated text", () =
   // could agree on every tracked path while disagreeing on everything else —
   // proven true against the committed pair before C2 was fixed (see the PR's
   // fix report). Blanking every tracked leaf and deep-comparing what remains
-  // is what actually holds up the promise in docs/10 §3 and the design spec's
-  // §3.1: structural fields are IDENTICAL in both files.
+  // is what actually holds up the promise: structural fields are IDENTICAL in
+  // both files.
   const diffs: string[] = [];
   diffSkeletons(
     structuralSkeleton(es as never as ContentDataset),

@@ -1,0 +1,46 @@
+{
+  "schema_version": 8,
+  "id": "c6afc423-41cc-41c5-9f05-2b38717d28e9",
+  "project_id": "portfolio2026",
+  "topic": "content/metrics",
+  "kind": "decision",
+  "status": "active",
+  "title": "Do not add or ask for metrics on Adsmovil, Hogarth or freelance achievements: metrics are closed with only the two RPPL ones",
+  "body": "Closed by the author 2026-10-29. Only `dinkum-mapbox` (~13.000 districts, estimated; live count 13.360) and `dinkum-mapbox-index` (index time 5 s -> 500 ms, estimated) carry a `metric`. The `before` of 5 s is the worst case of the real 3-5 s range, chosen by the author 2026-10-28. The author has no access to the Adsmovil, Hogarth or freelance systems and does not remember their figures, so `adsmovil-audiencias`, `adsmovil-campanias`, `adsmovil-mapbox`, `hogarth-i18n` and `freelance-landings` stay WITHOUT a metric: not a reconstructed one, not a placeholder, and do not prompt the author for one again. Reopen only if a real source appears (an old report, a colleague, a public page) and record it in `metric.source`. Any new estimate gets `confidence: \"estimated\"` so formatMetric renders \"~\".",
+  "not_derivable": "Missing metrics look like a data gap to fill; nothing in the repo says the author already exhausted every source and closed the question.",
+  "triggers": [
+    {
+      "on": [
+        "edit",
+        "write"
+      ],
+      "paths": [
+        "content/data/content.*.json"
+      ]
+    }
+  ],
+  "evidence": [
+    {
+      "type": "file",
+      "path": "content/data/content.es.json",
+      "sha256": "800ec82c5a2df6189546749f94547d11fd8f4cebb5f0a734cf11e630c33fb5d8",
+      "summary": "Only dinkum-mapbox and dinkum-mapbox-index have a metric, each with confidence estimated and a source note."
+    },
+    {
+      "type": "note",
+      "summary": "Author 2026-10-29: no access to older roles' systems or figures; metrics closed; reopen only with a source."
+    }
+  ],
+  "origin": "user_explicit",
+  "replaces": null,
+  "revisit_when": [],
+  "review": {
+    "issues": [],
+    "accepted": {
+      "by": "dd",
+      "at": "2026-10-29T17:11:35.687Z"
+    }
+  },
+  "created": "2026-10-29T17:11:35.687Z",
+  "updated": "2026-10-29T17:11:35.784Z"
+}

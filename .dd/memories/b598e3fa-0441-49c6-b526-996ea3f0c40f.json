@@ -1,0 +1,49 @@
+{
+  "schema_version": 8,
+  "id": "b598e3fa-0441-49c6-b526-996ea3f0c40f",
+  "project_id": "portfolio2026",
+  "topic": "content/projects",
+  "kind": "decision",
+  "status": "active",
+  "title": "Leave jwd-maderas hidden via `except` until it launches, and leave wp-plugins / muse-api with `links: []` because they are private",
+  "body": "`jwd-maderas` is in content/data/content.*.json with `visibility.except` listing every surface (cv, cv-short, cv-ats, portfolio, linkedin, public-api). That is deliberate (unpublished 2026-09-01, deferred 2026-10-29): it stays hidden until the author finishes and launches it, and its links, outcome and metric come with the launch, not before. Its `problem`/`outcome` still hold `TODO`s; do not fill them or remove the `except` to make the projects section fuller. `wp-plugins` (WooCommerce Seat Map) and `muse-api` (Algolia API/rake) have `links: []` because they are private client code with no public URL; that may stay that way permanently. ProjectList renders a link only when one exists, so no placeholder link or code change is needed. `muse-crm` and `mapas-distritos` have real public links.",
+  "not_derivable": "An `except` on every surface and empty links arrays look like mistakes or unfinished data; the launch condition and privacy reason are only known to the author.",
+  "triggers": [
+    {
+      "on": [
+        "edit",
+        "write"
+      ],
+      "paths": [
+        "content/data/content.*.json",
+        "src/components/projects/**"
+      ]
+    }
+  ],
+  "evidence": [
+    {
+      "type": "file",
+      "path": "content/data/content.es.json",
+      "sha256": "800ec82c5a2df6189546749f94547d11fd8f4cebb5f0a734cf11e630c33fb5d8",
+      "summary": "jwd-maderas: status in-progress, visibility.except = all six surfaces, outcome TODO; wp-plugins and muse-api: links []."
+    },
+    {
+      "type": "file",
+      "path": "src/components/projects/ProjectList.astro",
+      "sha256": "4d0126270a83a83a8b2953039f5778ac332a7d2736ce79530bea97bf6473e838",
+      "summary": "Renders project links only when present."
+    }
+  ],
+  "origin": "user_explicit",
+  "replaces": null,
+  "revisit_when": [],
+  "review": {
+    "issues": [],
+    "accepted": {
+      "by": "dd",
+      "at": "2026-10-29T17:11:36.007Z"
+    }
+  },
+  "created": "2026-10-29T17:11:36.007Z",
+  "updated": "2026-10-29T17:11:36.107Z"
+}

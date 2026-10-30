@@ -1,0 +1,50 @@
+{
+  "schema_version": 8,
+  "id": "0abf5e76-a5ad-483e-8119-c1c0e42037c4",
+  "project_id": "portfolio2026",
+  "topic": "i18n/routing",
+  "kind": "decision",
+  "status": "active",
+  "title": "Do not add an Accept-Language auto-redirect between / and /en/; the language switch stays a plain link",
+  "body": "Spanish lives at / and English at /en/, chosen by the reader through LocaleSwitch.astro, which is a plain <a> to the other locale's home (works without JS; /cv and /en/cv ship zero JS). Automatic redirection by Accept-Language was rejected in the 2026-09-02 en-site spec: it breaks the back button, it hides Spanish from a reader whose browser says English but who wants Spanish (the market is LatAm and Spanish is canonical), and on a static host it costs a redirect rule (a Function or _redirects) in front of every request. x-default in hreflang points at Spanish for the same reason. Do not add a redirect in functions/, public/_headers, a new public/_redirects, or a client script.",
+  "not_derivable": "Nothing in code or remaining docs records that auto-redirect was considered and rejected, or why; an agent 'improving' i18n would plausibly add it.",
+  "triggers": [
+    {
+      "on": [
+        "edit",
+        "write"
+      ],
+      "paths": [
+        "src/components/LocaleSwitch.astro",
+        "src/lib/anchors.ts",
+        "src/layouts/Base.astro",
+        "public/_headers",
+        "functions/**/*.ts"
+      ]
+    }
+  ],
+  "evidence": [
+    {
+      "type": "file",
+      "path": "src/components/LocaleSwitch.astro",
+      "sha256": "cd46f6df9c466b14e42b7d15d59996d00767c80b5d70cb99a633257a9b6e374a",
+      "summary": "The ES/EN switch: a link, not a script, pointing at the other locale's home."
+    },
+    {
+      "type": "note",
+      "summary": "Rejection and reasons from the deleted docs/superpowers/specs/2026-09-02-en-site-design.md §2.4-2.5."
+    }
+  ],
+  "origin": "user_explicit",
+  "replaces": null,
+  "revisit_when": [],
+  "review": {
+    "issues": [],
+    "accepted": {
+      "by": "dd",
+      "at": "2026-10-29T17:11:42.536Z"
+    }
+  },
+  "created": "2026-10-29T17:11:42.536Z",
+  "updated": "2026-10-29T17:11:42.601Z"
+}

@@ -119,6 +119,14 @@ export default defineConfig({
       // line would look identical to today's.
       chunkSizeWarningLimit: 600,
 
+      // Never inline a script; everything else keeps Vite's default (the
+      // small font subsets still land in the CSS as `data:`). Astro inlines
+      // a page script under this limit, and the CSP in public/_headers runs
+      // no inline code but the landing's head script: an inlined script works
+      // in `astro preview` and is blocked in production. It happened twice
+      // (the analytics, then the brief view's reveal) before this rule.
+      assetsInlineLimit: (file) => (file.endsWith(".js") ? false : undefined),
+
       // Published source maps. Lighthouse flags a large first-party bundle
       // without one (`valid-source-maps`), and the repo is public, so there is
       // nothing in the map that `git clone` does not already give. The `.map`
@@ -134,7 +142,12 @@ export default defineConfig({
       // sitemap would invite the crawler to the one page we ask it to ignore —
       // and two contradictory signals confuse more than the absence of one.
       // `single-landing.check.ts` guards the rest of that invariant.
-      filter: (page) => !page.includes("/cv/"),
+      //
+      // The brief views (`/brief/`, `/en/brief/`) are out for the matching
+      // reason: their canonical points at the landing (`Base.astro`
+      // `canonicalPath`), and a sitemap listing a page that declares another
+      // URL canonical is the same contradiction.
+      filter: (page) => !page.includes("/cv/") && !page.includes("/brief/"),
       // Same two landings `Base.astro`'s `hreflang` tags point at each other,
       // declared here too: a sitemap that disagrees with the `<head>` is
       // worse than a sitemap that says nothing about locales at all — it

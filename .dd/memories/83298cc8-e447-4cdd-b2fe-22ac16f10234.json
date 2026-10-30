@@ -1,0 +1,52 @@
+{
+  "schema_version": 8,
+  "id": "83298cc8-e447-4cdd-b2fe-22ac16f10234",
+  "project_id": "portfolio2026",
+  "topic": "landing-v2/loader",
+  "kind": "decision",
+  "status": "active",
+  "title": "The landing's loader is honest and short, and shows once per deploy",
+  "body": "Author's rule (2026-10-26): a loader only if loading needs it, kept under ~3 s; a blocking percentage loader becomes the visit's remembered negative peak. So main.ts loader() shows REAL progress (fonts, the load event capped at 5 s, each chapter's init a frame apart, ScrollTrigger.refresh(), two painted frames), no minimum time, no fake timer; the hero's entrance plays as the mark leaves. Skipped on reduced motion and with ?nointro.\nFrequency, decided 2026-10-29 ('cuanto menos aparezca mejor'): once per DEPLOY. src/lib/landing-head.ts writes the inline head script: it stamps <html data-build> with the deploy id (CF_PAGES_COMMIT_SHA, 'local' otherwise) and adds class 'seen' before the first paint when localStorage 'landing:loader' already holds that id, so the loader never flashes (v2.css) and main.ts skips it; main.ts writes the id when the loader finishes. A new deploy shows it once more. Assets are already cached under hashed names, so a return visit downloads only what changed; do not add a service worker for that. No storage (private mode) just means the loader shows again.",
+  "not_derivable": "The once-per-deploy rule and why the flag is read in the head script (no flash) are the author's call and a timing constraint the code does not state as a requirement.",
+  "triggers": [
+    {
+      "on": [
+        "edit",
+        "write"
+      ],
+      "paths": [
+        "src/scripts/v2/main.ts",
+        "src/lib/landing-head.ts",
+        "src/pages/index.astro",
+        "src/pages/en/index.astro"
+      ]
+    }
+  ],
+  "evidence": [
+    {
+      "type": "file",
+      "path": "src/scripts/v2/main.ts",
+      "sha256": "d32f0fea0ea9a5ce9bb1c6e7033a5b31d7850f99f0a124392f22b0252392ce64",
+      "summary": "Cited when this memory was saved."
+    },
+    {
+      "type": "file",
+      "path": "src/lib/landing-head.ts",
+      "sha256": "0b37a336a204a5587eeb5cd39700d8e0dad9dd897807ee5eaa2e3fb77151d44c",
+      "summary": "Cited when this memory was saved."
+    }
+  ],
+  "origin": "user_explicit",
+  "replaces": "792be626-8c11-49c1-818e-aba198eb9115",
+  "revisit_when": [],
+  "review": {
+    "issues": [],
+    "batch": "landing-v2-stage-2",
+    "accepted": {
+      "by": "person",
+      "at": "2026-10-29T22:46:24.505Z"
+    }
+  },
+  "created": "2026-10-29T22:42:19.121Z",
+  "updated": "2026-10-29T22:46:24.562Z"
+}

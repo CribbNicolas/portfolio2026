@@ -20,7 +20,7 @@ import assert from "node:assert/strict";
 import { accessSync, constants } from "node:fs";
 import { readdir, readFile } from "node:fs/promises";
 import { join, relative, sep } from "node:path";
-import { pdfFilename } from "../content/source/index";
+import { content, pdfFilename } from "../content/source/index";
 import { MESSAGES } from "../content/schema/messages";
 import { ANCHORS, LOCALE_PATHS, anchorScrollCss } from "../src/lib/anchors";
 import datasetEs from "../content/data/content.es.json";
@@ -123,8 +123,8 @@ test("NO page links to `/en/cv` either", () => {
 
 test("there is a real 404 page", () => {
   // Without `dist/404.html`, Cloudflare Pages returns 200 with HTML for any
-  // made-up route. That is a soft 404 and crawlers penalise it (closed #1,
-  // measured before fixing it). The file is generated from
+  // made-up route. That is a soft 404 and crawlers penalise it (measured
+  // before fixing it). The file is generated from
   // `src/pages/404.astro`: if someone deletes that page, this warns.
   const paths = pages.map((a) => relative(DIST, a).split(sep).join("/"));
   assert.ok(
@@ -137,8 +137,14 @@ test("there is a real 404 page", () => {
 test("the 404 is bilingual in one page and never links to /cv", async () => {
   const html = await readFile(join(DIST, "404.html"), "utf8");
   assert.match(html, /lang="en"/, "the 404 has no English block");
-  assert.ok(html.includes(`href="/#${ANCHORS.es.map}"`), "the 404 does not link to the Spanish map");
-  assert.ok(html.includes(`href="/en/#${ANCHORS.en.map}"`), "the 404 does not link to the English map");
+  // The way back: the projects and the CV, in each language (the map link
+  // was dropped by the author, 2026-10-29).
+  for (const id of [ANCHORS.es.projects, ANCHORS.es.cv]) {
+    assert.ok(html.includes(`href="/#${id}"`), `the 404 does not link to the Spanish #${id}`);
+  }
+  for (const id of [ANCHORS.en.projects, ANCHORS.en.cv]) {
+    assert.ok(html.includes(`href="/en/#${id}"`), `the 404 does not link to the English #${id}`);
+  }
   assert.doesNotMatch(html, /href="\/cv"/, "the 404 links to /cv");
   assert.doesNotMatch(html, /href="\/en\/cv"/, "the 404 links to /en/cv");
 });
@@ -212,7 +218,7 @@ test("`/en/` exists and is indexable", () => {
 test("both landings declare hreflang for each other, with Spanish as x-default", () => {
   // Reciprocity matters as much as presence: a crawler that finds `/`
   // pointing at `/en/` but not the other way around treats the pair as
-  // unconfirmed (docs/09 §2.3), so this checks BOTH pages for ALL THREE tags,
+  // unconfirmed, so this checks BOTH pages for ALL THREE tags,
   // not just one page for one.
   const ALTERNATES: [string, RegExp][] = [
     ["es", /^https?:\/\/[^"]*\/$/],
@@ -237,7 +243,7 @@ test("neither `/cv` nor `/en/cv` carries hreflang", () => {
   // already guards for `noindex`: `hreflang` tells a crawler "here is the
   // equivalent of this page in another language", and pointing that at a
   // page marked `noindex` is an error crawlers report, not a courtesy they
-  // ignore (docs/09 §2.3).
+  // ignore.
   for (const [name, html] of [["/cv", cv], ["/en/cv", enCv]] as const) {
     assert.doesNotMatch(
       html,
@@ -300,33 +306,62 @@ test("the Spanish landing has its three anchors, the English landing has its own
   }
 });
 
-test("each landing's CV section has not drifted from its PDF", () => {
-  // `#cv` is the LAST section of the landing, so everything after the marker is
-  // the CV. The floating button that follows contributes no `<li>`.
-  const roles = (html: string) => (html.match(/class="role"/g) ?? []).length;
-  // Achievements are `<li>` with no class of their own: `RoleBlock` puts them
-  // in a `<ul class="role__bullets">`. Counting `<li>` over the tail is enough.
-  const achievements = (html: string) => (html.match(/<li[ >]/g) ?? []).length;
+test("each landing's CV chapter carries everything its PDF prints", async () => {
+  // The landing's CV chapter (`#cv`) shows the `portfolio` surface — every
+  // role and achievement the dataset publishes — while the PDF prints
+  // `cv-ats`, cut to two pages. So the chapter is a SUPERSET of the PDF:
+  // every role and every achievement the PDF prints has to be in it, or the
+  // page promising "the CV" says less than the file it hands out.
+  const text = (html: string) =>
+    html
+      .replace(/<[^>]+>/g, " ")
+      .replace(/&#39;|&#x27;/g, "'")
+      .replace(/&quot;/g, '"')
+      .replace(/&lt;/g, "<")
+      .replace(/&gt;/g, ">")
+      .replace(/&amp;/g, "&")
+      .replace(/\s+/g, " ");
 
-  for (const [name, home, pdf, cvId] of [
-    ["Spanish", landing, cv, ANCHORS.es.cv],
-    ["English", enLanding, enCv, ANCHORS.en.cv],
+  for (const [name, home, locale, cvId] of [
+    ["Spanish", landing, "es", ANCHORS.es.cv],
+    ["English", enLanding, "en", ANCHORS.en.cv],
   ] as const) {
     const start = home.indexOf(`id="${cvId}"`);
-    assert.ok(start > 0, `the #${cvId} section was not found in the ${name} landing`);
-    const tail = home.slice(start);
+    assert.ok(start > 0, `the #${cvId} chapter was not found in the ${name} landing`);
+    const end = home.indexOf("</section>", start);
+    const chapter = home.slice(start, end);
+    const words = text(chapter);
+    const printed = await content.getView("cv-ats", locale);
 
-    assert.ok(roles(pdf) > 0, "`class=\"role\"` no longer exists: update this test");
     assert.equal(
-      roles(tail), roles(pdf),
-      `the ${name} landing shows ${roles(tail)} roles and its /cv shows ${roles(pdf)}`,
+      (chapter.match(/class="cvx__role"/g) ?? []).length,
+      printed.experience.length,
+      `the ${name} CV chapter shows a different number of roles than the PDF`,
     );
-    assert.equal(
-      achievements(tail), achievements(pdf),
-      `the ${name} landing shows ${achievements(tail)} achievements and its /cv shows ` +
-      `${achievements(pdf)}. Rule 7: \`portfolio\` does not cap achievements per role and ` +
-      `\`cv-ats\` caps at 5 — somebody changed the surface of one of the two pages.`,
-    );
+    for (const role of printed.experience) {
+      assert.ok(words.includes(role.company), `the ${name} CV chapter lost the role at ${role.company}`);
+      for (const a of role.achievements) {
+        assert.ok(
+          words.includes(a.text.short),
+          `the ${name} CV chapter lacks an achievement the PDF prints: "${a.text.short.slice(0, 60)}…"`,
+        );
+      }
+    }
+  }
+});
+
+test("the brief views point at their landing and stay out of the sitemap", async () => {
+  // They repeat the landing's facts on a second URL: canonical → the landing,
+  // no Open Graph, no hreflang, not in the sitemap (Base.astro, astro.config).
+  const sitemap = await readFile(join(DIST, "sitemap-0.xml"), "utf8");
+  for (const locale of ["es", "en"] as const) {
+    const path = LOCALE_PATHS[locale].brief;
+    const html = await readFile(join(DIST, ...path.split("/").filter(Boolean), "index.html"), "utf8");
+    const canonical = /<link rel="canonical" href="([^"]+)"/.exec(html)?.[1] ?? "";
+    assert.equal(new URL(canonical).pathname, LOCALE_PATHS[locale].home, `${path} is not canonical to its landing`);
+    assert.ok(!html.includes('property="og:'), `${path} emits Open Graph`);
+    assert.ok(!/hreflang="x-default"/.test(html), `${path} carries the landings' hreflang set`);
+    assert.ok(!sitemap.includes(`${path}/`), `${path} is in the sitemap`);
   }
 });
 
@@ -363,7 +398,7 @@ test("neither landing repeats the CV header", () => {
  * carry its own locale's chrome copy and its own locale's author text, and
  * not the other's.
  *
- * The map title is chrome (`messages.ts`, a closed compile-time set); the
+ * The experience heading is chrome (`messages.ts`, a closed compile-time set); the
  * identity summary is author's prose (the dataset, the thing `resolveView`
  * resolves). Between the two they cover both halves of what a mismatched
  * `locale`/`view` pair would get wrong.
@@ -374,12 +409,12 @@ test("each landing renders its own locale's content, not the other's", () => {
     ["English", enLanding, MESSAGES.en, MESSAGES.es, datasetEn],
   ] as const) {
     assert.ok(
-      html.includes(own.mapTitle),
-      `the ${name} landing is missing its own map title ("${own.mapTitle}")`,
+      html.includes(own.sectionExperience),
+      `the ${name} landing is missing its own experience heading ("${own.sectionExperience}")`,
     );
     assert.ok(
-      !html.includes(other.mapTitle),
-      `the ${name} landing contains the OTHER locale's map title ("${other.mapTitle}") — ` +
+      !html.includes(other.sectionExperience),
+      `the ${name} landing contains the OTHER locale's experience heading ("${other.sectionExperience}") — ` +
         "locale/view mismatch: the chrome copy and the data are speaking different languages",
     );
     assert.ok(

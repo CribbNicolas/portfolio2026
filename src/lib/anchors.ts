@@ -7,15 +7,20 @@
  * same word in both because it is a coincidence of vocabulary, not a reason to
  * special-case it.
  *
- * ONE exported table because two places name these ids and used to do it by
- * hand: `src/pages/index.astro` (the pill nav's `href`s and the sections'
- * `id`s) and `scripts/single-landing.check.ts` (verifying the anchors survive
- * the build). Splitting the id from the href in either place is how they drift.
+ * On the landing (`components/v2/Landing.astro`) `#mapa` is the RPPL map
+ * chapter, `#cv` the CV chapter and `#proyectos` its projects list. They
+ * outlived the old landing on purpose: shared links, `llms.txt` and the 404
+ * point at them.
+ *
+ * ONE exported table because several places name these ids: the landing,
+ * the brief view, the 404, `llms.txt` and `scripts/single-landing.check.ts`
+ * (verifying the anchors survive the build). Splitting the id from the href
+ * in any of them is how they drift.
  *
  * Relative import and NOT the `@content` alias: this module is loaded both by
  * Vite (`.astro` files) and by `tsx` running a `*.check.ts` on its own, which
- * does not resolve the alias. Same reason as `src/lib/jsonld.ts` and
- * `src/lib/lab-hover-css.ts`. Functions import it too (`functions/_pdf.ts`),
+ * does not resolve the alias. Same reason as `src/lib/jsonld.ts`. Functions
+ * import it too (`functions/_pdf.ts`),
  * so Locale comes from `content-schema` rather than the content source.
  *
  * Locale → URL used to be four copies, two of them ternaries: adding a third
@@ -38,6 +43,9 @@ export const ANCHORS: Record<Locale, LandingAnchors> = {
 
 export interface LocalePaths {
   home: string;
+  /** The brief view: the landing without the chapters. Paths are English in
+   *  both locales (author, 2026-10-29); anchors follow the page's language. */
+  brief: string;
   cv: string;
   pdf: string;
   json: string;
@@ -45,8 +53,8 @@ export interface LocalePaths {
 }
 
 export const LOCALE_PATHS: Record<Locale, LocalePaths> = {
-  es: { home: "/", cv: "/cv", pdf: "/cv.pdf", json: "/cv.json", llms: "/llms.txt" },
-  en: { home: "/en/", cv: "/en/cv", pdf: "/en/cv.pdf", json: "/en/cv.json", llms: "/en/llms.txt" },
+  es: { home: "/", brief: "/brief", cv: "/cv", pdf: "/cv.pdf", json: "/cv.json", llms: "/llms.txt" },
+  en: { home: "/en/", brief: "/en/brief", cv: "/en/cv", pdf: "/en/cv.pdf", json: "/en/cv.json", llms: "/en/llms.txt" },
 };
 
 /** Social card JPEG, one committed file per locale. */

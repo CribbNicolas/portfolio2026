@@ -1,7 +1,7 @@
 {
   "schemaVersion": "1.0.0",
   "locale": "en",
-  "updatedAt": "2026-09-01T18:23:48.650Z",
+  "updatedAt": "2026-10-28T12:00:00.000Z",
 
   "identity": {
     "fullName": "Nicolás Agustín Cribb Barbaro",
@@ -34,7 +34,7 @@
     },
     "summary": {
       "short": "Full-stack developer with a product focus: React, Next.js and TypeScript, plus the Node, Docker and CI/CD to take a project from the repo to production.",
-      "long": "If a checkout or a map with thousands of features is not allowed to go down, that's where I'm useful. The stack is whatever the problem asks for: React or Vue, Next or WordPress, Node or PHP or a rake task in Ruby. I don't collect frameworks.\n\nBefore Rosario I worked remotely from Misiones. Landing pages, on a team, with Vue, Quasar, Django and WordPress: I don't remember the clients and I'm not going to invent them. In adtech I built the front end of an audience builder on my own — AND, OR, XOR and NOT queries over age, business category and location — plus a POI map with Mapbox, Next and Node. At an agency we adapted sites from a home market to other countries: not translation. A service that exists in one country often doesn't exist in the other. I don't name the client.\n\nAt Dinkum I ship both ends. The map in the RPPL report (~13,000 school districts; indexing went from 3–5 s to ~500 ms in a Web Worker) and the plugin that hooks a seat map into the WooCommerce cart and the reservation APIs. At Muse the front end lives in a Vite/Turbo monorepo; I work on the CRM — orders, events, Algolia — and the rake task that cleans the global index when a delete wasn't propagating.\n\nI use Claude and Cursor every day. I review everything that lands in the repo. I'm looking for full-stack work, and freelance when there's a product behind it — not one more landing page."
+      "long": "If a checkout or a map with thousands of features is not allowed to go down, that's where I'm useful. The stack is whatever the problem asks for: React or Vue, Next or WordPress, Node or PHP or a rake task in Ruby. I don't collect frameworks.\n\nBefore Rosario I worked remotely from Misiones. Landing pages, on a team, with Vue, Quasar, Django and WordPress: I don't remember the clients and I'm not going to invent them. In adtech I built the front end of an audience builder on my own — AND, OR, XOR and NOT queries over age, business category and location — plus a POI map with Mapbox, Next and Node. At an agency we adapted sites from a home market to other countries: not translation. A service that exists in one country often doesn't exist in the other. I don't name the client.\n\nAt Dinkum I shipped both ends. The map in the RPPL report (~13,000 school districts; indexing went from ~5 s to ~500 ms in a Web Worker) and the plugin that hooks a seat map into the WooCommerce cart and the reservation APIs. At Muse the front end lives in a Vite/Turbo monorepo; I worked on the CRM — orders, events, Algolia — and the rake task that cleans the global index when a delete wasn't propagating. Today I support what I shipped there.\n\nI use Claude and Cursor every day. I review everything that lands in the repo.\n\nI'm looking for remote or hybrid work from Rosario, with my hours set to the team's. I take any web development work, as an employee or freelance. What I want most is work that pushes me into something I haven't touched yet, or a product people recognize outside the team, like the RPPL map."
     }
   },
 
@@ -43,20 +43,21 @@
     { "id": "javascript", "name": "JavaScript", "category": "language", "aliases": ["JS", "ECMAScript"], "level": "core", "periods": [{ "start": "2020-04", "end": "2023-07" }, { "start": "2024-01" }], "active": true, "visibility": { "priority": 1 } },
     { "id": "react", "name": "React", "category": "frontend", "aliases": ["ReactJS", "React.js"], "level": "core", "periods": [{ "start": "2022-10", "end": "2023-07" }, { "start": "2024-01" }], "active": true, "visibility": { "priority": 1 } },
     { "id": "nextjs", "name": "Next.js", "category": "frontend", "aliases": ["NextJS", "Next"], "level": "core", "relatedIds": ["react"], "active": true, "visibility": { "priority": 1 } },
+    { "id": "astro", "name": "Astro", "category": "frontend", "aliases": ["Astro.js", "AstroJS"], "level": "working", "active": true, "visibility": { "priority": 3 } },
     { "id": "mapbox", "name": "Mapbox GL JS", "category": "data", "aliases": ["Mapbox", "Mapbox GL"], "level": "core", "periods": [{ "start": "2024-01", "end": "2025-07" }, { "start": "2025-09", "end": "2025-11" }], "active": true, "visibility": { "priority": 2 } },
     { "id": "wordpress", "name": "WordPress", "category": "cms", "aliases": ["WordPress plugin development", "WooCommerce", "WordPress page builder"], "level": "core", "periods": [{ "start": "2021-07", "end": "2023-07" }, { "start": "2025-02" }], "relatedIds": ["php"], "active": true, "visibility": { "priority": 3 } },
     { "id": "vite", "name": "Vite", "category": "tooling", "aliases": [], "level": "working", "periods": [{ "start": "2022-09", "end": "2023-07" }, { "start": "2024-01" }], "active": true, "visibility": { "priority": 3 } },
     { "id": "tailwind", "name": "Tailwind CSS", "category": "frontend", "aliases": ["TailwindCSS"], "level": "working", "active": true, "visibility": { "priority": 2 } },
-    { "id": "scss", "name": "SCSS", "category": "frontend", "aliases": ["Sass", "SASS", "SCSS"], "level": "working", "periods": [{ "start": "2024-01" }], "active": true, "visibility": { "priority": 4 } },
+    { "id": "scss", "name": "SCSS", "category": "frontend", "aliases": ["Sass", "SASS", "SCSS"], "level": "working", "periods": [{ "start": "2024-01" }], "active": true, "visibility": { "priority": 3 } },
     { "id": "mui", "name": "Material UI", "category": "frontend", "aliases": ["MUI"], "level": "working", "periods": [{ "start": "2022-10", "end": "2023-07" }, { "start": "2024-01", "end": "2024-09" }], "relatedIds": ["react"], "active": true, "visibility": { "priority": 3 } },
-    { "id": "jotai", "name": "Jotai", "category": "frontend", "aliases": ["atoms"], "level": "working", "relatedIds": ["react"], "active": true, "visibility": { "priority": 4 } },
+    { "id": "jotai", "name": "Jotai", "category": "frontend", "aliases": ["atoms"], "level": "working", "relatedIds": ["react"], "active": true, "visibility": { "priority": 3 } },
     { "id": "solidjs", "name": "SolidJS", "category": "frontend", "aliases": ["Solid"], "level": "familiar", "active": true, "visibility": { "only": [], "priority": 4 } },
-    { "id": "vue", "name": "Vue 3", "category": "frontend", "aliases": ["Vue.js", "VueJS"], "level": "working", "periods": [{ "start": "2021-06", "end": "2022-06" }, { "start": "2024-01", "end": "2024-09" }], "active": true, "visibility": { "priority": 4 } },
+    { "id": "vue", "name": "Vue 3", "category": "frontend", "aliases": ["Vue.js", "VueJS"], "level": "working", "periods": [{ "start": "2021-06", "end": "2022-06" }, { "start": "2024-01", "end": "2024-09" }], "active": true, "visibility": { "priority": 3 } },
     { "id": "quasar", "name": "Quasar", "category": "frontend", "aliases": ["Quasar Framework"], "level": "working", "periods": [{ "start": "2021-06", "end": "2022-06" }], "relatedIds": ["vue"], "active": true, "visibility": { "priority": 4 } },
     { "id": "node", "name": "Node.js", "category": "backend", "aliases": ["NodeJS", "Node"], "level": "working", "active": true, "visibility": { "priority": 2 } },
-    { "id": "php", "name": "PHP", "category": "backend", "aliases": ["Laravel"], "level": "familiar", "periods": [{ "start": "2025-02" }], "active": true, "visibility": { "priority": 4 } },
-    { "id": "django", "name": "Django", "category": "backend", "aliases": ["Django REST"], "level": "working", "active": true, "visibility": { "priority": 4 } },
-    { "id": "ruby", "name": "Ruby", "category": "backend", "aliases": ["Rails", "Ruby on Rails"], "level": "familiar", "active": true, "visibility": { "priority": 4 } },
+    { "id": "php", "name": "PHP", "category": "backend", "aliases": ["Laravel"], "level": "familiar", "periods": [{ "start": "2025-02" }], "active": true, "visibility": { "priority": 3 } },
+    { "id": "django", "name": "Django", "category": "backend", "aliases": ["Django REST"], "level": "working", "active": true, "visibility": { "priority": 3 } },
+    { "id": "ruby", "name": "Ruby", "category": "backend", "aliases": ["Rails", "Ruby on Rails"], "level": "familiar", "active": true, "visibility": { "priority": 3 } },
     { "id": "sanity", "name": "Sanity", "category": "cms", "aliases": ["Sanity.io", "headless CMS"], "level": "familiar", "active": true, "visibility": { "only": [], "priority": 4 } },
     { "id": "playwright", "name": "Playwright", "category": "testing", "aliases": ["E2E testing"], "level": "working", "active": true, "visibility": { "priority": 2 } },
     { "id": "docker", "name": "Docker", "category": "infra", "aliases": ["containerization"], "level": "working", "periods": [{ "start": "2021-06" }], "active": true, "visibility": { "priority": 2 } },
@@ -79,7 +80,7 @@
       "start": "2024-09",
       "end": null,
       "context": {
-        "short": "WordPress plugins, interactive maps and back office, on a team and as the sole owner."
+        "short": "Two projects: Muse CRM (WooCommerce plugin, CRM admin and seat map) and the RPPL report map, on a team and as the sole owner. Now, support."
       },
       "visibility": { "priority": 1 }
     },
@@ -167,11 +168,11 @@
       "projectId": "mapas-distritos",
       "text": {
         "short": "I replaced the feature-state merge with a hash index built in a Web Worker.",
-        "long": "The first version merged the ~13,000 records into feature-state: it took 3-5 s, doubled memory use and crashed. I replaced it with an FNV-1a hash index built in a Web Worker, with a zero-copy transfer of the ArrayBuffer. The district JSON weighs 7 MB; the UI thread does not block while it indexes. The IDs are normalized separately: district GEOID to 7 digits, state FIPS to 2. The color is painted with a Mapbox GEOID→color expression, not with feature-state."
+        "long": "The first version merged the ~13,000 records into feature-state: it took ~5 s, doubled memory use and crashed. I replaced it with an FNV-1a hash index built in a Web Worker, with a zero-copy transfer of the ArrayBuffer. The district JSON weighs 7 MB; the UI thread does not block while it indexes. The IDs are normalized separately: district GEOID to 7 digits, state FIPS to 2. The color is painted with a Mapbox GEOID→color expression, not with feature-state."
       },
       "metric": {
         "label": "indexing time",
-        "before": "3-5 s",
+        "before": "5 s",
         "after": "500 ms",
         "confidence": "estimated",
         "source": "Medición interna al migrar de merge en feature-state a FastIndex (Web Worker FNV-1a), octubre 2025."
@@ -375,7 +376,7 @@
         {
           "id": "hash-index-worker",
           "decision": "A hash index in a Web Worker instead of merging the data into feature-state",
-          "context": "The dataset is ~13,000 polygons plus 7 MB of analytics JSON. Merging all of it into feature-state doubled memory use, took 3-5 s and crashed.",
+          "context": "The dataset is ~13,000 polygons plus 7 MB of analytics JSON. Merging all of it into feature-state doubled memory use, took ~5 s and crashed.",
           "rationale": "O(1) lookups on demand, a free UI while the indexing runs, a zero-copy transfer of the ArrayBuffer.",
           "tradeoff": "GEOID/FIPS have to be normalized by hand (7 digits vs 2), and the visual hover stays in feature-state, separate from the data."
         },
@@ -420,7 +421,7 @@
       "roleId": "dinkum",
       "status": "shipped",
       "start": "2024-10",
-      "end": null,
+      "end": "2026-02",
       "problem": {
         "short": "Selling numbered seats in WooCommerce without double booking: the map is on S3, the cart is in WordPress and availability is in external APIs.",
         "long": "A WooCommerce store does not know which seat is free. The visual map lives on S3 (with no backend of its own), the real reservation in Elixir/Ruby services, and the money in the WordPress checkout. If those three fall out of step, two people pay for the same seat."
@@ -434,6 +435,23 @@
         "long": "Main author of the repo (~380 of 558 commits, 2024-10 → 2026-07). In production against WooCommerce 10: a rotating nonce, the session visible in a toast, and the map no longer fighting the minicart."
       },
       "decisions": [
+        {
+          "id": "woo-extension-not-standalone",
+          "decision": "Build the seat map as a WooCommerce extension, not as a checkout of our own",
+          "context": "A standalone checkout was simpler, fit our APIs and would have shipped sooner. But it sat apart from the rest of the store.",
+          "rationale": "Seated tickets and regular products share one cart, and the payment gateway gets WooCommerce's security updates without us maintaining them.",
+          "tradeoff": "A more complex build, tied to WooCommerce's hooks and release pace, instead of a flow cut to our own APIs that would have deployed faster.",
+          "alternatives": [
+            "A checkout of our own outside WooCommerce: simpler and tailored, but a separate cart and payment security on us."
+          ]
+        },
+        {
+          "id": "react-over-vanilla",
+          "decision": "Move the plugin's front end from vanilla JS to WordPress's React, early",
+          "context": "Vanilla was enough at first. As development went on, the plugin came to hold features of the whole system, back and front, and the requirements grew.",
+          "rationale": "Room to move inside WordPress and native integration with its newer model. Catching the gap early kept the migration cheap.",
+          "tradeoff": "Some performance, and a more complex plugin."
+        },
         {
           "id": "embed-muse-renderer",
           "decision": "Do not draw the map in the plugin: embed Muse's renderer",
@@ -480,10 +498,10 @@
       "roleId": "dinkum",
       "status": "shipped",
       "start": "2024-09",
-      "end": null,
+      "end": "2026-03",
       "problem": {
         "short": "A ticketing CRM for performing arts organizations: selling seats, donations and profiles on a visual map, not an Excel grid.",
-        "long": "Muse is used by orgs like Marlboro Music and PCMS. The staff needs to design the venue, open an event, sell seats, take payment, take donations and search profiles. The buyer sees the same map in the shop. Without a modern front end, that lived in old screens and in a map disconnected from the CRM."
+        "long": "Muse is used by orgs like Marlboro Music and PCMS. The staff needs to design the venue, open an event, sell seats, take payment, take donations and search profiles. The buyer sees the same map in the shop. Without a modern front end, that lived in old screens and in a map disconnected from the CRM. The previous admin was Angular 1.x, discontinued: unpatched vulnerabilities and performance problems."
       },
       "solution": {
         "short": "A Turborepo monorepo with Vite: admin (CRM), shop, a venue designer in Konva and an embeddable renderer the WooCommerce plugin also uses.",
@@ -491,13 +509,20 @@
       },
       "outcome": {
         "short": "Admin and shop at app-next.musecrm.com. The renderer is published to S3 and the WordPress plugin consumes it.",
-        "long": "A live product: musecrm.com (marketing) and app-next.musecrm.com (the app). My commits run from 2024-09 to 2026-08. The same renderer feeds WooCommerce Seat Map, so a contract change is felt in both sales channels."
+        "long": "A live product: musecrm.com (marketing) and app-next.musecrm.com (the app). My commits run from 2024-09 to 2026-08. The same renderer feeds WooCommerce Seat Map, so a contract change is felt in both sales channels. Customers have fully moved off the old Angular admin."
       },
       "decisions": [
         {
+          "id": "rewrite-angular-admin",
+          "decision": "Rewrite the Angular 1.x admin from scratch, on libraries with long-term support",
+          "context": "The Muse admin was Angular 1.x, discontinued: vulnerabilities, performance problems, and no footing to add new features. I was hired, along with others, to rebuild it.",
+          "rationale": "React and libraries with LTS, unlikely to make an abrupt turn like Angular's: updates keep coming. It also closed what the old admin left half done: the full analytics and reports view, the interactive seat map in the shop and the admin wired to the API, and webhooks that keep views in sync through React's global state.",
+          "tradeoff": "Rewriting the whole system from zero, with no library in common with the old one — only the Ruby API stayed —, the cost carried by the client, and customers on the old admin until the new one was nearly done."
+        },
+        {
           "id": "turbo-monorepo",
           "decision": "One monorepo (Turbo + pnpm) instead of separate repos for admin, shop and renderer",
-          "context": "The map has to look the same in the CRM, in the shop and inside WordPress. Three repos let the event contract drift apart.",
+          "context": "It was not planned from the start. Once the pieces showed up — the shop the buyer sees inside the plugin, the Muse admin, the Konva seat map both of them draw, and the bridge between the WooCommerce plugin and the shop — it was clear they shared code and an event contract.",
           "rationale": "One versioned @muse/seat-renderer package; the Woo plugin consumes it through postinstall.",
           "tradeoff": "A breaking change in the renderer breaks admin, shop and Woo at once; the release has to be coordinated."
         },
@@ -571,6 +596,31 @@
       "featured": true,
       "slug": "muse-api-algolia",
       "visibility": { "priority": 3 }
+    },
+    {
+      "id": "deltadictum",
+      "name": "DeltaDictum",
+      "status": "shipped",
+      "start": "2026-09",
+      "end": null,
+      "problem": {
+        "short": "A coding agent does not know what the code does not say: why something was decided, which trap the team already fell into, which step nothing enforces. It repeats it or undoes it."
+      },
+      "solution": {
+        "short": "A plugin for coding agents that keeps decisions, traps and unwritten steps as memories in git, and delivers each one right before the action it applies to.",
+        "long": "Each memory says when it applies, what to do, and why the code alone would not tell the agent. Before every read, edit or command, a hook matches the action against the memories' triggers: a rule applies or it does not, no semantic search. It arrives once per session and stays silent when nothing applies. Memories are JSON files in the repository, shared through git; everything else stays on the machine. No account, no model calls, no background process, no dependencies."
+      },
+      "outcome": {
+        "short": "Published on npm: from the first commit (2026-09-10) to 1.0 (2026-10-22). Runs on Claude Code, Codex and OpenCode; Cursor and Grok Build in preview."
+      },
+      "skillIds": ["node", "javascript", "ai-assisted"],
+      "links": [
+        { "id": "repo", "label": "GitHub", "url": "https://github.com/CribbNicolas/deltadictum", "kind": "repo" },
+        { "id": "docs", "label": "Documentation", "url": "https://cribbnicolas.github.io/deltadictum/", "kind": "website" }
+      ],
+      "media": [],
+      "featured": false,
+      "visibility": { "priority": 2 }
     }
   ],
 

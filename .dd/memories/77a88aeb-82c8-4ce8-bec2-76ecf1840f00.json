@@ -1,0 +1,43 @@
+{
+  "schema_version": 8,
+  "id": "77a88aeb-82c8-4ce8-bec2-76ecf1840f00",
+  "project_id": "portfolio2026",
+  "topic": "seo/jsonld",
+  "kind": "decision",
+  "status": "active",
+  "title": "Emit only JSON-LD Person; do not add BreadcrumbList or WebSite+SearchAction",
+  "body": "BreadcrumbList describes a navigation hierarchy and the landing is one page with none; WebSite+SearchAction declares an internal search that does not exist. Structured data describing something absent is worse than none — Google flags it as inconsistent. src/lib/jsonld.ts emits Person only. Reconsider BreadcrumbList when case studies become pages of their own.",
+  "not_derivable": "The rejected schema.org types and the trigger to reconsider are not in code.",
+  "triggers": [
+    {
+      "on": [
+        "edit",
+        "write"
+      ],
+      "paths": [
+        "src/lib/jsonld.ts",
+        "src/layouts/Base.astro"
+      ]
+    }
+  ],
+  "evidence": [
+    {
+      "type": "file",
+      "path": "src/lib/jsonld.ts",
+      "sha256": "3879fa0561f5c14ab867232d859b30d6a16bd263273a1d238ee5596bc3db82db",
+      "summary": "ContentView -> schema.org Person, the only type emitted."
+    }
+  ],
+  "origin": "user_explicit",
+  "replaces": null,
+  "revisit_when": [],
+  "review": {
+    "issues": [],
+    "accepted": {
+      "by": "dd",
+      "at": "2026-10-29T17:11:49.931Z"
+    }
+  },
+  "created": "2026-10-29T17:11:49.931Z",
+  "updated": "2026-10-29T17:11:49.999Z"
+}

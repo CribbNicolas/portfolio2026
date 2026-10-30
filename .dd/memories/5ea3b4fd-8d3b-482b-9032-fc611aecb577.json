@@ -1,0 +1,49 @@
+{
+  "schema_version": 8,
+  "id": "5ea3b4fd-8d3b-482b-9032-fc611aecb577",
+  "project_id": "portfolio2026",
+  "topic": "content/schema",
+  "kind": "trap",
+  "status": "active",
+  "title": "When adding a field to an interface in content-schema.ts, add it to the Zod schema in validation.ts in the same commit, with `.strict()`",
+  "body": "Zod mirrors the interfaces 1:1: one lowercase const per interface (`role` <-> `Role`, `media` <-> `Media`), same fields, same order, every object `.strict()`. Because of `.strict()`, a key present in content/data/content.es.json (or content.en.json) but missing from the Zod object THROWS in `pnpm run validate` and `pnpm test` instead of being dropped silently — that is the point, but it means an interface-only change breaks the first dataset edit that uses the field, possibly much later and in someone else's commit. Do both edits together. Never relax to `.passthrough()`/`.strip()` to make it pass. A new prose field is also picked up by the i18n tracker automatically (scripts/i18n-fields.ts uses a denylist), so expect `pnpm run test:i18n` to ask for its English translation; a new non-prose key must be added to `NOT_TEXT` there. The editor renders new fields from the schema via editor/schema-adapter.ts, which throws on Zod shapes it does not know.",
+  "not_derivable": "Nothing links the TypeScript interface to its Zod twin at compile time; the mismatch only surfaces when data carrying the field arrives, and the 'same commit' rule was only written in CLAUDE.md.",
+  "triggers": [
+    {
+      "on": [
+        "edit",
+        "write"
+      ],
+      "paths": [
+        "content/schema/content-schema.ts",
+        "content/schema/validation.ts"
+      ]
+    }
+  ],
+  "evidence": [
+    {
+      "type": "file",
+      "path": "content/schema/validation.ts",
+      "sha256": "459a658f9a982a8ba4fbb2aca2f163a7517c9d44759461fde59c4162ff26bfa8",
+      "summary": "Line 19 comment: every object carries `.strict()`; an undeclared key throws."
+    },
+    {
+      "type": "file",
+      "path": "scripts/i18n-fields.ts",
+      "sha256": "2f3dbc3d99f6b9df2b180f36e1856e789660977005ef05c06119a1bc90b7a8ac",
+      "summary": "NOT_TEXT denylist: any string key not listed is treated as translatable."
+    }
+  ],
+  "origin": "user_explicit",
+  "replaces": null,
+  "revisit_when": [],
+  "review": {
+    "issues": [],
+    "accepted": {
+      "by": "dd",
+      "at": "2026-10-29T17:11:36.336Z"
+    }
+  },
+  "created": "2026-10-29T17:11:36.336Z",
+  "updated": "2026-10-29T17:11:36.439Z"
+}

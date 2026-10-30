@@ -1,0 +1,62 @@
+{
+  "schema_version": 8,
+  "id": "6841ffe0-8e26-46c4-a5ce-cb90df3a75b1",
+  "project_id": "portfolio2026",
+  "topic": "pdf/fonts",
+  "kind": "trap",
+  "status": "active",
+  "title": "Keep /cv fonts self-hosted via @fontsource, at most 2 families and 4 weights total; never load fonts from a CDN",
+  "body": "The CV pages (src/pages/cv.astro, src/pages/en/cv.astro) import @fontsource/manrope 400/600/800 and nothing else. Rules from the 2026-08-14 visual-system spec: max 2 font families and max 4 weights IN TOTAL, because every weight is a file embedded in the printed PDF. Fonts must be self-hosted woff2 from npm (@fontsource/* or equivalent), never Google Fonts or any CDN: the same /cv page is printed by Playwright locally (pdf:local, Windows) and in CI (Ubuntu), and by Cloudflare Browser Rendering in production over the published page, and all of them must produce the same PDF; the site also must not depend on a third party. Adding a family or weight to /cv therefore grows the PDF and must stay self-hosted. Only Manrope's `latin` subset is loaded, so any new glyph in CV output must stay inside it (format.test.ts guards formatMetric; `→` already broke the PDF once). Ligatures stay off on /cv (tokens.css: `fi` extracts as one odd glyph for the parser); src/styles/v2.css turns them back on for /v2 only and must not reach /cv.",
+  "not_derivable": "Code shows which fonts are imported, not that weights are budgeted because each is embedded in the PDF, or that CDN fonts are banned so local/CI/Browser Rendering print identical PDFs. The spec stating it is being deleted.",
+  "triggers": [
+    {
+      "on": [
+        "edit",
+        "write"
+      ],
+      "paths": [
+        "src/pages/cv.astro",
+        "src/pages/en/cv.astro",
+        "src/styles/tokens.css",
+        "src/styles/cv.css",
+        "src/layouts/Base.astro"
+      ]
+    }
+  ],
+  "evidence": [
+    {
+      "type": "file",
+      "path": "src/pages/cv.astro",
+      "sha256": "995713df187ef767af3164018868da355ee944f0592e7045275485ab9ab8f38b",
+      "summary": "Imports only @fontsource/manrope 400, 600, 800."
+    },
+    {
+      "type": "file",
+      "path": "scripts/render-pdf.ts",
+      "sha256": "088127bef8c6d8be1c2ed3c1c9a9d606ea7951c9cfc09bfdf1e2e57b10abebe5",
+      "summary": "Waits on document.fonts.ready before printing."
+    },
+    {
+      "type": "file",
+      "path": "content/schema/format.test.ts",
+      "sha256": "c8569cd2c70a88467d666c61c4708601a1356d28b842bb6af6c0fc66b9d3c357",
+      "summary": "Asserts formatter output stays inside Manrope's latin subset."
+    },
+    {
+      "type": "note",
+      "summary": "Rule set from the deleted spec docs/superpowers/specs/2026-08-14-sistema-visual-design.md §3.2."
+    }
+  ],
+  "origin": "user_explicit",
+  "replaces": null,
+  "revisit_when": [],
+  "review": {
+    "issues": [],
+    "accepted": {
+      "by": "dd",
+      "at": "2026-10-29T17:10:24.108Z"
+    }
+  },
+  "created": "2026-10-29T17:10:24.108Z",
+  "updated": "2026-10-29T17:10:24.206Z"
+}
