@@ -1,0 +1,55 @@
+{
+  "schema_version": 8,
+  "id": "56e3d1ed-922d-4ba2-ab20-5efc173414fe",
+  "project_id": "portfolio2026",
+  "topic": "map/evidence-gap",
+  "kind": "decision",
+  "status": "archived",
+  "title": "Keep skills without evidence visible, small and hollow on the knowledge map: never hide them, enlarge them or give them estimated years",
+  "body": "The map replaces a grid of logos on purpose: a grid asserts, the graph shows evidence. A node is large only because dated achievements back it, and it can be clicked to see which. Position: jobs in the crust, technologies in the core. Skills declared in content/data/content.*.json with no achievement or project citing them are drawn small and hollow, grouped at the centre. That is the map showing the gap instead of covering it, and it is deliberate. Do not \"fix\" it by filtering those nodes out, giving them a minimum size or opacity that matches evidenced skills, assigning years without `periods` or dated evidence (invariant 4), or adding achievements or projects just to light a node up. The fix for a hollow node is real content in the dataset, or dropping the skill.",
+  "not_derivable": "Comments call it 'not a bug', but nothing states the product reason (evidence over a logo grid) or forbids the cosmetic fixes an agent would try on a node that looks empty.",
+  "triggers": [
+    {
+      "on": [
+        "edit",
+        "write"
+      ],
+      "paths": [
+        "content/schema/knowledge-graph.ts",
+        "content/schema/graph-layout.ts",
+        "src/lib/graph-svg.ts",
+        "src/components/lab/**",
+        "src/scripts/lab/**",
+        "src/styles/lab.css"
+      ]
+    }
+  ],
+  "evidence": [
+    {
+      "type": "file",
+      "path": "content/schema/knowledge-graph.ts",
+      "sha256": "90971d27b796330aefd3c1d083b0f0f3975d0c4b3941d3cbc951d28e6f91bf89",
+      "summary": "nodesWithoutEvidence: declared working skills with no edge; 'the map showing where content is missing'."
+    },
+    {
+      "type": "file",
+      "path": "content/schema/graph-layout.ts",
+      "sha256": "bcde66b1bf24660549b3e41e3121869110a66e1367eb1c8a524ca9747b673e08",
+      "summary": "Inner ring for skills with no evidence."
+    }
+  ],
+  "origin": "user_explicit",
+  "replaces": null,
+  "revisit_when": [],
+  "review": {
+    "issues": [
+      "archived_by_person: The 3D knowledge map (src/scripts/lab, graph-3d.ts, three, GraphSvg, knowledge-graph) was removed on 2026-10-29 when the brief view replaced the old landing; these memories describe code that no longe"
+    ],
+    "accepted": {
+      "by": "dd",
+      "at": "2026-10-29T17:11:46.841Z"
+    }
+  },
+  "created": "2026-10-29T17:11:46.841Z",
+  "updated": "2026-10-29T20:46:20.083Z"
+}

@@ -15,7 +15,7 @@
  * managed one. It is checked by opening `/robots.txt` on the `staging`
  * preview and seeing whether this shows up or the "content signals" block
  * does. If Cloudflare's wins, the sitemap has to be announced through Search
- * Console and the limitation noted (`docs/09-seo-and-metadata.md` §3).
+ * Console and the limitation noted in this header.
  */
 
 import type { APIRoute } from "astro";
@@ -31,11 +31,14 @@ export const GET: APIRoute = ({ site }) => {
     "Allow: /",
     "",
     "# /cv y /en/cv existen solo para que Browser Rendering imprima cada PDF.",
-    "# Van con noindex y sin links entrantes; el destino del lector es el ancla",
-    "# #cv de la landing correspondiente. Se desalienta el rastreo para que no",
-    "# compita con la home.",
+    "# Van con noindex y sin links entrantes; el destino del lector es el",
+    "# capítulo #cv de la landing (/#cv, /en/#cv). Se desalienta el rastreo",
+    "# para que no compita con la home.",
     "Disallow: /cv/",
     "Disallow: /en/cv/",
+    "",
+    "# /brief y /en/brief (la vista breve) repiten los hechos de la landing y",
+    "# declaran a la landing como canonical: se pueden rastrear, no compiten.",
     "",
     "# /build.json dice qué commit está publicado. Lo consume el smoke de CI,",
     "# no un lector.",

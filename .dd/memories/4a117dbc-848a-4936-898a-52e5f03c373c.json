@@ -1,0 +1,47 @@
+{
+  "schema_version": 8,
+  "id": "4a117dbc-848a-4936-898a-52e5f03c373c",
+  "project_id": "portfolio2026",
+  "topic": "content/skills",
+  "kind": "failed_approach",
+  "status": "active",
+  "title": "Do not re-add SVN, Java/Spring Boot or React Router/Query as skills, and do not reopen Skill.periods for skills whose derived years the author confirmed",
+  "body": "Removed from the old CV on purpose: `SVN` (nobody searches for it and it signals legacy environments); `Router`/`Query` nested under React (they are not tools at that level, and nesting them says you do not prioritise); `Java/Springboot` (the author would not defend it in an interview, so it adds nothing). Keep them out of `skills` in content/data/content.*.json and out of the groups in content/schema/skill-groups.ts.\n\n`Skill.periods` was closed by the author 2026-10-29: 13 skills declare `periods`; every other skill derives its years from the roles and projects citing it, and the author confirmed those derived figures (Git 2.6, Node 2.3, Next.js 2.3, Playwright 2.0, ...). Do not add `periods` to make a number look bigger or rounder. Reopen only for a skill the author used BEFORE its first achievement, which is the one thing derivation cannot know.",
+  "not_derivable": "The dataset only shows what is present; it cannot show which skills were deliberately removed or that the author already reviewed and accepted every derived year count.",
+  "triggers": [
+    {
+      "on": [
+        "edit",
+        "write"
+      ],
+      "paths": [
+        "content/data/content.*.json",
+        "content/schema/skill-groups.ts"
+      ]
+    }
+  ],
+  "evidence": [
+    {
+      "type": "file",
+      "path": "content/data/content.es.json",
+      "sha256": "800ec82c5a2df6189546749f94547d11fd8f4cebb5f0a734cf11e630c33fb5d8",
+      "summary": "skills has no svn/java/spring/react-router entries; 13 skills declare periods."
+    },
+    {
+      "type": "note",
+      "summary": "Author 2026-10-29: Skill.periods closed, derived years confirmed; SVN, Java/Springboot, Router/Query removed from the old CV on purpose."
+    }
+  ],
+  "origin": "user_explicit",
+  "replaces": null,
+  "revisit_when": [],
+  "review": {
+    "issues": [],
+    "accepted": {
+      "by": "dd",
+      "at": "2026-10-29T17:11:36.993Z"
+    }
+  },
+  "created": "2026-10-29T17:11:36.993Z",
+  "updated": "2026-10-29T17:11:37.090Z"
+}

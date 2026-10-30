@@ -1,0 +1,63 @@
+{
+  "schema_version": 8,
+  "id": "0d9a4c49-126b-447e-b333-60f589f98291",
+  "project_id": "portfolio2026",
+  "topic": "lab/map-input",
+  "kind": "decision",
+  "status": "archived",
+  "title": "Keep the knowledge map's canvases pointer-events:none and let the container listen; never add wheel/touchmove listeners or pointer preventDefault",
+  "body": "Rules that hold today in src/scripts/lab and src/styles/lab.css: 1) Both canvases are `pointer-events: none`; the CONTAINER `.lab__map` (tabindex=0) listens. That is what makes scroll capture impossible by construction. 2) Touch is arbitrated by the browser with `touch-action: pan-x pan-y` (lab.css:156): every one-finger swipe scrolls the page; rotation starts only with TWO pointers down; mouse drag rotates. 3) No `wheel` or `touchmove` listener anywhere in client code (asserted by `pnpm run test:bundle`). 4) No pointer preventDefault. Existing preventDefault calls are only: keyboard (interaction.ts:302 arrows on a focused map, boot.ts:138 Space on a list item) and `webglcontextlost` (field.ts:172, graph-3d.ts:644), which is required to allow context restore. 5) Hit testing is by projecting nodes to NDC, not THREE.Raycaster — the projection is computed anyway for labels. 6) The server-rendered SVG is never removed; the 3D layers on top and the SVG goes to opacity 0, so reverting (lost context, slow frames) is dropping a class. 7) Colors come from CSS tokens via getComputedStyle (no hex in JS) — a convention stated in comments, NOT checked by CI.",
+  "not_derivable": "The rules are scattered across interaction.ts, graph-3d.ts, lab.css and a bundle test; the old summary in CLAUDE.md was stale (pan-y, keyboard-only preventDefault, hex 'CI-verified'), so code alone gives a fragmented picture.",
+  "triggers": [
+    {
+      "on": [
+        "edit",
+        "write"
+      ],
+      "paths": [
+        "src/scripts/lab/**",
+        "src/styles/lab.css"
+      ]
+    }
+  ],
+  "evidence": [
+    {
+      "type": "file",
+      "path": "src/scripts/lab/interaction.ts",
+      "sha256": "79600c607fdbc13093a9b12d48f9dd0ea5d6cb2fc48ad83e88000a2bdbec4274",
+      "summary": "Header: canvas never receives pointer events; touch-action pan-x pan-y; rotation needs two pointers."
+    },
+    {
+      "type": "file",
+      "path": "src/styles/lab.css",
+      "sha256": "3807c4251ca0e1e8d2147da0a0f8cf1c5f435e142ac7342b67157ed911295aa8",
+      "summary": "Header: both canvases pointer-events none; line 156 touch-action: pan-x pan-y."
+    },
+    {
+      "type": "file",
+      "path": "scripts/bundle-budget.check.ts",
+      "sha256": "ade6a9ad8b62c3279c89fd736e24ec6a5700c69edf7456ee63a9489adf55c4ec",
+      "summary": "Line ~231: test 'no client module listens for wheel or touchmove'."
+    },
+    {
+      "type": "file",
+      "path": "src/scripts/lab/graph-3d.ts",
+      "sha256": "c6d4c256af5a7ba569705c4bd5f93588a4063c65971bc80ce750688bbd7a67de",
+      "summary": "Header: NDC hit test instead of Raycaster; line 77 colors from tokens; line 652 SVG never removed; line 644 contextlost preventDefault."
+    }
+  ],
+  "origin": "user_explicit",
+  "replaces": null,
+  "revisit_when": [],
+  "review": {
+    "issues": [
+      "archived_by_person: The 3D knowledge map (src/scripts/lab, graph-3d.ts, three, GraphSvg, knowledge-graph) was removed on 2026-10-29 when the brief view replaced the old landing; these memories describe code that no longe"
+    ],
+    "accepted": {
+      "by": "dd",
+      "at": "2026-10-29T17:11:43.506Z"
+    }
+  },
+  "created": "2026-10-29T17:11:43.506Z",
+  "updated": "2026-10-29T20:46:19.974Z"
+}

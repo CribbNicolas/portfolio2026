@@ -1,7 +1,7 @@
 /*
  * Visual system — direction C, «Producto».
- * Chosen on 2026-08-14 out of the three in
- * docs/superpowers/specs/2026-08-14-sistema-visual-design.md §6.
+ * Chosen on 2026-08-14 out of three; the rationale is in DeltaDictum topic
+ * design/visual-direction.
  *
  * Color is declared by ROLE (--ink, --accent), never by color name: that way
  * print mode redefines the same tokens without touching a single selector.
@@ -18,10 +18,19 @@
   --bg-raised: #1c1e23;
   --ink: #f0eeea;
   --ink-soft: #a1a5b0;
-  /* Terracotta and not violet/indigo on purpose: the violet gradient is the
-     default of a thousand templates and fails the voice test of spec §5. */
-  --accent: #e2825f;
-  --accent-faint: #2c1c16;
+  /* A muted, deep violet (author, 2026-10-26 on the landing: "violeta o
+     púrpura, no tan chillón", then "más oscuro y profundo"; the whole site
+     since 2026-10-29). Flat, never a gradient: the violet gradient is the
+     template default the voice test rejects.
+     It cannot carry small text on the dark background (3.6:1), so it splits
+     in two: --accent for SURFACES (the C, buttons, marks; light ink on it
+     reads at 5.5:1) and --accent-ink for TEXT and thin marks on dark (7.6:1).
+     The printed CV does not use these: cv.css's `@media print` keeps its own
+     light, standard palette. */
+  --accent: #5e4bc4;
+  --accent-faint: #1a1630;
+  --accent-ink: #a99bf0;
+  --accent-rgb: 169 155 240;
   --line: #2c2f36;
   /* Translucent on purpose: the pill carries `backdrop-filter`, and with an
      opaque background the blur would not show. */
@@ -62,8 +71,10 @@ body {
   letter-spacing: -0.005em;
 }
 
+/* The text violet, not the surface one: the deep violet is 2.9:1 on the
+   ground, under the 3:1 a focus indicator needs (WCAG 1.4.11). */
 :focus-visible {
-  outline: 2px solid var(--accent);
+  outline: 2px solid var(--accent-ink);
   outline-offset: 2px;
 }
 

@@ -1,0 +1,53 @@
+{
+  "schema_version": 8,
+  "id": "e7a76e64-7dc1-4b33-abae-08a3c26819b8",
+  "project_id": "portfolio2026",
+  "topic": "analytics/privacy",
+  "kind": "decision",
+  "status": "active",
+  "title": "Keep the analytics privacy line next to the analytics on the reader pages, never in Base.astro, and keep it true",
+  "body": "The footer line (footerPrivacy* keys in content/schema/messages.ts) says what is measured: Clarity records anonymous sessions WITHOUT cookies (consent declared denied, memory analytics/consent) and Cloudflare Web Analytics uses no cookies either, linking Microsoft's privacy statement. It renders where the analytics run: the landing's foot (src/components/v2/Landing.astro) and the brief view (src/components/HomeDocument.astro). Never in src/layouts/Base.astro: if analytics are removed the line goes with them instead of being orphaned on /cv. If Clarity's consent ever changes to granted, this line must change in the same diff (it would then be false) and a consent mechanism is needed for EU visitors. Starting Clarity on first interaction (src/scripts/analytics.ts) is a cost decision, not consent, and must not be described as one.",
+  "not_derivable": "That the line's wording is tied to the consent choice, and why it sits with the analytics rather than in the layout, is not recorded in code.",
+  "triggers": [
+    {
+      "on": [
+        "edit",
+        "write"
+      ],
+      "paths": [
+        "src/layouts/Base.astro",
+        "src/components/HomeDocument.astro",
+        "src/components/v2/Landing.astro",
+        "src/scripts/analytics.ts",
+        "content/schema/messages.ts"
+      ]
+    }
+  ],
+  "evidence": [
+    {
+      "type": "file",
+      "path": "content/schema/messages.ts",
+      "sha256": "c557cc50a5f6d743d9f6b4cf588282c5e37584aa3357fcb2aa92f83fdda3518e",
+      "summary": "Cited when this memory was saved."
+    },
+    {
+      "type": "file",
+      "path": "src/components/v2/Landing.astro",
+      "sha256": "7f90cf76b6c1e644ac8e7a3c289cfef61d2b232b6a8f72ea549ecb72f8c7c6a2",
+      "summary": "Cited when this memory was saved."
+    }
+  ],
+  "origin": "user_explicit",
+  "replaces": "a6860194-bb60-4672-96dd-888c4f9271ff",
+  "revisit_when": [],
+  "review": {
+    "issues": [],
+    "batch": "landing-v2-stage-1-revisions",
+    "accepted": {
+      "by": "person",
+      "at": "2026-10-29T20:58:04.850Z"
+    }
+  },
+  "created": "2026-10-29T20:48:05.504Z",
+  "updated": "2026-10-29T20:58:04.903Z"
+}

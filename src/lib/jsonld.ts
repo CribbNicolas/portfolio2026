@@ -2,7 +2,7 @@
  * ContentView → schema.org/Person.
  *
  * Server-rendered in the `<head>`: crawlers do not execute JS, so a
- * JSON-LD inyectado por script no existe para ellos (docs/04 §3).
+ * JSON-LD inyectado por script no existe para ellos.
  *
  * Se alimenta de la superficie `public-api`, que ya excluye los datos de
  * contacto privados. Este archivo no filtra nada: si tuviera que filtrar,
@@ -27,7 +27,7 @@ export function buildPersonJsonLd(view: ContentView, site: URL): Record<string, 
     "@id": new URL("/#person", site).toString(),
     name: identity.fullName,
     alternateName: identity.preferredName,
-    // The searchable one, not the brand one (CONTRACT §3).
+    // The searchable one, not the brand one.
     jobTitle: identity.searchTitle,
     description: identity.summary.short,
     url: site.toString(),

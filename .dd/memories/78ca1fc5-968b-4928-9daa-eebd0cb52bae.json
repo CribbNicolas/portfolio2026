@@ -1,0 +1,53 @@
+{
+  "schema_version": 8,
+  "id": "78ca1fc5-968b-4928-9daa-eebd0cb52bae",
+  "project_id": "portfolio2026",
+  "topic": "deploy/cloudflare-config",
+  "kind": "fact",
+  "status": "active",
+  "title": "Cloudflare Pages dashboard holds config the repo cannot show: build vars, runtime secrets, analytics IDs and which branches deploy",
+  "body": "Project: repo CribbNicolas/portfolio2026, production branch `main`, preset None, build `pnpm run build`, output `dist`.\nBuild vars (Production AND Preview): `NODE_VERSION=24` (v3 image starts at Node 18.17.1; engines need >=22.12, `astro sync` fails on 18); `PNPM_VERSION=11.1.3` (v3 ships 10.11.1); `SITE_URL` (else canonical/JSON-LD/og URLs point at https://portfolio.invalid, astro.config.mjs).\nRuntime vars (Production and Preview): `BROWSER_RENDERING_ACCOUNT_ID` (plaintext), `BROWSER_RENDERING_TOKEN` (secret, ONE permission: Developer Platform > Browser Run > Edit), `PDF_REFRESH_TOKEN` (secret; unset means `?refresh=` does not exist — safe default, a render is billable).\nAnalytics vars, Production ONLY so previews do not pollute data: `PUBLIC_CF_BEACON_TOKEN`, `PUBLIC_CLARITY_ID`. Public by nature; read from env so they can be rotated/disabled without code. Undefined = script not rendered.\nPreview deployments: Custom branches, include `staging` only. NOT 'All non-Production branches': that deploys `develop` and every `feature/*`, each a build against the 500/month quota and a public URL. A new env var the code reads must be added in the dashboard for both environments where relevant.",
+  "not_derivable": "All of this lives in the Cloudflare dashboard, outside git; the repo only shows the variable names being read.",
+  "triggers": [
+    {
+      "on": [
+        "edit",
+        "write"
+      ],
+      "paths": [
+        "functions/**",
+        "astro.config.mjs",
+        "package.json",
+        ".dev.vars.example",
+        "src/pages/index.astro",
+        "src/pages/en/index.astro"
+      ]
+    }
+  ],
+  "evidence": [
+    {
+      "type": "file",
+      "path": ".dev.vars.example",
+      "sha256": "90aa56929570ed6a9ae0f9ea3af9374872215f85271b6ffba03e758ed71bbabc",
+      "summary": "Same runtime var names, configured in the dashboard in production."
+    },
+    {
+      "type": "file",
+      "path": "astro.config.mjs",
+      "sha256": "7ad6b3db0bc65979d4e0576cb915e1a35af6fcd67ee0aa5008ebc0487ff87a7c",
+      "summary": "SITE_URL fallback to https://portfolio.invalid."
+    }
+  ],
+  "origin": "user_explicit",
+  "replaces": null,
+  "revisit_when": [],
+  "review": {
+    "issues": [],
+    "accepted": {
+      "by": "dd",
+      "at": "2026-10-29T17:11:37.986Z"
+    }
+  },
+  "created": "2026-10-29T17:11:37.986Z",
+  "updated": "2026-10-29T17:11:38.091Z"
+}

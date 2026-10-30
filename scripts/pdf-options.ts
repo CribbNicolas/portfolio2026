@@ -27,7 +27,7 @@ export const PDF_OPTIONS = {
   // degrading silently. That is the safety net.
   tagged: true,
   outline: true,
-  // Chrome's headers and footers break parsing (docs/01 §1).
+  // Chrome's headers and footers break parsing.
   displayHeaderFooter: false,
 } as const;
 

@@ -1,0 +1,54 @@
+{
+  "schema_version": 8,
+  "id": "ce4a798d-bab8-4d74-9962-cccfcbdd5ab4",
+  "project_id": "portfolio2026",
+  "topic": "frontend/csp-inline",
+  "kind": "trap",
+  "status": "active",
+  "title": "The CSP allows no inline code but the landing's head script by hash; astro.config.mjs forbids inlining scripts — keep it that way",
+  "body": "public/_headers sends script-src 'self' + the two analytics hosts + ONE sha256: the landing's head script (LANDING_HEAD_SCRIPT in src/lib/landing-head.ts). Any other inline code is blocked in production only (astro preview and dist/ carry no CSP).\n1) Astro inlines a page script whose chunk is under vite.build.assetsInlineLimit. It bit twice on 2026-10-29: Analytics.astro's startAnalytics(), then the brief view's reveal once its canvas code was removed. astro.config.mjs now sets assetsInlineLimit to a function that returns false for .js (everything else keeps Vite's default, so small font subsets still inline as data:). Do not remove or loosen it; `pnpm run test:js` rejects inline executable scripts as the backstop.\n2) Editing LANDING_HEAD_SCRIPT changes its sha256: put the new hash in public/_headers in the same diff (test:js recomputes it; test:served checks the served policy after deploy). Keep the script constant: the build id lives in <meta name=\"build-id\">. Never fix a blocked script with 'unsafe-inline'.",
+  "not_derivable": "The CSP only exists once Cloudflare serves _headers, so the breakage is invisible locally; that Astro inlines small scripts is framework behaviour, not visible in the source.",
+  "triggers": [
+    {
+      "on": [
+        "edit",
+        "write"
+      ],
+      "paths": [
+        "public/_headers",
+        "src/lib/landing-head.ts",
+        "astro.config.mjs",
+        "src/components/Analytics.astro",
+        "src/components/v2/Landing.astro",
+        "src/components/HomeDocument.astro"
+      ]
+    }
+  ],
+  "evidence": [
+    {
+      "type": "file",
+      "path": "astro.config.mjs",
+      "sha256": "a3bc7d82cf97c6a6b6745b74038efd12969b7e649c6aa701c766bbde1c9c9502",
+      "summary": "Cited when this memory was saved."
+    },
+    {
+      "type": "file",
+      "path": "public/_headers",
+      "sha256": "bd54a32eacb40b3618d6e34b86a81f2e92238858a236e00d34446bef2b3f8c35",
+      "summary": "Cited when this memory was saved."
+    }
+  ],
+  "origin": "model_initiated",
+  "replaces": "4fdffe7e-867c-40bf-938f-3693c41b0896",
+  "revisit_when": [],
+  "review": {
+    "issues": [],
+    "batch": "landing-v2-review",
+    "accepted": {
+      "by": "person",
+      "at": "2026-10-30T00:33:01.391Z"
+    }
+  },
+  "created": "2026-10-30T00:18:53.584Z",
+  "updated": "2026-10-30T00:33:01.450Z"
+}

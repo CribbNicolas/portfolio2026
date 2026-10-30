@@ -5,8 +5,7 @@
  * Extracted out of `src/pages/cv.astro` so `/cv` and `/en/cv` render the exact
  * same markup, parameterized only by `locale` — the alternative, two page
  * files with the same JSX, is how the two languages start drifting on day
- * three (see `docs/04`'s "one layout" rule for the CV, now doubled to two
- * locales instead of one).
+ * three.
  *
  * It fetches its OWN `cv-ats` view rather than receiving it as a prop: the
  * caller (`cv.astro` / `en/cv.astro`) needs no view of its own to render

@@ -1,0 +1,2590 @@
+/* The landing (`/`, `/en/`): every chapter of `components/v2/Landing.astro`. */
+
+:root {
+  /* The switch-off black: deeper than --bg, the DD chapter opens on it. */
+  --void: #060608;
+  /* The failure color of the seats chapter. Not a token yet (stage 2). */
+  --danger: #e5484d;
+  --gutter: clamp(16px, 6vw, 96px);
+  /* ONE vertical rhythm for the free-scroll chapters: the space between two
+     chapters is the same everywhere, so no seam reads as "the page broke". */
+  --section-pad: clamp(88px, 14svh, 150px);
+}
+
+html.lenis,
+html.lenis body {
+  height: auto;
+}
+.lenis.lenis-smooth {
+  scroll-behavior: auto !important;
+}
+
+body {
+  overflow-x: clip;
+  font-variant-ligatures: normal;
+}
+/* No orphan words (author, 2026-10-29): a heading or a short line never
+   leaves one word alone below the rest — they balance their lines; running
+   text never ends on a single word — `pretty`. A rule on a class (a
+   `.beat__title`, say) still wins over these. */
+:is(h1, h2, h3, h4, figcaption) {
+  text-wrap: balance;
+}
+:is(p, li) {
+  text-wrap: pretty;
+}
+/* Short one- or two-line copy reads best balanced, not just "pretty":
+   "coropleta de distritos y estados." breaks as "…coropleta / de distritos
+   y estados.", never with "estados." alone. */
+.beat__body,
+.beat__label,
+.stage__wins li,
+.principle p {
+  text-wrap: balance;
+}
+
+/* Film grain over everything: texture, and it dithers the dark gradients that
+   otherwise band into visible stripes. */
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  pointer-events: none;
+  opacity: 0.07;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+.mono {
+  font-family: ui-monospace, "SF Mono", "Cascadia Code", Menlo, monospace;
+  font-size: 0.78rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+
+/* --- loader: only exists once JS has said so -------------------------- */
+.loader {
+  display: none;
+}
+/* Already seen for this build (src/lib/landing-head.ts): the mark and the
+   percentage never show, but the plain cover does. The chapters build their
+   pins under it, and without it the first frames showed every section
+   stacked, un-pinned (author, 2026-10-29). main.ts fades it out. */
+.js.seen .loader__mark,
+.js.seen .loader__pct {
+  display: none;
+}
+.js .loader {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 1.25rem;
+  background: var(--bg);
+}
+.loader__pct {
+  margin: 0;
+  min-width: 4ch;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+/* --- no JavaScript: the way to the brief view ---------------------------- */
+/* A card on the right, where the hero's C would be (no script, no C); on
+   phones and upright tablets a bar along the bottom. Fixed, so the way out
+   stays in reach over the half-built chapters (author, 2026-10-30). */
+.nojs {
+  position: fixed;
+  top: 50%;
+  right: max(var(--gutter), 6vw);
+  z-index: 40;
+  display: grid;
+  justify-items: start;
+  gap: 14px;
+  width: min(24rem, 34vw);
+  margin: 0;
+  padding: 28px 32px;
+  transform: translateY(-50%);
+  border: 1px solid color-mix(in srgb, var(--accent) 55%, transparent);
+  border-radius: 24px;
+  background: var(--bg-raised);
+  box-shadow: 0 16px 48px rgb(0 0 0 / 0.5);
+  font-size: 1.4rem;
+  font-weight: 700;
+  line-height: 1.25;
+  letter-spacing: -0.015em;
+  text-wrap: balance;
+}
+@media (max-width: 760px), (max-width: 1100px) and (orientation: portrait) {
+  .nojs {
+    top: auto;
+    right: 16px;
+    bottom: 16px;
+    left: 16px;
+    width: auto;
+    gap: 8px;
+    justify-items: center;
+    padding: 16px 20px;
+    transform: none;
+    font-size: 1.1rem;
+    text-align: center;
+  }
+}
+/* The card replaces the hero's choice ("scroll for the guided tour" is not
+   true without a script), and the page ends clear of the phone bar. */
+:root:not(.js) .hero__choice {
+  display: none;
+}
+:root:not(.js) body {
+  padding-bottom: 120px;
+}
+.nojs a {
+  color: var(--accent-ink);
+  font-size: 0.82em;
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 5px;
+}
+
+/* --- 1 + 2. opening and who I am: one pinned stage ----------------------- */
+.intro__stage {
+  position: relative;
+  height: 100svh;
+  overflow: hidden;
+}
+.hero {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  align-items: center;
+  /* The bottom keeps clear of the guided/brief choice (.hero__choice), so
+     the copy centres in the room above it. */
+  padding: 96px var(--gutter) 120px;
+}
+.hero::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(60vmax 60vmax at 78% 45%, var(--accent-faint), transparent 60%);
+  pointer-events: none;
+}
+/* The ring is ABOVE the copy: when it grows it crosses over the text. */
+.hero__ringwrap {
+  position: absolute;
+  z-index: 3;
+  right: -12vmin;
+  top: 50%;
+  width: min(86vmin, 900px);
+  height: min(86vmin, 900px);
+  margin-top: calc(min(86vmin, 900px) / -2);
+  /* No will-change here: it freezes the raster at scale 1, and at 26x the
+     edge of the C turns to mush. Re-rastering a single path is cheap. */
+  pointer-events: none;
+}
+.hero__ring {
+  display: block;
+  width: 100%;
+  height: 100%;
+  transform-origin: 50% 50%;
+}
+.hero__copy {
+  position: relative;
+  z-index: 2;
+  max-width: 62rem;
+}
+.hero__name {
+  margin: 18px 0 28px;
+  /* Capped by height too: at 13vw a 1366×768 screen left 6 px between the
+     buttons and the choice, which overlapped "Descargar CV" at 1280×720. */
+  font-size: clamp(3.6rem, min(13vw, 19vh), 11.5rem);
+  font-weight: 800;
+  line-height: 0.86;
+  letter-spacing: -0.055em;
+}
+.hero__line {
+  display: block;
+}
+/* Windows high contrast paints a backplate behind every run of text, and
+   SplitText's masked lines overlap: the backplates cut the letters. The
+   name keeps the system's text colour with no backplate. */
+@media (forced-colors: active) {
+  .hero__name,
+  .hero__name * {
+    forced-color-adjust: none;
+    color: CanvasText;
+  }
+}
+.hero__hook {
+  max-width: 34ch;
+  margin: 0 0 22px;
+  font-size: clamp(1.15rem, 2.1vw, 1.6rem);
+  line-height: 1.3;
+  letter-spacing: -0.015em;
+}
+.hero__facts {
+  margin: 0 0 32px;
+}
+.hero__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+/* The choice: scroll for the guided version, or click for the simple one.
+   Above the ring (z 3), which on phones sits right behind it. */
+.hero__choice {
+  position: absolute;
+  z-index: 4;
+  left: var(--gutter);
+  bottom: 28px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 18px;
+}
+.hero__cue {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0;
+  font-weight: 600;
+}
+.hero__alt {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+.hero__or {
+  color: var(--ink-soft);
+}
+/* The way to the brief view: in the accent (its text tint, 7.6:1 on the
+   ground) and a step up in size, so it reads as the other door and not as
+   small print (author, 2026-10-29). Still a link, not a third button. */
+.hero__simple {
+  color: var(--accent-ink);
+  font-size: 1.05rem;
+  font-weight: 600;
+  text-decoration: underline;
+  text-decoration-color: rgb(var(--accent-rgb) / 0.45);
+  text-decoration-thickness: 2px;
+  text-underline-offset: 5px;
+  transition: color 160ms ease-out, text-decoration-color 160ms ease-out;
+}
+.hero__simple:hover {
+  color: var(--ink);
+  text-decoration-color: var(--accent-ink);
+}
+
+/* Which cue: by input, not by width. A mouse (or trackpad) gets the wheel;
+   a touch screen gets the finger. */
+.cue--swipe {
+  display: none;
+}
+@media (hover: none) and (pointer: coarse) {
+  .cue--wheel {
+    display: none;
+  }
+  .cue--swipe {
+    display: block;
+  }
+}
+
+/* A mouse whose wheel rolls down. */
+.cue--wheel {
+  position: relative;
+  flex: none;
+  width: 22px;
+  height: 34px;
+  border: 1.5px solid var(--ink-soft);
+  border-radius: 11px;
+}
+.cue--wheel i {
+  position: absolute;
+  left: 50%;
+  top: 7px;
+  width: 3px;
+  height: 7px;
+  margin-left: -1.5px;
+  border-radius: 2px;
+  background: var(--accent-ink);
+  animation: wheel 1.6s cubic-bezier(0.65, 0, 0.35, 1) infinite;
+}
+@keyframes wheel {
+  0% { transform: translateY(0); opacity: 0; }
+  20% { opacity: 1; }
+  70% { transform: translateY(10px); opacity: 0; }
+  100% { transform: translateY(10px); opacity: 0; }
+}
+
+/* A finger that swipes up: what scrolling down is on a touch screen. */
+.cue--swipe {
+  flex: none;
+  width: 30px;
+  height: 30px;
+  overflow: visible;
+  fill: none;
+  stroke: var(--ink-soft);
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.cue--swipe g {
+  animation: swipe 1.8s cubic-bezier(0.65, 0, 0.35, 1) infinite;
+}
+@keyframes swipe {
+  0% { transform: translateY(6px); opacity: 0; }
+  20% { opacity: 1; }
+  65% { transform: translateY(-8px); opacity: 1; }
+  85%, 100% { transform: translateY(-8px); opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cue--wheel i,
+  .cue--swipe g {
+    animation: none;
+  }
+}
+
+/* "Quién soy" lives ON the accent: the C's own color. Ink flips to the page
+   background so the contrast holds. */
+.about {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
+  grid-template-rows: 1fr auto;
+  align-items: center;
+  gap: 16px 56px;
+  padding: 88px var(--gutter) 36px;
+  background: var(--accent);
+  color: var(--ink);
+}
+/* 92 %: at 72 % (kicker) and 82 % (summary) the ink on the violet was 3.7
+   and 4.3:1, under AA's 4.5. */
+.about .mono {
+  color: rgb(240 238 234 / 0.92);
+}
+.about__kicker span {
+  color: var(--ink);
+  font-weight: 700;
+}
+.about__manifesto {
+  margin: 18px 0 24px;
+  font-size: clamp(1.9rem, 3.7vw, 3.5rem);
+  font-weight: 800;
+  line-height: 1.04;
+  letter-spacing: -0.04em;
+  text-wrap: pretty;
+}
+.about__summary {
+  max-width: 40ch;
+  margin: 0;
+  font-size: 1.05rem;
+  line-height: 1.5;
+  color: rgb(240 238 234 / 0.92);
+}
+
+/* The stack: three cards. They start as an isometric pile and end facing the
+   reader; the container carries the camera angle, each card only moves along
+   its own z (the pile) and y (the final list). */
+.stack {
+  position: relative;
+  height: 100%;
+  display: grid;
+  place-items: center;
+  perspective: 1800px;
+}
+.stack__iso {
+  position: relative;
+  /* Room for Interfaz's 11 chips, each with its icon — and capped by the
+     height: the three cards stack to ~1.12× this width, and on a 768px-tall
+     laptop the first one rose under the dock. */
+  width: min(40vw, 540px, calc((100svh - 230px) * 0.88));
+  aspect-ratio: 2.9;
+  transform-style: preserve-3d;
+}
+.plate {
+  position: absolute;
+  inset: 0;
+  transform-style: preserve-3d;
+}
+.plate__face {
+  position: absolute;
+  inset: 0;
+  padding: 16px 18px;
+  border-radius: 14px;
+  background: var(--bg);
+  color: var(--ink);
+  box-shadow: 0 24px 50px rgb(8 4 28 / 0.45);
+}
+/* The card's thickness while it is still a pile: a darker copy pushed down. */
+.plate::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 14px;
+  background: #0b0b0d;
+  transform: translateZ(-10px);
+  /* Thickness belongs to the pile; flat cards have none. Tweened to 0 as they
+     turn, or it shows through the face as dark stripes mid-rotation. */
+  opacity: var(--thick, 1);
+}
+.plate--front .plate__face {
+  box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--ink), 0 30px 70px rgb(8 4 28 / 0.55);
+}
+.plate__label {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin: 0 0 12px;
+  font-weight: 800;
+  font-size: 1.1rem;
+  letter-spacing: -0.02em;
+}
+.plate__label .mono {
+  color: var(--accent-ink);
+}
+.plate__label em {
+  margin-left: auto;
+  font-style: normal;
+  font-weight: 400;
+  font-size: 0.8rem;
+  color: var(--ink-soft);
+}
+.plate__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.plate__chips li {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px 4px 8px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.chip__icon {
+  flex: none;
+  width: 13px;
+  height: 13px;
+  fill: currentColor;
+  opacity: 0.85;
+}
+.chip__icon--line {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.9;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.plate--front .plate__chips li {
+  border-color: rgb(var(--accent-rgb) / 0.6);
+}
+
+/* --- chapters (map, seats): pinned stage, beats on the left ------------- */
+.chapter__stage {
+  position: relative;
+  height: 100svh;
+  overflow: hidden;
+  /* Opaque: a chapter lands ON TOP of the previous one (see overlap() in
+     main.ts), so whatever is under it must not show through. */
+  background: var(--bg);
+}
+/* Later chapters stack above earlier ones while their pins hand off. */
+.intro__stage {
+  z-index: 1;
+}
+[data-peak-stage] {
+  z-index: 2;
+}
+[data-seats-stage] {
+  z-index: 3;
+  perspective: 1300px;
+  /* Transparent, unlike the other chapters: it rises over the map's last
+     frame (dark, one marker) and that marker has to stay visible through it
+     until the hall takes its place. */
+  background: transparent;
+}
+.peak__ring {
+  transform-origin: 50% 50%;
+}
+/* A scrim so the beat text never fights the visual under it. */
+.chapter__stage::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, var(--bg) 0%, rgb(19 20 23 / 0.85) 28%, transparent 52%);
+  pointer-events: none;
+  /* A chapter that slides in over the previous one starts without it, or its
+     top edge cuts across the frame underneath as a hard line. */
+  opacity: var(--scrim, 1);
+}
+.beats,
+.rail,
+.chapter__note {
+  z-index: 2;
+}
+/* Every beat starts at the SAME height: anchored by its top, not centered —
+   centered, a beat with bars sat higher than one without, and the kicker
+   jumped from beat to beat. */
+.beats {
+  position: absolute;
+  left: var(--gutter);
+  top: clamp(96px, 26vh, 280px);
+  /* Grows with the screen, like the titles do (up to 3.8rem): a fixed 30rem
+     left two or three words per line at 2560 px and words alone on their
+     lines ("asientos", "dentro"). Measured title by title, both locales. */
+  width: min(max(32rem, 38vw), 46rem, calc(100vw - 32px));
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.beat {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+}
+.beat__kicker span {
+  color: var(--accent-ink);
+}
+.beat__title {
+  margin: 12px 0 14px;
+  text-wrap: balance;
+  /* 3.6vw, not 4.4: at 1366 px the larger size left words alone on their
+     lines in the column; from ~1700 px up both cap at 3.8rem anyway. */
+  font-size: clamp(2rem, 3.6vw, 3.8rem);
+  font-weight: 800;
+  line-height: 0.98;
+  letter-spacing: -0.04em;
+  font-variant-numeric: tabular-nums;
+}
+/* A before/after movement, one half per line ("de ~5 s" / "a ~500 ms"). */
+.beat__line {
+  display: block;
+}
+.beat__label {
+  margin: -4px 0 14px;
+  color: var(--accent-ink);
+}
+.beat__body {
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: 1.05rem;
+  line-height: 1.5;
+}
+.bars {
+  display: grid;
+  gap: 10px;
+  margin-top: 22px;
+}
+.bars__row {
+  display: grid;
+  grid-template-columns: 5.5rem 1fr;
+  align-items: center;
+  gap: 12px;
+}
+.bars__track {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+/* Width, not scaleX: a scaled pill squashes its round ends, which is why the
+   short bar used to look square. --w is the bar's share of the track, minus
+   room for the number that follows it. */
+.bars__row i {
+  flex: none;
+  width: calc((100% - 5.5rem) * var(--w, 0));
+  height: 10px;
+  border-radius: 999px;
+  background: var(--ink-soft);
+}
+.bars__row b {
+  /* Mono for the figure, but not uppercase: "MS" is not a unit. */
+  text-transform: none;
+  font-weight: 600;
+  color: var(--ink);
+  white-space: nowrap;
+}
+.bars__row + .bars__row i {
+  background: var(--accent-ink);
+}
+.rail {
+  position: absolute;
+  left: var(--gutter);
+  bottom: 32px;
+  display: flex;
+  gap: 6px;
+}
+.rail i {
+  width: 28px;
+  height: 3px;
+  border-radius: 2px;
+  background: var(--line);
+  transition: background 300ms ease-out;
+}
+.rail i.on {
+  background: var(--accent-ink);
+}
+.chapter__note {
+  position: absolute;
+  right: 24px;
+  bottom: 28px;
+  margin: 0;
+  font-size: 0.7rem;
+}
+
+/* --- 3. the map --------------------------------------------------------- */
+.peak__world {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  perspective: 1400px;
+  background: radial-gradient(70% 70% at 60% 50%, var(--bg-raised), var(--bg));
+}
+.peak__tilt {
+  /* Sized by the space RIGHT of the beat text (gutter + 30rem), minus room
+     for the tilt, which widens the near edge — and by the height too. Sized
+     by the viewport alone, on a 1366×720 laptop it ran under the text and off
+     the right edge. */
+  width: max(40vw, min(calc(100vw - var(--gutter) - 30rem - 140px), 940px, 120vh));
+  aspect-ratio: 1.6;
+  position: relative;
+  transform-style: preserve-3d;
+  will-change: transform;
+  /* A left margin shifts a grid-centered box by HALF its size: this puts the
+     map's center at the middle of that free space. */
+  margin-left: calc(var(--gutter) + 30rem);
+}
+/* Points on the map, measured by morph.ts: where a district sits on screen
+   with the tilt applied. */
+.peak__probe {
+  position: absolute;
+  width: 0;
+  height: 0;
+}
+/* Where the seats chapter's hall lives from the hand-off to the end of its
+   pin (seats.ts): fixed to the screen, with the stage's own perspective, so
+   no scroll — not even a dragged scrollbar — moves it. Above the stages,
+   under the points of light and the dock. */
+.handoff {
+  position: fixed;
+  inset: 0;
+  z-index: 14;
+  perspective: 1300px;
+  pointer-events: none;
+}
+/* The hand-off's points of light, above both chapters, below the dock. */
+.morph {
+  position: fixed;
+  inset: 0;
+  z-index: 15;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  visibility: hidden;
+}
+.peak__canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.peak__ringwrap {
+  position: absolute;
+  z-index: 1;
+  left: 50%;
+  top: 50%;
+  width: min(64vmin, 620px);
+  height: min(64vmin, 620px);
+  margin: calc(min(64vmin, 620px) / -2) 0 0 calc(min(64vmin, 620px) / -2);
+  /* No will-change: it would freeze the raster at one scale, and this one
+     goes from 26x down to nothing. */
+  pointer-events: none;
+}
+.peak__ring {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.hall3d {
+  transform-origin: 50% 50%;
+  transform-style: preserve-3d;
+}
+
+/* --- 4. the seats ------------------------------------------------------- */
+.seats__visual {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  right: var(--gutter);
+  /* Clear of the beat column (gutter + 30rem): the lane used to run under it. */
+  width: min(48vw, 680px);
+  display: grid;
+  align-content: center;
+  gap: 18px;
+}
+.hall {
+  width: 100%;
+  overflow: visible;
+}
+.hall__stage {
+  fill: var(--bg-raised);
+  stroke: var(--line);
+}
+.hall__stage-label {
+  fill: var(--ink-soft);
+  font: 600 10px ui-monospace, monospace;
+  letter-spacing: 0.2em;
+  text-anchor: middle;
+}
+.seat {
+  fill: var(--bg-raised);
+  stroke: var(--ink-soft);
+  stroke-opacity: 0.7;
+  stroke-width: 1;
+}
+.seat--sold {
+  fill: var(--line);
+  stroke: none;
+}
+.seat--picked {
+  fill: var(--accent-ink);
+  stroke: var(--ink);
+  stroke-width: 1.5;
+  stroke-opacity: 1;
+}
+/* Clicked on the map, not in the cart yet: outlined, breathing. */
+.seat--pending {
+  fill: var(--accent-faint);
+  stroke: var(--accent-ink);
+  stroke-width: 2;
+  stroke-opacity: 1;
+  animation: pending 0.9s ease-in-out infinite;
+}
+@keyframes pending {
+  50% { fill-opacity: 0.35; }
+}
+/* On the map, but the cart never got it: the seat the race lost. */
+.seat--error {
+  fill: var(--danger);
+  stroke: var(--ink);
+  stroke-width: 1.5;
+  stroke-opacity: 1;
+}
+/* Every infinite loop stops under reduced motion: tokens.css cuts each one
+   to 0.01ms, which turned a blink, a nudge or a spin into a flicker. */
+@media (prefers-reduced-motion: reduce) {
+  .seat--pending,
+  .ddx__caret,
+  .ddgo span,
+  .ddx__go span,
+  .gate.is-running .gate__mark {
+    animation: none;
+  }
+}
+.flow {
+  display: grid;
+  grid-template-columns: 1fr 12rem;
+  align-items: center;
+  gap: 16px;
+}
+.lane {
+  position: relative;
+  height: 64px;
+  border-top: 1px dashed var(--line);
+  border-bottom: 1px dashed var(--line);
+}
+.lane__label {
+  position: absolute;
+  left: 0;
+  top: -22px;
+  color: var(--accent-ink);
+  /* One line, always: on a phone "Store API · 4 pedidos a la vez" wrapped
+     into the lane. */
+  white-space: nowrap;
+}
+.token {
+  position: absolute;
+  top: 50%;
+  margin-top: -14px;
+  height: 28px;
+  padding: 0 10px;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  background: var(--accent);
+  color: var(--ink);
+  font-weight: 700;
+  white-space: nowrap;
+}
+/* Dark on the red: light ink on it was 3.4:1. */
+.token--lost {
+  background: var(--danger);
+  color: var(--bg);
+}
+.cart {
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--bg-raised);
+  min-height: 150px;
+}
+.cart p {
+  margin: 0 0 8px;
+}
+.cart ul {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-weight: 600;
+  font-size: 0.92rem;
+}
+.sync {
+  justify-self: end;
+  margin: 0;
+  padding: 6px 12px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  transition: border-color 200ms ease-out, color 200ms ease-out;
+}
+.sync b {
+  color: var(--ink);
+  font-size: 0.95rem;
+}
+.sync.is-bad {
+  border-color: var(--danger);
+  color: var(--danger);
+}
+.sync.is-bad b {
+  color: var(--danger);
+}
+.sync.is-ok {
+  border-color: var(--accent-ink);
+  color: var(--accent-ink);
+}
+.surfaces {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+.surface {
+  padding: 12px 14px;
+  border: 1px solid var(--accent-ink);
+  border-radius: var(--radius);
+  background: var(--accent-faint);
+  transform: translateY(12px);
+}
+.surface p {
+  margin: 0;
+  font-weight: 700;
+}
+.surface .mono {
+  margin-bottom: 4px;
+  font-weight: 400;
+}
+
+
+/* --- 5. DeltaDictum: the second hook ------------------------------------ */
+
+/* A scene that must be watched whole holds the page (util.ts holdScroll).
+   The gutter is always reserved, so hiding the scrollbar moves nothing. */
+html {
+  scrollbar-gutter: stable;
+}
+html.is-held,
+html.is-held body {
+  overflow: hidden;
+}
+
+/* The switch-off. Four black bars close in (top and bottom to a line, then
+   the sides to a dot), over everything but the dock. */
+.crt {
+  position: fixed;
+  inset: 0;
+  z-index: 16;
+  pointer-events: none;
+  visibility: hidden;
+}
+.crt.is-gone {
+  display: none;
+}
+.crt__bar {
+  position: absolute;
+  background: var(--void);
+}
+.crt__bar--top,
+.crt__bar--bottom {
+  left: 0;
+  right: 0;
+  height: calc(50% + 1px);
+  transform: scaleY(0);
+}
+.crt__bar--top {
+  top: 0;
+  transform-origin: top;
+}
+.crt__bar--bottom {
+  bottom: 0;
+  transform-origin: bottom;
+}
+.crt__bar--left,
+.crt__bar--right {
+  top: 0;
+  bottom: 0;
+  width: calc(50% + 1px);
+  transform: scaleX(0);
+}
+.crt__bar--left {
+  left: 0;
+  transform-origin: left;
+}
+.crt__bar--right {
+  right: 0;
+  transform-origin: right;
+}
+/* The last of the picture: a hot line, then a dot. */
+.crt__line {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: 2px;
+  margin-top: -1px;
+  background: linear-gradient(90deg, transparent, #fff 18%, #fff 82%, transparent);
+  box-shadow: 0 0 24px 4px rgb(var(--accent-rgb) / 0.55);
+  opacity: 0;
+}
+.crt__dot {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 12px;
+  height: 12px;
+  margin: -6px 0 0 -6px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 0 18px 6px rgb(var(--accent-rgb) / 0.7);
+  opacity: 0;
+}
+
+/* The interception: the page speaks to the reader in DD's own format. */
+.ddx {
+  position: absolute;
+  left: 50%;
+  /* Above the middle: the block grows downward as the lines come in, and
+     centred it ended up sitting low (author, 2026-10-28). */
+  top: 40%;
+  width: min(1180px, calc(100vw - 2 * var(--gutter)));
+  transform: translate(-50%, -50%);
+  font: clamp(14px, 1.25vw, 22px) / 1.75 ui-monospace, "SF Mono", "Cascadia Code", Menlo, monospace;
+  color: #d6d9de;
+}
+.ddx p {
+  margin: 0;
+}
+.ddx .gray {
+  color: #8a8f98;
+}
+.ddx .white {
+  color: var(--ink);
+}
+.ddx .nest {
+  margin-left: 2.6em;
+}
+.ddx__cmd {
+  font-size: 1.15em;
+  color: var(--ink);
+}
+.ddx__l,
+.ddx__mem,
+.ddx__go {
+  opacity: 0;
+}
+.ddx__mem {
+  margin-top: 4px;
+  color: var(--accent-ink);
+  font-size: 1.12em;
+  line-height: 1.6;
+  text-wrap: pretty;
+}
+.ddx__caret {
+  display: inline-block;
+  width: 0.6em;
+  height: 1.1em;
+  margin-left: 3px;
+  vertical-align: -0.18em;
+  background: #fff;
+  box-shadow: 0 0 12px rgb(var(--accent-rgb) / 0.8);
+  animation: caret 1s steps(1) infinite;
+}
+.ddx__go {
+  margin-top: 28px !important;
+  color: var(--ink-soft);
+}
+@keyframes caret {
+  50% { opacity: 0; }
+}
+
+/* The chapter itself opens on the same black. */
+[data-dd-stage] {
+  z-index: 4;
+  background: transparent;
+  --scrim: 0;
+}
+[data-dd-stage].is-lit,
+:root:is(.still, :not(.js)) [data-dd-stage] {
+  background: var(--void);
+}
+/* Nothing of it shows while it rises, see-through, over the seats — not
+   the dimmed claim either, which peeked in at the bottom when the reader's
+   scroll ran on into the switch-off. */
+[data-dd-stage]:not(.is-lit) {
+  /* The stage itself, not its children: GSAP leaves them an inline
+     `visibility: inherit`, which beats a rule on the children. */
+  visibility: hidden;
+}
+
+/* Act 1 — the name, as big as the page allows. */
+.ddm {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  align-content: center;
+  padding: 0 var(--gutter);
+}
+.ddm__kicker span {
+  color: var(--accent-ink);
+}
+.ddm__name {
+  margin: 18px 0 22px;
+  /* No floor above the viewport: "DeltaDictum." must stay one line, and on a
+     375px phone a 3.6rem floor pushed the "." onto a line of its own. */
+  font-size: clamp(2.4rem, 12.5vw, 14rem);
+  white-space: nowrap;
+  font-weight: 800;
+  line-height: 0.86;
+  letter-spacing: -0.06em;
+}
+.ddm__name .char {
+  display: inline-block;
+}
+.ddm__claim {
+  max-width: 22ch;
+  margin: 0 0 24px;
+  font-size: clamp(1.8rem, 4vw, 3.6rem);
+  font-weight: 800;
+  line-height: 1.02;
+  letter-spacing: -0.04em;
+}
+.ddm__claim em {
+  font-style: normal;
+  color: var(--accent-ink);
+}
+.ddm__claim .w {
+  opacity: 0.16;
+}
+.ddm__lede {
+  max-width: 52ch;
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: 1.12rem;
+  line-height: 1.55;
+}
+
+/* Act 2 — the race: two sessions, same request. Act 3 keeps the right one
+   and annotates it. */
+.ddrace {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: auto auto;
+  align-content: center;
+  gap: 18px 28px;
+  /* Capped at ~1600px wide: on a big screen two terminals stretched edge to
+     edge read as two thin strips. */
+  padding: 72px max(var(--gutter), calc((100vw - 1600px) / 2));
+  visibility: hidden;
+}
+.ddrace__ask {
+  grid-column: 1 / -1;
+  margin: 0;
+}
+.ddrace__ask span {
+  color: var(--accent-ink);
+}
+.ddterm--off {
+  grid-area: 2 / 1;
+}
+.ddterm--on {
+  grid-area: 2 / 2;
+}
+.ddterm__cap {
+  padding: 10px 16px 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+  line-height: 1.3;
+  color: var(--ink);
+}
+.ddterm--off .ddterm__cap {
+  color: #f0a3a5;
+}
+.ddterm--on .ddterm__cap {
+  color: var(--accent-ink);
+}
+.ddterm .bad {
+  color: #f0a3a5;
+}
+.ddterm .ok {
+  color: #8fd19e;
+}
+.ddterm .tl {
+  opacity: 0;
+  transform: translateY(4px);
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+.ddterm .tl.on {
+  opacity: 1;
+  transform: none;
+}
+.ddterm .is-lit {
+  border-radius: 4px;
+  background: rgb(var(--accent-rgb) / 0.14);
+  box-shadow: 0 0 0 1px rgb(var(--accent-rgb) / 0.45);
+}
+.ddterm--on.is-hit {
+  box-shadow: 0 30px 80px rgb(0 0 0 / 0.45), 0 0 0 1px var(--accent-ink), 0 0 60px rgb(var(--accent-rgb) / 0.35);
+}
+.spin {
+  display: inline-block;
+  width: 1ch;
+}
+.ddterm__verdict {
+  margin: 0;
+  padding: 14px 20px 18px;
+  border-top: 1px solid var(--line);
+  font: 800 clamp(1.4rem, 2.2vw, 2.4rem) / 1 ui-monospace, "SF Mono", "Cascadia Code", Menlo, monospace;
+  letter-spacing: -0.02em;
+}
+
+/* The notes sit where the right session was; the session slides left. */
+.ddnotes {
+  grid-area: 2 / 2;
+  display: grid;
+  align-content: center;
+  gap: 18px;
+  margin: 0;
+  padding: 0 0 0 28px;
+  list-style: none;
+}
+.ddnote {
+  position: relative;
+  padding: 14px 18px 14px 52px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: rgb(255 255 255 / 0.02);
+  opacity: 0;
+}
+.ddnote__n {
+  position: absolute;
+  left: 16px;
+  top: 15px;
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border: 1.5px solid var(--accent-ink);
+  border-radius: 50%;
+  color: var(--accent-ink);
+  font-size: 0.72rem;
+}
+.ddnote h3 {
+  margin: 0 0 6px;
+  font-size: clamp(1.1rem, 1.2vw, 1.4rem);
+  letter-spacing: -0.02em;
+}
+.ddnote p {
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: clamp(0.92rem, 0.85vw, 1.05rem);
+  line-height: 1.5;
+}
+.ddlinks {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+}
+.ddlinks path {
+  fill: none;
+  stroke: var(--accent-ink);
+  stroke-width: 1.5;
+  stroke-dasharray: 3 5;
+}
+.ddlinks circle {
+  fill: var(--accent-ink);
+}
+
+/* The invitation to go on, once a held scene has finished. */
+.ddgo {
+  position: absolute;
+  left: 50%;
+  bottom: 32px;
+  z-index: 2;
+  margin: 0;
+  transform: translateX(-50%);
+  color: var(--ink-soft);
+  visibility: hidden;
+}
+.ddgo span,
+.ddx__go span {
+  display: inline-block;
+  animation: nudge 1.4s ease-in-out infinite;
+}
+@keyframes nudge {
+  50% { transform: translateY(4px); }
+}
+
+/* After the pin: what to take away, and where to go. */
+.ddcta {
+  padding: 18vh var(--gutter) var(--section-pad);
+}
+.ddcta__line {
+  max-width: 24ch;
+  margin: 0 0 32px;
+  font-size: clamp(2rem, 4.4vw, 3.8rem);
+  font-weight: 800;
+  line-height: 1.02;
+  letter-spacing: -0.04em;
+  text-wrap: balance;
+}
+.dd__pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 16px;
+  padding: 4px 12px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  font-size: 0.7rem;
+  text-transform: none;
+  letter-spacing: 0.02em;
+}
+.live {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--accent-ink);
+  box-shadow: 0 0 0 4px rgb(var(--accent-rgb) / 0.18);
+}
+.dd__checks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 20px;
+  margin: 0 0 28px;
+  padding: 0;
+  list-style: none;
+  color: var(--ink-soft);
+  font-size: 0.92rem;
+}
+.dd__checks li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.dd__checks svg path {
+  fill: none;
+  stroke: var(--accent-ink);
+  stroke-width: 2.4;
+}
+.dd__links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin: 0;
+}
+
+/* The session: DD's own terminal, as its site draws it. */
+/* A column, so the verdict is a footer: pinned to the bottom of both
+   sessions at the same height, whatever each one printed above it. */
+.ddterm {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  overflow: hidden;
+  border: 1px solid #2a2e34;
+  border-radius: 12px;
+  background: #101214;
+  box-shadow: 0 30px 80px rgb(0 0 0 / 0.45);
+  transition: box-shadow 0.4s ease;
+}
+.ddterm__chrome {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+  padding: 9px 16px;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  background: #15181c;
+  font: 12px ui-monospace, monospace;
+  color: var(--ink-soft);
+}
+.ddterm__chrome i {
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  background: #3a3f46;
+}
+.ddterm__chrome span {
+  margin: 0 auto;
+  padding-right: 50px;
+  white-space: nowrap;
+}
+.ddterm__screen {
+  flex: 1;
+  padding: 16px 20px 20px;
+  font: clamp(12px, 0.9vw, 16px) / 1.7 ui-monospace, "SF Mono", "Cascadia Code", Menlo, monospace;
+  color: #d6d9de;
+  overflow-wrap: anywhere;
+}
+.ddterm__screen p {
+  margin: 0;
+}
+.ddterm__screen strong {
+  color: var(--ink);
+}
+.ddterm .gray {
+  color: #8a8f98;
+}
+.ddterm .white {
+  color: var(--ink);
+}
+.ddterm .green {
+  color: #5fb672;
+}
+.ddterm .memory {
+  color: var(--accent-ink);
+}
+.ddterm .nest {
+  margin-left: 36px;
+}
+.ddterm .add {
+  padding: 0 6px;
+  background: rgb(95 182 114 / 0.14);
+  color: #b6e3bf;
+}
+.ddterm .prompt {
+  min-height: 1.7em;
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: #23262b;
+  color: #c4c8cf;
+}
+.ddterm .gap {
+  margin-top: 12px;
+}
+
+.dd__facts {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin: 56px 0 0;
+  padding: 24px 0 0;
+  border-top: 1px solid var(--line);
+  list-style: none;
+}
+.dd__facts li {
+  display: grid;
+  gap: 4px;
+}
+.dd__facts b {
+  font-size: 1.5rem;
+  letter-spacing: -0.03em;
+}
+.dd__facts span {
+  color: var(--ink-soft);
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+
+/* --- 6. the journey: plain scroll, sticky toolbox ------------------------ */
+.journey {
+  position: relative;
+  padding: var(--section-pad) var(--gutter) 0;
+}
+.journey__head {
+  max-width: 44rem;
+  margin-bottom: 10svh;
+}
+.journey__head h2 {
+  margin: 14px 0 16px;
+  font-size: clamp(2.6rem, 6vw, 5.4rem);
+  font-weight: 800;
+  line-height: 0.95;
+  letter-spacing: -0.045em;
+}
+.journey__body {
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
+  gap: 64px;
+}
+.journey__stages {
+  position: relative;
+  margin: 0;
+  padding: 0 0 0 40px;
+  list-style: none;
+}
+.journey__line {
+  position: absolute;
+  left: 7px;
+  top: 6px;
+  bottom: 0;
+  width: 2px;
+  background: var(--line);
+}
+.journey__line i {
+  display: block;
+  height: 100%;
+  background: linear-gradient(var(--accent-ink), var(--accent));
+  transform-origin: top;
+}
+.stage {
+  position: relative;
+  min-height: 72svh;
+}
+/* The last stage only needs to reach the toolbox's year; a full screen after
+   it was dead air before the next chapter. */
+.stage:last-child {
+  min-height: 46svh;
+}
+.stage__dot {
+  position: absolute;
+  left: -40px;
+  top: 4px;
+  width: 16px;
+  height: 16px;
+  border: 2px solid var(--line);
+  border-radius: 50%;
+  background: var(--bg);
+  transition: border-color 300ms ease-out, box-shadow 300ms ease-out, background 300ms ease-out;
+}
+.stage.is-current .stage__dot {
+  border-color: var(--accent-ink);
+  background: var(--accent);
+  box-shadow: 0 0 0 6px rgb(var(--accent-rgb) / 0.15);
+}
+.stage__when {
+  margin: 0 0 10px;
+}
+.stage__company {
+  margin: 0;
+  font-size: clamp(2rem, 4.2vw, 3.6rem);
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -0.04em;
+}
+.stage__title {
+  margin: 8px 0 16px;
+  color: var(--accent-ink);
+  font-weight: 600;
+}
+.stage__context {
+  max-width: 46ch;
+  margin: 0 0 18px;
+  color: var(--ink-soft);
+  font-size: 1.05rem;
+  line-height: 1.5;
+}
+.stage__wins {
+  display: grid;
+  gap: 10px;
+  max-width: 48ch;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.stage__wins li {
+  padding-left: 18px;
+  border-left: 2px solid var(--line);
+  line-height: 1.45;
+}
+.toolbox {
+  position: relative;
+}
+.toolbox__sticky {
+  position: sticky;
+  top: 18svh;
+  padding: 28px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: linear-gradient(160deg, var(--accent-faint), var(--bg-raised) 60%);
+}
+.toolbox__sticky > .mono {
+  margin: 0;
+}
+.toolbox__year {
+  margin: 4px 0 6px;
+  font-size: clamp(3.6rem, 7vw, 6.4rem);
+  font-weight: 800;
+  line-height: 0.9;
+  letter-spacing: -0.05em;
+  font-variant-numeric: tabular-nums;
+}
+.toolbox__year + .mono span {
+  color: var(--ink);
+  font-weight: 700;
+}
+.toolbox__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  min-height: 9rem;
+  margin: 22px 0 0;
+  padding: 0;
+  list-style: none;
+}
+/* The same chip as "Quién soy" (icon + name, pill), one size up. */
+.toolbox__chips li {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px 6px 11px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--bg);
+  font-size: 0.95rem;
+  font-weight: 600;
+  white-space: nowrap;
+  transition: border-color 300ms ease-out, color 300ms ease-out;
+}
+.toolbox__chips .chip__icon {
+  width: 16px;
+  height: 16px;
+}
+.toolbox__chips li.is-fresh {
+  border-color: var(--accent-ink);
+  color: var(--accent-ink);
+}
+
+/* --- 7. how I work: calm, plain scroll, the CI ticking ------------------- */
+.work {
+  padding: var(--section-pad) var(--gutter);
+}
+.work__body {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+  gap: 72px;
+}
+.work__kicker {
+  margin: 0;
+  color: var(--accent-ink);
+}
+.work__head h2 {
+  max-width: 16ch;
+  margin: 14px 0 0;
+  font-size: clamp(2.4rem, 5vw, 4.4rem);
+  font-weight: 800;
+  line-height: 0.98;
+  letter-spacing: -0.045em;
+  text-wrap: balance;
+}
+.work__head {
+  margin-bottom: 12svh;
+}
+.principle {
+  max-width: 34rem;
+  min-height: 34svh;
+}
+.principle__num {
+  margin: 0 0 8px;
+  color: var(--accent-ink);
+}
+.principle h3 {
+  margin: 0 0 10px;
+  font-size: clamp(1.5rem, 2.6vw, 2.2rem);
+  font-weight: 800;
+  line-height: 1.08;
+  letter-spacing: -0.03em;
+}
+.principle p:last-child {
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: 1.05rem;
+  line-height: 1.55;
+}
+.principle--limits {
+  min-height: 0;
+  padding-left: 20px;
+  border-left: 2px solid var(--line);
+}
+.pipeline__sticky {
+  position: sticky;
+  top: 14svh;
+  padding: 24px 26px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: #0f1013;
+}
+.pipeline__title {
+  margin: 0 0 16px;
+}
+.pipeline__count {
+  margin-left: 6px;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+.pipeline__list {
+  display: grid;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.gate {
+  display: grid;
+  grid-template-columns: 18px 9.5rem 1fr;
+  align-items: center;
+  gap: 10px;
+  padding: 5px 0;
+  color: var(--ink-soft);
+  font-size: 0.86rem;
+  transition: color 250ms ease-out;
+}
+.gate code {
+  font: 600 0.8rem ui-monospace, "SF Mono", "Cascadia Code", Menlo, monospace;
+  /* A gate still pending: quieter than a passed one, but at 4.5:1 or more on
+     the panel (#6b7079 was 3.82, under the minimum). */
+  color: #8a8f98;
+  transition: color 250ms ease-out;
+}
+.gate__mark {
+  width: 14px;
+  height: 14px;
+  border: 1.5px solid var(--line);
+  border-radius: 50%;
+  transition: background 250ms ease-out, border-color 250ms ease-out, transform 250ms ease-out;
+}
+.gate.is-running .gate__mark {
+  border-color: var(--accent-ink);
+  border-top-color: transparent;
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+.gate.is-done {
+  color: var(--ink);
+}
+.gate.is-done code {
+  color: var(--accent-ink);
+}
+.gate.is-done .gate__mark {
+  border-color: var(--accent-ink);
+  background: var(--accent-ink) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='m6 12 4 4 8-9' fill='none' stroke='%23131417' stroke-width='3.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / 10px no-repeat;
+}
+.pipeline__now {
+  display: none;
+}
+.pipeline__deploy {
+  margin: 16px 0 0;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+  transition: color 300ms ease-out;
+}
+.pipeline__deploy span {
+  color: var(--line);
+  transition: color 300ms ease-out;
+}
+.pipeline__deploy.is-done,
+.pipeline__deploy.is-done span {
+  color: var(--accent-ink);
+}
+
+/* --- 8. close: the C returns and its hole is the button ----------------- */
+.close__stage {
+  position: relative;
+  min-height: 92svh;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  align-items: center;
+  gap: 48px;
+  padding: 40px var(--gutter) var(--section-pad);
+  /* Clipped sideways only: the aura reaches up past the stage's top edge. */
+  overflow-x: clip;
+}
+/* The aura around the C. It used to be the stage's own background, so the
+   stage's top edge cut it straight across. Now it is a layer that reaches
+   well above the stage and fades out on its own, BEHIND the previous
+   section (z -1: that section has no background of its own) — no space
+   added between the sections. */
+.close__stage::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  left: 0;
+  right: 0;
+  top: -50vh;
+  bottom: 0;
+  background: radial-gradient(45vmax 45vmax at 30% calc(50vh + 46svh), var(--accent-faint), transparent 70%);
+  pointer-events: none;
+}
+.close__kicker {
+  margin: 0 0 14px;
+  color: var(--accent-ink);
+}
+/* Sized by the screen's height as well as its width: at 1366×768 the line
+   at 4vw ran eight lines tall, and at the end of the page its start sat cut
+   off under the dock with no scroll left to bring it down. */
+.close__line {
+  max-width: 24ch;
+  margin: 0 0 32px;
+  font-size: clamp(1.8rem, min(3.4vw, 5.4vh), 3.4rem);
+  font-weight: 800;
+  line-height: 1.02;
+  letter-spacing: -0.04em;
+  text-wrap: balance;
+}
+.close__contact {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 1.15rem;
+  font-weight: 600;
+}
+.close__contact a {
+  color: var(--ink);
+  text-decoration: none;
+  background: linear-gradient(var(--accent-ink), var(--accent-ink)) no-repeat 0 100% / 0 2px;
+  transition: background-size 250ms ease-out, color 250ms ease-out;
+}
+.close__contact a:hover {
+  color: var(--accent-ink);
+  background-size: 100% 2px;
+}
+
+/* --- 8. The CV: every fact, plain and dense ---------------------------------
+   No motion and no pin: it is the page's text-only layer, what a crawler or
+   a reader in a hurry gets. Denser than the chapters on purpose. */
+.cvx {
+  padding: var(--section-pad) var(--gutter);
+  border-top: 1px solid var(--line);
+}
+/* Where an anchor lands (/#cv, /#proyectos, /#mapa — the 404 links here):
+   a clean screen, nothing of the section before (author, 2026-10-29). The
+   72 px of `anchorScrollCss()` suit the brief view's full-width bar; the
+   landing's dock is a pill on the right that covers no heading, so the
+   chapter starts at the very top, and the projects heading keeps 48 px of its
+   own empty margin above it — less than the 56 px gap to the role before.
+   `#top` outranks the id rule anchors.ts emits inline. */
+#top .cvx,
+#top .peak {
+  scroll-margin-top: 0;
+}
+#top .cvx__h[id] {
+  scroll-margin-top: 48px;
+}
+.cvx__head {
+  max-width: 44rem;
+  margin-bottom: 8svh;
+}
+.cvx__kicker {
+  margin: 0;
+  color: var(--accent-ink);
+}
+.cvx__head h2 {
+  margin: 14px 0 16px;
+  font-size: clamp(2.4rem, 5vw, 4.4rem);
+  font-weight: 800;
+  line-height: 0.98;
+  letter-spacing: -0.045em;
+}
+.cvx__lede {
+  max-width: 48ch;
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: 1.05rem;
+  line-height: 1.5;
+}
+.cvx__grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr);
+  gap: 72px;
+}
+.cvx__h {
+  margin: 0 0 20px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--line);
+  color: var(--ink-soft);
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+.cvx__h:not(:first-child) {
+  margin-top: 56px;
+}
+.cvx__role,
+.cvx__project {
+  max-width: 64ch;
+  margin-bottom: 36px;
+}
+.cvx__when {
+  margin: 0 0 10px;
+}
+.cvx__metric {
+  color: var(--accent-ink);
+  font-weight: 700;
+}
+.cvx h4 {
+  margin: 0 0 6px;
+  font-size: 1.25rem;
+  font-weight: 800;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+}
+.cvx__client {
+  color: var(--ink-soft);
+  font-weight: 600;
+}
+.cvx__status {
+  margin-left: 10px;
+  color: var(--accent-ink);
+  font-size: 0.75rem;
+  vertical-align: middle;
+}
+.cvx__context,
+.cvx__project p {
+  margin: 0 0 10px;
+  color: var(--ink-soft);
+  line-height: 1.5;
+}
+.cvx__project .cvx__outcome {
+  color: var(--ink);
+}
+.cvx__wins {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.cvx__wins li {
+  padding-left: 16px;
+  border-left: 2px solid var(--line);
+  line-height: 1.45;
+}
+.cvx__stack {
+  color: var(--ink-soft);
+}
+.cvx__links {
+  display: flex;
+  gap: 16px;
+}
+.cvx__links a {
+  color: var(--accent-ink);
+}
+.cvx__side {
+  align-self: start;
+}
+.cvx__skills {
+  margin: 0;
+}
+.cvx__skills dt {
+  margin-top: 14px;
+  color: var(--ink-soft);
+  font-size: 0.85rem;
+}
+.cvx__skills dt:first-child {
+  margin-top: 0;
+}
+.cvx__skills dd {
+  margin: 4px 0 0;
+  line-height: 1.5;
+}
+.cvx__edu {
+  margin-bottom: 16px;
+}
+.cvx__edu p {
+  margin: 0 0 4px;
+  line-height: 1.4;
+}
+.cvx__side > p {
+  margin: 0;
+}
+@media (max-width: 760px), (max-width: 1100px) and (orientation: portrait) {
+  .cvx__grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0;
+  }
+  .cvx__side .cvx__h:first-child {
+    margin-top: 56px;
+  }
+}
+.foot__privacy {
+  flex-basis: 100%;
+  max-width: 72ch;
+  margin: 0;
+  line-height: 1.5;
+}
+
+.foot {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 8px 24px;
+  padding: 28px var(--gutter);
+  border-top: 1px solid var(--line);
+  color: var(--ink-soft);
+  font-size: 0.85rem;
+}
+.foot a {
+  color: var(--ink-soft);
+}
+.foot a:hover {
+  color: var(--accent-ink);
+}
+
+/* "Descargar CV" from anywhere: the close's C, centred over a dark scrim. */
+.cvmodal {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  display: grid;
+  place-items: center;
+}
+.cvmodal[hidden] {
+  display: none;
+}
+.cvmodal__scrim {
+  position: absolute;
+  inset: 0;
+  background: rgb(6 6 8 / 0.88);
+  backdrop-filter: blur(8px);
+}
+.cvmodal__body {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  gap: 24px;
+  pointer-events: none;
+}
+.cvmodal__body a {
+  pointer-events: auto;
+}
+.cvmodal__kicker {
+  margin: 0;
+  color: var(--accent-ink);
+}
+.cvmodal__slot .close__ringwrap {
+  width: min(60vmin, 560px);
+}
+.cvmodal__x {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  background: var(--bg-raised);
+  color: var(--ink);
+  font-size: 1.4rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: border-color 160ms ease-out;
+}
+.cvmodal__x:hover {
+  border-color: var(--ink-soft);
+}
+
+/* --- small screens ------------------------------------------------------ */
+/* Phones, and tablets held upright: a portrait iPad (768×1024) is a tall
+   narrow screen, and the side-by-side desktop layout put the C over the
+   name, the map in a corner and the journey and CI in thin columns. Keep in
+   step with NARROW in util.ts. */
+@media (max-width: 760px), (max-width: 1100px) and (orientation: portrait) {
+  .hero {
+    align-items: start;
+    align-content: start;
+    padding-top: 112px;
+  }
+  /* In the flow, under the buttons: down at the bottom it sat on the ring. */
+  .hero__choice {
+    position: relative;
+    left: auto;
+    bottom: auto;
+    margin-top: 36px;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  /* Stacked, the "o" would open a line on its own. */
+  .hero__or {
+    display: none;
+  }
+  .hero__ringwrap {
+    top: auto;
+    bottom: -34vw;
+    right: -30vw;
+    width: 92vw;
+    height: 92vw;
+    margin-top: 0;
+  }
+  .about {
+    /* minmax(0, …): a bare 1fr grows to its widest child's min-content, and
+       a long chip row pushed the manifesto past the screen's right edge. */
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto 1fr;
+    align-content: start;
+    gap: 8px;
+    padding-top: 84px;
+  }
+  .about__manifesto {
+    font-size: 1.45rem;
+    margin: 10px 0 8px;
+  }
+  .about__summary {
+    display: none;
+  }
+  .about__manifesto {
+    font-size: 1.25rem;
+  }
+  .stack {
+    height: 360px;
+  }
+  .stack__iso {
+    width: 88vw;
+    /* Taller than before the icons: at 3.6 Interfaz's third row touched the
+       bottom edge, and at 3.1 its fourth row did once the column stopped
+       overflowing the screen (narrower, more rows). */
+    aspect-ratio: 2.8;
+  }
+  .plate__face {
+    padding: 8px 10px;
+    border-radius: 10px;
+  }
+  .plate__label {
+    font-size: 0.8rem;
+    margin-bottom: 5px;
+  }
+  .plate__label em {
+    display: none;
+  }
+  .plate__chips {
+    gap: 4px;
+  }
+  .plate__chips li {
+    gap: 4px;
+    padding: 1px 6px 1px 5px;
+    font-size: 0.6rem;
+  }
+  .plate__chips .chip__icon {
+    width: 10px;
+    height: 10px;
+  }
+  .chapter__stage::after {
+    display: none;
+  }
+  .peak__tilt {
+    margin-left: 0;
+    width: 150vw;
+  }
+  .seats__visual {
+    top: 96px;
+    left: 16px;
+    right: 16px;
+    width: auto;
+    transform: none;
+  }
+  .flow {
+    grid-template-columns: 1fr 8rem;
+  }
+  .surfaces {
+    font-size: 0.75rem;
+  }
+  .beats {
+    top: auto;
+    bottom: 72px;
+    transform: none;
+  }
+  .beat {
+    top: auto;
+    bottom: 0;
+    transform: none;
+    padding: 16px;
+    border-radius: var(--radius);
+    background: var(--bg-pill);
+    backdrop-filter: blur(10px);
+  }
+  .beat__title {
+    font-size: 1.8rem;
+  }
+  .chapter__note {
+    display: none;
+  }
+  /* DD on phones: one column; the notes go under the session instead of
+     beside it (dd.ts does not slide it on one column). */
+  .ddrace {
+    grid-template-columns: 1fr;
+    /* Each row as tall as what it holds: in a fixed-height stage, auto rows
+       shrank the two sessions (overflow: hidden lets them) and cut their
+       last lines off. */
+    grid-template-rows: repeat(4, max-content);
+    align-content: start;
+    padding-top: 84px;
+    gap: 12px;
+  }
+  .ddterm--off {
+    grid-area: 2 / 1;
+  }
+  .ddterm--on {
+    grid-area: 3 / 1;
+  }
+  .ddnotes {
+    grid-area: 4 / 1;
+    padding: 0;
+    gap: 8px;
+  }
+  .ddnote {
+    padding: 10px 12px 10px 44px;
+  }
+  .ddnote p {
+    display: none;
+  }
+  .ddnote h3 {
+    margin: 0;
+    font-size: 0.95rem;
+  }
+  .ddnote__n {
+    top: 9px;
+  }
+  /* Two sessions stacked have to fit one phone screen: no window chrome,
+     a smaller face, half the indent, a shorter verdict. */
+  .ddterm__chrome {
+    display: none;
+  }
+  .ddterm__cap {
+    padding: 8px 12px 4px;
+    font-size: 0.8rem;
+  }
+  .ddterm__screen {
+    padding: 4px 10px 8px;
+    font-size: 9.5px;
+    line-height: 1.55;
+  }
+  .ddterm .nest {
+    margin-left: 14px;
+  }
+  .ddterm .gap {
+    margin-top: 6px;
+  }
+  .ddterm__verdict {
+    padding: 8px 12px 10px;
+    font-size: 1.15rem;
+  }
+  .ddrace__ask {
+    font-size: 0.66rem;
+  }
+  .ddlinks {
+    display: none;
+  }
+  /* The stacked sessions reach the bottom of the screen; the rail sat on
+     the second one's footer. */
+  [data-dd-stage] .rail {
+    display: none;
+  }
+  /* On one line and inside the lane, short of the cart beside it. */
+  .lane__label {
+    font-size: 0.6rem;
+    letter-spacing: 0.03em;
+  }
+  .ddx {
+    font-size: 12px;
+  }
+  .work__body {
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+  /* Phones: the CI becomes a sticky strip under the dock — fifteen marks and
+     a count — so the ticking happens where the reader is looking. */
+  .pipeline {
+    order: -1;
+    position: sticky;
+    top: 72px;
+    z-index: 3;
+  }
+  /* A band of page colour from the top of the screen down to the sticky
+     strip: without it the text scrolling under the strip showed in the gap
+     between the dock and the strip, cut in half. */
+  .pipeline::before,
+  .toolbox::before {
+    content: "";
+    position: absolute;
+    left: calc(-1 * var(--gutter));
+    right: calc(-1 * var(--gutter));
+    bottom: 100%;
+    height: 80px;
+    background: var(--bg);
+  }
+  .pipeline__sticky {
+    position: static;
+    padding: 12px 14px;
+  }
+  .pipeline__title {
+    margin-bottom: 10px;
+  }
+  .pipeline__list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .gate {
+    display: block;
+    padding: 0;
+  }
+  .gate code,
+  .gate > span:not(.gate__mark) {
+    display: none;
+  }
+  .pipeline__now {
+    display: block;
+    min-height: 2.6em;
+    margin: 10px 0 0;
+    color: var(--ink-soft);
+    font-size: 0.78rem;
+    line-height: 1.3;
+  }
+  .pipeline__now code {
+    color: var(--accent-ink);
+    font: 600 0.78rem ui-monospace, "SF Mono", "Cascadia Code", Menlo, monospace;
+  }
+  .pipeline__deploy {
+    margin-top: 10px;
+    padding-top: 10px;
+  }
+  .principle {
+    min-height: 26svh;
+  }
+  /* Seats: a smaller hall and a shorter card, so the cart stays visible. */
+  .seats__visual {
+    top: 84px;
+    bottom: auto;
+    align-content: start;
+    gap: 10px;
+  }
+  .hall {
+    max-height: 26svh;
+  }
+  .flow {
+    grid-template-columns: 1fr 7.5rem;
+    gap: 8px;
+  }
+  .lane {
+    height: 44px;
+  }
+  .cart {
+    min-height: 0;
+    padding: 10px 12px;
+  }
+  .cart ul {
+    font-size: 0.78rem;
+    gap: 2px;
+  }
+  .surfaces {
+    gap: 6px;
+  }
+  .surface {
+    padding: 8px 10px;
+  }
+  .surface p {
+    font-size: 0.7rem;
+  }
+  .beats {
+    bottom: 56px;
+  }
+  .beat {
+    padding: 12px 14px;
+  }
+  .beat__title {
+    margin: 6px 0 8px;
+    font-size: 1.45rem;
+  }
+  .beat__body {
+    font-size: 0.86rem;
+    line-height: 1.4;
+  }
+  /* The before/after bars repeat what the title already says in numbers;
+     on a phone they only push the card past the bottom edge. */
+  .bars {
+    display: none;
+  }
+  .close__stage {
+    grid-template-columns: 1fr;
+    align-content: center;
+    gap: 28px;
+    padding-top: 96px;
+  }
+  .close__ringwrap {
+    width: min(64vw, 300px);
+  }
+  .close__line {
+    font-size: 1.7rem;
+  }
+  .dd__facts {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  /* Clear of the toolbox's 80 px page-colour band (.toolbox::before): at
+     10svh (66 px on a 667 px phone) the band covered the title's second
+     line before the toolbox stuck ("4 stages" cut). */
+  .journey__head {
+    margin-bottom: 96px;
+  }
+  .journey__body {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+  /* On phones the toolbox rides at the top, under the dock, and the stages
+     scroll beneath it. */
+  .toolbox {
+    order: -1;
+    position: sticky;
+    top: 76px;
+    z-index: 3;
+  }
+  .toolbox__sticky {
+    position: static;
+    display: grid;
+    grid-template-columns: auto 1fr;
+    align-items: center;
+    gap: 2px 14px;
+    padding: 12px 14px;
+    background: var(--bg-raised);
+  }
+  .toolbox__year {
+    grid-row: span 2;
+    font-size: 2.4rem;
+    margin: 0;
+  }
+  .toolbox__chips {
+    grid-column: 1 / -1;
+    min-height: 0;
+    margin-top: 8px;
+    gap: 4px;
+  }
+  .toolbox__chips li {
+    padding: 2px 8px;
+    font-size: 0.68rem;
+  }
+  /* The whole toolbox would eat half the screen: on phones the bar shows only
+     what THIS stage added; the count still carries the total. */
+  .toolbox__chips li:not(.is-fresh) {
+    display: none;
+  }
+  .journey__stages {
+    margin-top: 32px;
+  }
+  .stage {
+    min-height: 64svh;
+  }
+}
+
+/* Short phones (iPhone SE and the like): "Quién soy" has to fit a
+   manifesto and three cards in ~667px. Tighter edges, a smaller
+   manifesto and a slightly narrower stack buy the room. */
+@media (max-width: 760px) and (max-height: 720px) {
+  .about {
+    padding-top: 68px;
+    padding-bottom: 14px;
+    gap: 4px;
+  }
+  .about__manifesto {
+    font-size: 1.08rem;
+    margin: 6px 0 4px;
+  }
+  .stack {
+    height: 330px;
+  }
+  .stack__iso {
+    width: 80vw;
+  }
+  /* The seats result: no room under the hall for both the beat card and the
+     three surfaces (reload, minicart, checkout), and the card covered them.
+     The beat's own text names all three. */
+  .surfaces {
+    display: none;
+  }
+  /* The beat card sits under the sync line ("Mapa 4 · Carrito 4"), and the
+     longest Spanish beats ran 15 px over it at 375×667. The card and the
+     rail go lower, the hall starts higher and the title is a step smaller. */
+  .seats__visual {
+    top: 76px;
+  }
+  .beats {
+    bottom: 36px;
+  }
+  .rail {
+    bottom: 20px;
+  }
+  .beat {
+    padding: 10px 12px;
+  }
+  .beat__title {
+    margin: 4px 0 6px;
+    font-size: 1.35rem;
+  }
+}
+
+/* Short phones: the hero's C smaller and further into the corner, so it
+   stays clear of the buttons and the guided/simple note. */
+@media (max-width: 760px) and (max-height: 720px) {
+  .hero__ringwrap {
+    width: 64vw;
+    height: 64vw;
+    bottom: -28vw;
+    right: -28vw;
+  }
+}
+
+/* Tablets held upright get the phone layout (see the big block), but at
+   phone sizes its stack was huge (88vw cards) and covered the manifesto:
+   capped cards, chips one size up, a stack tall enough for the list. */
+@media (min-width: 600px) and (max-width: 1100px) and (orientation: portrait) {
+  .about__manifesto {
+    font-size: 2rem;
+  }
+  .stack {
+    height: 600px;
+  }
+  .stack__iso {
+    width: min(78vw, 540px);
+    aspect-ratio: 3;
+  }
+  .plate__face {
+    padding: 14px 16px;
+  }
+  .plate__label {
+    font-size: 1rem;
+  }
+  .plate__chips {
+    gap: 6px;
+  }
+  .plate__chips li {
+    padding: 3px 9px 3px 7px;
+    font-size: 0.78rem;
+  }
+  .plate__chips .chip__icon {
+    width: 12px;
+    height: 12px;
+  }
+}
+
+/* --- reduced motion: every chapter laid out still ----------------------- */
+/* The same layout serves a page with no JavaScript (no `.js` class on
+   <html>, set by the inline head script): the chapters' resting states are
+   the scripts' job, and without them every layer would sit on top of the
+   one before. Still, the text is all there and nothing overlaps. */
+:root:not(.js) [data-dd-stage] {
+  visibility: visible;
+}
+/* The race's lines type in one by one (dd.ts); with no script, both
+   sessions show finished. The "keep scrolling" cue belongs to the pin. */
+:root:not(.js) .ddterm .tl {
+  opacity: 1;
+}
+:root:not(.js) .ddgo,
+:root:not(.js) .peak__world {
+  /* The map is drawn by map.ts; without it the canvas is an empty box. */
+  display: none;
+}
+:root:is(.still, :not(.js)) .chapter__stage,
+:root:is(.still, :not(.js)) .intro__stage {
+  height: auto;
+  min-height: 100svh;
+}
+:root:is(.still, :not(.js)) .hero,
+:root:is(.still, :not(.js)) .about {
+  position: relative;
+  min-height: 100svh;
+}
+:root:is(.still, :not(.js)) .hero__ringwrap {
+  display: none;
+}
+:root:is(.still, :not(.js)) .chapter__stage {
+  display: grid;
+  /* minmax(0, …): an auto track took the beats' widest unbreakable line and
+     ran the map chapter's text off a phone's right edge. */
+  grid-template-columns: minmax(0, 1fr);
+  gap: 32px;
+  padding: var(--section-pad) var(--gutter) 0;
+}
+:root:is(.still, :not(.js)) .chapter__stage::after {
+  display: none;
+}
+:root:is(.still, :not(.js)) .beat__title {
+  font-size: clamp(1.8rem, 3.4vw, 2.8rem);
+}
+:root:is(.still, :not(.js)) .peak__world,
+:root:is(.still, :not(.js)) .seats__visual {
+  position: relative;
+  min-height: 60svh;
+  transform: none;
+  inset: auto;
+  width: auto;
+}
+:root:is(.still, :not(.js)) .peak__ringwrap {
+  display: none;
+}
+:root:is(.still, :not(.js)) .beats,
+:root:is(.still, :not(.js)) .beat {
+  position: static;
+  transform: none;
+  display: grid;
+  gap: 48px;
+  width: auto;
+}
+:root:is(.still, :not(.js)) .rail {
+  display: none;
+}
+/* DD, still: the manifesto lit, the race finished, the notes in a column. */
+:root:is(.still, :not(.js)) .ddm,
+:root:is(.still, :not(.js)) .ddrace {
+  position: relative;
+  inset: auto;
+  visibility: visible;
+}
+:root:is(.still, :not(.js)) .ddm__claim .w {
+  opacity: 1;
+}
+:root:is(.still, :not(.js)) .ddrace {
+  padding: 0;
+}
+:root:is(.still, :not(.js)) .ddnote {
+  opacity: 1;
+}
+:root:is(.still, :not(.js)) .ddnotes {
+  grid-area: auto;
+  grid-column: 1 / -1;
+  padding: 0;
+}
+:root:is(.still, :not(.js)) .ddlinks {
+  display: none;
+}

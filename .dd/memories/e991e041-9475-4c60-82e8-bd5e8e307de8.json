@@ -1,0 +1,50 @@
+{
+  "schema_version": 8,
+  "id": "e991e041-9475-4c60-82e8-bd5e8e307de8",
+  "project_id": "portfolio2026",
+  "topic": "analytics/tools",
+  "kind": "decision",
+  "status": "active",
+  "title": "Keep both Clarity and Cloudflare Web Analytics on the reader pages; they measure different things and neither replaces the other",
+  "body": "Cloudflare Web Analytics gives pageviews, referrers, country, browser and Core Web Vitals, with no cookies, but no heatmaps. The question worth answering (which parts of the page and the CV get read) needs Microsoft Clarity: click, scroll and area heatmaps plus session recordings. Both are free, so both stay. Do not remove Clarity 'because CWA already covers analytics', and do not swap CWA for Clarity's pageview data. They run on the landings (/, /en/) and the brief views (/brief, /en/brief): the beacon from src/components/Analytics.astro, Clarity from startAnalytics() in each page's script (src/components/v2/Landing.astro, src/components/HomeDocument.astro). /cv and /en/cv stay at zero JS. Clarity starts on first interaction and runs cookieless (src/scripts/analytics.ts).",
+  "not_derivable": "Why two analytics tools coexist (heatmaps vs CWA's vitals) is not explained in code.",
+  "triggers": [
+    {
+      "on": [
+        "edit",
+        "write"
+      ],
+      "paths": [
+        "src/scripts/analytics.ts",
+        "src/components/Analytics.astro"
+      ]
+    }
+  ],
+  "evidence": [
+    {
+      "type": "file",
+      "path": "src/scripts/analytics.ts",
+      "sha256": "54074ac86ed3fdd945ceefca260ea393b8154ed7d49361e3d50ce212f22e7890",
+      "summary": "Cited when this memory was saved."
+    },
+    {
+      "type": "file",
+      "path": "src/components/Analytics.astro",
+      "sha256": "20946c75c4ec8fb51e8bdc26e9796a88f944c27e2586ca8fb3bc3e8c796590d9",
+      "summary": "Cited when this memory was saved."
+    }
+  ],
+  "origin": "model_initiated",
+  "replaces": "9051a5d4-65de-4580-bdc3-c7566b1b51fd",
+  "revisit_when": [],
+  "review": {
+    "issues": [],
+    "batch": "landing-v2-stage-4",
+    "accepted": {
+      "by": "person",
+      "at": "2026-10-29T23:15:14.858Z"
+    }
+  },
+  "created": "2026-10-29T23:13:07.512Z",
+  "updated": "2026-10-29T23:15:14.917Z"
+}

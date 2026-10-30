@@ -10,11 +10,12 @@
 
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { formatMetric } from "./format-metric";
+import { formatMetric, formatMetricEnds, formatMetricLabeled } from "./format-metric";
 import {
   formatDateRange,
   formatDuration,
   formatRoleTitle,
+  formatRoleTitleParts,
   formatSeniority,
   formatYearMonth,
 } from "./format";
@@ -76,6 +77,24 @@ test("what formatMetric emits stays inside the loaded font subset", () => {
   }
 });
 
+test("a labeled metric says what it counts, after a delta or before a movement", () => {
+  assert.equal(
+    formatMetricLabeled({ label: "distritos escolares", delta: "13.000", confidence: "estimated" }, "es"),
+    "~13.000 distritos escolares",
+  );
+  assert.equal(
+    formatMetricLabeled({ label: "indexing time", before: "5 s", after: "500 ms", confidence: "estimated" }, "en"),
+    "indexing time: from ~5 s to ~500 ms",
+  );
+  assert.equal(formatMetricLabeled({ label: "algo", confidence: "measured" }, "es"), null);
+});
+
+test("rule 2 on the CV: the concurrency comes apart from the title", () => {
+  const role = { title: "Dev", concurrent: true } as Parameters<typeof formatRoleTitleParts>[0];
+  assert.deepEqual(formatRoleTitleParts(role, "es"), { title: "Dev", concurrent: "en paralelo" });
+  assert.deepEqual(formatRoleTitleParts({ title: "Dev" }, "en"), { title: "Dev", concurrent: null });
+});
+
 test("a metric with no numbers returns null, not an empty string", () => {
   // The caller has to be able to drop the whole fragment. An "" slips silently
   // into a template and leaves a dangling dash in the CV.
@@ -83,7 +102,7 @@ test("a metric with no numbers returns null, not an empty string", () => {
   assert.equal(out, null);
 });
 
-test("formatYearMonth uses MM/AAAA (docs/03 §2)", () => {
+test("formatYearMonth uses MM/AAAA", () => {
   assert.equal(formatYearMonth("2023-07", "es"), "07/2023");
 });
 
@@ -151,4 +170,14 @@ test("rule 2: a concurrent role declares it in both languages", () => {
   const role = { title: "Dev", concurrent: true } as Parameters<typeof formatRoleTitle>[0];
   assert.equal(formatRoleTitle(role, "es"), "Dev (en paralelo)");
   assert.equal(formatRoleTitle(role, "en"), "Dev (concurrent)");
+});
+
+test("rule 4: the ends of an estimated before/after are each marked", () => {
+  const ends = formatMetricEnds({ label: "x", before: "90 s", after: "12 s", confidence: "estimated" });
+  assert.deepEqual(ends, { before: "~90 s", after: "~12 s" });
+  assert.deepEqual(formatMetricEnds({ label: "x", before: "90 s", after: "12 s", confidence: "measured" }), {
+    before: "90 s",
+    after: "12 s",
+  });
+  assert.equal(formatMetricEnds({ label: "x", delta: "40%", confidence: "estimated" }), null);
 });

@@ -1,0 +1,42 @@
+{
+  "schema_version": 8,
+  "id": "6c564f22-388a-46f3-9fc6-7ebd16847158",
+  "project_id": "portfolio2026",
+  "topic": "git/rulesets",
+  "kind": "fact",
+  "status": "active",
+  "title": "Branch protection lives in GitHub rulesets, not hooks: required checks validate+flujo on main/staging, validate+bump on develop",
+  "body": "One ruleset per branch, server-side: main and staging = require PR (0 approvals), status checks `validate` + `flujo`, block force pushes, restrict deletions; develop = same with `validate` + `bump`. Required checks match JOB names: renaming `validate` (content-validation.yml), `flujo` (flujo-de-ramas.yml) or `bump` (version-gate.yml) leaves a required check that never reports and blocks every PR — change the ruleset first.\n0 approvals because GitHub forbids approving your own PR; at 1 a one-person repo is stuck. 'Require linear history' is off: history uses merge commits.\nRejected: a local pre-push hook — it runs on the pusher's machine, not on GitHub's 'Merge pull request' button, so it covered the small case and left the big one open.\nThe repo is public BECAUSE rulesets are unavailable on private Free-plan repos.\nA merge into main has no CI run of its own; that is accepted — the check that counts runs on the pull_request event.",
+  "not_derivable": "Ruleset settings live in GitHub settings, outside git; the hook rejection and why-public reason are recorded nowhere in code.",
+  "triggers": [
+    {
+      "on": [
+        "edit",
+        "write"
+      ],
+      "paths": [
+        ".github/workflows/*.yml"
+      ]
+    }
+  ],
+  "evidence": [
+    {
+      "type": "file",
+      "path": ".github/workflows/flujo-de-ramas.yml",
+      "sha256": "2257cafd858b3dc40c8bbe6a786d57828edf5d7f8b37061d797c5c4dd8ddcbe3",
+      "summary": "Comment: renaming the job would leave a required check that never reports."
+    }
+  ],
+  "origin": "user_explicit",
+  "replaces": null,
+  "revisit_when": [],
+  "review": {
+    "issues": [],
+    "accepted": {
+      "by": "dd",
+      "at": "2026-10-29T17:11:41.286Z"
+    }
+  },
+  "created": "2026-10-29T17:11:41.286Z",
+  "updated": "2026-10-29T17:11:41.387Z"
+}

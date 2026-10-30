@@ -1,0 +1,551 @@
+/*
+ * The brief view (`/brief`, `/en/brief`, components/HomeDocument.astro): the
+ * CV as the PDF lays it out, read on screen. The pill, the download menu and
+ * the footer live in home.css.
+ *
+ * Reading comes first. The background moves slowly at low weight; the
+ * sections sit on raised panels so the text never rests on the moving lines;
+ * what a reader scans for (figures, metrics, companies, the core skills)
+ * carries the accent; everything else is ink or soft ink.
+ *
+ * Unlike cv.css, flex, grids and translucency are allowed: this page is not
+ * printed and no parser reads its layout.
+ */
+
+.lab {
+  position: relative;
+  min-height: 100vh;
+}
+
+/* No orphan words (author, 2026-10-29): headings balance their lines,
+   running text never ends on one word alone. */
+:is(h1, h2, h3, h4) {
+  text-wrap: balance;
+}
+:is(p, li, dd) {
+  text-wrap: pretty;
+}
+
+/* --- The background --------------------------------------------------------- */
+
+/* The landing's C, turning slowly, blurred into a glow behind the text. The
+   blur and the turn sit on the same element, so the browser rasterizes the
+   blur once and only rotates the result. Fixed, behind the whole page. */
+.brief__backdrop {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+/* Large, on the left, faint and barely blurred so it reads as the brand and
+   never pulls the eye from the CV (author, 2026-10-29). Its centre starts on
+   the bottom edge of the screen — the upper half shows on arrival — and the
+   parallax carries it up to the top edge by the end of the page, where the
+   lower half shows. */
+.brief__ring {
+  --ring: min(120vh, 1500px);
+  position: absolute;
+  left: calc(16vw - var(--ring) / 2);
+  top: calc(100vh - var(--ring) / 2);
+  width: var(--ring);
+  aspect-ratio: 1;
+  opacity: 0.22;
+  filter: blur(6px);
+  will-change: transform, translate;
+  animation: brief-turn 70s linear infinite;
+}
+@keyframes brief-turn {
+  to {
+    transform: rotate(360deg);
+  }
+}
+/* Parallax, driven by the scroll itself (no script). `translate` and the
+   turn's `transform` are separate properties, so the two animations compose
+   on one element. Where scroll-driven animations are not supported the ring
+   stays put, half showing. */
+@supports (animation-timeline: scroll()) {
+  .brief__ring {
+    animation:
+      brief-turn 70s linear infinite,
+      brief-drift linear both;
+    animation-timeline: auto, scroll(root);
+  }
+}
+@keyframes brief-drift {
+  to {
+    translate: 0 -100vh;
+  }
+}
+/* Not just shortened: tokens.css cuts every animation to 0.01 ms under
+   reduced motion, which on an infinite turn would spin it frantically. */
+@media (prefers-reduced-motion: reduce) {
+  .brief__ring {
+    animation: none;
+  }
+}
+
+/* --- The column -------------------------------------------------------------- */
+
+.brief {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  /* minmax(0, …): a bare auto track grows to its widest unbreakable line
+     (glued words, the e-mail) and pushed the page 12 px past a 375 px phone. */
+  grid-template-columns: minmax(0, 1fr);
+  gap: calc(var(--space) * 3);
+  max-width: 50rem;
+  margin-inline: auto;
+  padding: calc(var(--space) * 13) calc(var(--space) * 2) calc(var(--space) * 8);
+}
+
+/* --- Header ------------------------------------------------------------------- */
+
+.brief__head {
+  padding: calc(var(--space) * 2) calc(var(--space) * 1) calc(var(--space) * 3);
+}
+.brief__kicker {
+  margin: 0 0 calc(var(--space) * 1.5);
+  color: var(--accent-ink);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+.brief__name {
+  margin: 0;
+  font-size: clamp(2.3rem, 6vw, 3.6rem);
+  font-weight: 800;
+  line-height: 1.02;
+  letter-spacing: -0.04em;
+  text-wrap: balance;
+}
+.brief__tagline {
+  max-width: 34ch;
+  margin: calc(var(--space) * 1.5) 0 0;
+  color: var(--ink-soft);
+  font-size: 1.2rem;
+  line-height: 1.4;
+}
+.brief__facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space);
+  margin: calc(var(--space) * 3) 0 0;
+  padding: 0;
+  list-style: none;
+}
+.brief__facts li {
+  padding: 6px 14px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--bg) 70%, transparent);
+  color: var(--ink-soft);
+  font-size: 0.9rem;
+}
+.brief__facts strong {
+  color: var(--accent-ink);
+  font-weight: 800;
+}
+.brief__contact {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 18px;
+  margin: calc(var(--space) * 2) 0 0;
+  font-weight: 600;
+}
+.brief__contact a {
+  color: var(--ink);
+  text-decoration: none;
+  border-bottom: 1px solid var(--line);
+}
+.brief__contact a:hover {
+  color: var(--accent-ink);
+  border-color: var(--accent-ink);
+}
+/* Download and back to the guided landing: under the header and at the end. */
+.brief__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: calc(var(--space) * 1.5);
+  margin: calc(var(--space) * 3) 0 0;
+}
+.brief__end {
+  display: grid;
+  justify-items: center;
+  padding: calc(var(--space) * 3) 0 0;
+}
+.brief__end .brief__actions {
+  justify-content: center;
+  margin: 0;
+}
+
+/* --- Sections: raised panels over the glow ---------------------------------- */
+
+/* Soft panels, no outline (author, 2026-10-29: the boxed look was too hard):
+   a mostly opaque tint of the raised ground (74 %: at 48 % the text lost
+   legibility over the C), so the C behind only just shows through,
+   and enough blur behind it that the text never sits on the bright part. */
+.brief__section {
+  padding: calc(var(--space) * 3) calc(var(--space) * 2.5);
+  border-radius: 20px;
+  background: color-mix(in srgb, var(--bg-raised) 74%, transparent);
+  backdrop-filter: blur(18px);
+}
+@media (min-width: 40rem) {
+  .brief__section {
+    padding: calc(var(--space) * 4) calc(var(--space) * 5);
+  }
+}
+
+.brief__h {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 0 calc(var(--space) * 2.5);
+  color: var(--ink-soft);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+.brief__h::before {
+  content: "";
+  width: 18px;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--accent);
+}
+
+.brief__profile {
+  margin: 0;
+  font-size: 1.12rem;
+  line-height: 1.6;
+}
+
+/* --- Skills: label, then chips; `core` carries the accent --------------------- */
+
+.brief__skills {
+  display: grid;
+  gap: calc(var(--space) * 1.5);
+  margin: 0;
+}
+.brief__skill-group {
+  display: grid;
+  gap: 6px;
+}
+@media (min-width: 40rem) {
+  .brief__skill-group {
+    grid-template-columns: 9rem 1fr;
+    align-items: baseline;
+  }
+}
+.brief__skills dt {
+  color: var(--ink-soft);
+  font-size: 0.88rem;
+}
+.brief__skills dd {
+  margin: 0;
+}
+.brief__skills ul,
+.brief__stack {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.brief__skills li {
+  padding: 3px 10px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  color: var(--ink-soft);
+  font-size: 0.9rem;
+}
+.brief__skills li.is-core {
+  border-color: color-mix(in srgb, var(--accent) 55%, transparent);
+  background: var(--accent-faint);
+  color: var(--ink);
+  font-weight: 700;
+}
+
+/* --- Experience: a dated trail ------------------------------------------------ */
+
+.brief__role {
+  position: relative;
+  padding: 0 0 calc(var(--space) * 4) calc(var(--space) * 3);
+  border-left: 1px solid var(--line);
+}
+.brief__role:last-child {
+  padding-bottom: 0;
+}
+/* Phones: the panel, the trail and the bullet each indent the text, and
+   together they left it a ~260 px column. */
+@media (max-width: 40rem) {
+  .brief__role {
+    padding-left: calc(var(--space) * 2);
+  }
+}
+.brief__role::before {
+  content: "";
+  position: absolute;
+  top: 6px;
+  left: -5px;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 0 4px var(--bg-raised);
+}
+.brief__when {
+  margin: 0 0 6px;
+  color: var(--ink-soft);
+  font-size: 0.85rem;
+  font-variant-numeric: tabular-nums;
+}
+.brief__role-title {
+  margin: 0 0 var(--space);
+  font-size: 1.2rem;
+  font-weight: 800;
+  line-height: 1.3;
+  letter-spacing: -0.015em;
+}
+.brief__company {
+  margin-left: 8px;
+  color: var(--accent-ink);
+}
+.brief__company::before {
+  content: "· ";
+  color: var(--ink-soft);
+}
+.brief__client {
+  display: block;
+  color: var(--ink-soft);
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+.brief__context {
+  margin: 0 0 calc(var(--space) * 1.5);
+  color: var(--ink-soft);
+  line-height: 1.55;
+}
+.brief__wins {
+  display: grid;
+  gap: 10px;
+  margin: 0 0 calc(var(--space) * 1.5);
+  padding: 0;
+  list-style: none;
+}
+.brief__wins li {
+  position: relative;
+  padding-left: 18px;
+  line-height: 1.55;
+}
+.brief__wins li::before {
+  content: "";
+  position: absolute;
+  top: 0.7em;
+  left: 0;
+  width: 6px;
+  height: 2px;
+  background: var(--accent);
+}
+
+/* The figures inside a sentence and the metric after it: where the eye lands. */
+.brief__fig {
+  color: var(--accent-ink);
+  font-weight: 800;
+  white-space: nowrap;
+}
+/* The metric on its own row, as a chip that may break: unbroken, "~13.000
+   distritos escolares en el dataset" ran past the panel on a 375 px phone.
+   Inline with a cloned box, each line is its own pill as wide as its text
+   (an inline-block that wraps stretches to the full column); balanced, so
+   the two lines split even. The line height leaves the pills apart. */
+.brief__metric-row {
+  display: block;
+  margin-top: 6px;
+  font-size: 0.82rem;
+  line-height: 2;
+  text-wrap: balance;
+}
+.brief__metric {
+  padding: 2px 9px;
+  border: 1px solid color-mix(in srgb, var(--accent) 55%, transparent);
+  border-radius: 999px;
+  background: var(--accent-faint);
+  color: var(--ink);
+  font-weight: 700;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+}
+
+.brief__stack li {
+  padding: 2px 8px;
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--ink) 6%, transparent);
+  color: var(--ink-soft);
+  font-size: 0.8rem;
+}
+
+/* --- Projects ------------------------------------------------------------------- */
+
+.brief__projects {
+  display: grid;
+  gap: calc(var(--space) * 2);
+}
+@media (min-width: 48rem) {
+  .brief__projects {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+.brief__project {
+  padding: calc(var(--space) * 2.5);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--ink) 4%, transparent);
+}
+.brief__project h3 {
+  margin: 0 0 4px;
+  font-size: 1.05rem;
+  font-weight: 800;
+  line-height: 1.3;
+}
+.brief__project p {
+  margin: var(--space) 0 0;
+  color: var(--ink-soft);
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+.brief__project .brief__client {
+  margin: 0;
+  font-size: 0.85rem;
+}
+.brief__project .brief__outcome {
+  color: var(--ink);
+}
+.brief__status {
+  margin-left: 8px;
+  color: var(--accent-ink);
+  font-size: 0.75rem;
+  font-weight: 700;
+  vertical-align: middle;
+}
+.brief__links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+}
+.brief__links a {
+  color: var(--accent-ink);
+  font-weight: 600;
+  text-underline-offset: 3px;
+}
+
+/* --- Education and languages, side by side when there is room ----------------- */
+
+.brief__section--pair {
+  display: grid;
+  gap: calc(var(--space) * 4);
+}
+@media (min-width: 40rem) {
+  .brief__section--pair {
+    grid-template-columns: 2fr 1fr;
+  }
+}
+.brief__edu {
+  margin-bottom: calc(var(--space) * 2);
+}
+.brief__edu:last-child {
+  margin-bottom: 0;
+}
+.brief__edu-title {
+  margin: 0 0 2px;
+  font-weight: 700;
+  line-height: 1.4;
+}
+.brief__lang {
+  margin: 0 0 6px;
+  color: var(--ink-soft);
+}
+.brief__lang strong {
+  color: var(--ink);
+}
+
+/* --- Reveal as you scroll (boot.ts) -------------------------------------------
+   Hidden only once the script has said it will reveal them: with no script,
+   everything is there. Once, not tied to the scroll position. */
+
+[data-reveal] {
+  transition:
+    opacity 650ms ease,
+    transform 650ms cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+.reveal-ready [data-reveal]:not(.is-in) {
+  opacity: 0;
+  transform: translateY(16px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-reveal] {
+    transition: none;
+  }
+  .reveal-ready [data-reveal]:not(.is-in) {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* --- Page --------------------------------------------------------------- */
+
+/* Smooth scrolling is what makes the index read as navigation rather than as a
+   jump. `tokens.css` cancels animations under `prefers-reduced-motion`, but
+   `scroll-behavior` is not an animation and that reset does not reach it. */
+html {
+  scroll-behavior: smooth;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}
+
+/* --- Footer --------------------------------------------------------------
+   It only carries the analytics privacy line: small print, read if you get
+   there. Above the fixed field, like the column. */
+.footer {
+  position: relative;
+  z-index: 1;
+  max-width: 50rem;
+  margin-inline: auto;
+  padding-inline: calc(var(--space) * 2);
+  padding-block: calc(var(--space) * 6) calc(var(--space) * 5);
+  border-top: 1px solid var(--line);
+}
+
+.footer p {
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: 0.8125rem;
+  line-height: 1.6;
+  /* Narrower than the rest: it is small print, and a 45rem line at this size
+     forces the eye to hunt for where it continues. */
+  max-width: 38rem;
+}
+
+.footer a {
+  color: var(--ink-soft);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.footer a:hover {
+  color: var(--accent-ink);
+}
+
+@media (min-width: 40rem) {
+  .footer {
+    padding-block: calc(var(--space) * 8) calc(var(--space) * 6);
+  }
+}

@@ -5,9 +5,10 @@
 # a PR, and require checks, but not that the source is a specific branch. This is
 # the missing piece.
 #
-# Without it, the flow in docs/08 is an intention: nothing stops opening a PR
-# from `feature/whatever` straight into `main`, skipping in one move the staging
-# preview, the smoke over the published PDF and the version bump.
+# Without it, the feature/* -> develop -> staging -> main flow is an intention:
+# nothing stops opening a PR from `feature/whatever` straight into `main`,
+# skipping in one move the staging preview, the smoke over the published PDF
+# and the version bump.
 #
 # ⚠️ THE FILE NAME AND THE JOB ID STAY IN SPANISH ON PURPOSE. `flujo` is the
 # status check name required by the `main` and `staging` rulesets, and those
@@ -63,5 +64,5 @@ jobs:
             exit 0
           fi
 
-          echo "::error::'$SOURCE' cannot merge into '$BASE'. The flow is feature/* -> develop -> staging -> main (docs/08 section 5): only '$expected' enters '$BASE'."
+          echo "::error::'$SOURCE' cannot merge into '$BASE'. The flow is feature/* -> develop -> staging -> main: only '$expected' enters '$BASE'."
           exit 1

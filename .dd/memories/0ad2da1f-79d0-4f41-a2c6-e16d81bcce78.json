@@ -1,0 +1,49 @@
+{
+  "schema_version": 8,
+  "id": "0ad2da1f-79d0-4f41-a2c6-e16d81bcce78",
+  "project_id": "portfolio2026",
+  "topic": "frontend/bundle",
+  "kind": "trap",
+  "status": "active",
+  "title": "Never import `@content` (or content/source) from src/scripts/**: it ships zod and both datasets to every visitor",
+  "body": "src/scripts/** is the only code bundled for the browser. `@content` resolves to content/source/index.ts -> json-source.ts, which statically imports zod and both datasets: one import from a client module ships them to every visitor. Anything a chapter script prints comes from the page's markup (data-* attributes, text Astro rendered at build time from the dataset and src/lib/landing-copy.ts), as seats.ts does with its lane labels; build-time helpers belong in src/lib/ and are called from .astro frontmatter only. The same goes for src/lib/ci-steps.ts (node:fs) and anything else that reads the file system. It is caught only after `pnpm run build`, by `pnpm run test:bundle` ('no chunk took zod or the dataset to the browser': ZodObject or the person's full name in a chunk), so get it right while editing. (The three.js rules this memory used to carry went with the 3D map, removed 2026-10-29.)",
+  "not_derivable": "The check fires only after a full build; an agent writing a client module sees no local hint that one import drags the dataset along.",
+  "triggers": [
+    {
+      "on": [
+        "edit",
+        "write"
+      ],
+      "paths": [
+        "src/scripts/**"
+      ]
+    }
+  ],
+  "evidence": [
+    {
+      "type": "file",
+      "path": "scripts/bundle-budget.check.ts",
+      "sha256": "fe9aa92557e15ddca3aff0a617ddf50e4400afa18d90841c239a420f912a9d4b",
+      "summary": "Cited when this memory was saved."
+    },
+    {
+      "type": "file",
+      "path": "src/scripts/v2/seats.ts",
+      "sha256": "5effbc844011e1a86d735c190296c792758bf4cda09c05c216b412d306c3359c",
+      "summary": "Cited when this memory was saved."
+    }
+  ],
+  "origin": "user_explicit",
+  "replaces": "fed684fb-cc04-4d40-bada-b3575dd79dff",
+  "revisit_when": [],
+  "review": {
+    "issues": [],
+    "batch": "landing-v2-stage-1-revisions",
+    "accepted": {
+      "by": "person",
+      "at": "2026-10-29T20:58:03.888Z"
+    }
+  },
+  "created": "2026-10-29T20:48:07.056Z",
+  "updated": "2026-10-29T20:58:03.943Z"
+}

@@ -1,0 +1,55 @@
+{
+  "schema_version": 8,
+  "id": "91458c7c-9c91-4f68-a393-f192cac55e17",
+  "project_id": "portfolio2026",
+  "topic": "landing-v2/arc",
+  "kind": "decision",
+  "status": "active",
+  "title": "Keep v2's chapter order with the proof early and the opening C closing on the CV; keep the CV and contact reachable as plain HTML in the first viewport",
+  "body": "Chapter order: Apertura + Quién soy (intro.ts) → Mapa (peak.ts, map.ts) → Nada se pierde (seats.ts) → DeltaDictum (dd.ts) → Recorrido (journey.ts) → Cómo trabajo (work.ts) → Cierre (close.ts). It comes from the research arc accepted by the author on 2026-10-26. Why: the peak-end rule says a visit is remembered by its strongest moment and its ending, while the risk of leaving is highest in the first 10–30 s. So the first proof (the RPPL map, the only work with two traced metrics) comes early and is the strongest moment. The close reuses the opening motif, the C, which returns and opens into the ESP/EN download halves, so the download reads as a resolution, not a footer. The hero is never scrolljacked: CV and mail work as static HTML before any JS, and the dock reaches the CV from anywhere (cvmodal.ts). Pinned stretches must alternate with normal scroll, because long sequences read as broken: Recorrido, Cómo trabajo and Cierre are free scroll on purpose, as a change of rhythm. Intro → Map → Seats → DD is already a run of pins, so do not add another pinned chapter there. Reduced motion shows the static composition of each chapter (no loader, no Lenis, no pin), not a slower version. Every animation has to disclose a fact from the dataset; motion that is only decoration does not belong.",
+  "not_derivable": "The code shows the order, not the reasons (peak early, the ending motif, alternating pins), which came from the deleted research report.",
+  "triggers": [
+    {
+      "on": [
+        "edit",
+        "write"
+      ],
+      "paths": [
+        "src/pages/v2.astro",
+        "src/scripts/v2/main.ts",
+        "src/scripts/v2/intro.ts",
+        "src/scripts/v2/peak.ts",
+        "src/scripts/v2/seats.ts",
+        "src/scripts/v2/dd.ts",
+        "src/scripts/v2/journey.ts",
+        "src/scripts/v2/work.ts",
+        "src/scripts/v2/close.ts",
+        "src/scripts/v2/cvmodal.ts"
+      ]
+    }
+  ],
+  "evidence": [
+    {
+      "type": "file",
+      "path": "src/scripts/v2/close.ts",
+      "sha256": "2b50de806268620290cd295e2e8cb23b735f3fae0289ad879813c378190d13fa",
+      "summary": "The C returns and the CV download halves open from its hole"
+    },
+    {
+      "type": "note",
+      "summary": "Six-chapter arc from the 2026-10-26 personal-branding research report (peak-end rule, NN/g scrolljacking study), accepted by the author; DD chapter added later."
+    }
+  ],
+  "origin": "user_explicit",
+  "replaces": null,
+  "revisit_when": [],
+  "review": {
+    "issues": [],
+    "accepted": {
+      "by": "dd",
+      "at": "2026-10-29T17:11:44.061Z"
+    }
+  },
+  "created": "2026-10-29T17:11:44.061Z",
+  "updated": "2026-10-29T17:11:44.128Z"
+}

@@ -3,8 +3,7 @@
  *
  * Deliberately outside `src/pages/`: a route inside the site would need an SSR
  * adapter to accept a POST, would be built into `dist/`, and would force the
- * three checks that walk `dist/` to grow exceptions. See
- * `docs/superpowers/specs/2026-08-27-editor-design.md` §1.
+ * three checks that walk `dist/` to grow exceptions.
  */
 
 import { DatasetStore } from "../editor/store";

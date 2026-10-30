@@ -1,0 +1,46 @@
+{
+  "schema_version": 8,
+  "id": "d9f00c3b-8dda-462a-b9c2-7a12321823bb",
+  "project_id": "portfolio2026",
+  "topic": "seo/icons",
+  "kind": "decision",
+  "status": "active",
+  "title": "Do not add favicon.ico or a manifest.webmanifest; favicon.svg plus apple-touch-icon.png are the whole set",
+  "body": "favicon.ico: every current browser supports the SVG; those that do not (Safari before 15) show no icon at all, as before the favicon existed. An .ico is one more binary for a shrinking compatibility tail. Reconsider if analytics show real old-browser traffic; then add one more size in scripts/build-og.ts.\nmanifest.webmanifest / PWA: a manifest is for installing an app; this portfolio is visited once from a shared link and nobody installs it. apple-touch-icon.png (180x180, from `pnpm run og:local`) covers the one real case, saving to the home screen. Reconsider only if the site becomes something else.",
+  "not_derivable": "Missing files leave no trace; the reasons are recorded nowhere in code.",
+  "triggers": [
+    {
+      "on": [
+        "edit",
+        "write"
+      ],
+      "paths": [
+        "src/layouts/Base.astro",
+        "scripts/build-og.ts",
+        "public/favicon.svg",
+        "public/apple-touch-icon.png"
+      ]
+    }
+  ],
+  "evidence": [
+    {
+      "type": "file",
+      "path": "scripts/og-output.check.ts",
+      "sha256": "07e8211cba8620eacd07e9ea49adbff57d44918724ced4a454e3edb52bc323cc",
+      "summary": "Verifies favicon.svg and apple-touch-icon."
+    }
+  ],
+  "origin": "user_explicit",
+  "replaces": null,
+  "revisit_when": [],
+  "review": {
+    "issues": [],
+    "batch": "docs-migration",
+    "accepted": {
+      "by": "person",
+      "at": "2026-10-29T17:24:10.848Z"
+    }
+  },
+  "created": "2026-10-29T17:11:49.586Z",
+  "updated": "2026-10-29T17:24:10.898Z"
+}

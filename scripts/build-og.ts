@@ -4,7 +4,7 @@
  * the Spanish or English landing.
  *
  * `pnpm run og:local`. It does NOT run in the build or in CI, and that is the
- * underlying decision (closed #18): rasterizing needs Chromium and the
+ * underlying decision: rasterizing needs Chromium and the
  * Cloudflare builder does not have it — the same reason the PDF left the build.
  * So the image is generated here and COMMITTED. Zero runtime cost, zero
  * dependency on the builder, and no crawler waiting for a service to print
@@ -72,7 +72,7 @@ async function main(): Promise<void> {
         ...(textsByLocale[locale] as { name: string; kicker: string; role: string }),
         photoDataUri: `data:image/jpeg;base64,${photo.toString("base64")}`,
         fontCss: fonts,
-        brand: brandSvg({ size: 44, accent: "#b0472a", ink: "#17181c" }),
+        brand: brandSvg({ size: 44, accent: "#5e4bc4", ink: "#f0eeea" }),
       });
       const page = await browser.newPage({ viewport: { width: OG_WIDTH, height: OG_HEIGHT } });
       await page.setContent(html, { waitUntil: "load" });
@@ -89,7 +89,7 @@ async function main(): Promise<void> {
     }
 
     const small = await browser.newPage({ viewport: { width: ICON_SIDE, height: ICON_SIDE } });
-    await small.setContent(buildIconHtml(brandSvg({ size: 116, accent: "#b0472a", ink: "#17181c" })));
+    await small.setContent(buildIconHtml(brandSvg({ size: 116, accent: "#5e4bc4", ink: "#f0eeea" })));
     icon = await small.screenshot({ type: "png" });
   } finally {
     await browser.close();

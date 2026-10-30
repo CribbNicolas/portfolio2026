@@ -1,0 +1,57 @@
+{
+  "schema_version": 8,
+  "id": "b93ba068-ea25-4151-bc15-206f19b8498c",
+  "project_id": "portfolio2026",
+  "topic": "landing-v2/direction",
+  "kind": "decision",
+  "status": "superseded",
+  "title": "Treat /v2 as a scroll-driven experience on purpose: do not strip Lenis, pins or held scenes to satisfy the v1 no-wheel/no-hijack rules",
+  "body": "Author's direction for landing v2 (2026-10-26): the landing IS the experience, not a widget inside a page. One continuous scroll that ends in the CV download. A 'wow' effect now outranks performance (performance is kept where possible, it is no longer the priority). Scroll hijacking is ACCEPTED on the landing only: it reverses the anti-checklist of the 2026-08-14 visual-system spec (section 3.4) and CLAUDE.md map rule 5 (no wheel/touchmove listeners). So Lenis's wheel listener (main.ts) and holdScroll/releaseScroll in util.ts (wheel/touchmove/keys prevented, html.is-held) are deliberate. When test:js/test:bundle fail on /v2, the fix is an explicit exception written into CLAUDE.md and the checks (scripts/pages-with-js.ts, bundle budget), never deleting the behaviour and never a silent allowlist. Also decided: v2 has no 3D node map and no three.js. There is no photo, video or 3D portrait: the person is inferred from the work and the voice. The ring-with-N logo and the dark tone are the anchors; palette and type are open. v2 does not reuse the CV components: it builds from getView(\"portfolio\"). /cv and /en/cv stay unchanged at zero JS. Positioning: a web developer who adapts to new technology, which the page must demonstrate, not claim. Tone: sells through subtlety, never an old-fashioned pitch.",
+  "not_derivable": "CLAUDE.md and the v1 spec say the opposite (no wheel listeners, no hijacking), so an agent fixing the failing gates would remove the core of v2.",
+  "triggers": [
+    {
+      "on": [
+        "edit",
+        "write"
+      ],
+      "paths": [
+        "src/pages/v2.astro",
+        "src/scripts/v2/**",
+        "src/styles/v2.css",
+        "scripts/pages-with-js.ts",
+        "scripts/bundle-budget.check.ts",
+        "scripts/no-client-js.check.ts"
+      ]
+    }
+  ],
+  "evidence": [
+    {
+      "type": "file",
+      "path": "src/scripts/v2/util.ts",
+      "sha256": "a3c1d38b3097e91afdeaa74a6c5920bc2b32c3501eb7d6aac64a2d9652fc1433",
+      "summary": "holdScroll() stops Lenis and prevents wheel/touchmove/keys on purpose"
+    },
+    {
+      "type": "file",
+      "path": "src/scripts/v2/main.ts",
+      "sha256": "254a7292ef2b0af285f5fadf8c4d9811f34e99e4d3c7b1974270c64b535596ad",
+      "summary": "Lenis smooth scroll drives ScrollTrigger"
+    },
+    {
+      "type": "note",
+      "summary": "Author's direction for v2, decided 2026-10-26 in the spike's decision log (since deleted)."
+    }
+  ],
+  "origin": "user_explicit",
+  "replaces": null,
+  "revisit_when": [],
+  "review": {
+    "issues": [],
+    "accepted": {
+      "by": "dd",
+      "at": "2026-10-29T17:11:45.218Z"
+    }
+  },
+  "created": "2026-10-29T17:11:45.218Z",
+  "updated": "2026-10-29T20:58:04.421Z"
+}

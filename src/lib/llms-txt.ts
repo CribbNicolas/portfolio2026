@@ -1,5 +1,5 @@
 /**
- * Markdown summary for agents (docs/04 §3). Shared by `/llms.txt` and
+ * Markdown summary for agents. Shared by `/llms.txt` and
  * `/en/llms.txt` so the two cannot grow different headings.
  *
  * Every URL goes out as a Markdown link — `[name](url)` — and not as bare
@@ -11,7 +11,7 @@
 
 import type { ContentView, Locale } from "@content";
 import { formatDateRange, formatRoleTitle, formatSeniority, groupedSkills, MESSAGES } from "@content";
-import { LOCALE_PATHS } from "./anchors";
+import { ANCHORS, LOCALE_PATHS } from "./anchors";
 
 export function renderLlmsTxt(view: ContentView, locale: Locale, base: string): string {
   const { identity } = view;
@@ -31,7 +31,10 @@ export function renderLlmsTxt(view: ContentView, locale: Locale, base: string): 
     // survives a reader that strips markup.
     `- [${m.emailLabel}](mailto:${identity.contact.email}): ${identity.contact.email}`,
     ...identity.links.map((l) => `- [${l.label}](${l.url})`),
-    `- [${m.llmsHtmlCv}](${base}${paths.cv})`,
+    // The reader's CV is the landing's `#cv` chapter, not `/cv`: that page
+    // carries noindex, is disallowed in robots.txt and exists only to print
+    // the PDF.
+    `- [${m.llmsHtmlCv}](${base}${paths.home}#${ANCHORS[locale].cv})`,
     `- [${m.llmsPdfCv}](${base}${paths.pdf})`,
     `- [${m.llmsJson}](${base}${paths.json})`,
     "",
@@ -56,7 +59,9 @@ export function renderLlmsTxt(view: ContentView, locale: Locale, base: string): 
       // public demo is the strongest thing an agent can be handed, and it was
       // reachable from the landing but not from the file written for agents.
       ...p.links.map((l) => `- [${l.label}](${l.url})`),
-      ...(p.slug ? [`- [${m.llmsCase}](${base}/projects/${p.slug})`] : []),
+      // No link to a case page: none exists yet, and a link an agent follows
+      // into a 404 is worse than no link. `endpoints.check.ts` resolves every
+      // internal link here against `dist/`.
       "",
     ]),
   ];

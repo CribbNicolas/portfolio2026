@@ -1,0 +1,51 @@
+{
+  "schema_version": 8,
+  "id": "e9b41a91-7037-4119-8169-8780ad7a503f",
+  "project_id": "portfolio2026",
+  "topic": "portfolio/case-studies",
+  "kind": "procedure",
+  "status": "active",
+  "title": "Build long-form case studies with the fixed format from existing project data only; do not ask the author for more case-study content",
+  "body": "Format per project: [Name] · [Role] · [Year]; Problem = 2 sentences about the business, not the technology (`problem`); What I built = 3 bullets (`solution`); Decisions = technical decisions with their why and trade-off (`decisions`, `TechnicalDecision.tradeoff` is mandatory: with no trade-off it was not a decision); Outcome = a number or a qualitative before/after (`outcome`); Stack; Links = live demo + repo if public; Evidence = screenshot, short GIF or 20 s video, never an empty mockup. The decisions block is the differentiator: it is what a technical hiring manager actually reads. JWD Maderas is the main case for freelance clients (a complete product for a real business), not the maps, but it stays hidden until it launches. What is loaded in content/data/content.es.json is all the author has: render from it, never fill a `TODO` in `problem`/`outcome` by eye (invariant 4), and do not prompt the author for more material.",
+  "not_derivable": "The schema has the fields but not the section order, length limits, which project leads for freelance clients, or that the author has no further material to give.",
+  "triggers": [
+    {
+      "on": [
+        "edit",
+        "write"
+      ],
+      "paths": [
+        "src/components/projects/**",
+        "src/styles/projects.css",
+        "src/pages/index.astro",
+        "src/pages/en/index.astro",
+        "src/pages/v2.astro"
+      ]
+    }
+  ],
+  "evidence": [
+    {
+      "type": "file",
+      "path": "content/schema/validation.ts",
+      "sha256": "459a658f9a982a8ba4fbb2aca2f163a7517c9d44759461fde59c4162ff26bfa8",
+      "summary": "tradeoff: z.string().min(1, 'With no trade-off it was not a decision')."
+    },
+    {
+      "type": "note",
+      "summary": "Author 2026-10-29: the loaded project data is all there is; JWD Maderas is the main freelance case."
+    }
+  ],
+  "origin": "user_explicit",
+  "replaces": null,
+  "revisit_when": [],
+  "review": {
+    "issues": [],
+    "batch": "docs-migration",
+    "accepted": {
+      "by": "person",
+      "at": "2026-10-29T17:24:11.100Z"
+    }
+  },
+  "created": "2026-10-29T17:11:48.191Z",
+  "updated": "2026-10-29T17:24:11.149Z"
+}

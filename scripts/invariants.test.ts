@@ -7,10 +7,9 @@
  * rule is one that will diverge — the CV and the landing would start disagreeing
  * about which achievements exist, silently.
  *
- * This started as criterion 5 of `docs/superpowers/plans/2026-08-13-cv-como-sistema.md`,
- * a `grep` to paste into a terminal. A criterion that does not run on its own is
- * an intention, which is exactly what CONTRACT.md says we do not do
- * (`07-technical-debt.md` §12).
+ * This started as a `grep` to paste into a terminal. A criterion that does not
+ * run on its own is an intention, and the contract rules are tests, not
+ * intentions (CLAUDE.md invariant 5).
  *
  * It IS a `*.test.ts`: it reads sources, not `dist/`, so it needs no build and
  * runs in `pnpm test` with everything else.

@@ -1,0 +1,54 @@
+{
+  "schema_version": 8,
+  "id": "c9d9019f-14df-47b3-9cc9-c16add345332",
+  "project_id": "portfolio2026",
+  "topic": "landing-v2/handoff",
+  "kind": "failed_approach",
+  "status": "active",
+  "title": "Keep ONE seats hall in the map→seats hand-off: a cloned hall, a marker dot and a dive through the ring's hole were tried and rejected",
+  "body": "Transitions that were tried and dropped:\n(1) Quién soy → map: flying through the ring's hole with a clip circle computed from the ring geometry. Replaced by uncover() in peak.ts: the C scaled up and shrinking back, then rolling off to the left. A turn-and-fade at the centre was also dropped because it parked the C mid-screen.\n(2) Map → seats: a pulsing marker dot that the hall grew from. The author said it read as a bug.\n(3) ghostHall(): a cloned copy of the seats hall shown in the map chapter, then swapped for the real one. Two halls driven by separately lagged scrubs drift apart on a real wheel: the copy vanished before the real one arrived, and the real one arrived already glided right. Rule: exactly one hall element.\n(4) Holding that hall with a JS counter-shift against the scroll: one frame late on a dragged scrollbar, so it flickered (see seats.ts).\nCurrent design: the real hall moves into the fixed .handoff layer during the hand-off and the seats pin, and morph.ts flies one map district per seat onto its seat, lighting it up. Out of five options (the morph, a dive into one district, a card flip, lights out, the scanner printing the hall) the author chose 'the morph, with the lights'. The map keeps its perspective at the result beat; do not flatten it.",
+  "not_derivable": "Only the counter-shift is mentioned in seats.ts; the clone, the marker, the hole dive and the author's choice among options exist only in the deleted log.",
+  "triggers": [
+    {
+      "on": [
+        "edit",
+        "write"
+      ],
+      "paths": [
+        "src/scripts/v2/peak.ts",
+        "src/scripts/v2/seats.ts",
+        "src/scripts/v2/morph.ts"
+      ]
+    }
+  ],
+  "evidence": [
+    {
+      "type": "file",
+      "path": "src/scripts/v2/seats.ts",
+      "sha256": "72ce3bd9ce20483bec8503c43d8712003e1e2222f1a712dbee54c6d6c3ff1dc6",
+      "summary": "The hall is reparented into the fixed .handoff layer; the counter-shift was dropped"
+    },
+    {
+      "type": "file",
+      "path": "src/scripts/v2/morph.ts",
+      "sha256": "05fbfd13dcb51f024ca229cef93250bceca9de9de07b3eae10257935a8712c56",
+      "summary": "Districts fly from the map onto the seats"
+    },
+    {
+      "type": "note",
+      "summary": "Spike iterations 10–12 and the 2026-10-28 hand-off brainstorm with the author."
+    }
+  ],
+  "origin": "user_explicit",
+  "replaces": null,
+  "revisit_when": [],
+  "review": {
+    "issues": [],
+    "accepted": {
+      "by": "dd",
+      "at": "2026-10-29T17:11:45.556Z"
+    }
+  },
+  "created": "2026-10-29T17:11:45.556Z",
+  "updated": "2026-10-29T17:11:45.656Z"
+}

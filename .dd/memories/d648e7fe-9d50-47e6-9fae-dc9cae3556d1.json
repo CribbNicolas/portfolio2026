@@ -1,0 +1,58 @@
+{
+  "schema_version": 8,
+  "id": "d648e7fe-9d50-47e6-9fae-dc9cae3556d1",
+  "project_id": "portfolio2026",
+  "topic": "ci/smoke",
+  "kind": "trap",
+  "status": "active",
+  "title": "Trigger smoke-deploy.yml on push to main/staging and wait on /build.json; check_run and deployment_status never fire for Pages",
+  "body": "Cloudflare Pages creates no GitHub Deployment, so `deployment_status` never fires (the first version of the smoke ran 0 times for weeks while CI looked green). Pages publishes a check run, but `check_run` and `workflow_dispatch` only run a workflow whose file exists on the DEFAULT branch (`main`) — a smoke edited on `develop` does nothing until it reaches main. The current trigger is `push` to `main`/`staging` plus a poll of `$SITE/build.json` until it returns `github.sha` (never a fixed sleep: it would verify the previous deploy and pass green).\nThe workflow is what sets `SITE` (main -> https://cribbnicolas.pages.dev, staging -> https://staging.cribbnicolas.pages.dev), `PDF_SOURCE` and `EN_PDF_SOURCE`; `scripts/served.check.ts` (`pnpm run test:served`) refuses to run without `SITE`. A new deploying branch needs a case in 'Resolve this branch's URL'. It is the ONLY check of the served response (_headers, edge injections).",
+  "not_derivable": "The default-branch restriction of check_run/workflow_dispatch is GitHub behaviour not stated in the repo.",
+  "triggers": [
+    {
+      "on": [
+        "edit",
+        "write"
+      ],
+      "paths": [
+        ".github/workflows/smoke-deploy.yml",
+        "scripts/served.check.ts",
+        "src/pages/build.json.ts"
+      ]
+    },
+    {
+      "on": [
+        "run"
+      ],
+      "commands": [
+        "pnpm run test:served"
+      ]
+    }
+  ],
+  "evidence": [
+    {
+      "type": "file",
+      "path": ".github/workflows/smoke-deploy.yml",
+      "sha256": "9f96c635b5c604ee5289e992cadfeaf0ba1d45995778e77a31b6141c5ace8f40",
+      "summary": "Header comment on deployment_status; push trigger; SITE resolution per branch."
+    },
+    {
+      "type": "file",
+      "path": "scripts/served.check.ts",
+      "sha256": "ffaa784181cfa27abd6686800962ba08df34dc2e3081405ec288530e942b275f",
+      "summary": "Fails if SITE is missing."
+    }
+  ],
+  "origin": "user_explicit",
+  "replaces": null,
+  "revisit_when": [],
+  "review": {
+    "issues": [],
+    "accepted": {
+      "by": "dd",
+      "at": "2026-10-29T17:11:34.723Z"
+    }
+  },
+  "created": "2026-10-29T17:11:34.723Z",
+  "updated": "2026-10-29T17:11:34.821Z"
+}

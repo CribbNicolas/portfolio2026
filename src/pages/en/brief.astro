@@ -1,0 +1,32 @@
+---
+/**
+ * The brief view, in English. Same shell as `../brief.astro` (see its header
+ * comment): canonical → `/en/`, out of the sitemap.
+ */
+import Base from "../../layouts/Base.astro";
+import { content } from "@content";
+import { LOCALE_PATHS } from "../../lib/anchors";
+import HomeDocument from "../../components/HomeDocument.astro";
+import Analytics from "../../components/Analytics.astro";
+
+import "@fontsource/manrope/400.css";
+import "@fontsource/manrope/600.css";
+import "@fontsource/manrope/800.css";
+import "../../styles/tokens.css";
+import "../../styles/chrome.css";
+import "../../styles/brief.css";
+import { LANDING } from "../../lib/landing-copy";
+
+const view = await content.getView("portfolio", "en");
+const { identity } = view;
+---
+
+<Base
+  locale={view.locale}
+  title={`${identity.fullName} — ${identity.searchTitle} · ${LANDING[view.locale].briefTitle}`}
+  description={identity.summary.short}
+  canonicalPath={LOCALE_PATHS[view.locale].home}
+>
+  <HomeDocument view={view} />
+  <Analytics />
+</Base>

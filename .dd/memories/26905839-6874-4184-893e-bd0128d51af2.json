@@ -1,0 +1,53 @@
+{
+  "schema_version": 8,
+  "id": "26905839-6874-4184-893e-bd0128d51af2",
+  "project_id": "portfolio2026",
+  "topic": "design/no-orphan-words",
+  "kind": "decision",
+  "status": "active",
+  "title": "No orphan words: no line holds one word alone, no line ends on a function word, a before/after movement breaks into its two halves",
+  "body": "Author's UX rule (2026-10-29), every page, both locales, every width. Mechanism, in src/lib/highlight.ts and the CSS:\n1) Running text: text-wrap pretty on p/li; headings and short copy: balance (v2.css, brief.css).\n2) glueShortWords ties every one-letter word and the function words in FUNCTION_WORDS (de, del, en, la, un, una, y… / the, of, in, to, at, and…) to the next word with a no-break space: no line ends 'Un mapa de' or 'report: a'. A LIST, not 'every 2-letter word': that glued blocks too big for the column.\n3) glueTitle (the landing's beat titles) also holds the last two words together and, from three pieces up, the first two, when that end is a lone word: no 'everywhere.' or 'AsyncPile:' alone. Pieces split on ordinary spaces only; a piece with a no-break space already holds two words.\n4) A before/after metric goes on two lines, 'de ~5 s' / 'a ~500 ms' (formatMetricLines, .beat__line).\n5) Width matters as much as wording: .beats grows with the screen (min(max(32rem, 38vw), 46rem, 100vw - 32px)) and .beat__title is clamp(2rem, 3.6vw, 3.8rem). A fixed 30rem column under a 4.4vw title stranded 'asientos' and 'dentro'.\nVerify by measurement, not by eye: lay every title out at 2560, 1920, 1366 and 390 in es and en and flag any line with a single word (it was zero on 2026-10-29).",
+  "not_derivable": "It is the author's design rule; the code shows the mechanism but not that it is a requirement on every new piece of text, nor that column width was the cause.",
+  "triggers": [
+    {
+      "on": [
+        "edit",
+        "write"
+      ],
+      "paths": [
+        "src/styles/v2.css",
+        "src/styles/brief.css",
+        "src/lib/landing-copy.ts",
+        "src/components/v2/Landing.astro",
+        "src/lib/highlight.ts"
+      ]
+    }
+  ],
+  "evidence": [
+    {
+      "type": "file",
+      "path": "src/lib/highlight.ts",
+      "sha256": "a74969a6909c45a49e5c22e5b41db6632c07038afa88d8dac43e88d21edccd83",
+      "summary": "Cited when this memory was saved."
+    },
+    {
+      "type": "file",
+      "path": "src/styles/v2.css",
+      "sha256": "51614f122675389053ebbef7e35a14ed4c2cf523bb9a2c32a2512e4d5a9c5e4a",
+      "summary": "Cited when this memory was saved."
+    }
+  ],
+  "origin": "user_explicit",
+  "replaces": "586538e2-fcb9-4d67-ae2d-75869e14a004",
+  "revisit_when": [],
+  "review": {
+    "issues": [],
+    "batch": "landing-v2-review",
+    "accepted": {
+      "by": "person",
+      "at": "2026-10-30T00:07:55.460Z"
+    }
+  },
+  "created": "2026-10-29T23:58:07.446Z",
+  "updated": "2026-10-30T00:07:55.518Z"
+}

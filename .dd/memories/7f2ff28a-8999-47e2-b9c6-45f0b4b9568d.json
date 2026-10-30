@@ -1,0 +1,54 @@
+{
+  "schema_version": 8,
+  "id": "7f2ff28a-8999-47e2-b9c6-45f0b4b9568d",
+  "project_id": "portfolio2026",
+  "topic": "landing-v2/direction",
+  "kind": "decision",
+  "status": "active",
+  "title": "Treat the landing (/, /en/) as a scroll-driven experience on purpose: do not strip Lenis, pins or held scenes to satisfy the old no-wheel/no-hijack rules",
+  "body": "Author's direction (2026-10-26): the landing IS the experience, not a widget inside a page. One continuous scroll that ends in the CV download. A 'wow' effect outranks performance (performance is kept where possible). Scroll hijacking is ACCEPTED on the landing only, against the 2026-08-14 visual-system spec and CLAUDE.md invariant 7 (CLAUDE.md names the exception). So Lenis's wheel listener (src/scripts/v2/main.ts) and holdScroll/releaseScroll in util.ts are deliberate. Since 2026-10-29 the landing serves / and /en/ (src/components/v2/Landing.astro). When test:js or test:bundle fail on it, the fix is an explicit exception written into CLAUDE.md and the checks (scripts/pages-with-js.ts, the bundle budget), never deleting the behaviour and never a silent allowlist (docs/TODO.md stage 5). Also decided: no 3D node map, no three.js, no photo, video or 3D portrait; the ring-with-N logo and the dark tone are the anchors. The landing does not reuse the CV components: it builds from getView('portfolio'). /cv and /en/cv stay at zero JS. Positioning: a web developer who adapts to new technology, shown, not claimed. Tone: sells through subtlety.",
+  "not_derivable": "CLAUDE.md's invariant and the v1 spec say the opposite (no wheel listeners, no hijacking), so an agent fixing the failing gates would remove the core of the landing.",
+  "triggers": [
+    {
+      "on": [
+        "edit",
+        "write"
+      ],
+      "paths": [
+        "src/components/v2/Landing.astro",
+        "src/scripts/v2/**",
+        "src/styles/v2.css",
+        "scripts/pages-with-js.ts",
+        "scripts/bundle-budget.check.ts",
+        "scripts/no-client-js.check.ts"
+      ]
+    }
+  ],
+  "evidence": [
+    {
+      "type": "file",
+      "path": "src/scripts/v2/util.ts",
+      "sha256": "45cffdd0e261530e9f46d6839269c6f64b8891f053a23e6dc472f3a0ce8e00a0",
+      "summary": "Cited when this memory was saved."
+    },
+    {
+      "type": "file",
+      "path": "src/scripts/v2/main.ts",
+      "sha256": "0dcca43ebb9b56c67806088842a5909fc28a3cc25686d7510af360bcc384b9cd",
+      "summary": "Cited when this memory was saved."
+    }
+  ],
+  "origin": "user_explicit",
+  "replaces": "b93ba068-ea25-4151-bc15-206f19b8498c",
+  "revisit_when": [],
+  "review": {
+    "issues": [],
+    "batch": "landing-v2-stage-1-revisions",
+    "accepted": {
+      "by": "person",
+      "at": "2026-10-29T20:58:04.365Z"
+    }
+  },
+  "created": "2026-10-29T20:48:08.081Z",
+  "updated": "2026-10-29T20:58:04.421Z"
+}

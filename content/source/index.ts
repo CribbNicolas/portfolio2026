@@ -25,12 +25,6 @@ export * from "../schema/messages";
 // which used to keep two lists that drifted apart.
 export * from "../schema/skill-groups";
 
-// The graph is another view derived from the same content, same as formatting.
-// It runs ONLY at build time (page frontmatter): none of this reaches the
-// browser.
-export * from "../schema/knowledge-graph";
-export * from "../schema/graph-layout";
-
 // The PDF's file name is text derived from the data, same as a duration.
 // `functions/` imports it directly: a Worker has no `@content` alias.
 export * from "../schema/pdf-filename";

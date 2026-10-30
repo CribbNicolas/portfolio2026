@@ -1,0 +1,51 @@
+---
+// The icon in front of a skill's name, on every chip of
+// the page ("Quién soy" and the journey's toolbox). Always next to the name,
+// never instead of it: the first reader is often not technical, and a Jotai
+// or Quasar logo means nothing to them (author, 2026-10-28).
+import {
+  siTypescript, siJavascript, siReact, siNextdotjs, siAstro, siTailwindcss, siSass, siMui, siVuedotjs,
+  siQuasar, siSolid, siMapbox, siNodedotjs, siPhp, siDjango, siRuby, siWordpress, siSanity, siDocker,
+  siVite, siGit, siCloudflare,
+} from "simple-icons";
+
+interface Props {
+  /** A skill id from the dataset ("react", "cicd"). Unknown ids draw nothing. */
+  id: string;
+}
+const { id } = Astro.props;
+
+// Brand marks from Simple Icons (CC0), keyed by skill id.
+const BRAND: Record<string, { path: string }> = {
+  typescript: siTypescript, javascript: siJavascript, react: siReact, nextjs: siNextdotjs,
+  astro: siAstro, tailwind: siTailwindcss, scss: siSass, mui: siMui, vue: siVuedotjs, quasar: siQuasar,
+  solidjs: siSolid, mapbox: siMapbox, node: siNodedotjs, php: siPhp, django: siDjango, ruby: siRuby,
+  wordpress: siWordpress, sanity: siSanity, docker: siDocker, vite: siVite, git: siGit,
+  cloudflare: siCloudflare,
+};
+// No brand mark of its own (or none in Simple Icons): a line icon that says
+// what the thing IS. 24×24, stroked in currentColor.
+const DRAWN: Record<string, string> = {
+  // Jotai's unit is the atom: one nucleus, one orbit (React's mark has three).
+  jotai: '<circle cx="12" cy="12" r="2.2" fill="currentColor" stroke="none"/><ellipse cx="12" cy="12" rx="9.5" ry="4" transform="rotate(-30 12 12)"/>',
+  // Playwright's own mark is a pair of theatre masks: one mask.
+  playwright: '<path d="M4.5 4.5h15v6.5a7.5 7.5 0 0 1-15 0z"/><path d="M8.5 10h2M13.5 10h2M9 14.5q3 2.2 6 0"/>',
+  // The DevOps loop: build → ship → back again, without end.
+  cicd: '<path d="M12 12c-2-2.6-3.6-4-5.5-4a4 4 0 0 0 0 8c1.9 0 3.5-1.4 5.5-4s3.6-4 5.5-4a4 4 0 0 1 0 8c-1.9 0-3.5-1.4-5.5-4z"/>',
+  // One repository holding several packages.
+  monorepo: '<rect x="3" y="3" width="18" height="18" rx="3"/><rect x="7" y="7" width="4" height="4" rx="1"/><rect x="13" y="7" width="4" height="4" rx="1"/><rect x="7" y="13" width="4" height="4" rx="1"/><rect x="13" y="13" width="4" height="4" rx="1"/>',
+  // The sparkle has become the shorthand for "AI" across tools.
+  "ai-assisted": '<path d="M11 3.5l1.8 5.2 5.2 1.8-5.2 1.8L11 17.5l-1.8-5.2L4 10.5l5.2-1.8z"/><path d="M18.5 15l.7 2 2 .7-2 .7-.7 2-.7-2-2-.7 2-.7z"/>',
+};
+const brand = BRAND[id];
+const drawn = DRAWN[id];
+---
+
+{
+  brand && (
+    <svg class="chip__icon" viewBox="0 0 24 24" aria-hidden="true">
+      <path d={brand.path} />
+    </svg>
+  )
+}
+{drawn && <svg class="chip__icon chip__icon--line" viewBox="0 0 24 24" aria-hidden="true" set:html={drawn} />}

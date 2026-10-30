@@ -1,0 +1,49 @@
+{
+  "schema_version": 8,
+  "id": "0f5858ae-31a8-4df7-844b-d5847a6c9109",
+  "project_id": "portfolio2026",
+  "topic": "landing-v2/chapters",
+  "kind": "failed_approach",
+  "status": "active",
+  "title": "Do not bring back the Audiences (Venn of set operators) chapter for adsmovil-audiencias: the author built it and rejected it",
+  "body": "On 2026-10-26 the landing had an 'Audiences' chapter (src/scripts/v2/aud.ts, plain scroll) between Seats and DeltaDictum, built from the adsmovil-audiencias achievement. It had a sticky Venn diagram of edad / rubro / localidad; each text step switched the operator (AND, OR, XOR, NOT, then (edad AND rubro) OR localidad), the region filled, 170 illustrative dots lit up and a count followed. The author did not like it, and aud.ts was deleted. The slot it left was CLOSED on 2026-10-29: that seam is now the CRT switch-off and interception (src/scripts/v2/seats.ts -> src/scripts/v2/dd.ts), one continuous scene, and the plain-HTML CV chapter of src/components/v2/Landing.astro went before the close instead (memory landing-v2/cv-chapter). A new chapter there needs the author. The other repos in C:\\dev (KEDO, Project-Patriark, Orquesta, IntelliForm, Merchan7…) are not in the dataset, and none gets a chapter unless the author picks it.",
+  "not_derivable": "aud.ts was deleted with no trace in the code; only the deleted decision log recorded that it was tried and rejected, and the slot's closing is a decision, not code.",
+  "triggers": [
+    {
+      "on": [
+        "edit",
+        "write"
+      ],
+      "paths": [
+        "src/components/v2/Landing.astro",
+        "src/scripts/v2/main.ts",
+        "src/scripts/v2/*.ts"
+      ]
+    }
+  ],
+  "evidence": [
+    {
+      "type": "file",
+      "path": "src/components/v2/Landing.astro",
+      "sha256": "7f90cf76b6c1e644ac8e7a3c289cfef61d2b232b6a8f72ea549ecb72f8c7c6a2",
+      "summary": "Cited when this memory was saved."
+    },
+    {
+      "type": "note",
+      "summary": "Spike iterations 6–7 (2026-10-26): Audiences chapter built, rejected by the author, aud.ts deleted. Slot closed by the author's choice of the CV chapter, 2026-10-29."
+    }
+  ],
+  "origin": "user_explicit",
+  "replaces": "2356a7d3-53c0-4ecc-bbe7-20760d69ba43",
+  "revisit_when": [],
+  "review": {
+    "issues": [],
+    "batch": "landing-v2-stage-1-revisions",
+    "accepted": {
+      "by": "person",
+      "at": "2026-10-29T20:58:04.049Z"
+    }
+  },
+  "created": "2026-10-29T20:48:23.014Z",
+  "updated": "2026-10-29T20:58:04.103Z"
+}
