@@ -23,6 +23,25 @@ body {
   overflow-x: clip;
   font-variant-ligatures: normal;
 }
+/* No orphan words (author, 2026-10-29): a heading or a short line never
+   leaves one word alone below the rest — they balance their lines; running
+   text never ends on a single word — `pretty`. A rule on a class (a
+   `.beat__title`, say) still wins over these. */
+:is(h1, h2, h3, h4, figcaption) {
+  text-wrap: balance;
+}
+:is(p, li) {
+  text-wrap: pretty;
+}
+/* Short one- or two-line copy reads best balanced, not just "pretty":
+   "coropleta de distritos y estados." breaks as "…coropleta / de distritos
+   y estados.", never with "estados." alone. */
+.beat__body,
+.beat__label,
+.stage__wins li,
+.principle p {
+  text-wrap: balance;
+}
 
 /* Film grain over everything: texture, and it dithers the dark gradients that
    otherwise band into visible stripes. */
@@ -48,11 +67,15 @@ body::after {
 .loader {
   display: none;
 }
-/* Already seen for this build (src/lib/landing-head.ts): never shown. */
-.js.seen .loader {
+/* Already seen for this build (src/lib/landing-head.ts): the mark and the
+   percentage never show, but the plain cover does. The chapters build their
+   pins under it, and without it the first frames showed every section
+   stacked, un-pinned (author, 2026-10-29). main.ts fades it out. */
+.js.seen .loader__mark,
+.js.seen .loader__pct {
   display: none;
 }
-.js:not(.seen) .loader {
+.js .loader {
   position: fixed;
   inset: 0;
   z-index: 50;
@@ -69,6 +92,63 @@ body::after {
   font-variant-numeric: tabular-nums;
 }
 
+/* --- no JavaScript: the way to the brief view ---------------------------- */
+/* A card on the right, where the hero's C would be (no script, no C); on
+   phones and upright tablets a bar along the bottom. Fixed, so the way out
+   stays in reach over the half-built chapters (author, 2026-10-30). */
+.nojs {
+  position: fixed;
+  top: 50%;
+  right: max(var(--gutter), 6vw);
+  z-index: 40;
+  display: grid;
+  justify-items: start;
+  gap: 14px;
+  width: min(24rem, 34vw);
+  margin: 0;
+  padding: 28px 32px;
+  transform: translateY(-50%);
+  border: 1px solid color-mix(in srgb, var(--accent) 55%, transparent);
+  border-radius: 24px;
+  background: var(--bg-raised);
+  box-shadow: 0 16px 48px rgb(0 0 0 / 0.5);
+  font-size: 1.4rem;
+  font-weight: 700;
+  line-height: 1.25;
+  letter-spacing: -0.015em;
+  text-wrap: balance;
+}
+@media (max-width: 760px), (max-width: 1100px) and (orientation: portrait) {
+  .nojs {
+    top: auto;
+    right: 16px;
+    bottom: 16px;
+    left: 16px;
+    width: auto;
+    gap: 8px;
+    justify-items: center;
+    padding: 16px 20px;
+    transform: none;
+    font-size: 1.1rem;
+    text-align: center;
+  }
+}
+/* The card replaces the hero's choice ("scroll for the guided tour" is not
+   true without a script), and the page ends clear of the phone bar. */
+:root:not(.js) .hero__choice {
+  display: none;
+}
+:root:not(.js) body {
+  padding-bottom: 120px;
+}
+.nojs a {
+  color: var(--accent-ink);
+  font-size: 0.82em;
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 5px;
+}
+
 /* --- 1 + 2. opening and who I am: one pinned stage ----------------------- */
 .intro__stage {
   position: relative;
@@ -80,7 +160,9 @@ body::after {
   inset: 0;
   display: grid;
   align-items: center;
-  padding: 96px var(--gutter) 72px;
+  /* The bottom keeps clear of the guided/brief choice (.hero__choice), so
+     the copy centres in the room above it. */
+  padding: 96px var(--gutter) 120px;
 }
 .hero::before {
   content: "";
@@ -115,7 +197,9 @@ body::after {
 }
 .hero__name {
   margin: 18px 0 28px;
-  font-size: clamp(3.6rem, 13vw, 11.5rem);
+  /* Capped by height too: at 13vw a 1366×768 screen left 6 px between the
+     buttons and the choice, which overlapped "Descargar CV" at 1280×720. */
+  font-size: clamp(3.6rem, min(13vw, 19vh), 11.5rem);
   font-weight: 800;
   line-height: 0.86;
   letter-spacing: -0.055em;
@@ -165,11 +249,17 @@ body::after {
 .hero__or {
   opacity: 0.7;
 }
+/* The way to the brief view: in the accent (its text tint, 7.6:1 on the
+   ground) and a step up in size, so it reads as the other door and not as
+   small print (author, 2026-10-29). Still a link, not a third button. */
 .hero__simple {
-  color: var(--ink-soft);
+  color: var(--accent-ink);
+  font-size: 1.05rem;
+  font-weight: 600;
   text-decoration: underline;
-  text-decoration-color: var(--line);
-  text-underline-offset: 4px;
+  text-decoration-color: rgb(var(--accent-rgb) / 0.45);
+  text-decoration-thickness: 2px;
+  text-underline-offset: 5px;
   transition: color 160ms ease-out, text-decoration-color 160ms ease-out;
 }
 .hero__simple:hover {
@@ -439,7 +529,10 @@ body::after {
   position: absolute;
   left: var(--gutter);
   top: clamp(96px, 26vh, 280px);
-  width: min(30rem, calc(100vw - 32px));
+  /* Grows with the screen, like the titles do (up to 3.8rem): a fixed 30rem
+     left two or three words per line at 2560 px and words alone on their
+     lines ("asientos", "dentro"). Measured title by title, both locales. */
+  width: min(max(32rem, 38vw), 46rem, calc(100vw - 32px));
   margin: 0;
   padding: 0;
   list-style: none;
@@ -456,11 +549,17 @@ body::after {
 .beat__title {
   margin: 12px 0 14px;
   text-wrap: balance;
-  font-size: clamp(2rem, 4.4vw, 3.8rem);
+  /* 3.6vw, not 4.4: at 1366 px the larger size left words alone on their
+     lines in the column; from ~1700 px up both cap at 3.8rem anyway. */
+  font-size: clamp(2rem, 3.6vw, 3.8rem);
   font-weight: 800;
   line-height: 0.98;
   letter-spacing: -0.04em;
   font-variant-numeric: tabular-nums;
+}
+/* A before/after movement, one half per line ("de ~5 s" / "a ~500 ms"). */
+.beat__line {
+  display: block;
 }
 .beat__label {
   margin: -4px 0 14px;
@@ -671,8 +770,14 @@ body::after {
   stroke-width: 1.5;
   stroke-opacity: 1;
 }
+/* Every infinite loop stops under reduced motion: tokens.css cuts each one
+   to 0.01ms, which turned a blink, a nudge or a spin into a flicker. */
 @media (prefers-reduced-motion: reduce) {
-  .seat--pending {
+  .seat--pending,
+  .ddx__caret,
+  .ddgo span,
+  .ddx__go span,
+  .gate.is-running .gate__mark {
     animation: none;
   }
 }
@@ -1321,13 +1426,6 @@ html.is-held body {
   line-height: 0.95;
   letter-spacing: -0.045em;
 }
-.journey__lede {
-  max-width: 40ch;
-  margin: 0;
-  color: var(--ink-soft);
-  font-size: 1.05rem;
-  line-height: 1.5;
-}
 .journey__body {
   display: grid;
   grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
@@ -1637,10 +1735,13 @@ html.is-held body {
   margin: 0 0 14px;
   color: var(--accent-ink);
 }
+/* Sized by the screen's height as well as its width: at 1366×768 the line
+   at 4vw ran eight lines tall, and at the end of the page its start sat cut
+   off under the dock with no scroll left to bring it down. */
 .close__line {
-  max-width: 20ch;
+  max-width: 24ch;
   margin: 0 0 32px;
-  font-size: clamp(2rem, 4vw, 3.6rem);
+  font-size: clamp(1.8rem, min(3.4vw, 5.4vh), 3.4rem);
   font-weight: 800;
   line-height: 1.02;
   letter-spacing: -0.04em;
@@ -1672,6 +1773,20 @@ html.is-held body {
 .cvx {
   padding: var(--section-pad) var(--gutter);
   border-top: 1px solid var(--line);
+}
+/* Where an anchor lands (/#cv, /#proyectos, /#mapa — the 404 links here):
+   a clean screen, nothing of the section before (author, 2026-10-29). The
+   72 px of `anchorScrollCss()` suit the brief view's full-width bar; the
+   landing's dock is a pill on the right that covers no heading, so the
+   chapter starts at the very top, and the projects heading keeps 48 px of its
+   own empty margin above it — less than the 56 px gap to the role before.
+   `#top` outranks the id rule anchors.ts emits inline. */
+#top .cvx,
+#top .peak {
+  scroll-margin-top: 0;
+}
+#top .cvx__h[id] {
+  scroll-margin-top: 48px;
 }
 .cvx__head {
   max-width: 44rem;
@@ -1719,10 +1834,14 @@ html.is-held body {
   margin-bottom: 36px;
 }
 .cvx__when {
-  margin: 0 0 6px;
+  margin: 0 0 10px;
+}
+.cvx__metric {
+  color: var(--accent-ink);
+  font-weight: 700;
 }
 .cvx h4 {
-  margin: 0 0 8px;
+  margin: 0 0 6px;
   font-size: 1.25rem;
   font-weight: 800;
   line-height: 1.2;
@@ -2220,6 +2339,12 @@ html.is-held body {
   .dd__facts {
     grid-template-columns: repeat(2, 1fr);
   }
+  /* Clear of the toolbox's 80 px page-colour band (.toolbox::before): at
+     10svh (66 px on a 667 px phone) the band covered the title's second
+     line before the toolbox stuck ("4 stages" cut). */
+  .journey__head {
+    margin-bottom: 96px;
+  }
   .journey__body {
     grid-template-columns: 1fr;
     gap: 0;
@@ -2287,6 +2412,31 @@ html.is-held body {
   }
   .stack__iso {
     width: 80vw;
+  }
+  /* The seats result: no room under the hall for both the beat card and the
+     three surfaces (reload, minicart, checkout), and the card covered them.
+     The beat's own text names all three. */
+  .surfaces {
+    display: none;
+  }
+  /* The beat card sits under the sync line ("Mapa 4 · Carrito 4"), and the
+     longest Spanish beats ran 15 px over it at 375×667. The card and the
+     rail go lower, the hall starts higher and the title is a step smaller. */
+  .seats__visual {
+    top: 76px;
+  }
+  .beats {
+    bottom: 36px;
+  }
+  .rail {
+    bottom: 20px;
+  }
+  .beat {
+    padding: 10px 12px;
+  }
+  .beat__title {
+    margin: 4px 0 6px;
+    font-size: 1.35rem;
   }
 }
 
@@ -2367,6 +2517,9 @@ html.is-held body {
 }
 :root:is(.still, :not(.js)) .chapter__stage {
   display: grid;
+  /* minmax(0, …): an auto track took the beats' widest unbreakable line and
+     ran the map chapter's text off a phone's right edge. */
+  grid-template-columns: minmax(0, 1fr);
   gap: 32px;
   padding: var(--section-pad) var(--gutter) 0;
 }

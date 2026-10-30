@@ -8,7 +8,7 @@
 // direction, and the seats on the map act out what happens in the flow below.
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
-import { $, $$, holdScroll, paced, pinPaced, refreshing, releaseScroll } from "./util";
+import { $, $$, NARROW, holdScroll, paced, pinPaced, refreshing, releaseScroll } from "./util";
 import { GHOST, ghostCenter, mapSites } from "./peak";
 import { cellsToSeats } from "./morph";
 
@@ -292,6 +292,12 @@ export function seats() {
   tl.to({}, { duration: 9.8 });
   let active = -1;
   let scene: gsap.core.Timeline | null = null;
+  // On phones the card sits just under the sync line: a beat lifting 40 px
+  // on its way out (or arriving from 40 px up, scrolling back) slid over it
+  // and cut "Mapa 4 · Carrito 4". There a beat only moves below its place.
+  const narrow = matchMedia(NARROW).matches;
+  const leaveY = (fwd: boolean) => (narrow ? 12 : fwd ? -40 : 40);
+  const enterY = (fwd: boolean) => (narrow ? 12 : fwd ? 40 : -40);
   const goTo = (k: number) => {
     if (k === active) return;
     const prev = active;
@@ -301,7 +307,7 @@ export function seats() {
     // Only the beat leaving and the beat arriving may be on screen.
     beats.forEach((b, j) => j !== prev && j !== k && gsap.set(b, { autoAlpha: 0, overwrite: true }));
     if (prev >= 0) {
-      gsap.to(beats[prev], { autoAlpha: 0, y: k > prev ? -40 : 40, duration: 0.3, ease: "power2.in", overwrite: true });
+      gsap.to(beats[prev], { autoAlpha: 0, y: leaveY(k > prev), duration: 0.3, ease: "power2.in", overwrite: true });
     }
     rail.forEach((r, j) => r.classList.toggle("on", j <= k));
     if (k < 0) {
@@ -311,7 +317,7 @@ export function seats() {
     }
     gsap.fromTo(
       beats[k],
-      { autoAlpha: 0, y: k > prev ? 40 : -40 },
+      { autoAlpha: 0, y: enterY(k > prev) },
       { autoAlpha: 1, y: 0, duration: 0.5, ease: "power3.out", delay: prev >= 0 ? 0.2 : 0, overwrite: true },
     );
     scene = scenes[k]();

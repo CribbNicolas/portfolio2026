@@ -103,6 +103,24 @@ function loader() {
 }
 
 /**
+ * The loader without its mark: the same full-screen cover in the page's
+ * color, faded out once the page is built. Resolves as the fade starts, so
+ * the hero's entrance plays while the cover leaves.
+ */
+function plainCover() {
+  const el = $("[data-loader]");
+  return {
+    add() {},
+    finish() {
+      return new Promise<void>((resolve) => {
+        if (!el) return resolve();
+        gsap.to(el, { opacity: 0, duration: 0.35, ease: "power1.out", onStart: resolve, onComplete: () => el.remove() });
+      });
+    },
+  };
+}
+
+/**
  * Chapters that hand off to each other with no seam: each one is pulled up by
  * one screen so it lands exactly on top of the previous one's last frame, and
  * its pin starts at the very scroll position where the previous pin ends.
@@ -127,6 +145,7 @@ export async function start() {
     journeyStill();
     workStill();
     closeStill();
+    cvModal(true);
     anchorTarget()?.scrollIntoView();
     return;
   }
@@ -136,10 +155,11 @@ export async function start() {
   // deploy carries a new build id and shows it once more. The assets
   // themselves are cached by the browser under hashed names, so a return
   // visit downloads only what changed. `?nointro` still skips it.
+  // Skipped, it still covers the page — plain, no mark — until every pin is
+  // in place: the first frames otherwise show the chapters stacked.
   const html = document.documentElement;
   const skip = html.classList.contains("seen") || new URLSearchParams(location.search).has("nointro");
-  if (skip) $("[data-loader]")?.remove();
-  const progress = skip ? { add: () => {}, finish: () => Promise.resolve() } : loader();
+  const progress = skip ? plainCover() : loader();
 
   const lenis = startLenis();
   lenis.stop();

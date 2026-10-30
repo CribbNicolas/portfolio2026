@@ -2,14 +2,17 @@
 // halves (ESP / EN) are pulled up from the last section into the middle of
 // the screen, over a dark scrim (author, 2026-10-28). If the close is on
 // screen, the C leaves its own place; from anywhere else it rises from below,
-// where that section is. Esc, a click outside or × sends it back.
+// where that section is. Esc, a click or tap anywhere off the halves, or ×
+// sends it back. Under reduced motion it is the same C and halves, shown
+// and hidden in place, with no flight (`still`).
 //
-// The links keep their href and `download`: without JS they download the
-// Spanish PDF directly, as before.
+// The openers are `<button popovertarget="cv-pick">`: without JS they open
+// the still C as a native popover (CvPick.astro). Here their click is
+// cancelled, which also cancels the popover, and this dialog plays instead.
 import gsap from "gsap";
 import { $, $$, holdScroll, releaseScroll } from "./util";
 
-export function cvModal() {
+export function cvModal(still = false) {
   const modal = $("[data-cvmodal]");
   const scrim = $("[data-cvmodal-scrim]");
   const slot = $("[data-cvmodal-slot]");
@@ -33,6 +36,14 @@ export function cvModal() {
   let opener: HTMLElement | null = null;
   let open = false;
 
+  const closed = () => {
+    modal.hidden = true;
+    gsap.set(source, { visibility: "visible" });
+    releaseScroll();
+    opener?.focus({ preventScroll: true });
+    open = false;
+  };
+
   const show = (from: HTMLElement) => {
     if (open) return;
     open = true;
@@ -40,6 +51,10 @@ export function cvModal() {
     holdScroll();
     modal.hidden = false;
     gsap.set([ring, ...halves, kicker, shut], { clearProps: "transform,opacity,visibility" });
+    if (still) {
+      halves[0].focus({ preventScroll: true });
+      return;
+    }
 
     // Where the C comes from: its own place if it is on screen, otherwise
     // straight up from below the screen — the direction of the last section.
@@ -56,13 +71,7 @@ export function cvModal() {
     tl = gsap
       .timeline({
         onComplete: () => halves[0].focus({ preventScroll: true }),
-        onReverseComplete: () => {
-          modal.hidden = true;
-          gsap.set(source, { visibility: "visible" });
-          releaseScroll();
-          opener?.focus({ preventScroll: true });
-          open = false;
-        },
+        onReverseComplete: closed,
       })
       .fromTo(scrim, { autoAlpha: 0 }, { autoAlpha: 1, duration: 0.45, ease: "power1.out" }, 0)
       .fromTo(
@@ -76,7 +85,9 @@ export function cvModal() {
   };
 
   const hide = () => {
-    if (!open || !tl) return;
+    if (!open) return;
+    if (still) return closed();
+    if (!tl) return;
     // Back the way it came, a little quicker.
     tl.timeScale(1.6).reverse();
   };
@@ -87,7 +98,10 @@ export function cvModal() {
       show(a);
     }),
   );
-  scrim.addEventListener("click", hide);
+  // Anywhere but a half or ×: the scrim, the kicker, the ring.
+  modal.addEventListener("click", (e) => {
+    if (!(e.target as Element).closest(".close__half, [data-cvmodal-close]")) hide();
+  });
   shut.addEventListener("click", hide);
   // A half downloads its PDF (its own href + download), then the C goes back.
   halves.forEach((h) => h.addEventListener("click", () => setTimeout(hide, 450)));

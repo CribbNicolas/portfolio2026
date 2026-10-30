@@ -1,6 +1,26 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { splitFigures } from "./highlight";
+import { glueShortWords, glueTitle, splitFigures } from "./highlight";
+
+test("function words hold on to the next word; content words break freely", () => {
+  const nb = "\u00A0";
+  assert.equal(glueShortWords("the RPPL report: a choropleth"), `the${nb}RPPL report: a${nb}choropleth`);
+  assert.equal(glueShortWords("distritos y estados"), `distritos y${nb}estados`);
+  assert.equal(glueShortWords("I built it"), `I${nb}built it`);
+  assert.equal(
+    glueShortWords("Un mapa de asientos dentro de WooCommerce."),
+    `Un${nb}mapa de${nb}asientos dentro de${nb}WooCommerce.`,
+  );
+  assert.equal(glueShortWords("de a uno"), `de${nb}a${nb}uno`);
+  assert.equal(glueShortWords("Los mismos asientos"), `Los${nb}mismos asientos`);
+});
+
+test("a title never opens or closes on one word alone", () => {
+  const nb = "\u00A0";
+  assert.equal(glueTitle("The same seats everywhere."), `The${nb}same seats${nb}everywhere.`);
+  assert.equal(glueTitle("AsyncPile: one operation at a time."), `AsyncPile:${nb}one operation at${nb}a${nb}time.`);
+  assert.equal(glueTitle("Solo"), "Solo");
+});
 
 const figures = (s: string) => splitFigures(s).filter((p) => p.figure).map((p) => p.text);
 

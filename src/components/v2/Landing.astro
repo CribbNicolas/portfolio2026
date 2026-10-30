@@ -31,8 +31,10 @@ import {
   formatDuration,
   formatMetric,
   formatMetricLabeled,
+  formatMetricLines,
   formatMetricEnds,
   formatRoleTitle,
+  formatRoleTitleParts,
   formatSeniority,
   formatYearMonth,
   groupedSkills,
@@ -43,7 +45,9 @@ import { RING_PATH, N_PATH, N_WEIGHT, BRAND_VIEWBOX } from "../../lib/brand";
 import { ANCHORS, LOCALE_PATHS, OTHER_LOCALE, anchorScrollCss } from "../../lib/anchors";
 import { LANDING } from "../../lib/landing-copy";
 import { ciSteps } from "../../lib/ci-steps";
+import { glueShortWords, glueTitle } from "../../lib/highlight";
 import Logo from "../Logo.astro";
+import CvPick from "../CvPick.astro";
 import SkillIcon from "./SkillIcon.astro";
 
 interface Props {
@@ -91,12 +95,15 @@ const counterTarget = Number((map.metric?.delta ?? "0").replace(/\D/g, ""));
 const [kBrief, kScale, kBroke, kDecision, kResult] = t.peakKickers;
 const beats = [
   { kicker: kBrief, title: t.peakTitles.brief, body: map.text.short },
-  { kicker: kScale, title: map.metric ? formatMetricLabeled(map.metric, locale) : "", body: t.peakBodies.scale, counter: true },
+  { kicker: kScale, title: (map.metric && formatMetricLabeled(map.metric, locale)) ?? "", body: t.peakBodies.scale, counter: true },
   { kicker: kBroke, title: t.peakTitles.broke, body: fix.text.short },
   { kicker: kDecision, title: t.peakTitles.decision, body: index.text.short },
   {
     kicker: kResult,
-    title: index.metric ? formatMetric(index.metric, locale) : "",
+    title: (index.metric && formatMetric(index.metric, locale)) ?? "",
+    // "de ~5 s" over "a ~500 ms", one half per line: never "de ~5 s a"
+    // over a lone "~500 ms".
+    lines: index.metric ? formatMetricLines(index.metric, locale) : null,
     body: t.peakBodies.result,
     // Each bar carries its own end of the metric, "~" included.
     bars: index.metric ? formatMetricEnds(index.metric) : null,
@@ -225,9 +232,24 @@ const cvLinks = (["es", "en"] as const).map((lang) => ({
 
 <nav class="dock" aria-label={t.dockLabel}>
   <a class="dock__logo" href="#top"><Logo size={22} /></a>
-  <a class="dock__cv" href={paths.pdf} download data-cv-open>{m.downloadCv}</a>
+  <button class="dock__cv" type="button" popovertarget="cv-pick" data-cv-open>{m.downloadCv}</button>
   <a class="dock__lang" href={LOCALE_PATHS[other].home} hreflang={other} lang={other}>{t.otherLocaleShort}</a>
 </nav>
+
+{/*
+  Without JavaScript the chapters are their scenes half built, one under the
+  other: a bar sends the reader to the brief view (author, 2026-10-30). A
+  bar, not a redirect: the link-preview crawlers run no script and some
+  follow a meta refresh, and would trade this page's Open Graph card for the
+  brief view, which has none and is canonical to here.
+*/}
+{/* Both PDFs with no script: the dock's and the hero's "Descargar CV"
+    open this native popover; with JS, cvmodal.ts plays the animated C. */}
+<CvPick cvLinks={cvLinks} kicker={`${m.downloadCv} · ${t.cvModalPick}`} closeLabel={m.closeDialog} />
+
+<noscript>
+  <p class="nojs">{t.noJs} <a href={paths.brief}>{t.briefLink} <span aria-hidden="true">→</span></a></p>
+</noscript>
 
 {/*
   Where the seats chapter switches off, like an old screen: bars close in
@@ -284,7 +306,7 @@ const cvLinks = (["es", "en"] as const).map((lang) => ({
             {years} · {identity.location.city}, {identity.location.country} · {identity.location.timezone}
           </p>
           <div class="hero__actions" data-hero-fade>
-            <a class="btn btn--solid" href={paths.pdf} download data-cv-open>{m.downloadCv}</a>
+            <button class="btn btn--solid" type="button" popovertarget="cv-pick" data-cv-open>{m.downloadCv}</button>
             <a class="btn" href={`mailto:${identity.contact.email}`}>{t.writeMe}</a>
           </div>
         </div>
@@ -389,10 +411,12 @@ const cvLinks = (["es", "en"] as const).map((lang) => ({
                     <span data-counter data-target={counterTarget} aria-hidden="true">0</span>
                     <span class="visually-hidden">{b.title}</span>
                   </>
-                ) : b.title}
+                ) : b.lines ? (
+                  b.lines.map((line) => <span class="beat__line">{line}</span>)
+                ) : glueTitle(b.title)}
               </h2>
               {b.counter && <p class="beat__label mono" aria-hidden="true">{b.title}</p>}
-              <p class="beat__body">{b.body}</p>
+              <p class="beat__body">{glueShortWords(b.body)}</p>
               {b.bars && (
                 <div class="bars" aria-hidden="true">
                   <div class="bars__row">
@@ -476,8 +500,8 @@ const cvLinks = (["es", "en"] as const).map((lang) => ({
               <p class="beat__kicker mono">
                 <span>{String(i + 1).padStart(2, "0")}</span> {b.kicker}
               </p>
-              <h2 class="beat__title">{b.title}</h2>
-              <p class="beat__body">{b.body}</p>
+              <h2 class="beat__title">{glueTitle(b.title)}</h2>
+              <p class="beat__body">{glueShortWords(b.body)}</p>
             </li>
           ))
         }
@@ -613,7 +637,6 @@ const cvLinks = (["es", "en"] as const).map((lang) => ({
     <header class="journey__head">
       <p class="mono journey__kicker">{t.journeyKicker}</p>
       <h2>{t.journeyTitle(years, journey.length)}</h2>
-      <p class="journey__lede">{t.journeyLede}</p>
     </header>
 
     <div class="journey__body">
@@ -723,7 +746,9 @@ const cvLinks = (["es", "en"] as const).map((lang) => ({
   */}
   <section id={anchors.cv} class="cvx" aria-labelledby="cvx-title">
     <header class="cvx__head">
-      <p class="mono cvx__kicker">{t.cvKicker}</p>
+      {/* In English the kicker and the heading are the same word ("CV"):
+          shown once (author, 2026-10-29). */}
+      {t.cvKicker !== m.cvTitle && <p class="mono cvx__kicker">{t.cvKicker}</p>}
       <h2 id="cvx-title">{m.cvTitle}</h2>
       <p class="cvx__lede">{t.cvLede}</p>
     </header>
@@ -734,15 +759,23 @@ const cvLinks = (["es", "en"] as const).map((lang) => ({
         {
           roles.map((r) => (
             <article class="cvx__role">
-              <p class="mono cvx__when">{formatDateRange(r.start, r.end, locale)} · {formatDuration(r.durationMonths, locale)}</p>
-              <h4>
-                {formatRoleTitle(r, locale)} · {r.company}
-                {r.clientDescription && <span class="cvx__client"> — {r.clientDescription}</span>}
-              </h4>
+              {/* The PDF's shape (RoleBlock.astro, author 2026-10-29): the
+                  heading is title and company; the concurrency and the
+                  client go on the dated line; a metric keeps its label. */}
+              <h4>{formatRoleTitleParts(r, locale).title} · {r.company}</h4>
+              <p class="mono cvx__when">
+                {formatDateRange(r.start, r.end, locale)} · {formatDuration(r.durationMonths, locale)}
+                {r.location && <> · {r.location}</>}
+                {formatRoleTitleParts(r, locale).concurrent && <> · {formatRoleTitleParts(r, locale).concurrent}</>}
+                {r.clientDescription && <> · {r.clientDescription}</>}
+              </p>
               <p class="cvx__context">{r.context.short}</p>
               <ul class="cvx__wins">
                 {r.achievements.map((a) => (
-                  <li>{a.text.short}</li>
+                  <li>
+                    {a.text.short}
+                    {a.metric && <> — <span class="cvx__metric">{formatMetricLabeled(a.metric, locale)}</span></>}
+                  </li>
                 ))}
               </ul>
             </article>

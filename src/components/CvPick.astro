@@ -1,0 +1,43 @@
+---
+/**
+ * The CV dialog with no script: the landing's C, still, its hole split into
+ * the two PDFs (Spanish left, English right, in both locales). A native
+ * popover, opened by any `<button popovertarget="cv-pick">`.
+ *
+ * The brief view uses it as its only CV dialog. The guided landing uses it
+ * when JavaScript is off: with a script, cvmodal.ts cancels the button's
+ * click and plays the animated C instead (author, 2026-10-30: without JS the
+ * dock's "Descargar CV" downloaded the Spanish PDF only).
+ *
+ * The popover is as big as its content, so a click or tap on the backdrop
+ * light-dismisses it natively; Esc and × close it too, all with no script.
+ * Styles in chrome.css (.cvpick).
+ */
+import { RING_PATH, BRAND_VIEWBOX } from "../lib/brand";
+
+interface Props {
+  cvLinks: { lang: string; short: string; href: string; file: string; label: string }[];
+  kicker: string;
+  closeLabel: string;
+}
+
+const { cvLinks, kicker, closeLabel } = Astro.props;
+---
+
+<div id="cv-pick" popover class="cvpick" role="dialog" aria-labelledby="cv-pick-title">
+  <p class="cvpick__kicker" id="cv-pick-title">{kicker}</p>
+  <div class="close__ringwrap cvpick__ring">
+    <svg class="close__ring" viewBox={BRAND_VIEWBOX} aria-hidden="true">
+      <path d={RING_PATH} fill="var(--accent)" />
+    </svg>
+    <div class="close__cv">
+      {cvLinks.map((cv) => (
+        <a class:list={["close__half", `close__half--${cv.lang}`]} href={cv.href} download={cv.file} hreflang={cv.lang} aria-label={cv.label}>
+          <span class="close__half-lang">{cv.short}</span>
+          <span class="close__half-file">PDF</span>
+        </a>
+      ))}
+    </div>
+  </div>
+  <button class="cvpick__x" type="button" popovertarget="cv-pick" popovertargetaction="hide" aria-label={closeLabel}>×</button>
+</div>

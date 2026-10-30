@@ -11,8 +11,7 @@
  * point that tag at a few-byte wrapper while the real payload lives one static
  * `import` away. `criticalChunks` below follows static `import` specifiers
  * transitively from each page's entry chunk — but never a dynamic `import()`,
- * which is the deliberate boundary for what may load late (the brief view's
- * background field). Skipping that walk is exactly how this check went blind
+ * which is the deliberate boundary for what may load late. Skipping that walk is exactly how this check went blind
  * once already: it kept scanning a 44-byte wrapper while the chunk that
  * actually runs sat one hop away, unread.
  *
@@ -43,8 +42,8 @@ const ASTRO = join(DIST, "_astro");
  */
 const CRITICAL_BUDGET_KB = (page: string): number => (SCROLL_DRIVEN_PAGES.has(page) ? 80 : 4);
 
-/** The brief view's background field, loaded after `load` (WebGL by hand,
- *  no library): 2 KB measured. If it grew, a dependency got in. */
+/** Any chunk a page loads later through `import()`. None today (the brief
+ *  view's background moved to CSS); a new one starts under this ceiling. */
 const DEFERRED_BUDGET_KB = 8;
 
 /**

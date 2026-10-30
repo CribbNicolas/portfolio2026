@@ -88,7 +88,6 @@ export interface Messages {
   errorText: string;
   errorBack: string;
   errorNavLabel: string;
-  errorDestMap: string;
   errorDestProjects: string;
   errorDestCv: string;
 }
@@ -145,7 +144,6 @@ export const MESSAGES: Record<Locale, Messages> = {
       "La dirección que pediste no corresponde a ninguna página del sitio. Puede que el link estuviera mal copiado, o que apuntara a algo que ya no está.",
     errorBack: "Volver al inicio",
     errorNavLabel: "Secciones del sitio",
-    errorDestMap: "El mapa de RPPL",
     errorDestProjects: "Los proyectos",
     errorDestCv: "El CV completo",
   },
@@ -200,7 +198,6 @@ export const MESSAGES: Record<Locale, Messages> = {
       "The address you asked for doesn't match any page on this site. The link may have been copied wrong, or it pointed at something that is no longer here.",
     errorBack: "Back to the home page",
     errorNavLabel: "Site sections",
-    errorDestMap: "The RPPL map",
     errorDestProjects: "The projects",
     errorDestCv: "The full CV",
   },

@@ -31,11 +31,22 @@ const APPROX = "~";
  * stays inside the subset, in every locale.
  */
 export function formatMetric(m: Metric, locale: Locale): string | null {
-  const { metricFrom, metricTo } = MESSAGES[locale];
-  const ends = formatMetricEnds(m);
-  if (ends) return `${metricFrom} ${ends.before} ${metricTo} ${ends.after}`;
+  const lines = formatMetricLines(m, locale);
+  if (lines) return lines.join(" ");
   if (m.delta) return `${approx(m)}${m.delta}`;
   return null;
+}
+
+/**
+ * A before/after movement as its two halves, "de ~5 s" and "a ~500 ms", for
+ * a surface that sets it on two lines: broken anywhere else it leaves "de
+ * ~5 s a" over a lone "~500 ms" (author, 2026-10-29: no orphan words).
+ * `null` for a delta-only metric, which is one piece.
+ */
+export function formatMetricLines(m: Metric, locale: Locale): [string, string] | null {
+  const { metricFrom, metricTo } = MESSAGES[locale];
+  const ends = formatMetricEnds(m);
+  return ends ? [`${metricFrom} ${ends.before}`, `${metricTo} ${ends.after}`] : null;
 }
 
 /**

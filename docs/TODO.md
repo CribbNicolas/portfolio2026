@@ -84,54 +84,67 @@ Lighthouse after it: `/` 98/100/100/100, `/brief` 96/100/100/100 (mobile).
 
 ### 5. Author's review: visual and text (last, before the PR)
 
-Everything only the author can sign off, done on the branch's Pages preview
-once stages 1–4 are closed (a text change after it means `i18n:lock` and
-the checks again).
+Everything only the author can sign off, once stages 1–4 are closed, on a
+local production build (`pnpm run build && pnpm run preview`): Pages only
+builds previews for `staging`, not for `feature/*` branches. A text change
+after it means `i18n:lock` and the checks again.
 
-**Text**
-- [ ] Read the hook on screen, in both locales.
-- [ ] Confirm the provisional DeltaDictum copy: the `[DECISION]` memory typed
-      in the interception (`ddHook` in `landing-copy.ts`) and the CTA line
-      ("Un producto mío, hecho para la forma en que trabajo con agentes de
-      código.").
-- [ ] Confirm the DeltaDictum project as written into the dataset (problem,
-      solution, outcome; from its README and CHANGELOG only, no `decisions`:
-      a trade-off would have been invented).
-- [ ] English CV bullets open with "I built…"; English CVs usually drop
-      the pronoun (human readers, not the ATS).
-- [ ] Read and sign off, as prose, the English: `summary.long`, Hogarth, the
-      DeltaDictum project and every `en` line of `landing-copy.ts`.
-- [ ] English CV chapter: the kicker "CV" sits over the heading "CV"
-      (`cvKicker` and `MESSAGES.en.cvTitle`); keep one.
+**Text** — signed off by the author, 2026-10-29: the hook, the DeltaDictum
+copy and project, and the English as prose, as they stand.
 
-**Visual**
-- [ ] The six resolutions: 375×667, 390×844, 412×915, 768×1024, 1366×768,
-      1920×1080 (DevTools device mode, scroll the whole page), in both
-      locales and on the brief view.
-- [ ] The new CV chapter (`.cvx`, before the close).
-- [ ] The brief view redesign: raised panels over the animated field, the
-      reveal as you scroll, figures and metrics in the accent, `core` skills
-      set apart, the contact in the header (on phones, its only place).
-- [ ] At 1366×768 the dock overlaps the close's last line while it scrolls
-      under it (seen in a screenshot, 2026-10-29).
-- [ ] The violet across the site: the brief view, the 404, the favicon in a
-      light and a dark tab bar, the OG card, the iOS home-screen icon.
-- [ ] The two halved still stretches feel right on a real wheel and a phone.
-- [ ] The reduced-motion ("still") page once more after the layout changes.
-- [ ] The page with JavaScript off (DevTools → disable JavaScript): it now
-      reuses the still layout; nothing should be hidden or stacked.
-- [ ] Phones: check the seats beat card no longer covers the cart and surfaces.
-- [ ] At least once on a real phone, iOS Safari and Android Chrome. Held scroll
-      (Lenis stop + `is-held`), `svh` heights and the touch cue have only run
-      emulated. Compare Lenis against native scroll there.
-- [ ] Look at the social card in a real chat and in LinkedIn's Post Inspector
-      (the branch's Pages preview URL).
+**Visual** — 2560×1440 reviewed by the author in both locales, the guided
+landing and the brief view (2026-10-29). What is left:
 
-- [ ] PR: from a `feature/*` branch (not `spike/landing-v2`) into `develop`,
-      with the version bump. `major` if any URL or anchor of today's `/` goes
-      away, `minor` otherwise.
+Swept by Claude, 2026-10-29, at 375×667, 390×844, 412×915, 768×1024,
+1366×768 and 1920×1080 in both locales: the animated landing walked in
+half-screen steps, the brief view, the reduced-motion and the no-JS pages,
+checked for sideways scroll, text past an edge, the dock over text that
+cannot scroll out, the seats card over the cart and surfaces, and title lines
+holding one word. Fixed: 12 px of sideways scroll on the brief view at
+375 px and the map chapter's text past the edge in reduced motion (two grids
+without `minmax(0, 1fr)`), the close's line cut off under the dock at
+1366×768 (it now scales with the screen's height), and the seats card over
+the surfaces on short phones (hidden there; the beat names all three).
 
-### After the merge (needs a real deploy)
+The author's pass at the same sizes (2026-10-29), fixed and measured:
+the seats card cut the sync line ("Mapa 4 · Carrito 4") on short phones,
+moving in from above and, in Spanish, at rest (phones now only move it below
+its place; card, rail and title tighter under 720 px tall); the toolbox's
+page-colour band covered "4 etapas" until it stuck; "ESP" touched the PDF
+half's curve at 375 and 768 (the label sizes from the half, in `cqi`); the
+hero's name crowded the guided/brief choice at 1366×768 (capped at 19vh,
+centred above the choice); the brief view's metric chips ran past their
+panel at 375 (they break, one pill per line). The landing's CV chapter now
+has the PDF's role shape: title · company, then dates, place, concurrency
+and client, and the metric with its label. Reduced motion: every infinite
+loop stops (the C spun frantically at tokens.css's 0.01ms), and the dock's
+"Descargar CV" opens the same C with its two halves, shown in place. The CV
+dialog closes on a click or tap anywhere off the halves, guided and brief.
+Without JavaScript the guided landing shows a fixed way to the brief view,
+a card on the right on desktop, a bar along the bottom on phones, and its
+"Descargar CV" buttons open both PDFs in the brief view's native popover
+(CvPick.astro, shared; content-sized, so the backdrop closes it natively)
+(`<noscript>`, not a redirect: preview crawlers would lose the OG card).
+
+- [ ] The two halved still stretches feel right on a real wheel and in phone
+      emulation (author).
+
+### 6. Release — PR, merge, deploy (Claude)
+
+- [ ] Move the work from `spike/landing-v2` to a `feature/*` branch.
+- [ ] PR into `develop` with the version bump: `minor` (no URL or anchor of
+      today's `/` goes away; `/brief` and `/en/brief` are new). CI green.
+- [ ] Merge, then the promotions `develop` → `staging` → `main`
+      (`flujo-de-ramas.yml`), each one carrying the number as is.
+- [ ] Watch each deploy through: the Pages build, `smoke-deploy.yml`
+      (`test:served`, which now checks the CSP lets the landing's head
+      script run and that `/brief` is served), and the site itself on staging
+      and production.
+
+### 7. After the deploy (Claude)
+
+The author checks the live site on real phones once it is deployed;
+anything found there ships afterwards as minor fixes.
 
 - [ ] After the next production deploy, check `pnpm run pdf:refresh` works:
       `PDF_REFRESH_TOKEN` was set as a Pages Production secret on 2026-10-29,
@@ -142,6 +155,9 @@ the checks again).
       denied on purpose (`src/scripts/analytics.ts`).
 - [ ] The loader shows on the first visit after a deploy and not on the next
       one (`CF_PAGES_COMMIT_SHA` is the build id; locally it is "local").
+- [ ] Author, on the live site: the favicon in a light and a dark tab bar,
+      the iOS home-screen icon, and the social card in a real chat and in
+      LinkedIn's Post Inspector (staging URL first: it needs a public address).
 - [ ] Verify on staging that our `robots.txt` wins over Cloudflare's managed
       one; if not, use Search Console.
 

@@ -40,6 +40,7 @@ import { LANDING } from "../lib/landing-copy";
 import { splitFigures } from "../lib/highlight";
 import { RING_PATH, BRAND_VIEWBOX } from "../lib/brand";
 import Logo from "./Logo.astro";
+import CvPick from "./CvPick.astro";
 
 interface Props {
   view: ContentView;
@@ -103,35 +104,19 @@ const statusLabel: Partial<Record<string, string>> = {
     <a class="dock__lang" href={LOCALE_PATHS[other].brief} hreflang={other} lang={other}>{t.otherLocaleShort}</a>
   </nav>
 
-  {/*
-    The guided landing's CV dialog, without the motion: the same C, still,
-    its hole split into the two PDFs. A native popover: Esc and the backdrop
-    close it, and it needs no script. Spanish left, English right, in both
-    locales, like the landing's close.
-  */}
-  <div id="cv-pick" popover class="cvpick" role="dialog" aria-labelledby="cv-pick-title">
-    <p class="cvpick__kicker" id="cv-pick-title">{m.downloadCv} · {t.cvModalPick}</p>
-    <div class="close__ringwrap cvpick__ring">
-      <svg class="close__ring" viewBox={BRAND_VIEWBOX} aria-hidden="true">
-        <path d={RING_PATH} fill="var(--accent)" />
-      </svg>
-      <div class="close__cv">
-        {cvLinks.map((cv) => (
-          <a class:list={["close__half", `close__half--${cv.lang}`]} href={cv.href} download={cv.file} hreflang={cv.lang} aria-label={cv.label}>
-            <span class="close__half-lang">{cv.short}</span>
-            <span class="close__half-file">PDF</span>
-          </a>
-        ))}
-      </div>
-    </div>
-    <button class="cvpick__x" type="button" popovertarget="cv-pick" popovertargetaction="hide" aria-label={m.closeDialog}>×</button>
-  </div>
+  {/* The CV dialog: the landing's C, still (CvPick.astro). */}
+  <CvPick cvLinks={cvLinks} kicker={`${m.downloadCv} · ${t.cvModalPick}`} closeLabel={m.closeDialog} />
 
   {/*
-    The animated background (src/scripts/brief/field.ts), mounted after load
-    when the device can afford it. Without it, the flat `--bg`.
+    The background: the brand's C, the landing's turning ring, blurred into
+    light behind the text, with a slow parallax as the page scrolls (author,
+    2026-10-29). Pure CSS (brief.css): no script, no canvas.
   */}
-  <canvas class="brief__field" data-field aria-hidden="true"></canvas>
+  <div class="brief__backdrop" aria-hidden="true">
+    <svg class="brief__ring" viewBox={BRAND_VIEWBOX}>
+      <path d={RING_PATH} fill="var(--accent)" />
+    </svg>
+  </div>
 
   {/*
     The CV, laid out like the PDF (`cv-ats`: same sections, same order, same
@@ -202,7 +187,7 @@ const statusLabel: Partial<Record<string, string>> = {
             {role.achievements.map((a) => (
               <li>
                 {splitFigures(a.text.short).map((p) => (p.figure ? <strong class="brief__fig">{p.text}</strong> : p.text))}
-                {a.metric && <span class="brief__metric">{formatMetricLabeled(a.metric, locale)}</span>}
+                {a.metric && <span class="brief__metric-row"><span class="brief__metric">{formatMetricLabeled(a.metric, locale)}</span></span>}
               </li>
             ))}
           </ul>

@@ -1,6 +1,7 @@
 /**
- * The brief view's script: the animated background and the reveal as you
- * scroll. Both are decoration over a page that is complete without them.
+ * The brief view's script: the reveal as you scroll, and the CV dialog
+ * closing on a click or tap off its halves. The page is complete without it. (The background — the blurred, turning C with its parallax — is
+ * CSS only, in brief.css.)
  *
  * The reveal is NOT tied to the scroll position (no scrub, no pin): a block
  * fades in once, the first time it enters the screen, and stays. With no
@@ -10,27 +11,23 @@
  *
  * Like everything in `src/scripts/`, nothing here imports `@content`.
  */
-import { mayAttempt } from "./capability";
 
 export function start(): void {
   reveal();
+  dismissCvPick();
+}
 
-  const field = document.querySelector<HTMLCanvasElement>("[data-field]");
-  if (field && mayAttempt()) {
-    // Behind the load event and an idle moment: the text is the page, the
-    // background can wait until it is painted.
-    afterLoad(() =>
-      whenIdle(async () => {
-        try {
-          const { mountField } = await import("./field");
-          const scene = await mountField(field);
-          if (scene) addEventListener("pagehide", () => scene.destroy(), { once: true });
-        } catch {
-          /* The flat `--bg` is already underneath. */
-        }
-      }),
-    );
-  }
+/**
+ * The popover's own light dismiss closes it on a click OUTSIDE it, but the
+ * dialog covers the whole screen, so every click lands inside. Anywhere but
+ * a half (a download) or × (closes by itself) closes it, like the landing's.
+ * Without the script, × and Esc still do.
+ */
+function dismissCvPick(): void {
+  const pick = document.getElementById("cv-pick");
+  pick?.addEventListener("click", (e) => {
+    if (!(e.target as Element).closest(".close__half, .cvpick__x")) pick.hidePopover();
+  });
 }
 
 function reveal(): void {
@@ -56,14 +53,4 @@ function reveal(): void {
     { rootMargin: "0px 0px -8% 0px" },
   );
   for (const el of blocks) if (!el.classList.contains("is-in")) io.observe(el);
-}
-
-function afterLoad(fn: () => void): void {
-  if (document.readyState === "complete") fn();
-  else addEventListener("load", fn, { once: true });
-}
-
-function whenIdle(fn: () => void): void {
-  if ("requestIdleCallback" in window) requestIdleCallback(fn, { timeout: 2000 });
-  else setTimeout(fn, 200);
 }

@@ -137,8 +137,14 @@ test("there is a real 404 page", () => {
 test("the 404 is bilingual in one page and never links to /cv", async () => {
   const html = await readFile(join(DIST, "404.html"), "utf8");
   assert.match(html, /lang="en"/, "the 404 has no English block");
-  assert.ok(html.includes(`href="/#${ANCHORS.es.map}"`), "the 404 does not link to the Spanish map");
-  assert.ok(html.includes(`href="/en/#${ANCHORS.en.map}"`), "the 404 does not link to the English map");
+  // The way back: the projects and the CV, in each language (the map link
+  // was dropped by the author, 2026-10-29).
+  for (const id of [ANCHORS.es.projects, ANCHORS.es.cv]) {
+    assert.ok(html.includes(`href="/#${id}"`), `the 404 does not link to the Spanish #${id}`);
+  }
+  for (const id of [ANCHORS.en.projects, ANCHORS.en.cv]) {
+    assert.ok(html.includes(`href="/en/#${id}"`), `the 404 does not link to the English #${id}`);
+  }
   assert.doesNotMatch(html, /href="\/cv"/, "the 404 links to /cv");
   assert.doesNotMatch(html, /href="\/en\/cv"/, "the 404 links to /en/cv");
 });

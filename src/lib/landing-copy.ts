@@ -36,6 +36,8 @@ export interface LandingCopy {
   guidedCue: string;
   or: string;
   briefLink: string;
+  /** Without JavaScript, the bar that sends the reader to the brief view. */
+  noJs: string;
   /** The brief view's way back to the guided landing. */
   guidedLink: string;
   /** "Quién soy". */
@@ -90,7 +92,6 @@ export interface LandingCopy {
   /** Chapter 6: the journey. */
   journeyKicker: string;
   journeyTitle: (years: string, stages: number) => string;
-  journeyLede: string;
   toolboxIn: string;
   toolboxTools: string;
   /** Chapter 7: how I work. */
@@ -125,6 +126,7 @@ export const LANDING: Record<Locale, LandingCopy> = {
     guidedCue: "Bajá para ver el recorrido guiado",
     or: "o",
     briefLink: "Ver la vista breve",
+    noJs: "El recorrido guiado necesita JavaScript.",
     guidedLink: "Ver el recorrido guiado",
     aboutKicker: "Quién soy",
     manifesto: (name, years) =>
@@ -219,7 +221,6 @@ export const LANDING: Record<Locale, LandingCopy> = {
     },
     journeyKicker: "Recorrido",
     journeyTitle: (years, stages) => `${years}, ${stages} etapas.`,
-    journeyLede: "A la derecha, el stack crece con cada etapa: cada herramienta aparece en el año del primer logro que la usa.",
     toolboxIn: "Stack en",
     toolboxTools: "herramientas",
     workKicker: "Cómo trabajo",
@@ -281,6 +282,7 @@ export const LANDING: Record<Locale, LandingCopy> = {
     guidedCue: "Scroll for the guided tour",
     or: "or",
     briefLink: "See the brief view",
+    noJs: "The guided tour needs JavaScript.",
     guidedLink: "See the guided tour",
     aboutKicker: "About me",
     manifesto: (name, years) =>
@@ -375,7 +377,6 @@ export const LANDING: Record<Locale, LandingCopy> = {
     },
     journeyKicker: "Journey",
     journeyTitle: (years, stages) => `${years}, ${stages} stages.`,
-    journeyLede: "On the right, the stack grows with each stage: each tool shows up in the year of the first achievement that uses it.",
     toolboxIn: "Stack in",
     toolboxTools: "tools",
     workKicker: "How I work",

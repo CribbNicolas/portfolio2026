@@ -17,20 +17,71 @@
   min-height: 100vh;
 }
 
+/* No orphan words (author, 2026-10-29): headings balance their lines,
+   running text never ends on one word alone. */
+:is(h1, h2, h3, h4) {
+  text-wrap: balance;
+}
+:is(p, li, dd) {
+  text-wrap: pretty;
+}
+
 /* --- The background --------------------------------------------------------- */
 
-/* `fixed`, behind the whole page. Fades in once field.ts has a frame. */
-.brief__field {
+/* The landing's C, turning slowly, blurred into a glow behind the text. The
+   blur and the turn sit on the same element, so the browser rasterizes the
+   blur once and only rotates the result. Fixed, behind the whole page. */
+.brief__backdrop {
   position: fixed;
   inset: 0;
-  width: 100%;
-  height: 100%;
+  overflow: hidden;
   pointer-events: none;
-  opacity: 0;
-  transition: opacity 900ms ease;
 }
-.brief__field.is-active {
-  opacity: 1;
+/* Large, on the left, faint and barely blurred so it reads as the brand and
+   never pulls the eye from the CV (author, 2026-10-29). Its centre starts on
+   the bottom edge of the screen — the upper half shows on arrival — and the
+   parallax carries it up to the top edge by the end of the page, where the
+   lower half shows. */
+.brief__ring {
+  --ring: min(120vh, 1500px);
+  position: absolute;
+  left: calc(16vw - var(--ring) / 2);
+  top: calc(100vh - var(--ring) / 2);
+  width: var(--ring);
+  aspect-ratio: 1;
+  opacity: 0.22;
+  filter: blur(6px);
+  will-change: transform, translate;
+  animation: brief-turn 70s linear infinite;
+}
+@keyframes brief-turn {
+  to {
+    transform: rotate(360deg);
+  }
+}
+/* Parallax, driven by the scroll itself (no script). `translate` and the
+   turn's `transform` are separate properties, so the two animations compose
+   on one element. Where scroll-driven animations are not supported the ring
+   stays put, half showing. */
+@supports (animation-timeline: scroll()) {
+  .brief__ring {
+    animation:
+      brief-turn 70s linear infinite,
+      brief-drift linear both;
+    animation-timeline: auto, scroll(root);
+  }
+}
+@keyframes brief-drift {
+  to {
+    translate: 0 -100vh;
+  }
+}
+/* Not just shortened: tokens.css cuts every animation to 0.01 ms under
+   reduced motion, which on an infinite turn would spin it frantically. */
+@media (prefers-reduced-motion: reduce) {
+  .brief__ring {
+    animation: none;
+  }
 }
 
 /* --- The column -------------------------------------------------------------- */
@@ -39,6 +90,9 @@
   position: relative;
   z-index: 1;
   display: grid;
+  /* minmax(0, …): a bare auto track grows to its widest unbreakable line
+     (glued words, the e-mail) and pushed the page 12 px past a 375 px phone. */
+  grid-template-columns: minmax(0, 1fr);
   gap: calc(var(--space) * 3);
   max-width: 50rem;
   margin-inline: auto;
@@ -126,70 +180,17 @@
   margin: 0;
 }
 
-/* --- The CV dialog: the landing's C, still --------------------------------- */
+/* --- Sections: raised panels over the glow ---------------------------------- */
 
-.cvpick:popover-open {
-  display: grid;
-  place-content: center;
-  justify-items: center;
-  gap: calc(var(--space) * 3);
-  width: 100%;
-  height: 100%;
-  max-width: none;
-  max-height: none;
-  margin: 0;
-  padding: calc(var(--space) * 2);
-  border: 0;
-  background: transparent;
-  color: var(--ink);
-}
-.cvpick::backdrop {
-  background: rgb(6 6 8 / 0.88);
-  backdrop-filter: blur(8px);
-}
-.cvpick__kicker {
-  margin: 0;
-  color: var(--accent-ink);
-  font-size: 0.78rem;
-  font-weight: 700;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-}
-.cvpick__ring {
-  width: min(70vmin, 440px);
-}
-/* No turn: the landing's C rotates, this one stays put. */
-.cvpick .close__ring path {
-  animation: none;
-}
-.cvpick__x {
-  position: absolute;
-  top: 20px;
-  right: 20px;
-  display: grid;
-  place-items: center;
-  width: 44px;
-  height: 44px;
-  border: 1px solid var(--line);
-  border-radius: 50%;
-  background: var(--bg-raised);
-  color: var(--ink);
-  font-size: 1.4rem;
-  line-height: 1;
-  cursor: pointer;
-}
-.cvpick__x:hover {
-  border-color: var(--ink-soft);
-}
-
-/* --- Sections: raised panels over the field ---------------------------------- */
-
+/* Soft panels, no outline (author, 2026-10-29: the boxed look was too hard):
+   a mostly opaque tint of the raised ground (74 %: at 48 % the text lost
+   legibility over the C), so the C behind only just shows through,
+   and enough blur behind it that the text never sits on the bright part. */
 .brief__section {
   padding: calc(var(--space) * 3) calc(var(--space) * 2.5);
-  border: 1px solid var(--line);
-  border-radius: 16px;
-  background: color-mix(in srgb, var(--bg-raised) 82%, transparent);
-  backdrop-filter: blur(6px);
+  border-radius: 20px;
+  background: color-mix(in srgb, var(--bg-raised) 74%, transparent);
+  backdrop-filter: blur(18px);
 }
 @media (min-width: 40rem) {
   .brief__section {
@@ -279,6 +280,13 @@
 .brief__role:last-child {
   padding-bottom: 0;
 }
+/* Phones: the panel, the trail and the bullet each indent the text, and
+   together they left it a ~260 px column. */
+@media (max-width: 40rem) {
+  .brief__role {
+    padding-left: calc(var(--space) * 2);
+  }
+}
 .brief__role::before {
   content: "";
   position: absolute;
@@ -350,17 +358,27 @@
   font-weight: 800;
   white-space: nowrap;
 }
+/* The metric on its own row, as a chip that may break: unbroken, "~13.000
+   distritos escolares en el dataset" ran past the panel on a 375 px phone.
+   Inline with a cloned box, each line is its own pill as wide as its text
+   (an inline-block that wraps stretches to the full column); balanced, so
+   the two lines split even. The line height leaves the pills apart. */
+.brief__metric-row {
+  display: block;
+  margin-top: 6px;
+  font-size: 0.82rem;
+  line-height: 2;
+  text-wrap: balance;
+}
 .brief__metric {
-  display: inline-block;
-  margin-left: 8px;
-  padding: 1px 9px;
+  padding: 2px 9px;
   border: 1px solid color-mix(in srgb, var(--accent) 55%, transparent);
   border-radius: 999px;
   background: var(--accent-faint);
   color: var(--ink);
-  font-size: 0.82rem;
   font-weight: 700;
-  white-space: nowrap;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
 }
 
 .brief__stack li {
@@ -384,9 +402,8 @@
 }
 .brief__project {
   padding: calc(var(--space) * 2.5);
-  border: 1px solid var(--line);
-  border-radius: 12px;
-  background: color-mix(in srgb, var(--bg) 55%, transparent);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--ink) 4%, transparent);
 }
 .brief__project h3 {
   margin: 0 0 4px;

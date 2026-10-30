@@ -34,7 +34,6 @@ const DESTINATIONS = (locale: Locale) => {
   const home = LOCALE_PATHS[locale].home;
   const anchors = ANCHORS[locale];
   return [
-    { href: `${home}#${anchors.map}`, label: m.errorDestMap },
     { href: `${home}#${anchors.projects}`, label: m.errorDestProjects },
     { href: `${home}#${anchors.cv}`, label: m.errorDestCv },
   ];

@@ -116,6 +116,13 @@
 @keyframes ring-turn {
   to { transform: rotate(360deg); }
 }
+/* Still under reduced motion: tokens.css cuts every animation to 0.01ms,
+   and on an infinite turn that spun the C frantically. */
+@media (prefers-reduced-motion: reduce) {
+  .close__ring path {
+    animation: none;
+  }
+}
 /* The hole is 6.4 of the 32 box: 40% of the ring's width across. The two
    halves together are a touch smaller, so a sliver of dark separates them
    from the ring, and a gap down the middle tells them apart. */
@@ -129,6 +136,10 @@
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 5px;
+  /* The labels size from the halves (cqi), not the screen: at 3vmin "ESP"
+     touched the curve on a 375 px phone and a 768 px tablet, where the C
+     is small for the screen. */
+  container-type: inline-size;
 }
 .close__half {
   display: grid;
@@ -164,7 +175,7 @@
   translate: 0 0;
 }
 .close__half-lang {
-  font-size: clamp(1.1rem, 3vmin, 1.9rem);
+  font-size: clamp(0.7rem, 15cqi, 1.9rem);
   font-weight: 800;
   line-height: 1;
   letter-spacing: -0.02em;
@@ -172,4 +183,60 @@
 .close__half-file {
   color: rgb(19 20 23 / 0.6) !important;
   font-size: 0.62rem;
+}
+
+/* --- The CV dialog with no script: the C, still (CvPick.astro) ------------ */
+/* As big as its content: a click or tap on the backdrop light-dismisses a
+   popover natively, and a full-screen one left no backdrop to click. The ×
+   is fixed to the screen's corner, like the animated dialog's. */
+.cvpick:popover-open {
+  display: grid;
+  justify-items: center;
+  gap: calc(var(--space) * 3);
+  width: fit-content;
+  height: fit-content;
+  margin: auto;
+  padding: calc(var(--space) * 2);
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+  overflow: visible;
+}
+.cvpick::backdrop {
+  background: rgb(6 6 8 / 0.88);
+  backdrop-filter: blur(8px);
+}
+.cvpick__kicker {
+  margin: 0;
+  color: var(--accent-ink);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+.cvpick__ring {
+  width: min(70vmin, 440px);
+}
+/* No turn: the landing's C rotates, this one stays put. */
+.cvpick .close__ring path {
+  animation: none;
+}
+.cvpick__x {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  background: var(--bg-raised);
+  color: var(--ink);
+  font-size: 1.4rem;
+  line-height: 1;
+  cursor: pointer;
+}
+.cvpick__x:hover {
+  border-color: var(--ink-soft);
 }
