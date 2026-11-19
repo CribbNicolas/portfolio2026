@@ -43,14 +43,42 @@ body {
   text-wrap: balance;
 }
 
-/* Safari 26 on iPhone, address bar on top: the translucent bar shows the
-   page just above the viewport through the glass, and on this page that is
-   what the pinned chapters keep out of sight — "Quién soy"'s violet over
-   the map, the seat map behind DD (author, 2026-10-30). A fixed element
-   wholly above the viewport is not painted there (tried in 1.4.1). Safari
-   does tint its bar with the background of a fixed, full-width element
-   that TOUCHES the top edge: this cap reaches 1 px into the viewport, in
-   the page's colour. iOS only (`-webkit-touch-callout`), so no other
+/* What a phone shows AROUND a pinned stage. Safari 26 on iPhone paints the
+   page past the viewport's edges, behind its glass bars, and a pinned stage
+   (fixed, 100svh) is not painted there, nor does it reach the bottom once
+   the bars fold away: what shows is the page's own background. So that
+   background follows the chapter holding the screen — violet under "Quién
+   soy", black from the switch-off to the end of DD's pin — instead of
+   framing it in another colour (author, 2026-11-18, iPhone). The classes
+   are set by the chapters (`pinPaced`'s mark, intro.ts, peak.ts,
+   seats.ts). */
+html.on-accent:not(.map-open) {
+  --page-bg: var(--accent);
+}
+html.seats-pinned.is-off,
+html.dd-pinned {
+  --page-bg: var(--void);
+}
+body {
+  background-color: var(--page-bg, var(--bg));
+  transition: background-color 200ms linear;
+}
+/* The other half: the chapter just left is still in the page, right above
+   the viewport, and Safari shows it through the top bar — "Quién soy"'s
+   violet over the map, the seat map over DD. The chapter that took the
+   screen covers it inside the viewport, so hiding it changes nothing
+   there. Opacity, not visibility: GSAP leaves children an inline
+   `visibility`, which would beat it. */
+html.peak-pinned [data-intro-stage],
+html.dd-pinned [data-seats-stage] {
+  opacity: 0;
+}
+
+/* Safari 26 on iPhone, address bar on top: a fixed element wholly above the
+   viewport is not painted there (tried in 1.4.1). Safari does tint its bar
+   with the background of a fixed, full-width element that TOUCHES the top
+   edge: this cap reaches 1 px into the viewport, in the page's colour
+   (author, 2026-10-30). iOS only (`-webkit-touch-callout`), so no other
    browser gets the hairline. */
 @supports (-webkit-touch-callout: none) {
   body::before {
@@ -62,7 +90,8 @@ body {
     height: 100vh;
     z-index: 50;
     pointer-events: none;
-    background: var(--bg);
+    background: var(--page-bg, var(--bg));
+    transition: background-color 200ms linear;
   }
 }
 

@@ -153,7 +153,10 @@ export function intro() {
     [H, 1.7],
     [tl.duration(), 1.0], // the content lifts off while the map chapter slides over it
   ]);
-  pinPaced("[data-intro]", "[data-intro-stage]", outer);
+  // The page's own background turns violet with the screen (v2.css,
+  // `--page-bg`): it is what a phone shows around a pinned stage.
+  tl.eventCallback("onUpdate", () => document.documentElement.classList.toggle("on-accent", c.state.p >= 0.8));
+  pinPaced("[data-intro]", "[data-intro-stage]", outer, "intro-pinned");
   return entrance;
 }
 
