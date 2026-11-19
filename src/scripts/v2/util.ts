@@ -32,32 +32,46 @@ const KEYS = new Set([" ", "PageDown", "PageUp", "ArrowDown", "ArrowUp", "Home",
 const block = (e: Event) => e.preventDefault();
 const blockKeys = (e: KeyboardEvent) => KEYS.has(e.key) && e.preventDefault();
 /**
- * `at`: the scroll position the held scene belongs to. The pins scrub 0.7 s
- * behind the scroll, so a fast flick on a phone has carried the page past
- * the scene by the time it fires, and iOS momentum keeps going under
- * `overflow: hidden`: the scene played on a screen the reader had already
- * left (author, 2026-10-30, iPhone). Given `at`, the page goes back there
- * and stays, whatever the momentum does, until it is let go.
+ * `at`: the scroll position the held scene belongs to.
+ * `mark`: a class `<html>` carries while this scene holds the page.
+ *
+ * A flick's momentum CANNOT be stopped from here: on a phone (iOS and
+ * Android alike) the browser drops every scroll write until the momentum
+ * dies, `overflow: hidden` or not, and no scroll event follows the last
+ * one — a hold that waited for one left the page wherever the flick ended
+ * (author, 2026-11-19: held inside DD, the switch-off unseen). So a hold is
+ * two things:
+ *  · the page is put back at `at` EVERY FRAME until it is let go: the write
+ *    that lands is the first one after the momentum is over;
+ *  · meanwhile the scene must not move with the page. That is `mark`:
+ *    v2.css fixes the scene's stage to the screen under it, so the drift
+ *    goes by unseen.
  */
 let heldAt: number | null = null;
-const stay = () => {
+let heldAs = "";
+gsap.ticker.add(() => {
   if (heldAt !== null && Math.abs(scrollY - heldAt) > 1) scrollTo(0, heldAt);
-};
-export function holdScroll(at?: number) {
+});
+/** True while a scene holds the page: a second one must not take it over. */
+export const isHeld = () => document.documentElement.classList.contains("is-held");
+export function holdScroll(at?: number, mark = "") {
   scroller.lenis?.stop();
   document.documentElement.classList.add("is-held");
+  if (mark) document.documentElement.classList.add((heldAs = mark));
   addEventListener("wheel", block, { passive: false });
   addEventListener("touchmove", block, { passive: false });
   addEventListener("keydown", blockKeys);
   if (at !== undefined) {
     heldAt = Math.round(at);
     scrollTo(0, heldAt);
-    addEventListener("scroll", stay, { passive: true });
   }
 }
 export function releaseScroll() {
+  // Before the stage is unfixed: it must be let go where it belongs.
+  if (heldAt !== null) scrollTo(0, heldAt);
   heldAt = null;
-  removeEventListener("scroll", stay);
+  if (heldAs) document.documentElement.classList.remove(heldAs);
+  heldAs = "";
   document.documentElement.classList.remove("is-held");
   removeEventListener("wheel", block);
   removeEventListener("touchmove", block);

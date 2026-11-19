@@ -14,7 +14,7 @@
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { SplitText } from "gsap/SplitText";
-import { $, $$, cameDownPast, holdScroll, paced, pinPaced, refreshing, releaseScroll } from "./util";
+import { $, $$, cameDownPast, holdScroll, isHeld, paced, pinPaced, refreshing, releaseScroll } from "./util";
 
 const SPIN = "⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏";
 
@@ -207,13 +207,18 @@ export function dd() {
   // `came`: the reader's own scroll went down past the race (see
   // cameDownPast in util.ts). The page is taken back there and held at once;
   // the race starts when the pin's timeline, 0.7 s behind, arrives.
+  // `dd-holding` (v2.css) keeps this stage on screen while the flick's
+  // momentum carries the page on underneath.
+  const HOLD = "dd-holding";
   let came = 0;
   gsap.ticker.add((time) => {
     const down = arrived();
     if (refreshing.now) return;
-    if (down && !came && !active) {
+    // Not while the switch-off holds the page: its momentum may run through
+    // here, and the page is on its way back.
+    if (down && !came && !active && !isHeld()) {
       came = time;
-      holdScroll(showY());
+      holdScroll(showY(), HOLD);
     }
     if (want === active) {
       // The timeline never arrived (a resize in between): never leave the
@@ -247,8 +252,8 @@ export function dd() {
     // into it, it is simply there, finished.
     // Jumping past it (a dragged scrollbar, a link) must not hold the page
     // for a scene that is no longer on screen.
-    if (!here && (pin.direction < 0 || !pin.isActive)) return shown();
-    holdScroll(showY());
+    if (!here && (isHeld() || pin.direction < 0 || !pin.isActive)) return shown();
+    holdScroll(showY(), HOLD);
     scene = show();
   });
 
@@ -295,7 +300,9 @@ export function dd() {
     onEnter: () => gsap.to([go, ...rail], { autoAlpha: 0, duration: 0.3, overwrite: true }),
     onLeaveBack: () => {
       gsap.to(rail, { autoAlpha: 1, duration: 0.3, overwrite: true });
-      if (active) gsap.to(go, { autoAlpha: 1, duration: 0.3, overwrite: true });
+      // Not mid-race (the page coming back from a flick's momentum): the
+      // scene brings it in itself, at its end.
+      if (active && !scene) gsap.to(go, { autoAlpha: 1, duration: 0.3, overwrite: true });
     },
   });
 
