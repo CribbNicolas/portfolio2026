@@ -13,7 +13,12 @@ export const numbers = () => new Intl.NumberFormat(document.documentElement.lang
 /** The page's smooth scroll, for the few moments a chapter holds it still
  *  (the DD interception). Set by main.ts; typed loosely so this file does
  *  not import Lenis. */
-export const scroller: { lenis: { stop(): void; start(): void } | null } = { lenis: null };
+export const scroller: { lenis: { stop(): void; start(): void } | null; jumping: boolean } = {
+  lenis: null,
+  /** True while a link is carrying the page somewhere (main.ts): a held
+   *  scene on the way must not stop it. */
+  jumping: false,
+};
 
 /**
  * Holds the page still while a scene that must be watched whole plays (the
@@ -58,6 +63,28 @@ export function releaseScroll() {
   removeEventListener("touchmove", block);
   removeEventListener("keydown", blockKeys);
   scroller.lenis?.start();
+}
+
+/**
+ * Tells when the reader's scroll — the real one, not the pin's scrubbed
+ * timeline — goes down past `edge()`, having been inside `pin` the frame
+ * before. Call it once a frame.
+ *
+ * The held scenes used to wait for the pin's timeline to reach them, and
+ * that runs 0.7 s behind the scroll (`scrub`): after a flick on a phone the
+ * page had already left the pin by then, which read as "jumped past it" and
+ * skipped the scene (author, 2026-11-18, iPhone and Android). The real
+ * position has no lag. A jump from outside the pin (a dragged scrollbar, a
+ * link) does not count: its previous frame was not in here.
+ */
+export function cameDownPast(pin: ScrollTrigger, edge: () => number) {
+  let last = scrollY;
+  return () => {
+    const from = last;
+    last = scrollY;
+    const e = edge();
+    return !scroller.jumping && from >= pin.start && from < e && last >= e;
+  };
 }
 
 /** True while ScrollTrigger refreshes. The pins render their timelines at
@@ -107,8 +134,10 @@ export function paced(inner: gsap.core.Timeline, segments: [innerEnd: number, vh
   return outer;
 }
 
-/** Pin `stage` for exactly as many screens as the paced timeline lasts. */
-export function pinPaced(trigger: string, stage: string, outer: gsap.core.Timeline) {
+/** Pin `stage` for exactly as many screens as the paced timeline lasts.
+ *  While it is pinned, `<html>` carries `mark`: v2.css reads it to know
+ *  which chapter holds the screen. */
+export function pinPaced(trigger: string, stage: string, outer: gsap.core.Timeline, mark: string) {
   return ScrollTrigger.create({
     trigger,
     start: "top top",
@@ -117,6 +146,7 @@ export function pinPaced(trigger: string, stage: string, outer: gsap.core.Timeli
     scrub: 0.7,
     animation: outer,
     invalidateOnRefresh: true,
+    toggleClass: { targets: document.documentElement, className: mark },
   });
 }
 
