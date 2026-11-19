@@ -14,7 +14,7 @@
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { SplitText } from "gsap/SplitText";
-import { $, $$, holdScroll, paced, pinPaced, refreshing, releaseScroll } from "./util";
+import { $, $$, cameDownPast, holdScroll, paced, pinPaced, refreshing, releaseScroll } from "./util";
 
 const SPIN = "⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏";
 
@@ -204,9 +204,30 @@ export function dd() {
     want = t >= SHOW;
     rail.forEach((r, j) => r.classList.toggle("on", j === 0 || (j > 0 && t >= SHOW)));
   });
-  gsap.ticker.add(() => {
-    if (refreshing.now || want === active) return;
+  // `came`: the reader's own scroll went down past the race (see
+  // cameDownPast in util.ts). The page is taken back there and held at once;
+  // the race starts when the pin's timeline, 0.7 s behind, arrives.
+  let came = 0;
+  gsap.ticker.add((time) => {
+    const down = arrived();
+    if (refreshing.now) return;
+    if (down && !came && !active) {
+      came = time;
+      holdScroll(showY());
+    }
+    if (want === active) {
+      // The timeline never arrived (a resize in between): never leave the
+      // page held.
+      if (came && time - came > 3) {
+        came = 0;
+        releaseScroll();
+      }
+      return;
+    }
     active = want;
+    const here = came > 0;
+    came = 0;
+    if (here && !active) releaseScroll();
     if (scene) {
       // Cut short (a resize, a jump): never leave the page held.
       scene.kill();
@@ -226,7 +247,7 @@ export function dd() {
     // into it, it is simply there, finished.
     // Jumping past it (a dragged scrollbar, a link) must not hold the page
     // for a scene that is no longer on screen.
-    if (pin.direction < 0 || !pin.isActive) return shown();
+    if (!here && (pin.direction < 0 || !pin.isActive)) return shown();
     holdScroll(showY());
     scene = show();
   });
@@ -238,11 +259,12 @@ export function dd() {
     [tl.duration(), 1.2], // the notes, once the race has played and let go
   ];
   const outer = paced(tl, pacing);
-  const pin = pinPaced("[data-dd]", "[data-dd-stage]", outer);
+  const pin = pinPaced("[data-dd]", "[data-dd-stage]", outer, "dd-pinned");
   /** The scroll position where the race starts (SHOW): the pin's start plus
    *  the screens paced before it, and 2 px past it, so the scrub settles
    *  inside the scene, not on its edge (see offY in seats.ts). */
   const showY = () => Math.ceil(pin.start + innerHeight * pacing.filter(([to]) => to <= SHOW).reduce((s, [, vh]) => s + vh, 0)) + 2;
+  const arrived = cameDownPast(pin, () => showY() - 1);
   // See-through until it pins: it rises over the last seats beat (overlap),
   // which must stay visible; black from the moment it takes over.
   ScrollTrigger.create({

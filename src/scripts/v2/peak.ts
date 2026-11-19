@@ -175,7 +175,13 @@ export async function peak() {
   tl.to("[data-peak-world]", { autoAlpha: 0, duration: 0.6, ease: "power1.in" }, Hd + 0.25);
   tl.to({}, { duration: 1 }, Hd);
 
-  tl.eventCallback("onUpdate", () => (draw(), updateRail()));
+  tl.eventCallback("onUpdate", () => {
+    draw();
+    updateRail();
+    // The C has shrunk off the screen's edges: the page's background goes
+    // back to dark (see `on-accent` in intro.ts).
+    document.documentElement.classList.toggle("map-open", c.state.p < 0.8);
+  });
   // Pacing, in screens of scroll per beat. The scale (02) and the index
   // sweep (04) are the two moments to linger on; the rest move along.
   const outer = paced(tl, [
@@ -188,7 +194,7 @@ export async function peak() {
     [Hd, 0.8], // 06 the map tips into the hall's pose
     [tl.duration(), 1.0], // the map dissolves while the hall arrives over it
   ]);
-  pinPaced("[data-peak]", "[data-peak-stage]", outer);
+  pinPaced("[data-peak]", "[data-peak-stage]", outer, "peak-pinned");
   // Repaint while the section is anywhere in view — before the pin too, when
   // the ring and the mesh in its hole are already on screen.
   new IntersectionObserver(([e]) => (live = e.isIntersecting)).observe($("[data-peak]"));
