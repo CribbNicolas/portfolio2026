@@ -8,7 +8,7 @@
 // direction, and the seats on the map act out what happens in the flow below.
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
-import { $, $$, NARROW, cameDownPast, holdScroll, paced, pinPaced, refreshing, releaseScroll } from "./util";
+import { $, $$, NARROW, cameDownPast, holdScroll, isHeld, paced, pinPaced, refreshing, releaseScroll } from "./util";
 import { GHOST, ghostCenter, mapSites } from "./peak";
 import { cellsToSeats } from "./morph";
 
@@ -404,7 +404,7 @@ export function seats() {
   };
   const switchOff = () => {
     screenOn();
-    holdScroll(offY());
+    holdScroll(offY(), HOLD);
     // Cleared first, then measured: the caret's home is right after "⏺ ".
     gsap.set(crt, { visibility: "visible" });
     gsap.set(ddx, { autoAlpha: 1 });
@@ -484,13 +484,16 @@ export function seats() {
   // `came`: the reader's own scroll went down past the switch-off (see
   // cameDownPast in util.ts). The page is taken back there and held at once;
   // the sequence starts when the pin's timeline, 0.7 s behind, arrives.
+  // `is-switching` (v2.css) keeps this stage on screen and DD's off it while
+  // the flick's momentum carries the page on underneath.
+  const HOLD = "is-switching";
   let came = 0;
   gsap.ticker.add((time) => {
     const down = arrived();
     if (refreshing.now) return;
-    if (down && !came && !isOff) {
+    if (down && !came && !isOff && !isHeld()) {
       came = time;
-      holdScroll(offY());
+      holdScroll(offY(), HOLD);
     }
     if (wantOff === isOff) {
       // The timeline never arrived (a resize in between): never leave the
@@ -511,7 +514,7 @@ export function seats() {
       if (here) releaseScroll();
       screenOn();
     } else if (here) switchOff();
-    else if (pin.direction < 0 || !pin.isActive) screenSaid();
+    else if (isHeld() || pin.direction < 0 || !pin.isActive) screenSaid();
     else switchOff();
   });
   const pacing: [number, number][] = [
