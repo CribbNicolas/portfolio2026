@@ -2,7 +2,8 @@
 
 Analysed, not worth doing now; the idea is kept. Each item says why it waits
 and, where there is one, what would bring it back. When one is picked up, it
-moves to the TODO list in `docs/TODO.md`; delete it here only once it is done.
+moves to the TODO list in `docs/TODO.md` (created if it does not exist); delete
+it here only once it is done.
 
 ## Accessibility (audit of 2026-10-30)
 
@@ -48,7 +49,12 @@ wait because each one touches the chapters' mechanics or needs the author:
 
 - Per-posting CV: a generator that emits the exact `Skill.aliases` variant a
   job post uses, and a JSON Resume mapper. Wait for a concrete need.
-- Own domain, then update `SITE_URL`.
+- Own domain, then update `SITE_URL`. More pressing since 2026-10-30:
+  LinkedIn's post composer shows no preview for ANY `*.pages.dev` link
+  ("No se puede mostrar la vista previa"), ours and an unrelated one alike,
+  while its Post Inspector, WhatsApp and X read our card fine. A domain of
+  our own is the fix; until then, a LinkedIn post carries `og.jpg` uploaded
+  by hand with the link in the text.
 - Blog: never decided.
 - JSON-LD `CreativeWork` per project: little value while case studies have no
   page of their own; today only `Person` is emitted.

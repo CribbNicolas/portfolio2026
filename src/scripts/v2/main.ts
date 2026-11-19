@@ -37,7 +37,8 @@ function startLenis() {
   for (const a of $$<HTMLAnchorElement>('a[href^="#"]')) {
     a.addEventListener("click", (e) => {
       e.preventDefault();
-      lenis.scrollTo(a.getAttribute("href")!, { duration: 1.4 });
+      scroller.jumping = true;
+      lenis.scrollTo(a.getAttribute("href")!, { duration: 1.4, onComplete: () => void (scroller.jumping = false) });
     });
   }
   // Lets the QA screenshots (DeltaDictum: landing-v2/qa) jump to exact

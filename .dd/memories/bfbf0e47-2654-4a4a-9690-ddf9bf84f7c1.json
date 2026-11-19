@@ -1,0 +1,57 @@
+{
+  "schema_version": 8,
+  "id": "bfbf0e47-2654-4a4a-9690-ddf9bf84f7c1",
+  "project_id": "portfolio2026",
+  "topic": "analytics/consent",
+  "kind": "decision",
+  "status": "active",
+  "title": "Run Clarity cookieless for every visitor: consentV2 denied in code AND the project's Cookies setting OFF",
+  "body": "Decided by the author 2026-10-29 for EU visitors: no consent banner, no geolocation, Clarity records for everyone without cookies. Two pieces, both required. (1) src/scripts/analytics.ts calls Clarity.consentV2({ ad_Storage: 'denied', analytics_Storage: 'denied' }) right after Clarity.init: no first-party cookies (_clck, _clsk), and /collect still records. (2) The Clarity project setting Settings > Setup > Advanced > Cookies is OFF. Measured on production 2026-10-30 (Playwright Chromium, fresh context): with (1) alone, the tag and its c.gif sync pixels still set third-party cookies (CLID, MUID, MR, SM, ANONCHK on clarity.ms; MUID, MR, SRM_B on bing.com), and queuing the consent before the tag or using consent(false) changed nothing. With the setting OFF: zero cookies anywhere, /collect still records. The footer privacy line (footerPrivacy* in content/schema/messages.ts) says 'sin cookies'; keep it true: do not turn the setting back on, connect Microsoft Ads, or flip consent to granted without the author. To re-verify: load / in a fresh browser, scroll, wait ~10 s, list every cookie in the context (not only document.cookie).",
+  "not_derivable": "The Clarity dashboard setting lives outside the repo, and the code comment alone suggests consentV2 is sufficient; only a production measurement showed the third-party cookies.",
+  "triggers": [
+    {
+      "on": [
+        "edit"
+      ],
+      "paths": [
+        "src/scripts/analytics.ts",
+        "src/components/Analytics.astro"
+      ]
+    },
+    {
+      "on": [
+        "edit"
+      ],
+      "paths": [
+        "content/schema/messages.ts"
+      ],
+      "symbols": [
+        "footerPrivacyIntro"
+      ]
+    }
+  ],
+  "evidence": [
+    {
+      "type": "file",
+      "path": "src/scripts/analytics.ts",
+      "sha256": "e9c79d2a6b76d062e4ed058947c0a2d98e75823f526851fa703f2199ce9e32fa",
+      "summary": "Cited when this memory was saved."
+    },
+    {
+      "type": "note",
+      "summary": "2026-10-30 production check: with consentV2 denied only, 8 third-party cookies on clarity.ms and bing.com; after the author turned Cookies OFF in Clarity's project settings, none, with /collect still recording."
+    }
+  ],
+  "origin": "user_explicit",
+  "replaces": "dd4090d0-7cee-46fe-a35d-d6909514ab4e",
+  "revisit_when": [],
+  "review": {
+    "issues": [],
+    "accepted": {
+      "by": "person",
+      "at": "2026-10-30T06:35:17.103Z"
+    }
+  },
+  "created": "2026-10-30T06:11:39.919Z",
+  "updated": "2026-10-30T06:35:17.200Z"
+}

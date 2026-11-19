@@ -14,7 +14,7 @@
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { SplitText } from "gsap/SplitText";
-import { $, $$, holdScroll, paced, pinPaced, refreshing, releaseScroll } from "./util";
+import { $, $$, cameDownPast, holdScroll, isHeld, paced, pinPaced, refreshing, releaseScroll } from "./util";
 
 const SPIN = "⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏";
 
@@ -204,9 +204,35 @@ export function dd() {
     want = t >= SHOW;
     rail.forEach((r, j) => r.classList.toggle("on", j === 0 || (j > 0 && t >= SHOW)));
   });
-  gsap.ticker.add(() => {
-    if (refreshing.now || want === active) return;
+  // `came`: the reader's own scroll went down past the race (see
+  // cameDownPast in util.ts). The page is taken back there and held at once;
+  // the race starts when the pin's timeline, 0.7 s behind, arrives.
+  // `dd-holding` (v2.css) keeps this stage on screen while the flick's
+  // momentum carries the page on underneath.
+  const HOLD = "dd-holding";
+  let came = 0;
+  gsap.ticker.add((time) => {
+    const down = arrived();
+    if (refreshing.now) return;
+    // Not while the switch-off holds the page: its momentum may run through
+    // here, and the page is on its way back.
+    if (down && !came && !active && !isHeld()) {
+      came = time;
+      holdScroll(showY(), HOLD);
+    }
+    if (want === active) {
+      // The timeline never arrived (a resize in between): never leave the
+      // page held.
+      if (came && time - came > 3) {
+        came = 0;
+        releaseScroll();
+      }
+      return;
+    }
     active = want;
+    const here = came > 0;
+    came = 0;
+    if (here && !active) releaseScroll();
     if (scene) {
       // Cut short (a resize, a jump): never leave the page held.
       scene.kill();
@@ -226,18 +252,24 @@ export function dd() {
     // into it, it is simply there, finished.
     // Jumping past it (a dragged scrollbar, a link) must not hold the page
     // for a scene that is no longer on screen.
-    if (pin.direction < 0 || !pin.isActive) return shown();
-    holdScroll();
+    if (!here && (isHeld() || pin.direction < 0 || !pin.isActive)) return shown();
+    holdScroll(showY(), HOLD);
     scene = show();
   });
 
-  const outer = paced(tl, [
+  const pacing: [number, number][] = [
     [0.6, 0.45], // the name: right away, it is what the reader came down for
     [2.2, 1.3], // the claim lighting up, the lede
     [SHOW, 0.5], // the manifesto steps back
     [tl.duration(), 1.2], // the notes, once the race has played and let go
-  ]);
-  const pin = pinPaced("[data-dd]", "[data-dd-stage]", outer);
+  ];
+  const outer = paced(tl, pacing);
+  const pin = pinPaced("[data-dd]", "[data-dd-stage]", outer, "dd-pinned");
+  /** The scroll position where the race starts (SHOW): the pin's start plus
+   *  the screens paced before it, and 2 px past it, so the scrub settles
+   *  inside the scene, not on its edge (see offY in seats.ts). */
+  const showY = () => Math.ceil(pin.start + innerHeight * pacing.filter(([to]) => to <= SHOW).reduce((s, [, vh]) => s + vh, 0)) + 2;
+  const arrived = cameDownPast(pin, () => showY() - 1);
   // See-through until it pins: it rises over the last seats beat (overlap),
   // which must stay visible; black from the moment it takes over.
   ScrollTrigger.create({
@@ -268,7 +300,9 @@ export function dd() {
     onEnter: () => gsap.to([go, ...rail], { autoAlpha: 0, duration: 0.3, overwrite: true }),
     onLeaveBack: () => {
       gsap.to(rail, { autoAlpha: 1, duration: 0.3, overwrite: true });
-      if (active) gsap.to(go, { autoAlpha: 1, duration: 0.3, overwrite: true });
+      // Not mid-race (the page coming back from a flick's momentum): the
+      // scene brings it in itself, at its end.
+      if (active && !scene) gsap.to(go, { autoAlpha: 1, duration: 0.3, overwrite: true });
     },
   });
 
