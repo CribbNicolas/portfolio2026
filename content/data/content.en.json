@@ -1,7 +1,7 @@
 {
   "schemaVersion": "1.0.0",
   "locale": "en",
-  "updatedAt": "2026-10-28T12:00:00.000Z",
+  "updatedAt": "2026-11-20T12:00:00.000Z",
 
   "identity": {
     "fullName": "Nicolás Agustín Cribb Barbaro",
@@ -26,7 +26,8 @@
     },
     "links": [
       { "id": "github", "label": "GitHub", "url": "https://github.com/CribbNicolas", "kind": "github" },
-      { "id": "linkedin", "label": "LinkedIn", "url": "https://www.linkedin.com/in/cribb-barbaro-nicolas/", "kind": "linkedin" }
+      { "id": "linkedin", "label": "LinkedIn", "url": "https://www.linkedin.com/in/cribb-barbaro-nicolas/", "kind": "linkedin" },
+      { "id": "portfolio", "label": "Portfolio", "url": "https://cribbnicolas.pages.dev", "kind": "website" }
     ],
     "careerStart": "2020-04",
     "tagline": {
@@ -34,7 +35,7 @@
     },
     "summary": {
       "short": "Full-stack developer with a product focus: React, Next.js and TypeScript, plus the Node, Docker and CI/CD to take a project from the repo to production.",
-      "long": "If a checkout or a map with thousands of features is not allowed to go down, that's where I'm useful. The stack is whatever the problem asks for: React or Vue, Next or WordPress, Node or PHP or a rake task in Ruby. I don't collect frameworks.\n\nBefore Rosario I worked remotely from Misiones. Landing pages, on a team, with Vue, Quasar, Django and WordPress: I don't remember the clients and I'm not going to invent them. In adtech I built the front end of an audience builder on my own — AND, OR, XOR and NOT queries over age, business category and location — plus a POI map with Mapbox, Next and Node. At an agency we adapted sites from a home market to other countries: not translation. A service that exists in one country often doesn't exist in the other. I don't name the client.\n\nAt Dinkum I shipped both ends. The map in the RPPL report (~13,000 school districts; indexing went from ~5 s to ~500 ms in a Web Worker) and the plugin that hooks a seat map into the WooCommerce cart and the reservation APIs. At Muse the front end lives in a Vite/Turbo monorepo; I worked on the CRM — orders, events, Algolia — and the rake task that cleans the global index when a delete wasn't propagating. Today I support what I shipped there.\n\nI use Claude and Cursor every day. I review everything that lands in the repo.\n\nI'm looking for remote or hybrid work from Rosario, with my hours set to the team's. I take any web development work, as an employee or freelance. What I want most is work that pushes me into something I haven't touched yet, or a product people recognize outside the team, like the RPPL map."
+      "long": "If a checkout or a map with thousands of features is not allowed to go down, that's where I'm useful. The stack is whatever the problem asks for: React or Vue, Next or WordPress, Node or PHP or a rake task in Ruby. I don't collect frameworks.\n\nBefore Rosario I worked remotely from Misiones. Landing pages, on a team, with Vue, Quasar, Django and WordPress: I don't remember the clients and I'm not going to invent them. In adtech I built the front end of an audience builder on my own — AND, OR, XOR and NOT queries over age, business category and location — plus a POI map with Mapbox, Next and Node. At an agency we adapted sites from a home market to other countries: not translation. A service that exists in one country often doesn't exist in the other. I don't name the client.\n\nAt Dinkum I shipped both ends. The map in the RPPL report (~13,000 school districts; indexing went from ~5 s to ~500 ms in a Web Worker) and the plugin that hooks a seat map into the WooCommerce cart and the reservation APIs. At Muse the front end lives in a Vite/Turbo monorepo; I worked on the CRM — orders, events, Algolia — and the rake task that cleans the global index when a delete wasn't propagating. I also supported those releases until my time at Dinkum ended in November 2026.\n\nAs a personal project, I built this portfolio and its CV as a system: one validated data source feeds the Spanish and English website, PDFs and agent endpoints. The landing explains technical decisions with GSAP and Canvas; the brief view gets straight to the content. I added a schema-driven editor and CI checks so an update does not leave different versions of the same profile.\n\nI use Claude and Cursor every day. I review everything that lands in the repo.\n\nI'm looking for remote or hybrid work from Rosario, with my hours set to the team's. I take any web development work, as an employee or freelance. What I want most is work that pushes me into something I haven't touched yet, or a product people recognize outside the team, like the RPPL map."
     }
   },
 
@@ -62,7 +63,7 @@
     { "id": "playwright", "name": "Playwright", "category": "testing", "aliases": ["E2E testing"], "level": "working", "active": true, "visibility": { "priority": 2 } },
     { "id": "docker", "name": "Docker", "category": "infra", "aliases": ["containerization"], "level": "working", "periods": [{ "start": "2021-06" }], "active": true, "visibility": { "priority": 2 } },
     { "id": "cicd", "name": "CI/CD", "category": "infra", "aliases": ["GitHub Actions", "continuous integration"], "level": "working", "active": true, "visibility": { "priority": 2 } },
-    { "id": "cloudflare", "name": "Cloudflare", "category": "infra", "aliases": ["Cloudflare Workers"], "level": "working", "active": true, "visibility": { "only": [], "priority": 4 } },
+    { "id": "cloudflare", "name": "Cloudflare", "category": "infra", "aliases": ["Cloudflare Workers"], "level": "working", "active": true, "visibility": { "priority": 3 } },
     { "id": "monorepo", "name": "Monorepos", "category": "tooling", "aliases": ["monorepo"], "level": "working", "active": true, "visibility": { "priority": 3 } },
     { "id": "git", "name": "Git", "category": "tooling", "aliases": [], "level": "working", "active": true, "visibility": { "priority": 3 } },
     { "id": "ai-assisted", "name": "AI-assisted development", "category": "practice", "aliases": ["AI-assisted development", "Claude Code", "Cursor", "Codex", "Grok"], "level": "working", "active": true, "visibility": { "priority": 3 } }
@@ -78,9 +79,9 @@
       "workMode": "remote",
       "location": "Rosario, Argentina",
       "start": "2024-09",
-      "end": null,
+      "end": "2026-11",
       "context": {
-        "short": "Two projects: Muse CRM (WooCommerce plugin, CRM admin and seat map) and the RPPL report map, on a team and as the sole owner. Now, support."
+        "short": "Delivered the WooCommerce plugin, admin and seat map for Muse CRM, and the RPPL report map. Also supported those releases."
       },
       "visibility": { "priority": 1 }
     },
@@ -617,6 +618,71 @@
       "links": [
         { "id": "repo", "label": "GitHub", "url": "https://github.com/CribbNicolas/deltadictum", "kind": "repo" },
         { "id": "docs", "label": "Documentation", "url": "https://cribbnicolas.github.io/deltadictum/", "kind": "website" }
+      ],
+      "media": [],
+      "featured": false,
+      "visibility": { "priority": 2 }
+    },
+    {
+      "id": "portfolio",
+      "name": "Portfolio and CV as a system",
+      "status": "shipped",
+      "start": "2026-08",
+      "end": null,
+      "problem": {
+        "short": "Keep the CV, portfolio and recruiter data consistent in Spanish and English, so every version tells the same story.",
+        "long": "The same profile is read on a website, downloaded as a PDF and consumed by recruiters and agents. Maintaining each format by hand lets a date, an achievement or a translation change in one place and stay stale in another. Someone exploring the cases in depth and someone assessing the profile quickly also need different reading experiences."
+      },
+      "solution": {
+        "short": "Built a validated data source with Astro and TypeScript that generates the website, CV, PDFs and agent endpoints.",
+        "long": "Modeled roles, achievements, projects and decisions as facts with IDs and references, validated with Zod. A shared layer resolves visibility, priority and dates for each output. Astro generates the HTML, JSON-LD, /cv.json and /llms.txt in both languages. The landing uses GSAP, Lenis and Canvas to explain the cases; /brief offers a direct read, and prefers-reduced-motion has its own presentation without animation. The local editor derives its forms from the schema, validates before saving and uses ETags and atomic writes to detect conflicts. PDFs are printed from the CV pages through Cloudflare Browser Rendering and cached per deploy."
+      },
+      "outcome": {
+        "short": "Published the bilingual site and on-demand PDFs on Cloudflare; CI checks translations, extractable CV text and page weight budgets.",
+        "long": "The published site offers the interactive experience, a brief view, CV downloads in Spanish and English, and structured data for agents. GitHub Actions checks the data contract, references, parity between languages and a lock that detects stale translations. It also checks the editor, PDF text and reading order, the page limit, links, and HTML and JavaScript weight. The PDF cache changes with each deploy so an earlier CV does not keep being served after the data is updated."
+      },
+      "decisions": [
+        {
+          "id": "one-dataset-many-views",
+          "decision": "Store facts and derive the views in a shared layer",
+          "context": "The CV, website and endpoints need different lengths and selections, while keeping the same dates, references and contact details.",
+          "rationale": "A data change reaches every output; visibility and durations are resolved once. Components consume prepared views.",
+          "tradeoff": "Adding a fact means following the schema and its references. Translation remains editorial: each language has its own dataset, and CI checks that they stay aligned."
+        },
+        {
+          "id": "guided-and-brief-views",
+          "decision": "Offer a GSAP and Canvas landing alongside a brief HTML view",
+          "context": "The cases need to show how performance and synchronization decisions were made; a recruiter also needs to read the profile without following the whole narrative.",
+          "rationale": "The landing illustrates those decisions with interactive scenes, and the brief view presents the same facts for direct reading. Content is generated as HTML, and the reduced-motion preference has a presentation without animation.",
+          "tradeoff": "The narrative adds JavaScript and requires care with mobile scrolling. Page weight budgets and the brief alternative are part of the maintenance."
+        },
+        {
+          "id": "on-demand-pdf-per-deploy",
+          "decision": "Generate the PDF on demand and cache it per deploy",
+          "context": "Installing Chromium in the production build tied static site deployment to the printing engine. Printing on every download would consume the Browser Rendering quota.",
+          "rationale": "Cloudflare Pages publishes the site without Chromium; a Function prints the requested language's page and reuses the PDF. The cache key includes the published commit to invalidate the previous version on deployment.",
+          "tradeoff": "The first download without a cache hit depends on an external service and its quota. CI generates and checks both PDFs with Playwright before publication."
+        },
+        {
+          "id": "schema-driven-editor",
+          "decision": "Derive forms from the schema and validate before writing",
+          "context": "Editing JSON by hand can break references; maintaining a separate form duplicates rules and lets it fall behind when the model changes.",
+          "rationale": "The editor gets its fields from Zod and rejects invalid data before saving. ETags detect external edits, and a per-file queue coordinates saves within the process.",
+          "tradeoff": "The adapter depends on Zod's internal representation, isolated and covered by tests. The editor writes the Spanish dataset; translation is maintained separately."
+        }
+      ],
+      "skillIds": [
+        "astro",
+        "typescript",
+        "javascript",
+        "node",
+        "playwright",
+        "cloudflare",
+        "cicd",
+        "git"
+      ],
+      "links": [
+        { "id": "site", "label": "View portfolio", "url": "https://cribbnicolas.pages.dev", "kind": "website" }
       ],
       "media": [],
       "featured": false,
