@@ -1,7 +1,7 @@
 {
   "schemaVersion": "1.0.0",
   "locale": "es",
-  "updatedAt": "2026-10-28T12:00:00.000Z",
+  "updatedAt": "2026-11-20T12:00:00.000Z",
 
   "identity": {
     "fullName": "Nicolás Agustín Cribb Barbaro",
@@ -26,7 +26,8 @@
     },
     "links": [
       { "id": "github", "label": "GitHub", "url": "https://github.com/CribbNicolas", "kind": "github" },
-      { "id": "linkedin", "label": "LinkedIn", "url": "https://www.linkedin.com/in/cribb-barbaro-nicolas/", "kind": "linkedin" }
+      { "id": "linkedin", "label": "LinkedIn", "url": "https://www.linkedin.com/in/cribb-barbaro-nicolas/", "kind": "linkedin" },
+      { "id": "portfolio", "label": "Portfolio", "url": "https://cribbnicolas.pages.dev", "kind": "website" }
     ],
     "careerStart": "2020-04",
     "tagline": {
@@ -34,7 +35,7 @@
     },
     "summary": {
       "short": "Desarrollador full stack con foco en producto: React, Next.js y TypeScript, con base sólida en Node, Docker y CI/CD para llevar un proyecto del repo a producción.",
-      "long": "Si el producto no puede fallar en un checkout o en un mapa con miles de features, ahí me siento cómodo. El stack es el que el problema pide: React o Vue, Next o WordPress, Node o PHP o un rake en Ruby. No colecciono frameworks.\n\nAntes de Rosario laburé remoto desde Misiones. Landings en equipo con Vue, Quasar, Django y WordPress: no me acuerdo los clientes y no los invento. En adtech armé solo el frontend de un constructor de audiencias — queries con AND, OR, XOR y NOT sobre edad, rubro y localidad — y un mapa de POIs con Mapbox, Next y Node. En agencia adaptábamos sitios de un mercado de origen a otros países: no era traducir, era que el servicio que en un país existe en el otro no. Del cliente no hablo.\n\nEn Dinkum entregué las dos puntas. El mapa del informe de RPPL (~13.000 distritos escolares; el índice bajó de ~5 s a ~500 ms en un Web Worker) y el plugin que conecta un mapa de asientos con el carrito de WooCommerce y las APIs de reserva. En Muse el front vive en un monorepo Vite/Turbo; trabajé el CRM — órdenes, eventos, Algolia — y el rake que limpia el índice global cuando un delete no se propagaba. Hoy doy soporte a lo que entregué ahí.\n\nUso Claude y Cursor todos los días. Lo que entra al repo lo reviso yo.\n\nBusco remoto o híbrido desde Rosario, con el horario acomodado al del equipo. Tomo cualquier trabajo de desarrollo web, en relación de dependencia o freelance. Me interesa sobre todo lo que me obliga a meterme en algo que todavía no toqué, o un producto que se reconozca afuera del equipo, como el mapa de RPPL."
+      "long": "Si el producto no puede fallar en un checkout o en un mapa con miles de features, ahí me siento cómodo. El stack es el que el problema pide: React o Vue, Next o WordPress, Node o PHP o un rake en Ruby. No colecciono frameworks.\n\nAntes de Rosario laburé remoto desde Misiones. Landings en equipo con Vue, Quasar, Django y WordPress: no me acuerdo los clientes y no los invento. En adtech armé solo el frontend de un constructor de audiencias — queries con AND, OR, XOR y NOT sobre edad, rubro y localidad — y un mapa de POIs con Mapbox, Next y Node. En agencia adaptábamos sitios de un mercado de origen a otros países: no era traducir, era que el servicio que en un país existe en el otro no. Del cliente no hablo.\n\nEn Dinkum entregué las dos puntas. El mapa del informe de RPPL (~13.000 distritos escolares; el índice bajó de ~5 s a ~500 ms en un Web Worker) y el plugin que conecta un mapa de asientos con el carrito de WooCommerce y las APIs de reserva. En Muse el front vive en un monorepo Vite/Turbo; trabajé el CRM — órdenes, eventos, Algolia — y el rake que limpia el índice global cuando un delete no se propagaba. También di soporte a esas entregas hasta el cierre de mi etapa en Dinkum, en noviembre de 2026.\n\nComo proyecto propio construí este portfolio y su CV como un sistema: una fuente de datos validada alimenta la web en español e inglés, los PDFs y los endpoints para agentes. La landing cuenta decisiones técnicas con GSAP y Canvas; la vista breve permite ir directo al contenido. Sumé un editor basado en el esquema y controles de CI para que una actualización no deje versiones distintas del mismo perfil.\n\nUso Claude y Cursor todos los días. Lo que entra al repo lo reviso yo.\n\nBusco remoto o híbrido desde Rosario, con el horario acomodado al del equipo. Tomo cualquier trabajo de desarrollo web, en relación de dependencia o freelance. Me interesa sobre todo lo que me obliga a meterme en algo que todavía no toqué, o un producto que se reconozca afuera del equipo, como el mapa de RPPL."
     }
   },
 
@@ -62,7 +63,7 @@
     { "id": "playwright", "name": "Playwright", "category": "testing", "aliases": ["E2E testing"], "level": "working", "active": true, "visibility": { "priority": 2 } },
     { "id": "docker", "name": "Docker", "category": "infra", "aliases": ["containerización"], "level": "working", "periods": [{ "start": "2021-06" }], "active": true, "visibility": { "priority": 2 } },
     { "id": "cicd", "name": "CI/CD", "category": "infra", "aliases": ["GitHub Actions", "integración continua"], "level": "working", "active": true, "visibility": { "priority": 2 } },
-    { "id": "cloudflare", "name": "Cloudflare", "category": "infra", "aliases": ["Cloudflare Workers"], "level": "working", "active": true, "visibility": { "only": [], "priority": 4 } },
+    { "id": "cloudflare", "name": "Cloudflare", "category": "infra", "aliases": ["Cloudflare Workers"], "level": "working", "active": true, "visibility": { "priority": 3 } },
     { "id": "monorepo", "name": "Monorepos", "category": "tooling", "aliases": ["monorepo"], "level": "working", "active": true, "visibility": { "priority": 3 } },
     { "id": "git", "name": "Git", "category": "tooling", "aliases": [], "level": "working", "active": true, "visibility": { "priority": 3 } },
     { "id": "ai-assisted", "name": "Desarrollo asistido por IA", "category": "practice", "aliases": ["AI-assisted development", "Claude Code", "Cursor", "Codex", "Grok"], "level": "working", "active": true, "visibility": { "priority": 3 } }
@@ -78,9 +79,9 @@
       "workMode": "remote",
       "location": "Rosario, Argentina",
       "start": "2024-09",
-      "end": null,
+      "end": "2026-11",
       "context": {
-        "short": "Dos proyectos: Muse CRM (plugin de WooCommerce, admin del CRM y mapa de asientos) y el mapa del informe de RPPL, en equipo y como único responsable. Hoy, soporte."
+        "short": "Entregué el plugin de WooCommerce, el admin y el mapa de asientos de Muse CRM, y el mapa del informe de RPPL. También di soporte a esas entregas."
       },
       "visibility": { "priority": 1 }
     },
@@ -617,6 +618,71 @@
       "links": [
         { "id": "repo", "label": "GitHub", "url": "https://github.com/CribbNicolas/deltadictum", "kind": "repo" },
         { "id": "docs", "label": "Documentación", "url": "https://cribbnicolas.github.io/deltadictum/", "kind": "website" }
+      ],
+      "media": [],
+      "featured": false,
+      "visibility": { "priority": 2 }
+    },
+    {
+      "id": "portfolio",
+      "name": "Portfolio y CV como sistema",
+      "status": "shipped",
+      "start": "2026-08",
+      "end": null,
+      "problem": {
+        "short": "Mantener el CV, el portfolio y los datos para reclutadores en español e inglés sin que cada versión cuente una historia distinta.",
+        "long": "El mismo perfil se consulta en una web, se descarga como PDF y lo leen reclutadores y agentes. Mantener cada formato a mano hace que una fecha, un logro o una traducción cambien en un lugar y queden viejos en otro. Además, quien quiere recorrer los casos con detalle y quien necesita evaluar el perfil rápido no buscan la misma experiencia."
+      },
+      "solution": {
+        "short": "Construí con Astro y TypeScript una fuente de datos validada que genera la web, el CV, los PDFs y los endpoints para agentes.",
+        "long": "Modelé roles, logros, proyectos y decisiones como hechos con IDs y referencias, validados con Zod. Una capa compartida resuelve visibilidad, prioridad y fechas para cada salida. Astro genera el HTML, JSON-LD, /cv.json y /llms.txt en ambos idiomas. La landing usa GSAP, Lenis y Canvas para explicar los casos; /brief ofrece una lectura directa y prefers-reduced-motion tiene su propia presentación sin animación. El editor local deriva los formularios del esquema, valida antes de guardar y usa ETags y escritura atómica para detectar conflictos. Los PDFs se imprimen desde las páginas del CV mediante Cloudflare Browser Rendering y se cachean por deploy."
+      },
+      "outcome": {
+        "short": "Publiqué la web bilingüe y los PDFs bajo demanda en Cloudflare; CI verifica traducciones, texto extraíble del CV y presupuesto de carga.",
+        "long": "El sitio publicado ofrece la experiencia interactiva, la vista breve, la descarga del CV en español e inglés y datos estructurados para agentes. GitHub Actions verifica el contrato de datos, las referencias, la paridad entre idiomas y un lock que detecta traducciones desactualizadas. También comprueba el editor, el texto y orden de lectura de los PDFs, su límite de páginas, los enlaces y el peso de HTML y JavaScript. El cache del PDF cambia con cada deploy para no seguir sirviendo un CV anterior después de actualizar los datos."
+      },
+      "decisions": [
+        {
+          "id": "one-dataset-many-views",
+          "decision": "Guardar hechos y derivar las vistas en una capa compartida",
+          "context": "El CV, la web y los endpoints necesitan distinta extensión y selección, pero tienen que conservar las mismas fechas, referencias y datos de contacto.",
+          "rationale": "Una modificación en los datos se propaga a todas las salidas; la visibilidad y las duraciones se resuelven una sola vez. Los componentes consumen vistas ya preparadas.",
+          "tradeoff": "Agregar un dato exige respetar el esquema y sus referencias. La traducción sigue siendo editorial: se mantiene un dataset por idioma y CI comprueba que no se desalineen."
+        },
+        {
+          "id": "guided-and-brief-views",
+          "decision": "Ofrecer una landing con GSAP y Canvas y una vista breve en HTML",
+          "context": "Los casos necesitan mostrar cómo se tomaron decisiones de rendimiento y sincronización; un reclutador también necesita poder leer el perfil sin recorrer toda la narrativa.",
+          "rationale": "La landing ilustra esas decisiones con escenas interactivas y la vista breve presenta los mismos hechos con lectura directa. El contenido se genera como HTML y la preferencia de movimiento reducido tiene una presentación sin animación.",
+          "tradeoff": "La narrativa incorpora JavaScript y exige cuidar el scroll en móviles. Los presupuestos de carga y la alternativa breve forman parte del mantenimiento."
+        },
+        {
+          "id": "on-demand-pdf-per-deploy",
+          "decision": "Generar el PDF bajo demanda y cachearlo por deploy",
+          "context": "Instalar Chromium en el build de producción acoplaba la publicación de una web estática al motor de impresión. Volver a imprimir en cada descarga consumiría la cuota de Browser Rendering.",
+          "rationale": "Cloudflare Pages publica el sitio sin Chromium; una Function imprime la página del idioma solicitado y reutiliza el PDF. La clave de cache incorpora el commit publicado para invalidar la versión anterior al desplegar.",
+          "tradeoff": "La primera descarga que no encuentra cache depende de un servicio externo y su cuota. CI genera y verifica ambos PDFs con Playwright antes de publicar."
+        },
+        {
+          "id": "schema-driven-editor",
+          "decision": "Derivar los formularios del esquema y validar antes de escribir",
+          "context": "Editar JSON a mano permite romper referencias; mantener un formulario independiente duplica las reglas y lo deja desactualizado cuando cambia el modelo.",
+          "rationale": "El editor obtiene sus campos de Zod y rechaza datos inválidos antes de guardarlos. Los ETags detectan ediciones externas y una cola por archivo coordina los guardados dentro del proceso.",
+          "tradeoff": "El adaptador depende de la representación interna de Zod, aislada y cubierta por tests. El editor escribe el dataset en español; la traducción se mantiene por separado."
+        }
+      ],
+      "skillIds": [
+        "astro",
+        "typescript",
+        "javascript",
+        "node",
+        "playwright",
+        "cloudflare",
+        "cicd",
+        "git"
+      ],
+      "links": [
+        { "id": "site", "label": "Ver portfolio", "url": "https://cribbnicolas.pages.dev", "kind": "website" }
       ],
       "media": [],
       "featured": false,
